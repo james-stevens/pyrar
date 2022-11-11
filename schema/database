@@ -1,0 +1,29 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+export MYSQL_DATABASE="pyrar"
+
+
+root="sqlsh -u root -p 6tjSpeo5SKpoc -d mysql"
+cmd="${root}"
+
+row_id_null="int unsigned"
+row_id="${row_id_null} not null default 0"
+password="varchar(100)"
+language="char(3)"    # ISO639-2/B
+hostname="varchar(260)"
+domain_name="varchar(260)"
+currency="char(3)"
+money="decimal(10,0) not null default 0"
+auto="int unsigned auto_increment"  ## unsigned int = 32bit unsigned
+flag="tinyint unsigned"
+num_years="int not null default 0"
+email="varchar(100)"
+product="varchar(50)"
+pathname="varchar(1024)"
+card_type="varchar(20)"
+utf8="CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+
+tbl=$(basename -- "$0" .tbl)

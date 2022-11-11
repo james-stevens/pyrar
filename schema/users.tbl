@@ -1,0 +1,27 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+. ./database
+
+sqlsh "drop table if exists users"
+sqlsh "CREATE TABLE users (
+	user_id			${auto},
+
+	login			${email},
+	password		${password},
+	name			varchar(100),
+
+	payment_data	json default null,
+
+	deleted_dt		datetime,
+	created_dt		datetime,
+	amended_dt		datetime,
+
+	primary key by_id (user_id),
+	unique key by_login(login)
+	) ${utf8}"
+
+sqlsh 'grant select, insert, update on users to webui'
+sqlsh 'grant select on users to epprun,raradm'

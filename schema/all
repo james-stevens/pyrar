@@ -1,0 +1,35 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+. ./database
+
+${cmd} "drop database ${MYSQL_DATABASE}"
+${cmd} "create database ${MYSQL_DATABASE}"
+${cmd} "grant all privileges on ${MYSQL_DATABASE}.* to '${MYSQL_USERNAME}'@'%' identified by '${MYSQL_PASSWORD}' with grant option"
+${cmd} "flush PRIVILEGES"
+${cmd} "flush tables"
+
+{
+echo "webui BWB39B9M1c1ig"
+echo "raradm 132wSQI9Qik76"
+echo "epprun P0tsOvAJ2iMqo"
+} | while read user pass
+do
+	${cmd} "drop user ${user}"
+	${cmd} "flush PRIVILEGES"
+	${cmd} "flush tables"
+	${cmd} "create user ${user} identified by '${pass}'"
+done
+
+
+for file in *.tbl
+do
+	echo ${file}; sh ${file}
+done
+
+${cmd} "flush logs"
+${cmd} 'purge binary logs before now()'
+
