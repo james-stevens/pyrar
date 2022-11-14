@@ -22,11 +22,11 @@ RUN ln -s /dev/shm /run/nginx
 RUN ln -fns /run/nginx.conf /etc/nginx/nginx.conf
 RUN ln -fns /run/inittab /etc/inittab
 
-COPY myCA.pem myCA-2.pem /etc/ssl/private/
+COPY pems/myCA.pem pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
 RUN mkdir -m 755 -p /usr/local/pyrar /usr/local/pyrar/etc /usr/local/pyrar/pems
-COPY certkey.pem /usr/local/pyrar/pems/client.pem
+COPY pems/certkey.pem /usr/local/pyrar/pems/client.pem
 COPY htdocs /usr/local/pyrar/htdocs/
 
 COPY python /usr/local/pyrar/python/
