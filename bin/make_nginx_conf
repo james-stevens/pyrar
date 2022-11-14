@@ -1,0 +1,59 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+forks="3"
+if test "${REST_FORKS}"; then forks="${REST_FORKS}"; fi
+
+facility="local0"
+if test "${REST_LOG_FACILITY}"; then facility="${REST_LOG_FACILITY}"; fi
+
+api_dir="/api"
+if test "${REST_API_DIR}"; then api_dir="${REST_API_DIR}"; fi
+
+
+{
+echo "
+worker_processes  3;
+pid /run/nginx.pid;
+
+events { worker_connections  1024; }
+
+user nginx;
+error_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx error;
+
+http {
+	access_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx,severity=info;
+
+	include         mime.types;
+	default_type    application/octet-stream;
+	sendfile        on;
+	keepalive_timeout  65;
+
+	upstream api_servers {
+"
+for id in $(seq 1 ${forks})
+do
+		echo "		server unix:/run/wsgi_${id}.sock;"
+done
+echo "
+		}
+
+	server {
+		listen 80;
+		listen [::]:80;
+
+		root /usr/local/htdocs;
+		location ${api_dir} {
+"
+if test -f /etc/nginx/htpasswd
+	then
+		echo '		auth_basic "Flask REST/API";'
+		echo '		auth_basic_user_file /etc/nginx/htpasswd;'
+	fi
+echo "
+			proxy_pass http://api_servers${api_dir};
+			}
+	}
+}"
+} > /run/nginx.conf

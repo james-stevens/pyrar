@@ -1,0 +1,28 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+. ./database
+
+sqlsh "drop table if exists providers"
+sqlsh "CREATE TABLE providers (
+	provider_id     ${auto},
+
+	provider		varchar(50) not null default '',
+
+	server			varchar(150) not null default '',
+	username		varchar(100) not null default '',
+	password		varchar(100) not null default '',
+	client_pem		varchar(100) not null default '',
+
+	created_dt		datetime,
+	amended_dt		datetime,
+
+	primary key by_id (provider_id),
+	unique key by_provider (provider)
+
+	) ${utf8}"
+
+sqlsh 'grant select on providers to epprun'
+sqlsh 'grant select, insert, update, delete on providers to raradm'

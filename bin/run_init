@@ -1,0 +1,22 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+if test "${SYSLOG_SERVER}"
+	then
+		echo "*.* @${SYSLOG_SERVER}"
+	else
+		echo "*.* -/dev/console"
+	fi > /run/syslog.conf
+
+/usr/local/bin/make_inittab
+
+if test -d /etc/start.d
+	then
+		for file in /etc/start.d/*
+			do
+				. ${file}
+			done
+	fi
+
+exec /sbin/init

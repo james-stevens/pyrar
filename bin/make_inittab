@@ -1,0 +1,14 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+forks="3"
+if test "${REST_FORKS}"; then forks="${REST_FORKS}"; fi
+
+{
+echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
+echo "::respawn:/usr/local/bin/start_wsgi 1"
+echo "::respawn:/usr/local/bin/start_wsgi 2"
+echo "::respawn:/usr/local/bin/start_wsgi 3"
+echo "::respawn:/usr/local/bin/start_nginx"
+} > /run/inittab

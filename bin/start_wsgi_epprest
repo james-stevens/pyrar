@@ -1,0 +1,21 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements are possible, contact me for more information
+
+session="${1}"
+provider="nol"
+workers=3
+facility="local0"
+loglevel="info"
+
+export PYRAR_PROVIDER="${provider}"
+
+cd /usr/local/pyrar/python
+exec gunicorn \
+        --workers ${workers} \
+        --log-syslog \
+        --log-syslog-to udp://127.0.0.1:514 \
+        --log-syslog-facility ${facility} \
+        --log-level ${loglevel} \
+        --bind unix:/run/wsgi_epprest_${provider}_${session}.sock \
+        wsgi_epprest >/tmp/start_wsgi.${provider}_${session}.log 2>&1
