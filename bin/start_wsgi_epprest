@@ -8,7 +8,7 @@ workers=3
 facility="local0"
 loglevel="info"
 
-ses="$(jq .${provider}.sessions < ${BASEDIR}/etc/providers.json)
+ses="$(jq .${provider}.sessions < ${BASEDIR}/etc/providers.json)"
 if test "${ses}"; then workers="${ses}"; fi
 
 export PYRAR_PROVIDER="${provider}"

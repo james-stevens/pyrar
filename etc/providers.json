@@ -12,6 +12,6 @@
 		"password": "abc123",
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
-		"sessions": 3
+		"sessions": 2
 	}
 }
