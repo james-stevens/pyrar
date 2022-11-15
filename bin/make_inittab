@@ -2,11 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-forks="3"
-if test "${REST_FORKS}"; then forks="${REST_FORKS}"; fi
-
 {
 echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
-echo "::respawn:/usr/local/bin/start_wsgi_epprest 1 nol"
+
+flat ${BASEDIR}/etc/providers.json | awk -F. '{ print $1 }' | sort -u | \
+	awk '{ printf "::respawn:/usr/local/bin/start_wsgi_epprest 1 %s\n",$0 }'
+
 echo "::respawn:/usr/local/bin/start_nginx"
 } > /run/inittab

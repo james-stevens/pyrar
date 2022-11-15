@@ -33,6 +33,7 @@ COPY python /usr/local/pyrar/python/
 RUN python3 -m compileall /usr/local/pyrar/python/
 
 RUN ln -fns /usr/local/pyrar/python/pysqlsh /usr/bin/sqlsh
+RUN ln -fns /usr/local/pyrar/python/flat.py /usr/bin/flat
 
 COPY bin /usr/local/bin/
 

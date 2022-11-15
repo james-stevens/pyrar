@@ -9,6 +9,7 @@ if test "${SYSLOG_SERVER}"
 		echo "*.* -/dev/console"
 	fi > /run/syslog.conf
 
+export BASEDIR="/usr/local/pyrar"
 /usr/local/bin/make_inittab
 
 if test -d /etc/start.d
@@ -18,5 +19,6 @@ if test -d /etc/start.d
 				. ${file}
 			done
 	fi
+
 
 exec /sbin/init

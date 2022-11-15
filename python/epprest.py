@@ -18,8 +18,8 @@ from pytz import utc
 
 import flask
 
-CLIENT_PEM_DIR = "/usr/local/pyrar/pems"
-PROVIDERS_FILE = "/usr/local/pyrar/etc/providers.json"
+CLIENT_PEM_DIR = os.environ["BASEDIR"] + "/pems"
+PROVIDERS_FILE = os.environ["BASEDIR"] + "/etc/providers.json"
 
 syslogFacility = syslog.LOG_LOCAL6
 
@@ -296,7 +296,7 @@ def connectToEPP():
     syslog.syslog(f"Greeting {ret}")
 
     ret, js = xmlRequest(makeLogin(this_provider["username"], this_provider["password"]))
-    syslog.syslog(f"Login {ret}")
+    syslog.syslog(f"Login to '{provider}' gives {ret}")
 
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()

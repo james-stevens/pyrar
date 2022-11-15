@@ -2,10 +2,9 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-forks="1"
 facility="local0"
-epp_dir="/epp"
 
+mkdir -p /run/epp
 
 {
 echo "
@@ -24,16 +23,18 @@ http {
 	default_type    application/octet-stream;
 	sendfile        on;
 	keepalive_timeout  65;
+"
 
-	upstream epp_servers {
-		server unix:/run/wsgi_epprest_nol_1.sock;
-		}
+flat ${BASEDIR}/etc/providers.json | awk -F. '{ print $1 }' | sort -u | \
+awk '{
+	printf "\tupstream epp_%s {\n",$0
+	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$0
+	print "\t\t}"
+	printf "\tserver {\n\t\tlisten %d;\n\t\tlocation / {\n",9999+NR
+	printf "\t\t\tproxy_pass http://epp_%s;\n",$0;
+	print "\t\t\t}\n\t\t}\n"
+	}'
 
-	server {
-		listen 10000;
-		location / {
-			proxy_pass http://epp_servers;
-			}
-		}
-	}"
+echo "}"
+
 } > /run/nginx.conf

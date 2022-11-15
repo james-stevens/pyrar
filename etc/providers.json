@@ -5,5 +5,13 @@
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
 		"sessions": 3
+	},
+
+	"extra": {
+		"username": "NIC-2010",
+		"password": "abc123",
+		"server": "contain.jrcs.net",
+		"certpem": "client.pem",
+		"sessions": 3
 	}
 }
