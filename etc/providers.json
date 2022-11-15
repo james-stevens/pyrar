@@ -1,0 +1,8 @@
+{
+	"nol": {
+		"username": "NIC-1013",
+		"password": "abc123",
+		"server": "192.168.1.141",
+		"certpem": "client.pem"
+	}
+}
