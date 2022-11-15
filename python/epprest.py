@@ -18,7 +18,8 @@ from pytz import utc
 
 import flask
 
-client_pem = "/opt/keys/client.pem"
+CLIENT_PEM_DIR = "/usr/local/pyrar/pems"
+PROVIDERS_FILE = "/usr/local/pyrar/etc/providers.json"
 
 syslogFacility = syslog.LOG_LOCAL6
 
@@ -30,6 +31,31 @@ EPP_PORT = 700
 
 EPP_PKT_LEN_BYTES = 4
 NETWORK_BYTE_ORDER = "big"
+
+if "PYRAR_PROVIDER" not in os.environ:
+    raise ValueError("No `PYRAR_PROVIDER` specified")
+
+if not os.path.isfile(PROVIDERS_FILE):
+    raise ValueError(f"Providers file `{PROVIDERS_FILE}` is missing")
+
+with open(PROVIDERS_FILE,"r") as fd:
+    provs = json.load(fd)
+
+provider = os.environ["PYRAR_PROVIDER"]
+if provider not in provs:
+    raise ValueError(f"Provider '{provider}' not in '{PROVIDERS_FILE}'")
+
+this_provider = provs[provider]
+for item in ["username","password","server","certpem"]:
+    if item not in this_provider:
+        raise ValueError(f"Item '{item}' missing from provider '{provider}'")
+
+client_pem = f"{CLIENT_PEM_DIR}/{this_provider['certpem']}"
+if not os.path.isfile(client_pem):
+	raise ValueError(f"Client PEM file for '{provider}' at '{client_pem}' not found")
+
+
+syslog.openlog(logoption=syslog.LOG_PID, facility=syslogFacility)
 
 jobInterval = 0
 if "EPP_KEEPALIVE" in os.environ:
@@ -56,7 +82,7 @@ def closeEPP():
         return
     ret, js = xmlRequest({"logout": None})
     flask.Response(js)
-    syslog.syslog("Logout {}".format(ret))
+    syslog.syslog(f"Logout {ret}")
     conn.close()
 
 
@@ -114,19 +140,19 @@ def makeLogin(username, password):
                 "version": "1.0",
                 "lang": "en"
             },
-			"svcs": {
-			"objURI": [
-				"urn:ietf:params:xml:ns:domain-1.0",
-				"urn:ietf:params:xml:ns:contact-1.0",
-				"urn:ietf:params:xml:ns:host-1.0"
-				],
-			"svcExtension": {
-				"extURI": [
-					"urn:ietf:params:xml:ns:secDNS-1.1",
-					"urn:ietf:params:xml:ns:fee-1.0"
-					]
-				}
-			}
+            "svcs": {
+            "objURI": [
+                "urn:ietf:params:xml:ns:domain-1.0",
+                "urn:ietf:params:xml:ns:contact-1.0",
+                "urn:ietf:params:xml:ns:host-1.0"
+                ],
+            "svcExtension": {
+                "extURI": [
+                    "urn:ietf:params:xml:ns:secDNS-1.1",
+                    "urn:ietf:params:xml:ns:fee-1.0"
+                    ]
+                }
+            }
         }
     }
 
@@ -200,7 +226,7 @@ def jsonRequest(in_js, addr):
     if conn is None:
         connectToEPP()
         if conn is None:
-            return abort(400, "Failed to connect to EPP Server")
+            return abort(400, f"Failed to connect to EPP Server - `{this_provider['server']}`")
 
     t1 = firstDict(in_js)
     if t1 == "hello":
@@ -230,8 +256,7 @@ def jsonRequest(in_js, addr):
             conn = None
             return abort(400, "Lost connection to EPP Server")
 
-    syslog.syslog("User request: {} asked '{}/{}' -> {}".format(
-        addr, t1, t2, ret))
+    syslog.syslog(f"User request: {addr} asked '{t1}/{t2}' -> {ret}")
 
     return js
 
@@ -249,46 +274,33 @@ def connectToEPP():
     global conn
     global scheduler
 
-    syslog.openlog(logoption=syslog.LOG_PID, facility=syslogFacility)
+    context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    context.load_cert_chain(client_pem)
 
-    if ("EPP_SERVER" not in os.environ or "EPP_USERNAME" not in os.environ
-            or "EPP_PASSWORD" not in os.environ):
-        syslog.syslog(
-            "ERROR: Either server, username or password has not been specified"
-        )
-    else:
-        args = Empty()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn = context.wrap_socket(s,
+                               server_side=False,
+                               server_hostname=this_provider["server"])
 
-        args.server = os.environ["EPP_SERVER"]
-        args.username = os.environ["EPP_USERNAME"]
-        args.password = os.environ["EPP_PASSWORD"]
+    syslog.syslog(f"Connecting to EPP Server: {this_provider['server']}")
+    try:
+        conn.connect((this_provider["server"], EPP_PORT))
+        conn.setblocking(True)
+    except Exception as e:
+        syslog.syslog(str(e))
+        conn.close()
+        conn = None
+        return
 
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        context.load_cert_chain(client_pem)
+    ret, js = jsonReply(conn, None)
+    syslog.syslog(f"Greeting {ret}")
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn = context.wrap_socket(s,
-                                   server_side=False,
-                                   server_hostname=args.server)
+    ret, js = xmlRequest(makeLogin(this_provider["username"], this_provider["password"]))
+    syslog.syslog(f"Login {ret}")
 
-        syslog.syslog("Connecting to EPP Server: {}".format(args.server))
-        try:
-            conn.connect((args.server, EPP_PORT))
-            conn.setblocking(True)
-        except Exception as e:
-            conn.close()
-            conn = None
-            return
-
-        ret, js = jsonReply(conn, None)
-        syslog.syslog("Greeting {}".format(ret))
-
-        ret, js = xmlRequest(makeLogin(args.username, args.password))
-        syslog.syslog("Login {}".format(ret))
-
-        if jobInterval > 0 and scheduler is not None:
-            scheduler.resume()
+    if jobInterval > 0 and scheduler is not None:
+        scheduler.resume()
 
 
 if __name__ == "__main__":
-    application.run()
+	application.run()

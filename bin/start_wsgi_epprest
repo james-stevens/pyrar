@@ -3,7 +3,7 @@
 # Alternative license arrangements are possible, contact me for more information
 
 session="${1}"
-provider="nol"
+provider="${2}"
 workers=3
 facility="local0"
 loglevel="info"

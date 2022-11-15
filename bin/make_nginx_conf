@@ -2,14 +2,9 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-forks="3"
-if test "${REST_FORKS}"; then forks="${REST_FORKS}"; fi
-
+forks="1"
 facility="local0"
-if test "${REST_LOG_FACILITY}"; then facility="${REST_LOG_FACILITY}"; fi
-
-api_dir="/api"
-if test "${REST_API_DIR}"; then api_dir="${REST_API_DIR}"; fi
+epp_dir="/epp"
 
 
 {
@@ -30,30 +25,15 @@ http {
 	sendfile        on;
 	keepalive_timeout  65;
 
-	upstream api_servers {
-"
-for id in $(seq 1 ${forks})
-do
-		echo "		server unix:/run/wsgi_${id}.sock;"
-done
-echo "
+	upstream epp_servers {
+		server unix:/run/wsgi_epprest_nol_1.sock;
 		}
 
 	server {
-		listen 80;
-		listen [::]:80;
-
-		root /usr/local/htdocs;
-		location ${api_dir} {
-"
-if test -f /etc/nginx/htpasswd
-	then
-		echo '		auth_basic "Flask REST/API";'
-		echo '		auth_basic_user_file /etc/nginx/htpasswd;'
-	fi
-echo "
-			proxy_pass http://api_servers${api_dir};
+		listen 10000;
+		location / {
+			proxy_pass http://epp_servers;
 			}
-	}
-}"
+		}
+	}"
 } > /run/nginx.conf

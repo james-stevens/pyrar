@@ -1,3 +1,6 @@
 #! /bin/sh
 
-docker run -it pyrar
+docker run \
+	-v /opt/github/pyrar/etc:/usr/local/pyrar/etc \
+	-p 10000:10000 \
+	-it pyrar $*
