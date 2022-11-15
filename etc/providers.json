@@ -4,14 +4,43 @@
 		"password": "abc123",
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
-		"sessions": 3
-	},
+		"sessions": 3,
+		"prices" : { "default": "x2" },
+		"domains" : {
+			"and.mom": null,
+			"for.men": null,
+			"for.mom": null,
+			"for.one": null,
+			"for.sale": null,
+			"from.marketing": null,
+			"from.work": null,
+			"in.london": {
+				"default": "x10",
+				"new": "x7",
+				"renew": "x5",
+				"renew:2": "x6"
+				},
+			"of.fashion": null,
+			"of.london": null,
+			"pony.club": null,
+			"that.win": null,
+			"to.work": null,
+			"under.one": null,
+			"with.marketing": null
+			}
+		},
 
 	"extra": {
 		"username": "NIC-2010",
 		"password": "abc123",
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
-		"sessions": 2
-	}
+		"sessions": 2,
+		"prices" : { "default": "x2" },
+		"domains" : {
+			"frog": null,
+			"chug": { "default": "1.5" },
+			"xp": { "default": "x1.5" }
+			}
+		}
 }
