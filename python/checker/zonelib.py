@@ -5,11 +5,7 @@
 import os
 import json
 import random
-import syslog
-from requests.auth import HTTPBasicAuth
-import validate
 import fileloader
-import log
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority"
 EPP_REST_ZONES = os.environ["BASE"] + "/etc/providers.json"
@@ -45,24 +41,25 @@ class ZoneLib:
         self.zone_list = []
         self.zone_data = {}
         self.zone_priority = {}
-        self.zone_data_last_changed = 0
-        self.priority_data_last_changed = 0
 
         self.zone_file = fileloader.FileLoader(EPP_REST_ZONES)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
 
         self.check_for_new_files()
 
-        with open(EPP_PORTS_LIST,"r") as fd:
-            port_lines = [ l.split() for l in fd.readlines()]
-        self.ports = { p[0]:int(p[1]) for p in port_lines }
+        with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
+            port_lines = [line.split() for line in fd.readlines()]
+        self.ports = {p[0]: int(p[1]) for p in port_lines}
 
     def check_for_new_files(self):
         self.zone_json, z_is_new = self.zone_file.data()
         self.pri_json, p_is_new = self.priority_file.data()
 
         if z_is_new or p_is_new:
-            self.zone_priority = {idx: pos for pos, idx in enumerate(self.pri_json)}
+            self.zone_priority = {
+                idx: pos
+                for pos, idx in enumerate(self.pri_json)
+            }
             self.process_json()
 
     def process_json(self):
@@ -108,7 +105,7 @@ class ZoneLib:
             return self.zone_priority[tld] + 10
         return random.randint(1000, 9999999)
 
-    def url(self,provider):
+    def url(self, provider):
         port = self.ports[provider]
         return f"http://127.0.0.1:{port}/epp/api/v1.0/request"
 
@@ -121,7 +118,6 @@ class ZoneLib:
         if provider not in self.ports:
             return None, None
 
-        port = self.ports[provider]
         return provider, self.url(provider)
 
     def extract_items(self, dom):
@@ -235,9 +231,9 @@ class ZoneLib:
 if __name__ == "__main__":
     my_zone_lib = ZoneLib()
     # print(my_zone_lib.zone_json)
-    print("ZONE_DATA",json.dumps(my_zone_lib.zone_data, indent=3))
-    print("ZONE_LIST",json.dumps(my_zone_lib.zone_list, indent=3))
-    print("ZONE_PRIORITY",json.dumps(my_zone_lib.zone_priority, indent=3))
-    print("PORTS",json.dumps(my_zone_lib.ports, indent=3))
+    print("ZONE_DATA", json.dumps(my_zone_lib.zone_data, indent=3))
+    print("ZONE_LIST", json.dumps(my_zone_lib.zone_list, indent=3))
+    print("ZONE_PRIORITY", json.dumps(my_zone_lib.zone_priority, indent=3))
+    print("PORTS", json.dumps(my_zone_lib.ports, indent=3))
     # print(json.dumps(my_zone_lib.return_zone_list(), indent=3))
     # print(json.dumps(my_zone_lib.make_xmlns(), indent=3))

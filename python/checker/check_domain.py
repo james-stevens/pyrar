@@ -4,9 +4,7 @@
 #######################################################
 
 import sys
-import os
 import json
-import syslog
 import httpx
 import flask
 
@@ -57,7 +55,7 @@ def xml_check_with_fees(domobj, years=1):
 tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
 xmlns = tld_lib.make_xmlns()
-clients = { p:httpx.Client() for p in tld_lib.ports }
+clients = {p: httpx.Client() for p in tld_lib.ports}
 
 
 def check_ok(name):
@@ -92,7 +90,6 @@ class DomainName:
             self.err = err
             self.names = None
         self.provider, self.url = tld_lib.http_req(name)
-        return
 
     def process_list(self, domain):
         self.names = []
@@ -102,6 +99,12 @@ class DomainName:
                 self.names.append(name)
                 if self.provider is None:
                     self.provider, self.url = tld_lib.http_req(name)
+                else:
+                    prov, __ = tld_lib.http_req(name)
+                    if prov != self.provider:
+                        self.err = "ERROR: Split providers request"
+                        self.names = None
+                        return
             else:
                 self.err = err
                 self.names = None
@@ -113,7 +116,9 @@ def http_price_domains(domobj):
     if domobj.provider is None or domobj.url is None:
         return 400, "Unsupported TLD"
 
-    resp = clients[domobj.provider].post(domobj.url, json=xml_check_with_fees(domobj, 1), headers=HEADER)
+    resp = clients[domobj.provider].post(domobj.url,
+                                         json=xml_check_with_fees(domobj, 1),
+                                         headers=HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"
@@ -121,7 +126,7 @@ def http_price_domains(domobj):
     try:
         return 200, json.loads(resp.content)
     except ValueError as err:
-        log.log(resp.status_code, "===", resp.content.decode("utf8"))
+        log.log(f"{resp.status_code} === {resp.content.decode('utf8')}")
         log.log(f"**** JSON FAILED TO PARSE ***** {err}")
         return 400, "Returned JSON Parse Error"
 
@@ -192,6 +197,10 @@ def rest_domain_price():
 
 def run_one(domain):
     domobj = DomainName(domain)
+    if domobj.names is None:
+        print(">>>>",domobj.err)
+        sys.exit(1)
+
     ret, out_js = http_price_domains(domobj)
 
     if ret != 200:
@@ -202,8 +211,8 @@ def run_one(domain):
         if code == 1000:
             tld_lib.multiply_values(ret_js)
         print(code, json.dumps(ret_js, indent=3))
-    for c in clients:
-        clients[c].close()
+    for client in clients:
+        clients[client].close()
 
 
 if __name__ == "__main__":

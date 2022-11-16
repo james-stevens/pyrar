@@ -94,8 +94,8 @@ class XmlParser:
         dom = dom_fee["fee:objID"]
         ret_dom = self.ret_js[dom]
 
-        ret_dom["class"] = dom_fee[
-            "fee:class"].lower() if "fee:class" in dom_fee else "standard"
+        ret_dom["class"] = dom_fee["fee:class"].lower(
+        ) if "fee:class" in dom_fee else "standard"
 
         if isinstance(dom_fee["fee:command"], list):
             for fee_item in dom_fee["fee:command"]:

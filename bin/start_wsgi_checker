@@ -2,23 +2,16 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-session="${1}"
-provider="${2}"
 sessions=3
 facility="local0"
 loglevel="info"
 
-ses="$(jq .${provider}.sessions < ${BASE}/etc/providers.json)"
-if test "${ses}"; then sessions="${ses}"; fi
-
-export PYRAR_PROVIDER="${provider}"
-
-cd ${BASE}/python/epp
+cd ${BASE}/python/checker
 exec gunicorn \
         --workers ${sessions} \
         --log-syslog \
         --log-syslog-to udp://127.0.0.1:514 \
         --log-syslog-facility ${facility} \
         --log-level ${loglevel} \
-        --bind unix:/run/epp/wsgi_epprest_${provider}_${session}.sock \
-        wsgi >/tmp/start_wsgi.${provider}_${session}.log 2>&1
+        --bind unix:/run/wsgi_checker.sock \
+        wsgi >/tmp/start_wsgi.log 2>&1

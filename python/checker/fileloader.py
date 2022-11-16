@@ -18,12 +18,12 @@ def have_newer(mtime, file_name):
 
 
 class FileLoader:
-    def __init__(self,filename):
+    def __init__(self, filename):
         self.filename = filename
-        self.last_mtime = 0;
+        self.last_mtime = 0
 
     def check_for_new(self):
-        if (new_time := have_newer(self.last_mtime,self.filename)) is None:
+        if (new_time := have_newer(self.last_mtime, self.filename)) is None:
             return False
 
         log.log(f"NORMAL: Reloading file '{self.filename}'")
@@ -39,5 +39,5 @@ class FileLoader:
         return False
 
     def data(self):
-        ret = self.check_for_new();
+        ret = self.check_for_new()
         return self.json, ret

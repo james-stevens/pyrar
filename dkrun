@@ -4,4 +4,5 @@ docker run \
 	-v /opt/github/pyrar/etc:/opt/pyrar/etc \
 	-p 10000:10000 \
 	-p 10001:10001 \
+	-p 127.0.0.1:80:80 \
 	-it pyrar $*

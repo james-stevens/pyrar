@@ -7,13 +7,15 @@ import syslog
 debug = False
 done_init = False
 
+
 def log(line):
     if debug:
-        print(">>>>>>",line)
+        print(">>>>>>", line)
     else:
         if not done_init:
             init()
         syslog.syslog(line)
+
 
 def init(facility=syslog.LOG_LOCAL6):
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
