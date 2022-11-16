@@ -39,7 +39,7 @@
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"frog": null,
-			"chug": { "default": "1.5" },
+			"chug": { "default": "x1.5" },
 			"xp": { "default": "x1.5" }
 			}
 		}
