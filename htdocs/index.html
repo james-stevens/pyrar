@@ -19,12 +19,14 @@ function fromIDN()
 {
 	f = document.form1;
 	f.puny.value = toASCII(f.idn.value);
+	f.idn.value = "";
 }
 
 function fromPuny()
 {
 	f = document.form1;
 	f.idn.value = toUnicode(f.puny.value);
+	f.puny.value = "";
 }
 
 </script>
