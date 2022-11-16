@@ -8,14 +8,12 @@ workers=3
 facility="local0"
 loglevel="info"
 
-ses="$(jq .${provider}.sessions < ${BASEDIR}/etc/providers.json)"
+ses="$(jq .${provider}.sessions < ${BASE}/etc/providers.json)"
 if test "${ses}"; then workers="${ses}"; fi
 
 export PYRAR_PROVIDER="${provider}"
 
-mkdir -p /run/epp
-
-cd ${BASEDIR}/python
+cd ${BASE}/python/epp
 exec gunicorn \
         --workers ${workers} \
         --log-syslog \

@@ -4,7 +4,6 @@
 
 facility="local0"
 
-mkdir -p /run/epp
 
 {
 echo "
@@ -25,15 +24,14 @@ http {
 	keepalive_timeout  65;
 "
 
-flat ${BASEDIR}/etc/providers.json | awk -F. '{ print $1 }' | sort -u | \
 awk '{
-	printf "\tupstream epp_%s {\n",$0
-	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$0
+	printf "\tupstream epp_%s {\n",$1
+	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$1
 	print "\t\t}"
-	printf "\tserver {\n\t\tlisten %d;\n\t\tlocation / {\n",9999+NR
-	printf "\t\t\tproxy_pass http://epp_%s;\n",$0;
+	printf "\tserver {\n\t\tlisten %d;\n\t\tlocation / {\n",$2
+	printf "\t\t\tproxy_pass http://epp_%s;\n",$1;
 	print "\t\t\t}\n\t\t}\n"
-	}'
+	}' /run/prov_ports
 
 echo "}"
 

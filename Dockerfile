@@ -22,18 +22,18 @@ RUN ln -s /dev/shm /run/nginx
 RUN ln -fns /run/nginx.conf /etc/nginx/nginx.conf
 RUN ln -fns /run/inittab /etc/inittab
 
-RUN mkdir -m 755 -p /usr/local/pyrar /usr/local/pyrar/etc /usr/local/pyrar/pems
-COPY pems /usr/local/pyrar/pems/
-COPY htdocs /usr/local/pyrar/htdocs/
+RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
+COPY pems /opt/pyrar/pems/
+COPY htdocs /opt/pyrar/htdocs/
 
-RUN mv /usr/local/pyrar/pems/myCA.pem /usr/local/pyrar/pems/myCA-2.pem /etc/ssl/private/
+RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
-COPY python /usr/local/pyrar/python/
-RUN python3 -m compileall /usr/local/pyrar/python/
+COPY python /opt/pyrar/python/
+RUN python3 -m compileall /opt/pyrar/python/
 
-RUN ln -fns /usr/local/pyrar/python/pysqlsh /usr/bin/sqlsh
-RUN ln -fns /usr/local/pyrar/python/flat.py /usr/bin/flat
+RUN ln -fns /opt/pyrar/python/bin/pysqlsh /usr/bin/sqlsh
+RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
 
 COPY bin /usr/local/bin/
 

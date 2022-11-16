@@ -7,7 +7,5 @@ conf="nginx.conf"
 
 /usr/local/bin/make_nginx_conf
 
-mkdir /run/nginx; chown nginx: /run/nginx
-
 sleep 1
 exec /usr/sbin/nginx -c /etc/nginx/${conf} -g "${opts}"

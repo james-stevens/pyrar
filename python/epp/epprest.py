@@ -18,8 +18,8 @@ from pytz import utc
 
 import flask
 
-CLIENT_PEM_DIR = os.environ["BASEDIR"] + "/pems"
-PROVIDERS_FILE = os.environ["BASEDIR"] + "/etc/providers.json"
+CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
+PROVIDERS_FILE = os.environ["BASE"] + "/etc/providers.json"
 
 syslogFacility = syslog.LOG_LOCAL6
 
