@@ -24,7 +24,6 @@ RUN ln -fns /run/inittab /etc/inittab
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
 COPY pems /opt/pyrar/pems/
-COPY htdocs /opt/pyrar/htdocs/
 
 RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
@@ -36,5 +35,6 @@ RUN ln -fns /opt/pyrar/python/bin/pysqlsh /usr/bin/sqlsh
 RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
 
 COPY bin /usr/local/bin/
+COPY htdocs /opt/pyrar/htdocs/
 
 CMD [ "/usr/local/bin/run_init" ]

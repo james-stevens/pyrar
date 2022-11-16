@@ -31,7 +31,7 @@ http {
 		location /api {
 			proxy_pass http://wsgi_checker/api;
 			}
-		root /opt/htdocs;
+		root ${BASE}/htdocs;
 		}
 "
 

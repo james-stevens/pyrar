@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>PowerDNS Admin WebUI - Login</title>
+    <meta charSet="utf-8"/>
+	<script src="/theme.js"></script>
+	<script src="/punycode.js"></script>
+</head>
+<style type='text/css'></style>
+<script language="Javascript">
+
+gbl = {}
+
+function bodyLoaded()
+{
+	changeTheme("dark");
+}
+
+function fromIDN()
+{
+	f = document.form1;
+	f.puny.value = toASCII(f.idn.value);
+}
+
+function fromPuny()
+{
+	f = document.form1;
+	f.idn.value = toUnicode(f.puny.value);
+}
+
+</script>
+<body onLoad="bodyLoaded();">
+<form name=form1>
+<table align=center>
+<tr><td>IDN</td><td><input name=idn size=50></td><td><span class=myBtn onClick="fromIDN();">convert</span></td></tr>
+<tr><td>Puny</td><td><input name=puny size=50></td><td><span class=myBtn onClick="fromPuny();">convert</span></td></tr>
+</form>
+</table>
+</body>
+</html>
