@@ -11,6 +11,7 @@
 
 debugAPI = true;
 
+
 gbl = {
 	"server": window.location.host,
 	"theme": window.localStorage.getItem("theme"),
@@ -67,6 +68,14 @@ function fromPuny()
 
 
 
+function btn(call,txt,hlp,sz) {
+    let ex=""
+    if (sz != null) ex = `style='width: ${sz}px;'`
+    return `<span ${ex} title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
+}
+
+
+
 function showSearch(data)
 {
 	if ("error" in data) {
@@ -74,38 +83,55 @@ function showSearch(data)
 		return;
 		}
 
-	let e = document.getElementById("output");
 	gbl.search.result = gbl.search.result.concat(data);
 
 	let x = "<table align=center>";
 	for(let item of gbl.search.result) {
-		if (!("name" in item)) {
+		if (item.name=="-") {
 			x += "<tr><td colspan=4><hr></td></tr>";
 			continue;
 			}
 
+		if (!item.avail) continue;
+
 		x += "<tr>";
-		if (item.avail) x += `<td>${gbl.tick}</td>`; else x += `<td></td>`;
 		x += `<td>${fromPuny(item.name)}</td>`;
 		if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
 		else {
-			if ("create" in item) x += `<td align=right>BUY $${item.create}</td>`;
+			if ("create" in item) {
+				x += "<td align=right>";
+				x += btn(`buyOneName('${item.name}')`,`BUY $${item.create}`,"Buy this domain",120);
+				x += "</td>";
+				}
 			if ("renew" in item) x += `<td align=right>renew $${item.create}</td>`;
 			}
 		x += "</tr>";
 		}
 
+	let e = document.getElementById("output");
 	e.innerHTML = x + "</table>";
 
 	if (("search" in gbl)&&("todo" in gbl.search)) {
 		if (gbl.search.todo.length <= 0) delete gbl.search; else searchNext();
 		}
 	else {
-		gbl.search.result.push({});
+		gbl.search.result.push({"name":"-"});
 		let name = data[0]["name"];
 		let pos = name.indexOf(".");
 		if (pos > 0) multiSearch(name.substr(0,pos),name.substr(pos+1));
 		}
+}
+
+
+
+function buyOneName(name)
+{
+	callApi("domain/check",(data) => {
+
+		// user buys here
+		console.log(data);
+
+		}, { json: { "domain" : name }}); 
 }
 
 
@@ -120,7 +146,7 @@ function searchNext()
 		srch.push(gbl.search.term + "." + nxt.name);
 		}
 
-	callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
+	callApi("domain/check",showSearch, { json: {"domain" : srch }} );
 }
 
 
