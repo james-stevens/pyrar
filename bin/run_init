@@ -11,8 +11,6 @@ if test "${SYSLOG_SERVER}"
 
 export BASE="/opt/pyrar"
 
-/usr/local/bin/make_inittab
-
 if test -d /etc/start.d
 	then
 		for file in /etc/start.d/*
@@ -33,5 +31,8 @@ flat ${BASE}/etc/providers.json | awk -F. 'BEGIN { n=10000 }
 			print x,have[x],n 
 			}
 		}' > /run/prov_ports
+
+
+/usr/local/bin/make_inittab
 
 exec /sbin/init
