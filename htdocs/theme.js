@@ -253,5 +253,6 @@ td {
 	visibility: visible;
 	opacity: 1; transition: opacity 0.5s linear;
 	}
+
 `;
 }

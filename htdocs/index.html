@@ -1,33 +1,173 @@
 <html>
 <head>
-    <title>PowerDNS Admin WebUI - Login</title>
+    <title>Python Registrar</title>
     <meta charSet="utf-8"/>
 	<script src="/theme.js"></script>
 	<script src="/punycode.js"></script>
+	<script src="/lib.js"></script>
 </head>
 <style type='text/css'></style>
 <script language="Javascript">
 
-gbl = {}
+debugAPI = true;
+
+gbl = {
+	"server": window.location.host,
+	"theme": window.localStorage.getItem("theme"),
+
+    tick: "&#x2611;",
+    cross: "&#x2612;",
+    timer: "&#x23f3;",
+    bin: "&#x2702;",
+    warn: "&#x26a0;",
+    page: "&#x1F5CE;",
+    nsec: "&#x1F512;",
+    nsec3: "&#x1F510;",
+    clip: "&#x1F4CE;",
+
+    gap: "<div style='height: 7px;'></div>",
+
+    max_per_search: 5
+	};
+
+ctx = {};
+
+if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
+	gbl.theme="dark";
+	window.localStorage.setItem("theme",gbl.theme);
+	}
+
+changeTheme(gbl.theme);
+
+function errMsg(line) { console.log("errMsg",line); }
+function msg(line) { console.log("msg",line); }
 
 function bodyLoaded()
 {
-	changeTheme("dark");
+	callApi("zones",data => { gbl.zones = data; });
 }
+
+
 
 function fromIDN()
 {
-	f = document.form1;
+	let f = document.form1;
 	f.puny.value = toASCII(f.idn.value);
 	f.idn.value = "";
 }
 
+
+
 function fromPuny()
 {
-	f = document.form1;
+	let f = document.form1;
 	f.idn.value = toUnicode(f.puny.value);
 	f.puny.value = "";
 }
+
+
+
+function showSearch(data)
+{
+	if ("error" in data) {
+		console.log("showSearch:ERROR:",data);
+		return;
+		}
+
+	let e = document.getElementById("output");
+	gbl.search.result = gbl.search.result.concat(data);
+
+	let x = "<table align=center>";
+	for(let item of gbl.search.result) {
+		if (!("name" in item)) {
+			x += "<tr><td colspan=4><hr></td></tr>";
+			continue;
+			}
+
+		x += "<tr>";
+		if (item.avail) x += `<td>${gbl.tick}</td>`; else x += `<td></td>`;
+		x += `<td>${fromPuny(item.name)}</td>`;
+		if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
+		else {
+			if ("create" in item) x += `<td align=right>BUY $${item.create}</td>`;
+			if ("renew" in item) x += `<td align=right>renew $${item.create}</td>`;
+			}
+		x += "</tr>";
+		}
+
+	e.innerHTML = x + "</table>";
+
+	if (("search" in gbl)&&("todo" in gbl.search)) {
+		if (gbl.search.todo.length <= 0) delete gbl.search; else searchNext();
+		}
+	else {
+		gbl.search.result.push({});
+		let name = data[0]["name"];
+		let pos = name.indexOf(".");
+		if (pos > 0) multiSearch(name.substr(0,pos),name.substr(pos+1));
+		}
+}
+
+
+
+function searchNext()
+{
+	let first = gbl.search.todo.shift();
+	let srch = [ gbl.search.term + "." + first.name ];
+
+	while((gbl.search.todo.length > 0)&&(srch.length < gbl.max_per_search)&&(first.provider == gbl.search.todo[0].provider)) {
+		let nxt = gbl.search.todo.shift();
+		srch.push(gbl.search.term + "." + nxt.name);
+		}
+
+	callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
+}
+
+
+
+function fromPuny(fqdn)
+{
+	if ((fqdn.substr(0,4)=="xn--")||(fqdn.indexOf(".xn--") > 0))
+		return toUnicode(fqdn);
+	return fqdn;
+}
+
+
+
+function multiSearch(srch,not_me_tld)
+{
+	gbl.search.todo = [];
+	gbl.search.term = srch;
+	for(x of gbl.zones) {
+		if ((not_me_tld==null)||(x.name!=not_me_tld)) gbl.search.todo.push(x);
+		}
+
+	searchNext();
+}
+
+
+
+function doSearch()
+{
+    delete gbl.search;
+
+    gbl.search = {};
+    gbl.search.result = [];
+
+    f = document.searchForm;
+    let srch = toASCII(f.search.value);
+
+    if (srch.indexOf(".") >= 0)
+		callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
+	else
+		multiSearch(srch,null);
+
+    f.search.focus();
+    f.search.select();
+    return false;
+}
+
+
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -36,6 +176,11 @@ function fromPuny()
 <tr><td>IDN</td><td><input name=idn size=50></td><td><span class=myBtn onClick="fromIDN();">convert</span></td></tr>
 <tr><td>Puny</td><td><input name=puny size=50></td><td><span class=myBtn onClick="fromPuny();">convert</span></td></tr>
 </form>
+<tr><td colspan=2><hr></td></tr>
+<form name=searchForm onSubmit="return doSearch();">
+<tr><td>Search</td><td><input autofocus name=search size=50></td><td><span class=myBtn onClick="doSearch();">search</span></td></tr>
+</form>
 </table>
+<div id="output"></div>
 </body>
 </html>
