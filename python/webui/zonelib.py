@@ -7,7 +7,7 @@ import json
 import random
 import fileloader
 
-EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority"
+EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REST_ZONES = os.environ["BASE"] + "/etc/providers.json"
 EPP_PORTS_LIST = "/run/prov_ports"
 

@@ -8,6 +8,6 @@ echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
 flat ${BASE}/etc/providers.json | awk -F. '{ print $1 }' | sort -u | \
 	awk '{ printf "::respawn:/usr/local/bin/start_wsgi_epprest 1 %s\n",$0 }'
 
-echo "::respawn:/usr/local/bin/start_wsgi_checker"
+echo "::respawn:/usr/local/bin/start_wsgi_webui"
 echo "::respawn:/usr/local/bin/start_nginx"
 } > /run/inittab

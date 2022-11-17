@@ -2,11 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-sessions=5
+sessions=10
 facility="local0"
 loglevel="info"
 
-cd ${BASE}/python/checker
+cd ${BASE}/python/webui
 exec gunicorn \
         --workers ${sessions} \
         --log-syslog \

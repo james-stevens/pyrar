@@ -13,7 +13,7 @@ if test "${ses}"; then sessions="${ses}"; fi
 
 export PYRAR_PROVIDER="${provider}"
 
-cd ${BASE}/python/epp
+cd ${BASE}/python/epprest
 exec gunicorn \
         --workers ${sessions} \
         --log-syslog \
