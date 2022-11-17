@@ -26,6 +26,8 @@ gbl = {
     nsec3: "&#x1F510;",
     clip: "&#x1F4CE;",
 
+    cur: "$",
+
     gap: "<div style='height: 7px;'></div>",
 
     max_per_search: 5
@@ -102,10 +104,10 @@ function showSearch(data)
 		else {
 			if ("create" in item) {
 				x += "<td align=right>";
-				x += btn(`buyOneName('${item.name}')`,`BUY $${item.create}`,"Buy this domain",120);
+				x += btn(`buyOneName('${item.name}')`,`BUY ${gbl.cur}${item.create}`,"Buy this domain",120);
 				x += "</td>";
 				}
-			if ("renew" in item) x += `<td align=right>renew $${item.create}</td>`;
+			if ("renew" in item) x += `<td align=right>renew ${gbl.cur}${item.create}</td>`;
 			}
 		x += "</tr>";
 		}
@@ -131,7 +133,7 @@ function buyOneName(name)
 
 		let item = data.shift();
 		let e = document.getElementById("output");
-		e.innerHTML = `<h2>Buy '${item.name}' for $${item.create}</h2>`;
+		e.innerHTML = `<h2>Buy '${item.name}' for ${gbl.cur}${item.create}</h2>`;
 
 		}, { json: { "domain" : name }}); 
 }

@@ -43,6 +43,7 @@ const theme_colours = {
 function changeTheme(theme_name)
 {
 	gbl.theme = theme_name;
+	window.localStorage.setItem("theme",gbl.theme);
 	document.querySelector("style").innerText = theme_css(theme_name);
 }
 
