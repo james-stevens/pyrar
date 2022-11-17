@@ -20,8 +20,9 @@ const theme_colours = {
 		],
 	"light": [
 		"000000","555555","F0F2F4","F6F8FA","ffffff",
-		"999999","F6F8FA","aaaaaa","F0F2F4","cccccc",
-		"cccccc","9898ff","e0e0e0","cccccc","ffffff",
+		"999999","F6F8FA","aaaaaa","F6F8FA","cccccc",
+		"cccccc","9898ff","e0e0e0","303030","ffffff",
+		"000000","000000","F0F2F4"
 		],
 	"dark": [
 		"C9D1D9","555555","25303B","010409","15202B",
@@ -71,11 +72,12 @@ h2 { text-align: center; }
 
 #topSpan{
 	background-color: #${cols[6]};
-	height: 55px;
-	line-height: 55px;
+	height: 100px;
+	line-height: 100px;
 	margin-top: 0px;
 	padding-left: 0px;
 	padding-top: 1px;
+	margin-bottom: 50px;
 	top: 0px;
 	}
 
@@ -120,6 +122,17 @@ input {
 	border-color: #${cols[7]};
 	}
 
+.searchBox {
+	padding: 5px 12px;
+	background-color: #${cols[3]};
+	color: #${cols[16]};
+	font-family: inherit;
+	font-size: 20px;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #${cols[7]};
+	}
+
 .inputBad {
 	color: #${cols[0]};
 	background-color: #${cols[15]};
@@ -128,6 +141,7 @@ input {
 	}
 
 body {
+	background-image: url("bg-${theme}.jpg");
 	color: #${cols[16]};
 	font-family: inherit;
 	font-size: inherit;

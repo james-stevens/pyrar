@@ -78,8 +78,10 @@ function btn(call,txt,hlp,sz) {
 
 function showSearch(data)
 {
+	let e = document.getElementById("output");
+
 	if ("error" in data) {
-		console.log("showSearch:ERROR:",data);
+		e.innerHTML = "<h2>" + data.error + "</h2>";
 		return;
 		}
 
@@ -108,7 +110,6 @@ function showSearch(data)
 		x += "</tr>";
 		}
 
-	let e = document.getElementById("output");
 	e.innerHTML = x + "</table>";
 
 	if (("search" in gbl)&&("todo" in gbl.search)) {
@@ -128,8 +129,9 @@ function buyOneName(name)
 {
 	callApi("domain/check",(data) => {
 
-		// user buys here
-		console.log(data);
+		let item = data.shift();
+		let e = document.getElementById("output");
+		e.innerHTML = `<h2>Buy '${item.name}' for $${item.create}</h2>`;
 
 		}, { json: { "domain" : name }}); 
 }
@@ -177,6 +179,9 @@ function doSearch()
 {
     delete gbl.search;
 
+	let e = document.getElementById("output");
+	e.innerHTML = "";
+
     gbl.search = {};
     gbl.search.result = [];
 
@@ -197,14 +202,12 @@ function doSearch()
 
 </script>
 <body onLoad="bodyLoaded();">
-<form name=form1>
+<div id="topSpan">
+<table border=0 width=100% height=100%><tr><Td>Title</td></tr></table>
+</div>
 <table align=center>
-<tr><td>IDN</td><td><input name=idn size=50></td><td><span class=myBtn onClick="fromIDN();">convert</span></td></tr>
-<tr><td>Puny</td><td><input name=puny size=50></td><td><span class=myBtn onClick="fromPuny();">convert</span></td></tr>
-</form>
-<tr><td colspan=2><hr></td></tr>
 <form name=searchForm onSubmit="return doSearch();">
-<tr><td>Search</td><td><input autofocus name=search size=50></td><td><span class=myBtn onClick="doSearch();">search</span></td></tr>
+<tr><td><input autofocus class=searchBox name=search size=50></td></tr>
 </form>
 </table>
 <div id="output"></div>
