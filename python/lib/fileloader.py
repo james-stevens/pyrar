@@ -4,7 +4,7 @@
 
 import os
 import json
-import log
+import lib.log as log
 
 
 def have_newer(mtime, file_name):

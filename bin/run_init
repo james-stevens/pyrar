@@ -4,7 +4,7 @@
 
 export BASE="/opt/pyrar"
 
-syslog="$(jq .syslog_server ${BASE}/etc/policy.json)"
+syslog="$(jq .syslog_server ${BASE}/etc/policy.json | tr -d '"')"
 
 if test "${syslog}" = "null"
 	then

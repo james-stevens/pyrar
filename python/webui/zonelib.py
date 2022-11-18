@@ -5,7 +5,7 @@
 import os
 import json
 import random
-import fileloader
+import lib.fileloader as fileloader
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REST_ZONES = os.environ["BASE"] + "/etc/providers.json"
@@ -71,8 +71,7 @@ class ZoneLib:
         for provider, prov in self.zone_json.items():
             new_send[provider] = {}
             for item, val in DEFAULT_CONFIG.items():
-                new_send[provider][item] = prov[
-                    item] if item in prov else val
+                new_send[provider][item] = prov[item] if item in prov else val
             if "domains" in prov:
                 doms = prov["domains"]
                 for dom in doms:

@@ -8,7 +8,6 @@ import xmltodict
 import os
 import sys
 import errno
-import syslog
 import socket
 import ssl
 import time
@@ -17,11 +16,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
 import flask
+import lib.policy as policy
+import lib.log as log
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 PROVIDERS_FILE = os.environ["BASE"] + "/etc/providers.json"
-
-syslogFacility = syslog.LOG_LOCAL6
 
 application = flask.Flask("EPP/REST/API")
 conn = None
@@ -54,8 +53,8 @@ client_pem = f"{CLIENT_PEM_DIR}/{this_provider['certpem']}"
 if not os.path.isfile(client_pem):
 	raise ValueError(f"Client PEM file for '{provider}' at '{client_pem}' not found")
 
-
-syslog.openlog(logoption=syslog.LOG_PID, facility=syslogFacility)
+my_policy = policy.Policy()
+log.init(my_policy.policy("facility_epp_api"),my_policy.policy("log_epp_api"))
 
 jobInterval = 0
 if "EPP_KEEPALIVE" in os.environ:
@@ -82,7 +81,7 @@ def closeEPP():
         return
     ret, js = xmlRequest({"logout": None})
     flask.Response(js)
-    syslog.syslog(f"Logout {ret}")
+    log.log(f"Logout {ret}")
     conn.close()
 
 
@@ -256,7 +255,7 @@ def jsonRequest(in_js, addr):
             conn = None
             return abort(400, "Lost connection to EPP Server")
 
-    syslog.syslog(f"User request: {addr} asked '{t1}/{t2}' -> {ret}")
+    log.log(f"User request: {addr} asked '{t1}/{t2}' -> {ret}")
 
     return js
 
@@ -282,21 +281,21 @@ def connectToEPP():
                                server_side=False,
                                server_hostname=this_provider["server"])
 
-    syslog.syslog(f"Connecting to EPP Server: {this_provider['server']}")
+    log.log(f"Connecting to EPP Server: {this_provider['server']}")
     try:
         conn.connect((this_provider["server"], EPP_PORT))
         conn.setblocking(True)
     except Exception as e:
-        syslog.syslog(str(e))
+        log.log(str(e))
         conn.close()
         conn = None
         return
 
     ret, js = jsonReply(conn, None)
-    syslog.syslog(f"Greeting {ret}")
+    log.log(f"Greeting {ret}")
 
     ret, js = xmlRequest(makeLogin(this_provider["username"], this_provider["password"]))
-    syslog.syslog(f"Login to '{provider}' gives {ret}")
+    log.log(f"Login to '{provider}' gives {ret}")
 
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()

@@ -12,9 +12,9 @@ import flask
 import zonelib
 import parsexml
 import validate
-import log
-import fileloader
-import policy
+import lib.log as log
+import lib.fileloader as fileloader
+import lib.policy as policy
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
@@ -54,6 +54,10 @@ def xml_check_with_fees(domobj, years=1):
         }
     }
 
+
+my_policy = policy.Policy()
+log.init(my_policy.policy("facility_python_code"),
+         my_policy.policy("log_python_code"))
 
 tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
@@ -170,7 +174,7 @@ def get_config():
     ret = {
         "providers": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
-        "policy": policy.data()
+        "policy": my_policy.data()
     }
     return flask.jsonify(ret)
 

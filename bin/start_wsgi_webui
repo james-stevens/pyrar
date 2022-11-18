@@ -2,7 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-ses="$(jq .webui_sessions ${BASE}/etc/policy.json)"
+ses="$(jq .webui_sessions ${BASE}/etc/policy.json | tr -d '"')"
 if test "${ses}" = "null"; then ses="3"; fi
 
 . /usr/local/bin/get_py_log

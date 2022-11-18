@@ -2,10 +2,10 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-lvl="$(jq .loglevel_nginx ${BASE}/etc/policy.json)"
+lvl="$(jq .loglevel_nginx ${BASE}/etc/policy.json | tr -d '"')"
 if test "${lvl}" = "null"; then lvl="info"; fi
 
-fac="$(jq .facility_nginx ${BASE}/etc/policy.json)"
+fac="$(jq .facility_nginx ${BASE}/etc/policy.json | tr -d '"')"
 if test "${fac}" = "null"; then fac="local0"; fi
 
 

@@ -93,6 +93,7 @@ h2 { text-align: center; }
 	}
 
 .businessName {
+	font-weight: bold;
 	padding-left: 30px;
 	font-size: 25px;
 	}

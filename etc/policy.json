@@ -3,6 +3,12 @@
 	"currency_iso": "USD",
 	"currency_symbol": "$",
 
+	"log_epp_api" : true,
+	"facility_epp_api" : 170,
+
+	"log_python_code": true,
+	"facility_python_code": 170,
+
 	"log_python_req": false,
 	"facility_python": "local0",
 	"loglevel_python": "info",
