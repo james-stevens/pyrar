@@ -2,11 +2,14 @@
 	"business_name": "NameShake Registrar",
 	"currency_iso": "USD",
 	"currency_symbol": "$",
+
 	"log_python_req": false,
 	"facility_python": "local0",
 	"loglevel_python": "info",
+
 	"facility_nginx": "local0",
 	"loglevel_nginx": "info",
+
 	"webui_sessions": 10,
 	"syslog_server" : null
 }

@@ -6,9 +6,12 @@ import syslog
 
 debug = False
 done_init = False
+with_logging = True
 
 
 def log(line):
+    if not with_logging:
+        return
     if debug:
         print(">>>>>>", line)
     else:
@@ -17,6 +20,6 @@ def log(line):
         syslog.syslog(line)
 
 
-def init(facility=syslog.LOG_LOCAL6):
+def init(facility=syslog.LOG_LOCAL6,with_logging=True):
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
     done_init = True

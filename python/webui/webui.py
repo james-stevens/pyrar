@@ -14,14 +14,13 @@ import parsexml
 import validate
 import log
 import fileloader
+import policy
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
     'Content-type': 'application/json',
     'Accept': 'application/json'
 }
-
-WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
 
 
 def xml_check_with_fees(domobj, years=1):
@@ -60,10 +59,6 @@ tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
 xmlns = tld_lib.make_xmlns()
 clients = {p: httpx.Client() for p in tld_lib.ports}
-
-policy_file = fileloader.FileLoader(WEBUI_POLICY)
-
-print(">>>>>>", policy_file.data())
 
 
 def check_ok(name):
@@ -175,7 +170,7 @@ def get_config():
     ret = {
         "providers": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
-        "policy": policy_file.data()
+        "policy": policy.data()
     }
     return flask.jsonify(ret)
 
