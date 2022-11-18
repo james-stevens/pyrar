@@ -285,5 +285,47 @@ td {
 	opacity: 1; transition: opacity 0.5s linear;
 	}
 
+/* Popup container */
+.popup {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* The actual popup (appears on top) */
+.popup .popuptext {
+	visibility: hidden;
+	background-color: #${cols[6]};
+	color: #fff;
+	border-radius: 6px;
+	padding: 8px;
+	position: absolute;
+	z-index: 1;
+	height: 175px
+	left: 75%;
+	margin-left: -350px;
+	border: 1px solid;
+	border-color: #${cols[10]};
+	box-shadow: 5px 5px #${cols[3]};
+	}
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+.popup .show {
+	visibility: visible;
+	-webkit-animation: fadeIn 1s;
+	animation: fadeIn 1s
+	}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity: 1;}
+	}
+
+@keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity:1 ;}
+	}
+
 `;
 }

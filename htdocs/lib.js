@@ -105,5 +105,5 @@ function fromPuny(fqdn)
 function btn(call,txt,hlp,sz) {
     let ex=""
     if (sz != null) ex = `style='width: ${sz}px;'`
-    return `<span ${ex} title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
+    return `<span ${ex} tabindex=0 title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
 }

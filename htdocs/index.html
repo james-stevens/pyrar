@@ -51,6 +51,28 @@ function msg(line)
 }
 
 
+function toggleLogin() {
+    var popup = document.getElementById("loginPopup");
+    popup.classList.toggle("show");
+    for(x of popup.classList)
+        if (x == "show") {
+            let e = document.formLogin.username;
+            e.focus(); e.select();
+            }
+}
+
+
+function toggleRegister() {
+    var popup = document.getElementById("registerPopup");
+    popup.classList.toggle("show");
+    for(x of popup.classList)
+        if (x == "show") {
+            let e = document.formRegister.username;
+            e.focus(); e.select();
+            }
+}
+
+
 function bodyLoaded()
 {
 	gbl.elm = {};
@@ -62,7 +84,36 @@ function bodyLoaded()
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 		console.log(gbl.config);
 
-		let x = `<table style="margin-top: 20px;" width=100%><tr><Td class=businessName>${policy("business_name","Registrar")}</td></tr></table>`
+		let x = `<table border=0 style="margin-top: 20px;" width=100%><tr>`
+		x += `<Td class=businessName>${policy("business_name","Registrar")}</td>`
+		x += "<td width=100% align=right>";
+
+		x += '<div class="popup">' + btn("toggleRegister()","Register","Get me logged in",75);
+		x += '<span class="popuptext" id="registerPopup">';
+		x += "<form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>";
+		x += '<tr onclick="toggleRegister()"><Td colspan=2><div style="height: 15px;"></div></td></tr>';
+		x += '<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>';
+		x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
+		x += '<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
+		x += '<tr><td colspan=2>'+gbl.gap+'</td></tr><tr><td class=btmBtnBar colspan=2>';
+		x += btn("toggleRegister()","Cancel","Cancel Register",75);
+		x += btn("doRegister()","OK","Register",75);
+		x += '</td></tr></form></table></span></div>';
+
+		x += '<div class="popup">' + btn("toggleLogin()","Login","Get me logged in",75);
+		x += '<span class="popuptext" id="loginPopup">';
+		x += "<form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>";
+		x += '<tr onclick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>';
+		x += '<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>';
+		x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
+		x += '<tr><td colspan=2>'+gbl.gap+'</td></tr><tr><td class=btmBtnBar colspan=2>';
+		x += btn("toggleLogin()","Cancel","Cancel Login",75);
+		x += btn("doLogin()","OK","Login",75);
+		x += '</td></tr></form></table></span></div>';
+
+		x += "</td><td><div style='width: 50px;'></div></td>"
+		x += `</tr></table>`
+
 		gbl.elm.topSpan.innerHTML = x;
 
 		gbl.cur = policy("currency_symbol","$");
