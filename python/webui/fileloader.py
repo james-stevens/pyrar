@@ -26,7 +26,7 @@ class FileLoader:
         if (new_time := have_newer(self.last_mtime, self.filename)) is None:
             return False
 
-        log.log(f"NORMAL: Reloading file '{self.filename}'")
+        log.log(f"Reloading file '{self.filename}'")
         try:
             with open(self.filename, "r", encoding='UTF-8') as file_fd:
                 if file_fd.readable():
@@ -39,5 +39,9 @@ class FileLoader:
         return False
 
     def data(self):
+        self.check_for_new()
+        return self.json
+
+    def check(self):
         ret = self.check_for_new()
         return self.json, ret

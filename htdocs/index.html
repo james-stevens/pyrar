@@ -30,7 +30,7 @@ gbl = {
 
     gap: "<div style='height: 7px;'></div>",
 
-    max_per_search: 5
+    max_checks: 2
 	};
 
 ctx = {};
@@ -45,9 +45,10 @@ changeTheme(gbl.theme);
 function errMsg(line) { console.log("errMsg",line); }
 function msg(line) { console.log("msg",line); }
 
+
 function bodyLoaded()
 {
-	callApi("zones",data => { gbl.zones = data; });
+	callApi("config",data => { gbl.config = data; });
 }
 
 
@@ -78,6 +79,27 @@ function btn(call,txt,hlp,sz) {
 
 
 
+function one_search_line(item)
+{
+	if (!item.avail) return "";
+
+	let x = "<tr>";
+	x += `<td>${fromPuny(item.name)}</td>`;
+	if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
+	else {
+		if ("create" in item) {
+			x += "<td align=right>";
+			x += btn(`buyOneName('${item.name}')`,`BUY ${gbl.cur}${item.create}`,"Buy this domain",120);
+			x += "</td>";
+			}
+		if ("renew" in item) x += `<td align=right>renew ${gbl.cur}${item.create}</td>`;
+		}
+	x += "</tr>";
+	return x;
+}
+
+
+
 function showSearch(data)
 {
 	let e = document.getElementById("output");
@@ -87,38 +109,14 @@ function showSearch(data)
 		return;
 		}
 
-	gbl.search.result = gbl.search.result.concat(data);
-
-	let x = "<table align=center>";
-	for(let item of gbl.search.result) {
-		if (item.name=="-") {
-			x += "<tr><td colspan=4><hr></td></tr>";
-			continue;
-			}
-
-		if (!item.avail) continue;
-
-		x += "<tr>";
-		x += `<td>${fromPuny(item.name)}</td>`;
-		if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
-		else {
-			if ("create" in item) {
-				x += "<td align=right>";
-				x += btn(`buyOneName('${item.name}')`,`BUY ${gbl.cur}${item.create}`,"Buy this domain",120);
-				x += "</td>";
-				}
-			if ("renew" in item) x += `<td align=right>renew ${gbl.cur}${item.create}</td>`;
-			}
-		x += "</tr>";
-		}
-
-	e.innerHTML = x + "</table>";
+	for(let item of data) gbl.search.result += one_search_line(item);
+	e.innerHTML = "<table align=center>" + gbl.search.result + "</table>";
 
 	if (("search" in gbl)&&("todo" in gbl.search)) {
-		if (gbl.search.todo.length <= 0) delete gbl.search; else searchNext();
+		if (gbl.search.todo.length <= 0) delete gbl.search.todo; else searchNext();
 		}
 	else {
-		gbl.search.result.push({"name":"-"});
+		gbl.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
 		let name = data[0]["name"];
 		let pos = name.indexOf(".");
 		if (pos > 0) multiSearch(name.substr(0,pos),name.substr(pos+1));
@@ -145,7 +143,12 @@ function searchNext()
 	let first = gbl.search.todo.shift();
 	let srch = [ gbl.search.term + "." + first.name ];
 
-	while((gbl.search.todo.length > 0)&&(srch.length < gbl.max_per_search)&&(first.provider == gbl.search.todo[0].provider)) {
+	let max = gbl.max_checks;
+
+	if ((first.provider in gbl.config.providers)&&("max_checks" in gbl.config.providers[first.provider]))
+		max = gbl.config.providers[first.provider].max_checks;
+
+	while((gbl.search.todo.length > 0)&&(srch.length < max)&&(first.provider == gbl.search.todo[0].provider)) {
 		let nxt = gbl.search.todo.shift();
 		srch.push(gbl.search.term + "." + nxt.name);
 		}
@@ -168,7 +171,7 @@ function multiSearch(srch,not_me_tld)
 {
 	gbl.search.todo = [];
 	gbl.search.term = srch;
-	for(x of gbl.zones) {
+	for(let x of gbl.config.zones) {
 		if ((not_me_tld==null)||(x.name!=not_me_tld)) gbl.search.todo.push(x);
 		}
 
@@ -185,7 +188,7 @@ function doSearch()
 	e.innerHTML = "";
 
     gbl.search = {};
-    gbl.search.result = [];
+    gbl.search.result = "";
 
     f = document.searchForm;
     let srch = toASCII(f.search.value);

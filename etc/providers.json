@@ -1,10 +1,12 @@
 {
 	"nol": {
+		"desc": "Names.of.London",
 		"username": "NIC-2010",
 		"password": "abc123",
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
 		"sessions": 3,
+		"max_checks": 10,
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"and.mom": null,
@@ -31,11 +33,13 @@
 		},
 
 	"extra": {
+		"desc": "Somebody Else",
 		"username": "NIC-2010",
 		"password": "abc123",
 		"server": "contain.jrcs.net",
 		"certpem": "client.pem",
 		"sessions": 2,
+		"max_checks": 10,
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"frog": null,

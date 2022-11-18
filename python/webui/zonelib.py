@@ -11,6 +11,8 @@ EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REST_ZONES = os.environ["BASE"] + "/etc/providers.json"
 EPP_PORTS_LIST = "/run/prov_ports"
 
+DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
+
 
 def have_newer(mtime, file_name):
     if not os.path.isfile(file_name) or not os.access(file_name, os.R_OK):
@@ -37,6 +39,7 @@ def tld_of_name(name):
 
 class ZoneLib:
     def __init__(self):
+        self.zone_send = {}
         self.zone_json = {}
         self.zone_list = []
         self.zone_data = {}
@@ -52,8 +55,8 @@ class ZoneLib:
         self.ports = {p[0]: int(p[1]) for p in port_lines}
 
     def check_for_new_files(self):
-        self.zone_json, z_is_new = self.zone_file.data()
-        self.pri_json, p_is_new = self.priority_file.data()
+        self.zone_json, z_is_new = self.zone_file.check()
+        self.pri_json, p_is_new = self.priority_file.check()
 
         if z_is_new or p_is_new:
             self.zone_priority = {
@@ -63,8 +66,13 @@ class ZoneLib:
             self.process_json()
 
     def process_json(self):
+        new_send = {}
         new_data = {}
         for provider, prov in self.zone_json.items():
+            new_send[provider] = {}
+            for item, val in DEFAULT_CONFIG.items():
+                new_send[provider][item] = prov[
+                    item] if item in prov else val
             if "domains" in prov:
                 doms = prov["domains"]
                 for dom in doms:
@@ -77,6 +85,7 @@ class ZoneLib:
                     for dom in doms
                 })
 
+        self.zone_send = new_send
         self.zone_data = new_data
         new_list = [{
             "name": dom,

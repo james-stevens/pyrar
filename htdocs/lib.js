@@ -25,12 +25,12 @@ function callApi(sfx,callback,inData)
         }
 
     fetch(url,httpCmd).then(response => {
-        if (debugAPI) console.log("API-Resp>>>",response);
+        if (debugAPI) console.log("API>>> Resp",response);
 
         if (response.status != okResp) {
             response.text().then(
                 data => {
-					if (debugAPI) console.log("BAD-Resp:",response.status,response.statusText);
+					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
                     try { 
                     	return callback(JSON.parse(data));
 					} catch {
@@ -43,7 +43,7 @@ function callApi(sfx,callback,inData)
             }
 		else {
 			response.text().then(data => {
-				if (debugAPI) console.log("OK-Resp:",response.status,response.statusText);
+				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
 				if ((inData != null)&&(inData.noData)) {
 					return callback(true);
 				} else {

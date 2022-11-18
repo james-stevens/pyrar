@@ -3,6 +3,7 @@
 #    (c) Copyright 2022-2022 - All Rights Reserved    #
 #######################################################
 
+import os
 import sys
 import json
 import httpx
@@ -12,12 +13,15 @@ import zonelib
 import parsexml
 import validate
 import log
+import fileloader
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
     'Content-type': 'application/json',
     'Accept': 'application/json'
 }
+
+WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
 
 
 def xml_check_with_fees(domobj, years=1):
@@ -56,6 +60,10 @@ tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
 xmlns = tld_lib.make_xmlns()
 clients = {p: httpx.Client() for p in tld_lib.ports}
+
+policy_file = fileloader.FileLoader(WEBUI_POLICY)
+
+print(">>>>>>", policy_file.data())
 
 
 def check_ok(name):
@@ -158,7 +166,18 @@ def abort(err_no, message):
 
 
 log.init()
-application = flask.Flask("Domain/Checker")
+application = flask.Flask("EPP Registrar")
+
+
+@application.route('/api/v1.0/config', methods=['GET'])
+def get_config():
+    tld_lib.check_for_new_files()
+    ret = {
+        "providers": tld_lib.zone_send,
+        "zones": tld_lib.return_zone_list(),
+        "policy": policy_file.data()
+    }
+    return flask.jsonify(ret)
 
 
 @application.route('/api/v1.0/zones', methods=['GET'])
@@ -198,7 +217,7 @@ def rest_domain_price():
 def run_one(domain):
     domobj = DomainName(domain)
     if domobj.names is None:
-        print(">>>>",domobj.err)
+        print(">>>>", domobj.err)
         sys.exit(1)
 
     ret, out_js = http_price_domains(domobj)
@@ -210,18 +229,17 @@ def run_one(domain):
         code, ret_js = xml_p.parse_check_message()
         if code == 1000:
             tld_lib.multiply_values(ret_js)
-        print(code, json.dumps(ret_js, indent=3))
+        print(">>>>>", code, json.dumps(ret_js, indent=3))
     for client in clients:
         clients[client].close()
 
 
 if __name__ == "__main__":
+    log.debug = True
     if len(sys.argv) > 1:
         x = sys.argv[1].lower()
         print("====>> RUN ONE", x, "=>", sys.argv[1])
         run_one(x)
         sys.exit(0)
-    else:
-        print(tld_lib.return_zone_list())
 
     application.run()

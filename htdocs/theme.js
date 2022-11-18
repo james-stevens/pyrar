@@ -142,7 +142,7 @@ input {
 	}
 
 body {
-	background-image: url("bg-${theme}.jpg");
+	background-image: url("/img/bg-${theme}.jpg");
 	color: #${cols[16]};
 	font-family: inherit;
 	font-size: inherit;
