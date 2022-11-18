@@ -1,3 +1,22 @@
+
+// regex for an FQDN hostname
+const fqdnCheck = /^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*(xn--|)[A-Za-z0-9\-]+[.]$/;
+
+// regex for adding a host name
+const hostnameCheck = /^([a-zA-Z0-9_*]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])(\.([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_]))*$/
+
+// regex's for RR validation - just add more here and they will work
+const validations = {
+    rrAAAA: /^(([0-9A-F]{1,4}:){7,7}[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,7}:|([0-9A-F]{1,4}:){1,6}:[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,5}(:[0-9A-F]{1,4}){1,2}|([0-9A-F]{1,4}:){1,4}(:[0-9A-F]{1,4}){1,3}|([0-9A-F]{1,4}:){1,3}(:[0-9A-F]{1,4}){1,4}|([0-9A-F]{1,4}:){1,2}(:[0-9A-F]{1,4}){1,5}|[0-9A-F]{1,4}:((:[0-9A-F]{1,4}){1,6})|:((:[0-9A-F]{1,4}){1,7}|:)|fe80:(:[0-9A-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9A-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/i,
+       rrA: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
+      rrMX: /^[1-9][0-9]{0,5} (([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)+([A-Za-z0-9_]|[A-Za-z0-9_][A-Za-z0-9\-_]*[A-Za-z0-9_])[.]$/,
+      rrNS: fqdnCheck,
+   rrCNAME: fqdnCheck,
+ rrCATALOG: fqdnCheck,
+      rrDS: /^(([123456]?[0-9]{1,4}|[0-9]1,4) ([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]) [1234] [0-9A-F ]{40,100})$/i,
+    };
+
+
 function callApi(sfx,callback,inData)
 {
     document.body.style.cursor="progress";
@@ -57,7 +76,34 @@ function callApi(sfx,callback,inData)
 				});
 			}
         })
-        .catch(err => errMsg(`ERROR:3: Failed to connect to server (${err})`))
+        .catch(err => callback({"error":"Server connection error"}))
 
     document.body.style.cursor="auto";
+}
+
+
+
+function policy(name,val)
+{
+    if (!("config" in gbl)) return val;
+    if (!("policy" in gbl.config)) return val;
+    if (!(name in gbl.config.policy)) return val;
+    return gbl.config.policy[name];
+}
+
+
+
+function fromPuny(fqdn)
+{
+    if ((fqdn.substr(0,4)=="xn--")||(fqdn.indexOf(".xn--") > 0))
+        return toUnicode(fqdn);
+    return fqdn;
+}
+
+
+
+function btn(call,txt,hlp,sz) {
+    let ex=""
+    if (sz != null) ex = `style='width: ${sz}px;'`
+    return `<span ${ex} title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
 }

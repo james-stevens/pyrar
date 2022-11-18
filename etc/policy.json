@@ -5,5 +5,8 @@
 	"log_python_req": false,
 	"facility_python": "local0",
 	"loglevel_python": "info",
-	"webui_sessions": 10
+	"facility_nginx": "local0",
+	"loglevel_nginx": "info",
+	"webui_sessions": 10,
+	"syslog_server" : null
 }

@@ -44,7 +44,11 @@ if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
 changeTheme(gbl.theme);
 
 function errMsg(line) { console.log("errMsg",line); }
-function msg(line) { console.log("msg",line); }
+function msg(line)
+{
+	let e = document.getElementById("output");
+	if (e) e.innerHTML = "<h2>" + line + "</h2>";
+}
 
 
 function bodyLoaded()
@@ -54,6 +58,9 @@ function bodyLoaded()
 
 	callApi("config",data => {
 		gbl.config = data;
+		gbl.config.ok_tlds = {}
+		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
+		console.log(gbl.config);
 
 		let x = `<table style="margin-top: 20px;" width=100%><tr><Td class=businessName>${policy("business_name","Registrar")}</td></tr></table>`
 		gbl.elm.topSpan.innerHTML = x;
@@ -64,15 +71,7 @@ function bodyLoaded()
 }
 
 
-function policy(name,val)
-{
-	if (!("config" in gbl)) return val;
-	if (!("policy" in gbl.config)) return val;
-	if (!(name in gbl.config.policy)) return val;
-	return gbl.config.policy[name];
-}
-
-
+/*
 function fromIDN()
 {
 	let f = document.form1;
@@ -88,15 +87,7 @@ function fromPuny()
 	f.idn.value = toUnicode(f.puny.value);
 	f.puny.value = "";
 }
-
-
-
-function btn(call,txt,hlp,sz) {
-    let ex=""
-    if (sz != null) ex = `style='width: ${sz}px;'`
-    return `<span ${ex} title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
-}
-
+*/
 
 
 function one_search_line(item)
@@ -127,10 +118,7 @@ function showSearch(data)
 {
 	let e = document.getElementById("output");
 
-	if ("error" in data) {
-		e.innerHTML = "<h2>" + data.error + "</h2>";
-		return;
-		}
+	if ("error" in data) { msg(data.error); return; }
 
 	for(let item of data) gbl.search.result += one_search_line(item);
 	e.innerHTML = "<table width=100%>" + gbl.search.result + "</table>";
@@ -181,14 +169,6 @@ function searchNext()
 
 
 
-function fromPuny(fqdn)
-{
-	if ((fqdn.substr(0,4)=="xn--")||(fqdn.indexOf(".xn--") > 0))
-		return toUnicode(fqdn);
-	return fqdn;
-}
-
-
 
 function multiSearch(srch,not_me_tld)
 {
@@ -205,6 +185,12 @@ function multiSearch(srch,not_me_tld)
 
 function doSearch()
 {
+    function do_end() {
+		f.search.focus();
+		f.search.select();
+		return false;
+    	}
+
     delete gbl.search;
 
 	let e = document.getElementById("output");
@@ -216,17 +202,34 @@ function doSearch()
     f = document.searchForm;
     let srch = toASCII(f.search.value);
 
-    if (srch.indexOf(".") >= 0)
+    if (srch.indexOf(".") >= 0) {
+		if (!supported_tld(srch)) {
+			msg("Not a supported TLD");
+			return do_end(); }
+
+		if (!fqdnCheck.test(srch)) {
+			msg("Invald domain name");
+			return do_end(); }
+
 		callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
+		return do_end();
+		}
+	
+	if (!hostnameCheck.test(srch))
+		msg("Invald domain name");
 	else
 		multiSearch(srch,null);
 
-    f.search.focus();
-    f.search.select();
-    return false;
+	return do_end();
 }
 
 
+
+function supported_tld(fqdn)
+{
+	if ((pos = fqdn.indexOf(".")) < 0) return false;
+	return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
+}
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -234,7 +237,7 @@ function doSearch()
 
 <div id="searchForm">
 <table align=center>
-<form name=searchForm onSubmit="return doSearch();">
+<form action="#" name=searchForm onSubmit="return doSearch();">
 <tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>
 </form>
 <tr><td><div id="output"></div></div></td></tr>

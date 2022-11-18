@@ -2,7 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-facility="local0"
+lvl="$(jq .loglevel_nginx ${BASE}/etc/policy.json)"
+if test "${lvl}" = "null"; then lvl="info"; fi
+
+fac="$(jq .facility_nginx ${BASE}/etc/policy.json)"
+if test "${fac}" = "null"; then fac="local0"; fi
 
 
 {
@@ -13,10 +17,10 @@ pid /run/nginx.pid;
 events { worker_connections  1024; }
 
 user nginx;
-error_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx error;
+error_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx error;
 
 http {
-	access_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx,severity=info;
+	access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx,severity=${lvl};
 
 	include         mime.types;
 	default_type    application/octet-stream;
