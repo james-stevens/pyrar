@@ -1,0 +1,16 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements are possible, contact me for more information
+
+log="$(jq .log_python_req ${BASE}/etc/policy.json)"
+if test "${log}" = "true"
+    then
+        lvl="$(jq .loglevel_python ${BASE}/etc/policy.json)"
+        if test "${lvl}" = "null"; then lvl="info"; fi
+
+        fac="$(jq .facility_python ${BASE}/etc/policy.json)"
+        if test "${fac}" = "null"; then fac="local0"; fi
+
+        extra="--log-syslog --log-syslog-to udp://127.0.0.1:514"
+        extra="${extra} --log-syslog-facility ${fac} --log-level ${lvl}"
+    fi

@@ -106,7 +106,7 @@ function one_search_line(item)
 	let x = "<tr>";
 	x += `<td><span class=searchDomain>${fromPuny(item.name)}`;
 	if ("renew" in item)
-		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.create}</span>`;
+		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.renew}</span>`;
 	x += "</td>";
 
 	if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;

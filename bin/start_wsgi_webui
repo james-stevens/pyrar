@@ -2,16 +2,13 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-sessions=10
-facility="local0"
-loglevel="info"
+ses="$(jq .webui_sessions ${BASE}/etc/policy.json)"
+if test "${ses}" = "null"; then ses="3"; fi
+
+. /usr/local/bin/get_py_log
 
 cd ${BASE}/python/webui
 exec gunicorn \
-        --workers ${sessions} \
-        --log-syslog \
-        --log-syslog-to udp://127.0.0.1:514 \
-        --log-syslog-facility ${facility} \
-        --log-level ${loglevel} \
-        --bind unix:/run/wsgi_checker.sock \
+        --workers ${ses} \
+		${extra} --bind unix:/run/wsgi_checker.sock \
         wsgi >/tmp/start_wsgi.log 2>&1
