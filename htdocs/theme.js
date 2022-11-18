@@ -3,19 +3,19 @@ const theme_colours = {
 	"blue": [
 		"000000","383855","4f4f6f","555577","666688",
 		"666699","777799","8888aa","9999bb","a0a0cc",
-		"aaaacc","b0b0ff","c0c0e0","d0d0ff","ddddff",
+		"aaaacc","b0b0ff","8080b0","d0d0ff","ddddff",
 		"ffd0d0","ffffff","8888aa"
 		],
 	"red": [
 		"000000","553838","6f4f4f","775555","886666",
 		"996666","997777","aa8888","bb9999","cca0a0",
-		"ccaaaa","ffb0b0","e0c0c0","ffd0d0","ffdddd",
+		"ccaaaa","ffb0b0","b08080","ffd0d0","ffdddd",
 		"d0d0ff","ffffff","aa8888"
 		],
 	"green": [
 		"000000","385538","4f6f4f","557755","668866",
 		"669966","779977","88aa88","99bb99","a0cca0",
-		"aaccaa","b0ffb0","c0e0c0","d0ffd0","ddffdd",
+		"aaccaa","b0ffb0","80b080","d0ffd0","ddffdd",
 		"d0d0ff","ffffff","88aa88"
 		],
 	"light": [
@@ -27,7 +27,7 @@ const theme_colours = {
 	"dark": [
 		"C9D1D9","555555","25303B","010409","15202B",
 		"999999","25303B","464B52","35404B","464B52",
-		"464B52","9898ff","e0e0e0","767B92","ffffff",
+		"464B52","9898ff","808080","767B92","ffffff",
 		"ffd0d0","C9D1D9","25303B"
 		],
 	"custom": [
@@ -71,6 +71,16 @@ h2 { text-align: center; }
 	border-radius: 6px;
 	}
 
+
+.searchDomain {
+	font-size: 20px;
+	}
+
+.searchRenew {
+	font-size: 12px;
+	color: #${cols[1]};
+	}
+
 #topSpan{
 	background-color: #${cols[6]};
 	height: 100px;
@@ -80,6 +90,11 @@ h2 { text-align: center; }
 	padding-top: 1px;
 	margin-bottom: 50px;
 	top: 0px;
+	}
+
+.businessName {
+	padding-left: 30px;
+	font-size: 25px;
 	}
 
 html {

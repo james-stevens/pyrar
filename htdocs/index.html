@@ -27,6 +27,7 @@ gbl = {
     clip: "&#x1F4CE;",
 
     cur: "$",
+    cur_iso: "USD",
 
     gap: "<div style='height: 7px;'></div>",
 
@@ -48,9 +49,28 @@ function msg(line) { console.log("msg",line); }
 
 function bodyLoaded()
 {
-	callApi("config",data => { gbl.config = data; });
+	gbl.elm = {};
+	["topSpan","searchForm"].forEach(i => { gbl.elm[i] = document.getElementById(i); } );
+
+	callApi("config",data => {
+		gbl.config = data;
+
+		let x = `<table style="margin-top: 20px;" width=100%><tr><Td class=businessName>${policy("business_name","Registrar")}</td></tr></table>`
+		gbl.elm.topSpan.innerHTML = x;
+
+		gbl.cur = policy("currency_symbol","$");
+		gbl.cur_iso = policy("currency_iso","USD");
+		});
 }
 
+
+function policy(name,val)
+{
+	if (!("config" in gbl)) return val;
+	if (!("policy" in gbl.config)) return val;
+	if (!(name in gbl.config.policy)) return val;
+	return gbl.config.policy[name];
+}
 
 
 function fromIDN()
@@ -84,15 +104,18 @@ function one_search_line(item)
 	if (!item.avail) return "";
 
 	let x = "<tr>";
-	x += `<td>${fromPuny(item.name)}</td>`;
+	x += `<td><span class=searchDomain>${fromPuny(item.name)}`;
+	if ("renew" in item)
+		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.create}</span>`;
+	x += "</td>";
+
 	if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
 	else {
 		if ("create" in item) {
 			x += "<td align=right>";
-			x += btn(`buyOneName('${item.name}')`,`BUY ${gbl.cur}${item.create}`,"Buy this domain",120);
+			x += btn(`buyOneName('${item.name}')`,`<b>BUY ${gbl.cur}${item.create}</b>`,`Buy '${item.name}' for ${gbl.cur}${item.create}`,120);
 			x += "</td>";
 			}
-		if ("renew" in item) x += `<td align=right>renew ${gbl.cur}${item.create}</td>`;
 		}
 	x += "</tr>";
 	return x;
@@ -110,7 +133,7 @@ function showSearch(data)
 		}
 
 	for(let item of data) gbl.search.result += one_search_line(item);
-	e.innerHTML = "<table align=center>" + gbl.search.result + "</table>";
+	e.innerHTML = "<table width=100%>" + gbl.search.result + "</table>";
 
 	if (("search" in gbl)&&("todo" in gbl.search)) {
 		if (gbl.search.todo.length <= 0) delete gbl.search.todo; else searchNext();
@@ -188,7 +211,7 @@ function doSearch()
 	e.innerHTML = "";
 
     gbl.search = {};
-    gbl.search.result = "";
+	gbl.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
 
     f = document.searchForm;
     let srch = toASCII(f.search.value);
@@ -207,14 +230,15 @@ function doSearch()
 
 </script>
 <body onLoad="bodyLoaded();">
-<div id="topSpan">
-<table border=0 width=100% height=100%><tr><Td>Title</td></tr></table>
-</div>
+<div id="topSpan"></div>
+
+<div id="searchForm">
 <table align=center>
 <form name=searchForm onSubmit="return doSearch();">
-<tr><td><input autofocus class=searchBox name=search size=50></td></tr>
+<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>
 </form>
+<tr><td><div id="output"></div></div></td></tr>
 </table>
-<div id="output"></div>
+
 </body>
 </html>
