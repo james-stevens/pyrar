@@ -51,7 +51,7 @@ function callApi(sfx,callback,inData)
                 data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
                     try { 
-                    	return callback(JSON.parse(data));
+                    	return callback(false,JSON.parse(data));
 					} catch {
                         errMsg(`ERROR:1: ${data} ${response.status} ${response.statusText}`)
                         }
@@ -64,19 +64,19 @@ function callApi(sfx,callback,inData)
 			response.text().then(data => {
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
 				if ((inData != null)&&(inData.noData)) {
-					return callback(true);
+					return callback(true,true);
 				} else {
 					let param = data;
 					try {
 						param = JSON.parse(data); }
 					catch {
 						param = data; }
-					return callback(param);
+					return callback(true,param);
 					}
 				});
 			}
         })
-        .catch(err => callback({"error":"Server connection error"}))
+        .catch(err => callback(false,{"error":"Server connection error"}))
 
     document.body.style.cursor="auto";
 }

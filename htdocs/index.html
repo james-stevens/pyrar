@@ -31,7 +31,7 @@ gbl = {
 
     gap: "<div style='height: 7px;'></div>",
 
-    max_checks: 2
+    def_max_checks: 2
 	};
 
 ctx = {};
@@ -76,48 +76,17 @@ function toggleRegister() {
 function bodyLoaded()
 {
 	gbl.elm = {};
-	["topSpan","searchForm"].forEach(i => { gbl.elm[i] = document.getElementById(i); } );
+	["topSpan","searchForm","businessName"].forEach(i => { gbl.elm[i] = document.getElementById(i); } );
 
-	callApi("config",data => {
-		gbl.config = data;
-		gbl.config.ok_tlds = {}
-		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
-		console.log(gbl.config);
-
-		let x = `<table border=0 style="margin-top: 20px;" width=100%><tr>`
-		x += `<Td class=businessName>${policy("business_name","Registrar")}</td>`
-		x += "<td width=100% align=right>";
-
-		x += '<div class="popup">' + btn("toggleRegister()","Register","Get me logged in",75);
-		x += '<span class="popuptext" id="registerPopup">';
-		x += "<form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>";
-		x += '<tr onclick="toggleRegister()"><Td colspan=2><div style="height: 15px;"></div></td></tr>';
-		x += '<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>';
-		x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
-		x += '<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
-		x += '<tr><td colspan=2>'+gbl.gap+'</td></tr><tr><td class=btmBtnBar colspan=2>';
-		x += btn("toggleRegister()","Cancel","Cancel Register",75);
-		x += btn("doRegister()","OK","Register",75);
-		x += '</td></tr></form></table></span></div>';
-
-		x += '<div class="popup">' + btn("toggleLogin()","Login","Get me logged in",75);
-		x += '<span class="popuptext" id="loginPopup">';
-		x += "<form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>";
-		x += '<tr onclick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>';
-		x += '<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>';
-		x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>';
-		x += '<tr><td colspan=2>'+gbl.gap+'</td></tr><tr><td class=btmBtnBar colspan=2>';
-		x += btn("toggleLogin()","Cancel","Cancel Login",75);
-		x += btn("doLogin()","OK","Login",75);
-		x += '</td></tr></form></table></span></div>';
-
-		x += "</td><td><div style='width: 50px;'></div></td>"
-		x += `</tr></table>`
-
-		gbl.elm.topSpan.innerHTML = x;
-
-		gbl.cur = policy("currency_symbol","$");
-		gbl.cur_iso = policy("currency_iso","USD");
+	callApi("config",(ret,data) => {
+		if (ret) {
+			gbl.config = data;
+			gbl.config.ok_tlds = {};
+			for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
+			gbl.elm.businessName.innerHTML = policy("business_name","Registrar");
+			gbl.cur = policy("currency_symbol","$");
+			gbl.cur_iso = policy("currency_iso","USD");
+			}
 		});
 }
 
@@ -141,9 +110,9 @@ function fromPuny()
 */
 
 
-function one_search_line(item)
+function one_search_line(item,block_not_avail)
 {
-	if (!item.avail) return "";
+	if ((block_not_avail)&&(!item.avail)) return "";
 
 	let x = "<tr>";
 	x += `<td><span class=searchDomain>${fromPuny(item.name)}`;
@@ -165,20 +134,21 @@ function one_search_line(item)
 
 
 
-function showSearch(data)
+function showSearch(ret,data)
 {
+	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
 	let e = document.getElementById("output");
 
-	if ("error" in data) { msg(data.error); return; }
+	if ((!ret)&&("error" in data)) { msg(data.error); return; }
 
-	for(let item of data) gbl.search.result += one_search_line(item);
-	e.innerHTML = "<table width=100%>" + gbl.search.result + "</table>";
+	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
+	e.innerHTML = "<table width=100%>" + ctx.search.result + "</table>";
 
-	if (("search" in gbl)&&("todo" in gbl.search)) {
-		if (gbl.search.todo.length <= 0) delete gbl.search.todo; else searchNext();
+	if (is_multi_search) {
+		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
 		}
 	else {
-		gbl.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
+		ctx.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
 		let name = data[0]["name"];
 		let pos = name.indexOf(".");
 		if (pos > 0) multiSearch(name.substr(0,pos),name.substr(pos+1));
@@ -189,7 +159,7 @@ function showSearch(data)
 
 function buyOneName(name)
 {
-	callApi("domain/check",(data) => {
+	callApi("domain/check",(ret,data) => {
 
 		let item = data.shift();
 		let e = document.getElementById("output");
@@ -202,17 +172,17 @@ function buyOneName(name)
 
 function searchNext()
 {
-	let first = gbl.search.todo.shift();
-	let srch = [ gbl.search.term + "." + first.name ];
+	let first = ctx.search.todo.shift();
+	let srch = [ ctx.search.term + "." + first.name ];
 
-	let max = gbl.max_checks;
+	let max = gbl.def_max_checks;
 
 	if ((first.provider in gbl.config.providers)&&("max_checks" in gbl.config.providers[first.provider]))
 		max = gbl.config.providers[first.provider].max_checks;
 
-	while((gbl.search.todo.length > 0)&&(srch.length < max)&&(first.provider == gbl.search.todo[0].provider)) {
-		let nxt = gbl.search.todo.shift();
-		srch.push(gbl.search.term + "." + nxt.name);
+	while((ctx.search.todo.length > 0)&&(srch.length < max)&&(first.provider == ctx.search.todo[0].provider)) {
+		let nxt = ctx.search.todo.shift();
+		srch.push(ctx.search.term + "." + nxt.name);
 		}
 
 	callApi("domain/check",showSearch, { json: {"domain" : srch }} );
@@ -223,10 +193,10 @@ function searchNext()
 
 function multiSearch(srch,not_me_tld)
 {
-	gbl.search.todo = [];
-	gbl.search.term = srch;
+	ctx.search.todo = [];
+	ctx.search.term = srch;
 	for(let x of gbl.config.zones) {
-		if ((not_me_tld==null)||(x.name!=not_me_tld)) gbl.search.todo.push(x);
+		if ((not_me_tld==null)||(x.name!=not_me_tld)) ctx.search.todo.push(x);
 		}
 
 	searchNext();
@@ -242,13 +212,13 @@ function doSearch()
 		return false;
     	}
 
-    delete gbl.search;
+    delete ctx.search;
 
 	let e = document.getElementById("output");
 	e.innerHTML = "";
 
-    gbl.search = {};
-	gbl.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
+    ctx.search = {};
+	ctx.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
 
     f = document.searchForm;
     let srch = toASCII(f.search.value);
@@ -284,7 +254,49 @@ function supported_tld(fqdn)
 
 </script>
 <body onLoad="bodyLoaded();">
-<div id="topSpan"></div>
+<div id="topSpan">
+<table border=0 width=100% style="margin-top: 30px;">
+<tr>
+<td align=left><span id="businessName" class="businessName">Registrar</span></td>
+<td align=right><span id="noLoginBtns">
+
+<div class="popup">
+<span style='width: 75px;' tabindex=0 title="Register me" class=myBtn onClick="toggleRegister(); return false;">Register</span>
+<span class="popuptext" id="registerPopup">
+<form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>
+<tr onclick="toggleRegister()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
+<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
+<tr>
+	<td class=btmBtnBar colspan=2>
+		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleRegister(); return false;">Cancel</span>
+		<span style='width: 75px;' tabindex=0 title="Register" class=myBtn onClick="doRegister(); return false;">OK</span>
+	</td>
+</tr></form></table>
+</span></div>
+
+
+<div class="popup">
+<span style='width: 75px;' tabindex=0 title="Get me logged in" class=myBtn onClick="toggleLogin(); return false;">Login</span>
+<span class="popuptext" id="loginPopup">
+<form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>
+<tr onclick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
+<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
+<tr>
+	<td class=btmBtnBar colspan=2>
+		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleLogin(); return false;">Cancel</span>
+		<span style='width: 75px;' tabindex=0 title="Login" class=myBtn onClick="doLogin(); return false;">OK</span>
+	</td>
+</tr></form>
+</table>
+</span></td></tr></table>
+</td></tr></table>
+
+</div>
 
 <div id="searchForm">
 <table align=center>

@@ -92,10 +92,11 @@ h2 { text-align: center; }
 	top: 0px;
 	}
 
-.businessName {
+#businessName {
 	font-weight: bold;
 	padding-left: 30px;
 	font-size: 25px;
+	magrin-left: 50px;
 	}
 
 html {
@@ -325,6 +326,11 @@ td {
 @keyframes fadeIn {
 	from {opacity: 0;}
 	to {opacity:1 ;}
+	}
+
+#noLoginBtns {
+	margin-right: 50px;
+	margin-left: 500px;
 	}
 
 `;
