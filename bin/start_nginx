@@ -3,9 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 
 opts="daemon off;"
-conf="nginx.conf"
 
 /usr/local/bin/make_nginx_conf
-
-sleep 1
-exec /usr/sbin/nginx -c /etc/nginx/${conf} -g "${opts}"
+exec /usr/sbin/nginx -c /etc/nginx/nginx.conf -g "${opts}"
