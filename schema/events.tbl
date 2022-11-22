@@ -1,0 +1,37 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+
+. ./database
+
+sqlsh "drop table if exists events"
+sqlsh "create table events (
+
+	event_id		${auto},
+
+	event_type		varchar(25) not null default 'Unknown',
+	domain_id		${row_id},
+	user_id			${row_id},
+	when_dt			datetime,
+
+	who_did_it      varchar(100) NULL,
+	from_where      varchar(50) NULL,
+	program         varchar(50) NULL,
+	function        varchar(50) NULL,
+	line_num        int NULL,
+
+	notes			varchar(1024) null,
+	filename		${pathname} null,
+
+	primary key (event_id),
+	key by_domain (domain_id),
+	key by_user (user_id)
+)"
+
+sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
+
+sqlsh "grant insert on events to webui"
+sqlsh "grant insert,update,select on events to raradm"

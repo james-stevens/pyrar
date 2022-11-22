@@ -107,3 +107,11 @@ function btn(call,txt,hlp,sz) {
     if (sz != null) ex = `style='width: ${sz}px;'`
     return `<span ${ex} tabindex=0 title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
 }
+
+
+function supported_tld(fqdn)
+{
+    if ((pos = fqdn.indexOf(".")) < 0) return false;
+    return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
+}
+

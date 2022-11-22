@@ -1,0 +1,35 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+
+. ./database
+
+sqlsh "drop table if exists domains"
+sqlsh "create table domains (
+	domain_id			${auto},
+	name				${domain_name} not null default '',
+	zone				${domain_name} not null default '',
+	user_id				${row_id},
+
+	status_id			${row_id},
+	renew_id			${row_id},
+
+	name_servers		text,
+
+	created_dt			datetime null,
+	amended_dt			datetime null,
+	expiry_dt			datetime not null,
+
+	CONSTRAINT by_name primary key (zone,name),
+	unique key by_id (domain_id),
+	key by_expdt (expiry_dt),
+	key by_user (user_id)
+)"
+
+sqlsh "ALTER TABLE domains AUTO_INCREMENT = 10450"
+
+sqlsh "grant insert,update,select on domains to webui"
+sqlsh "grant select,insert,update,delete on domains to raradm"

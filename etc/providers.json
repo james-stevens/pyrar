@@ -10,7 +10,7 @@
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"and.mom": null,
-			"for.men": null,
+			"for.men": { "create": 88.88 },
 			"for.mom": null,
 			"for.one": null,
 			"for.sale": null,

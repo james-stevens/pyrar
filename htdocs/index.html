@@ -6,7 +6,7 @@
 	<script src="/punycode.js"></script>
 	<script src="/lib.js"></script>
 </head>
-<style type='text/css'></style>
+<style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
 
 debugAPI = true;
@@ -43,12 +43,19 @@ if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
 
 changeTheme(gbl.theme);
 
-function errMsg(line) { console.log("errMsg",line); }
-function msg(line)
-{
-	let e = document.getElementById("output");
-	if (e) e.innerHTML = "<h2>" + line + "</h2>";
-}
+
+gbl.head = document.head || document.getElementsByTagName('head')[0];
+
+function changeFavicon(src) {
+	var link = document.createElement('link'),
+		oldLink = document.getElementById('dynamic-favicon');
+
+	link.id = 'dynamic-favicon';
+	link.rel = 'shortcut icon';
+	link.href = src;
+	if (oldLink) gbl.head.removeChild(oldLink);
+	gbl.head.appendChild(link);
+	}
 
 
 function toggleLogin() {
@@ -84,9 +91,14 @@ function bodyLoaded()
 			gbl.config.ok_tlds = {};
 			for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
+			let my_icon = policy("icon",null);
 			let site_name = policy("business_name","Registrar");
-			gbl.elm.businessName.innerHTML = site_name;
 			document.title = site_name;
+			if (my_icon) {
+				changeFavicon("/"+my_icon)
+				gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/${my_icon}">&nbsp;${site_name}`;
+				}
+			else gbl.elm.businessName.innerHTML = site_name;
 
 			gbl.cur = policy("currency_symbol","$");
 			gbl.cur_iso = policy("currency_iso","USD");
@@ -143,7 +155,7 @@ function showSearch(ret,data)
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
 	let e = document.getElementById("output");
 
-	if ((!ret)&&("error" in data)) { msg(data.error); return; }
+	if ((!ret)&&("error" in data)) { errMsg(data.error,document.searchForm.search); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	e.innerHTML = "<table width=100%>" + ctx.search.result + "</table>";
@@ -228,12 +240,12 @@ function doSearch()
     let srch = toASCII(f.search.value);
 
     if (srch.indexOf(".") >= 0) {
-		if (!supported_tld(srch)) {
-			msg("Not a supported TLD");
+		if (!fqdnCheck.test(srch)) {
+			errMsg("Invald domain name",document.searchForm.search);
 			return do_end(); }
 
-		if (!fqdnCheck.test(srch)) {
-			msg("Invald domain name");
+		if (!supported_tld(srch)) {
+			errMsg("Not a supported TLD",document.searchForm.search);
 			return do_end(); }
 
 		callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
@@ -241,7 +253,7 @@ function doSearch()
 		}
 	
 	if (!hostnameCheck.test(srch))
-		msg("Invald domain name");
+		errMsg("Invald domain name",document.searchForm.search);
 	else
 		multiSearch(srch,null);
 
@@ -250,11 +262,41 @@ function doSearch()
 
 
 
-function supported_tld(fqdn)
+
+function unerrMsg()
 {
-	if ((pos = fqdn.indexOf(".")) < 0) return false;
-	return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
+    let m = document.getElementById("myMsgPop");
+    let t1 = m.innerHTML;
+    let t2 = ctx.lastErrMsg;
+    if (t2 == null) t2 = "";
+    if (t1 == t2) m.className = "msgPop msgPopNo";
+    delete ctx.lastErrMsg;
 }
+
+
+
+function errMsg(txt,elem,min_width)
+{
+    let m = document.getElementById("myMsgPop");
+
+	if (elem) {
+		let box = elem.getBoundingClientRect();
+		m.style.top = box.y + box.height + "px";
+		m.style.left = box.x + "px";
+		if (!min_width) min_width = box.width - 10;
+		m.style.minWidth = min_width + "px";
+		m.style.width = min_width + "px";
+		console.log(box);
+		}
+
+    m.className = 'msgPop msgPopYes';
+    m.innerHTML = `${gbl.warn} ${txt}`;
+    ctx.lastErrMsg = m.innerHTML;
+    setTimeout(unerrMsg,2500);
+}
+
+
+
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -309,6 +351,8 @@ function supported_tld(fqdn)
 </form>
 <tr><td><div id="output"></div></div></td></tr>
 </table>
+
+<div id=myMsgPop class='msgPop msgPopNo'></div>
 
 </body>
 </html>
