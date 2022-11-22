@@ -38,14 +38,41 @@ def format_data(data):
     return "unhex('" + "".join([hex(ord(a))[2:] for a in data]) + "')"
 
 
-def data_set(data,items=None):
+def data_set(data,items=None,joiner=","):
     """ for list of {items} in dictionary {data} create a `item=val` pair """
     the_list = items if items is not None else [ item for item in data]
-    return ",".join([item + "=" + format_data(data[item]) for item in the_list])
+
+    out = { item:format_data(data[item] if item in data else None) for item in the_list }
+
+    if "amended_dt" in items:
+        out["amended_dt"] = "now()"
+    if "created_dt" in items:
+        out["created_dt"] = "now()"
+
+    return joiner.join([item + "=" + out[item] for item in out])
+
+
+def sql_run_one(sql):
+    try:
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        cnx.commit()
+        return True
+    except Exception as exc:
+        return False
 
 
 def sql_insert(table, data, items = None):
-    return f"insert into {table} set " + data_set(data,items)
+    return sql_run_one(f"insert into {table} set " + data_set(data,items))
+
+
+def sql_exists(table, data, items = None):
+    sql = f"select 1 from {table} where " + data_set(data,items," and ")
+    if (run_query(sql)):
+        res = cnx.store_result()
+        rows = [r for r in res.fetch_row(maxrows=0, how=1)]
+        return (len(rows) > 0)
+    return False
 
 
 def convert_string(data):
@@ -146,32 +173,20 @@ if __name__ == "__main__":
             "four": "this is four",
             "five": None
         }))
-    print(
-        sql_insert(
-            "users", {
-                "one": 1,
-                "two": "22",
-                "three": True,
-                "four": "this is four",
-                "five": None
-            }, ["one", "two"]))
-    print(
-        sql_insert(
-            "users", {
-                "one": 1,
-                "two": "22",
-                "three": True,
-                "four": "this is four",
-                "five": None
-            }))
 
     lib.log.debug = True
+
     connect("webui")
+
     if (run_query("show tables")):
         print("ROWS:",cnx.affected_rows())
         print("ROWID:",cnx.insert_id())
         res = cnx.store_result()
         for r in res.fetch_row(maxrows=0, how=1):
             print(">>>>",r)
+
+    for e in ["james@jrcs.net","aaa@bbb.com"]:
+        print(f">>>> sql exists -> {e} ->",sql_exists("users",{"email":e},["email"]))
+
     cnx.close()
 

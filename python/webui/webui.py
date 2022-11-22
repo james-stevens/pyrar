@@ -16,6 +16,7 @@ import lib.log as log
 import lib.fileloader as fileloader
 import lib.policy as policy
 import lib.users as users
+import lib.mysql
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
@@ -64,6 +65,8 @@ tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
 xmlns = tld_lib.make_xmlns()
 clients = {p: httpx.Client() for p in tld_lib.ports}
+
+lib.mysql.connect("webui")
 
 
 def check_ok(name):
@@ -188,13 +191,17 @@ def get_supported_zones():
 
 @application.route('/api/v1.0/users/register', methods=['POST'])
 def users_register():
+    http_heads = dict(flask.request.headers)
     tld_lib.check_for_new_files()
+
     if flask.request.json is None:
         return abort(400, "No JSON posted")
-    data = flask.request.form
-    if "email" not in data or "password" not in data:
-    	return abort(400, "Missing registration data")
-	users.register(data)
+
+    user_agent = http_heads["User-Agent"] if "User-Agent" in http_heads else "Unknown"
+    ret, val = users.register(flask.request.json,user_agent)
+    if not ret:
+        return abort(400,val)
+    return flask.jsonify(val)
 
 
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])

@@ -9,7 +9,7 @@ sqlsh "drop table if exists users"
 sqlsh "CREATE TABLE users (
 	user_id			${auto},
 
-	login			${email},
+	email			${email},
 	password		${password},
 	name			varchar(100),
 
@@ -20,7 +20,7 @@ sqlsh "CREATE TABLE users (
 	amended_dt		datetime,
 
 	primary key by_id (user_id),
-	unique key by_login(login)
+	unique key by_login(email)
 	) ${utf8}"
 
 sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
