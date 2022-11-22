@@ -11,10 +11,11 @@ import flask
 
 import zonelib
 import parsexml
-import validate
+import lib.validate as validate
 import lib.log as log
 import lib.fileloader as fileloader
 import lib.policy as policy
+import lib.users as users
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
@@ -68,9 +69,9 @@ clients = {p: httpx.Client() for p in tld_lib.ports}
 def check_ok(name):
     if not tld_lib.supported_tld(name):
         return "Unsupported TLD"
-    if validate.is_valid_fqdn(name) or validate.is_valid_tld(name):
-        return None
-    return "Domain failed validation"
+    if not validate.is_valid_fqdn(name):
+        return "Domain failed validation"
+    return None
 
 
 class DomainName:
@@ -183,6 +184,17 @@ def get_config():
 def get_supported_zones():
     tld_lib.check_for_new_files()
     return flask.jsonify(tld_lib.return_zone_list())
+
+
+@application.route('/api/v1.0/users/register', methods=['POST'])
+def users_register():
+    tld_lib.check_for_new_files()
+    if flask.request.json is None:
+        return abort(400, "No JSON posted")
+    data = flask.request.form
+    if "email" not in data or "password" not in data:
+    	return abort(400, "Missing registration data")
+	users.register(data)
 
 
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])

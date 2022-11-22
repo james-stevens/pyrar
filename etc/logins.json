@@ -1,0 +1,7 @@
+{
+	"mysql": {
+		"connect":"192.168.1.240:3306",
+		"database":"pyrar",
+		"webui": "BWB39B9M1c1ig"
+		}
+}
