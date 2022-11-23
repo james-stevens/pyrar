@@ -12,12 +12,13 @@ import flask
 import zonelib
 import parsexml
 import lib.validate as validate
-import lib.log as log
+from lib.log import log as log, init as log_init
 import lib.fileloader as fileloader
 import lib.policy as policy
 import lib.users as users
 import lib.mysql
 import lib.event
+from lib.event import event
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
@@ -29,8 +30,18 @@ HEADER = {
     'Accept': 'application/json'
 }
 
+def fees_one(action,years):
+    return {
+        "@name": action,
+        "fee:period": {
+            "@unit": "y",
+            "#text": str(years),
+            }
+        }
 
-def xml_check_with_fees(domobj, years=1):
+
+def xml_check_with_fees(domobj, years=1, which=["create","renew"]):
+    fees_extra = [ fees_one(name,years) for name in which ]
     return {
         "check": {
             "domain:check": {
@@ -63,7 +74,7 @@ def xml_check_with_fees(domobj, years=1):
 
 
 my_policy = policy.Policy()
-log.init(my_policy.policy("facility_python_code"),
+log_init(my_policy.policy("facility_python_code"),
          my_policy.policy("log_python_code"))
 
 tld_lib = zonelib.ZoneLib()
@@ -142,8 +153,8 @@ def http_price_domains(domobj):
     try:
         return 200, json.loads(resp.content)
     except ValueError as err:
-        log.log(f"{resp.status_code} === {resp.content.decode('utf8')}")
-        log.log(f"**** JSON FAILED TO PARSE ***** {err}")
+        log(f"{resp.status_code} === {resp.content.decode('utf8')}")
+        log(f"**** JSON FAILED TO PARSE ***** {err}")
         return 400, "Returned JSON Parse Error"
 
     return 400, "Unexpected Error"
@@ -167,13 +178,12 @@ def check_and_parse(domobj):
 
 
 def abort(err_no, message):
-    log.log(f'ERROR: #{err_no} {message}')
+    log(f'ERROR: #{err_no} {message}')
     response = flask.jsonify({'error': message})
     response.status_code = err_no
     return response
 
 
-log.init()
 application = flask.Flask("EPP Registrar")
 
 
@@ -204,7 +214,6 @@ def get_supported_zones():
 @application.route('/api/v1.0/hello', methods=['GET'])
 def hello():
     start_req()
-    lib.event.event({"notes": "Hello World"}, gzz(czz()))
     return "Hello World\n"
 
 
@@ -253,13 +262,12 @@ def rest_domain_price():
 def run_one(domain):
     domobj = DomainName(domain)
     if domobj.names is None:
-        print(">>>>", domobj.err)
         sys.exit(1)
 
     ret, out_js = http_price_domains(domobj)
 
     if ret != 200:
-        print("ERROR:", ret, out_js)
+        log("ERROR:", ret, out_js)
     else:
         xml_p = parsexml.XmlParser(out_js)
         code, ret_js = xml_p.parse_check_message()

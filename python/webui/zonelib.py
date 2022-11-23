@@ -8,7 +8,7 @@ import random
 import lib.fileloader as fileloader
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
-EPP_REST_ZONES = os.environ["BASE"] + "/etc/providers.json"
+EPP_PROVIDERS = os.environ["BASE"] + "/etc/providers.json"
 EPP_PORTS_LIST = "/run/prov_ports"
 
 DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
@@ -40,35 +40,33 @@ def tld_of_name(name):
 class ZoneLib:
     def __init__(self):
         self.zone_send = {}
-        self.zone_json = {}
         self.zone_list = []
         self.zone_data = {}
         self.zone_priority = {}
 
-        self.zone_file = fileloader.FileLoader(EPP_REST_ZONES)
+        self.zone_file = fileloader.FileLoader(EPP_PROVIDERS)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
-
-        self.check_for_new_files()
+        self.process_json()
 
         with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
             port_lines = [line.split() for line in fd.readlines()]
         self.ports = {p[0]: int(p[1]) for p in port_lines}
 
     def check_for_new_files(self):
-        self.zone_json, z_is_new = self.zone_file.check()
-        self.pri_json, p_is_new = self.priority_file.check()
+        z_is_new = self.zone_file.check()
+        p_is_new = self.priority_file.check()
 
         if z_is_new or p_is_new:
             self.zone_priority = {
                 idx: pos
-                for pos, idx in enumerate(self.pri_json)
+                for pos, idx in enumerate(self.priority_file.json)
             }
             self.process_json()
 
     def process_json(self):
         new_send = {}
         new_data = {}
-        for provider, prov in self.zone_json.items():
+        for provider, prov in self.zone_file.json.items():
             new_send[provider] = {}
             for item, val in DEFAULT_CONFIG.items():
                 new_send[provider][item] = prov[item] if item in prov else val
@@ -177,10 +175,10 @@ class ZoneLib:
         default_both = "default." + action
 
         prov = tld_data["provider"]
-        if prov not in self.zone_json:
+        if prov not in self.zone_file.json:
             return None
 
-        json_prov = self.zone_json[prov]
+        json_prov = self.zone_file.json[prov]
         if "prices" not in json_prov:
             return None
 
@@ -228,7 +226,7 @@ class ZoneLib:
             "secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
         }
         ret_xmlns = {}
-        for provider, data in self.zone_json.items():
+        for provider, data in self.zone_file.json.items():
             ret_xmlns[provider] = default_xmlns
             if "xmlns" in data:
                 for xml_name, xml_data in data["xmlns"].items():
@@ -238,7 +236,7 @@ class ZoneLib:
 
 if __name__ == "__main__":
     my_zone_lib = ZoneLib()
-    # print(my_zone_lib.zone_json)
+    # print(my_zone_lib.zone_file.json)
     print("ZONE_DATA", json.dumps(my_zone_lib.zone_data, indent=3))
     print("ZONE_LIST", json.dumps(my_zone_lib.zone_list, indent=3))
     print("ZONE_PRIORITY", json.dumps(my_zone_lib.zone_priority, indent=3))

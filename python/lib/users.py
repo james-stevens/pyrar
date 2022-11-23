@@ -13,7 +13,7 @@ import os
 from inspect import currentframe as czz, getframeinfo as gzz
 
 import lib.mysql
-import lib.event
+from lib.event import event
 
 
 def session_code(user_id):
@@ -55,7 +55,7 @@ def register(data, user_agent):
 
 
 def test_fn():
-    lib.event.event({"notes": "some notes"}, gzz(czz()))
+    event({"notes": "some notes"}, gzz(czz()))
 
 
 if __name__ == "__main__":

@@ -39,13 +39,11 @@ class FileLoader:
 
     def check_for_new(self):
         if (new_time := have_newer(self.last_mtime, self.filename)) is None:
-            print("Not newer", self.filename)
             return False
         if (data := load_file_json(self.filename)) is not None:
             self.json = data
             self.last_mtime = new_time
             return True
-        print(">>> load failed")
         return False
 
     def data(self):
@@ -53,8 +51,7 @@ class FileLoader:
         return self.json
 
     def check(self):
-        ret = self.check_for_new()
-        return self.json, ret
+        return self.check_for_new()
 
 
 if __name__ == "__main__":
