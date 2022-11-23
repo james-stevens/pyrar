@@ -1,7 +1,13 @@
 {
-	"mysql": {
+	"pyrar": {
 		"connect":"192.168.1.240:3306",
 		"database":"pyrar",
 		"webui": "BWB39B9M1c1ig"
+		},
+	"pdns" : {
+		"connect":"192.168.1.240:3306",
+		"database":"pyrar_pdns",
+		"username":"pdns",
+		"password":"124"
 		}
 }

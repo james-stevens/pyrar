@@ -37,24 +37,25 @@ if "PYRAR_PROVIDER" not in os.environ:
 if not os.path.isfile(PROVIDERS_FILE):
     raise ValueError(f"Providers file `{PROVIDERS_FILE}` is missing")
 
-with open(PROVIDERS_FILE,"r") as fd:
+with open(PROVIDERS_FILE, "r") as fd:
     provs = json.load(fd)
 
 provider = os.environ["PYRAR_PROVIDER"]
 if provider not in provs:
     raise ValueError(f"Provider '{provider}' not in '{PROVIDERS_FILE}'")
 
-this_provider = provs[provider]
-for item in ["username","password","server","certpem"]:
-    if item not in this_provider:
+this_epp = provs[provider]
+for item in ["username", "password", "server", "certpem"]:
+    if item not in this_epp:
         raise ValueError(f"Item '{item}' missing from provider '{provider}'")
 
-client_pem = f"{CLIENT_PEM_DIR}/{this_provider['certpem']}"
+client_pem = f"{CLIENT_PEM_DIR}/{this_epp['certpem']}"
 if not os.path.isfile(client_pem):
-	raise ValueError(f"Client PEM file for '{provider}' at '{client_pem}' not found")
+    raise ValueError(
+        f"Client PEM file for '{provider}' at '{client_pem}' not found")
 
 my_policy = policy.Policy()
-log.init(my_policy.policy("facility_epp_api"),my_policy.policy("log_epp_api"))
+log.init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
 
 jobInterval = 0
 if "EPP_KEEPALIVE" in os.environ:
@@ -120,12 +121,11 @@ def makeXML(cmd):
     else:
         cmd["clTRID"] = clTRID
 
-    xml = xmltodict.unparse({
-        "epp": {
+    xml = xmltodict.unparse(
+        {"epp": {
             "@xmlns": "urn:ietf:params:xml:ns:epp-1.0",
             verb: cmd
-        }
-    })
+        }})
     return clTRID, ((EPP_PKT_LEN_BYTES + len(xml)).to_bytes(
         EPP_PKT_LEN_BYTES, NETWORK_BYTE_ORDER) + bytearray(xml, 'utf-8'))
 
@@ -140,15 +140,15 @@ def makeLogin(username, password):
                 "lang": "en"
             },
             "svcs": {
-            "objURI": [
-                "urn:ietf:params:xml:ns:domain-1.0",
-                "urn:ietf:params:xml:ns:contact-1.0",
-                "urn:ietf:params:xml:ns:host-1.0"
+                "objURI": [
+                    "urn:ietf:params:xml:ns:domain-1.0",
+                    "urn:ietf:params:xml:ns:contact-1.0",
+                    "urn:ietf:params:xml:ns:host-1.0"
                 ],
-            "svcExtension": {
-                "extURI": [
-                    "urn:ietf:params:xml:ns:secDNS-1.1",
-                    "urn:ietf:params:xml:ns:fee-1.0"
+                "svcExtension": {
+                    "extURI": [
+                        "urn:ietf:params:xml:ns:secDNS-1.1",
+                        "urn:ietf:params:xml:ns:fee-1.0"
                     ]
                 }
             }
@@ -206,6 +206,7 @@ def handleCloseRequest():
     closeEPP()
     return abort(200, "Session Closed")
 
+
 @application.route('/api/epp/v1.0/finish', methods=['GET'])
 @application.route('/epp/api/v1.0/finish', methods=['GET'])
 def handleFinsihRequest():
@@ -225,7 +226,9 @@ def jsonRequest(in_js, addr):
     if conn is None:
         connectToEPP()
         if conn is None:
-            return abort(400, f"Failed to connect to EPP Server - `{this_provider['server']}`")
+            return abort(
+                400,
+                f"Failed to connect to EPP Server - `{this_epp['server']}`")
 
     t1 = firstDict(in_js)
     if t1 == "hello":
@@ -279,11 +282,11 @@ def connectToEPP():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn = context.wrap_socket(s,
                                server_side=False,
-                               server_hostname=this_provider["server"])
+                               server_hostname=this_epp["server"])
 
-    log.log(f"Connecting to EPP Server: {this_provider['server']}")
+    log.log(f"Connecting to EPP Server: {this_epp['server']}")
     try:
-        conn.connect((this_provider["server"], EPP_PORT))
+        conn.connect((this_epp["server"], EPP_PORT))
         conn.setblocking(True)
     except Exception as e:
         log.log(str(e))
@@ -294,7 +297,7 @@ def connectToEPP():
     ret, js = jsonReply(conn, None)
     log.log(f"Greeting {ret}")
 
-    ret, js = xmlRequest(makeLogin(this_provider["username"], this_provider["password"]))
+    ret, js = xmlRequest(makeLogin(this_epp["username"], this_epp["password"]))
     log.log(f"Login to '{provider}' gives {ret}")
 
     if jobInterval > 0 and scheduler is not None:
@@ -302,4 +305,4 @@ def connectToEPP():
 
 
 if __name__ == "__main__":
-	application.run()
+    application.run()

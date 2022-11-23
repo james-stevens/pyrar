@@ -16,20 +16,18 @@ import lib.mysql
 import lib.event
 
 
-def session_key(user_id, user_agent):
+def session_code(user_id):
     hsh = hashlib.sha512()
     hsh.update(secrets.token_bytes(500))
     hsh.update(str(user_id).encode("utf-8"))
     hsh.update(str(os.getpid()).encode("utf-8"))
     hsh.update(str(time.time()).encode("utf-8"))
-    hsh.update(user_agent.encode("utf-8"))
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
 
-def session_code(session_key, user_agent):
+def session_key(session_code, user_agent):
     hsh = hashlib.sha512()
-    hsh.update(secrets.token_bytes(500))
-    hsh.update(str(user_id).encode("utf-8"))
+    hsh.update(session_code.encode("utf-8"))
     hsh.update(user_agent.encode("utf-8"))
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
@@ -57,11 +55,14 @@ def register(data, user_agent):
 
 
 def test_fn():
-    lib.event.event("here", gzz(czz()))
+    lib.event.event({"notes": "some notes"}, gzz(czz()))
 
 
 if __name__ == "__main__":
+    lib.log.debug = True
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
-    print(session_key(100, "spam"))
+    print(session_code(100))
+    print(session_key("fred", "Windows"))
+    lib.mysql.connect("webui")
     test_fn()

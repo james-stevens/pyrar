@@ -17,6 +17,11 @@ import lib.fileloader as fileloader
 import lib.policy as policy
 import lib.users as users
 import lib.mysql
+import lib.event
+
+from inspect import currentframe as czz, getframeinfo as gzz
+
+http_heads = {}
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
@@ -172,9 +177,16 @@ log.init()
 application = flask.Flask("EPP Registrar")
 
 
+def start_req():
+    global http_heads
+    http_heads = dict(flask.request.headers)
+    tld_lib.check_for_new_files()
+    lib.event.http_start("webui", flask.request.remote_addr, 99)
+
+
 @application.route('/api/v1.0/config', methods=['GET'])
 def get_config():
-    tld_lib.check_for_new_files()
+    start_req()
     ret = {
         "providers": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
@@ -185,28 +197,34 @@ def get_config():
 
 @application.route('/api/v1.0/zones', methods=['GET'])
 def get_supported_zones():
-    tld_lib.check_for_new_files()
+    start_req()
     return flask.jsonify(tld_lib.return_zone_list())
+
+
+@application.route('/api/v1.0/hello', methods=['GET'])
+def hello():
+    start_req()
+    lib.event.event({"notes": "Hello World"}, gzz(czz()))
+    return "Hello World\n"
 
 
 @application.route('/api/v1.0/users/register', methods=['POST'])
 def users_register():
-    http_heads = dict(flask.request.headers)
-    tld_lib.check_for_new_files()
-
+    start_req()
     if flask.request.json is None:
         return abort(400, "No JSON posted")
 
-    user_agent = http_heads["User-Agent"] if "User-Agent" in http_heads else "Unknown"
-    ret, val = users.register(flask.request.json,user_agent)
+    user_agent = http_heads[
+        "User-Agent"] if "User-Agent" in http_heads else "Unknown"
+    ret, val = users.register(flask.request.json, user_agent)
     if not ret:
-        return abort(400,val)
+        return abort(400, val)
     return flask.jsonify(val)
 
 
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
-    tld_lib.check_for_new_files()
+    start_req()
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
         if not isinstance(dom, str) and not isinstance(dom, list):

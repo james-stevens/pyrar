@@ -20,22 +20,29 @@ LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 cnx = None
 my_login = None
 
+HEXLIB = "0123456789ABCDEF"
+
+
+def ashex(line):
+    ret = ""
+    for item in line:
+        asc = ord(item)
+        ret = ret + HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
+    return ret
+
 
 def format_data(data):
     """ convert {data} to SQL string """
     if data is None:
         return "NULL"
 
-    if isinstance(data, bool):
-        return "1" if data else "0"
-
     if isinstance(data, int):
-        return str(data)
+        return str(int(data))
 
     if not isinstance(data, str):
         data = str(data)
 
-    return "unhex('" + "".join([hex(ord(a))[2:] for a in data]) + "')"
+    return "unhex('" + ashex(data) + "')"
 
 
 def data_set(data, items=None, joiner=","):
@@ -49,20 +56,29 @@ def data_set(data, items=None, joiner=","):
 
 
 def sql_run_one(sql):
+    if cnx is None:
+        lib.log.log("MySQL not connected")
+        return False
+
     try:
         cursor = cnx.cursor()
         cursor.execute(sql)
         cnx.commit()
         return True
     except Exception as exc:
+        lib.log.log(exc)
         return False
 
 
 def sql_insert(table, data, items=None):
     extra = ""
-    for item in ["amended_dt", "created_dt", "deleted_dt"]:
-        if item in items:
+    chk = items if items is not None else data
+    for item in ["when_dt", "amended_dt", "created_dt", "deleted_dt"]:
+        if item in chk:
             extra = extra + "," + item + "=now()"
+        if item in data:
+            del data[item]
+
     return sql_run_one(f"insert into {table} set " + data_set(data, items) +
                        extra)
 
@@ -102,7 +118,7 @@ def connect(login):
 
     my_login = login
     logins = lib.fileloader.FileLoader(LOGINS_JSON)
-    mysql_json = logins.data()["mysql"]
+    mysql_json = logins.data()["pyrar"]
 
     conn = mysql_json["connect"]
 
@@ -146,23 +162,22 @@ def run_query(sql):
             return True
 
         except MySQLdb.OperationalError as exc:
-            print(">>>>>", exc)
             lib.log.log(exc)
             cnx.close()
             cnx = None
             return False
         except MySQLdb.Error as exc:
-            print(">>>>>", exc)
             lib.log.log(exc)
             return False
 
     except MySQLdb.Error as exc:
-        print(">>>>>", exc)
         lib.log.log(exc)
         return False
 
 
 if __name__ == "__main__":
+    print(ashex("james"))
+
     print(
         data_set({
             "one": 1,

@@ -4,18 +4,18 @@
 
 import os
 import json
-import lib.log as log
+import lib.log
 
 
 def load_file_json(filename):
-    log.log(f"Reloading file '{filename}'")
+    lib.log.log(f"Reloading file '{filename}'")
     try:
         with open(filename, "r", encoding='UTF-8') as file_fd:
             if file_fd.readable():
-                json = json.load(file_fd)
-        return json
+                data = json.load(file_fd)
+                return data
     except Exception as err:
-        log.log(f"{filename} : {str(err)}")
+        lib.log.log(f"load_file_json: {filename} : {str(err)}")
 
     return None
 
@@ -34,15 +34,18 @@ class FileLoader:
     def __init__(self, filename):
         self.filename = filename
         self.last_mtime = 0
-        self.check_for_newer()
+        self.json = None
+        self.check_for_new()
 
     def check_for_new(self):
         if (new_time := have_newer(self.last_mtime, self.filename)) is None:
+            print("Not newer", self.filename)
             return False
-        if (json := load_file_json(self.filename)) is not None:
-            self.json = json
+        if (data := load_file_json(self.filename)) is not None:
+            self.json = data
             self.last_mtime = new_time
             return True
+        print(">>> load failed")
         return False
 
     def data(self):
@@ -52,3 +55,9 @@ class FileLoader:
     def check(self):
         ret = self.check_for_new()
         return self.json, ret
+
+
+if __name__ == "__main__":
+    lib.log.debug = True
+    file = FileLoader("/opt/github/pyrar/etc/logins.json")
+    print(json.dumps(file.json, indent=4))
