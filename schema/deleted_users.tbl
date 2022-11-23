@@ -5,9 +5,10 @@
 
 . ./database
 
-sqlsh "drop table if exists users"
-sqlsh "CREATE TABLE users (
-	user_id			${auto},
+sqlsh "drop table if exists deleted_users"
+sqlsh "CREATE TABLE deleted_users (
+	deleted_user_id			${auto},
+	user_id			${row_id},
 
 	email			${email},
 	password		${password},
@@ -18,11 +19,12 @@ sqlsh "CREATE TABLE users (
 	created_dt		datetime,
 	amended_dt		datetime,
 
-	primary key by_id (user_id),
+	deleted_dt		datetime,
+
+	primary key by_id (deleted_user_id),
 	unique key by_login(email)
 	) ${utf8}"
 
 sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert, update on users to webui'
-sqlsh 'grant select on users to epprun,raradm'
+sqlsh 'grant select on deleted_users to raradm'

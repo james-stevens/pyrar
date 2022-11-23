@@ -4,5 +4,6 @@
 
 from inspect import currentframe, getframeinfo
 
-def event(desc,frameinfo):
-    print(">>>>>",desc,frameinfo)
+
+def event(desc, frameinfo):
+    print(">>>>>", desc, frameinfo)

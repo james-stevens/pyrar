@@ -38,17 +38,13 @@ def format_data(data):
     return "unhex('" + "".join([hex(ord(a))[2:] for a in data]) + "')"
 
 
-def data_set(data,items=None,joiner=","):
+def data_set(data, items=None, joiner=","):
     """ for list of {items} in dictionary {data} create a `item=val` pair """
-    the_list = items if items is not None else [ item for item in data]
-
-    out = { item:format_data(data[item] if item in data else None) for item in the_list }
-
-    if "amended_dt" in items:
-        out["amended_dt"] = "now()"
-    if "created_dt" in items:
-        out["created_dt"] = "now()"
-
+    the_list = items if items is not None else [item for item in data]
+    out = {
+        item: format_data(data[item] if item in data else None)
+        for item in the_list
+    }
     return joiner.join([item + "=" + out[item] for item in out])
 
 
@@ -62,12 +58,17 @@ def sql_run_one(sql):
         return False
 
 
-def sql_insert(table, data, items = None):
-    return sql_run_one(f"insert into {table} set " + data_set(data,items))
+def sql_insert(table, data, items=None):
+    extra = ""
+    for item in ["amended_dt", "created_dt", "deleted_dt"]:
+        if item in items:
+            extra = extra + "," + item + "=now()"
+    return sql_run_one(f"insert into {table} set " + data_set(data, items) +
+                       extra)
 
 
-def sql_exists(table, data, items = None):
-    sql = f"select 1 from {table} where " + data_set(data,items," and ")
+def sql_exists(table, data, items=None):
+    sql = f"select 1 from {table} where " + data_set(data, items, " and ")
     if (run_query(sql)):
         res = cnx.store_result()
         rows = [r for r in res.fetch_row(maxrows=0, how=1)]
@@ -79,6 +80,7 @@ def convert_string(data):
     if isinstance(data, bytes):
         return data.decode("utf8")
     return data
+
 
 def convert_datetime(data):
     return data
@@ -118,17 +120,15 @@ def connect(login):
             host = svr[0]
             port = int(svr[1])
 
-    cnx = mdb.connect(
-        user=login,
-        passwd=mysql_json[login],
-        unix_socket=sock,
-        host=host,
-        port=port,
-        db=mysql_json["database"],
-        conv=my_conv,
-        charset='utf8mb4',
-        init_command='set names utf8mb4'
-    )
+    cnx = mdb.connect(user=login,
+                      passwd=mysql_json[login],
+                      unix_socket=sock,
+                      host=host,
+                      port=port,
+                      db=mysql_json["database"],
+                      conv=my_conv,
+                      charset='utf8mb4',
+                      init_command='set names utf8mb4')
 
 
 def run_query(sql):
@@ -146,22 +146,20 @@ def run_query(sql):
             return True
 
         except MySQLdb.OperationalError as exc:
-            print(">>>>>",exc)
+            print(">>>>>", exc)
             lib.log.log(exc)
             cnx.close()
             cnx = None
             return False
         except MySQLdb.Error as exc:
-            print(">>>>>",exc)
+            print(">>>>>", exc)
             lib.log.log(exc)
             return False
 
     except MySQLdb.Error as exc:
-        print(">>>>>",exc)
+        print(">>>>>", exc)
         lib.log.log(exc)
         return False
-
-
 
 
 if __name__ == "__main__":
@@ -179,14 +177,14 @@ if __name__ == "__main__":
     connect("webui")
 
     if (run_query("show tables")):
-        print("ROWS:",cnx.affected_rows())
-        print("ROWID:",cnx.insert_id())
+        print("ROWS:", cnx.affected_rows())
+        print("ROWID:", cnx.insert_id())
         res = cnx.store_result()
         for r in res.fetch_row(maxrows=0, how=1):
-            print(">>>>",r)
+            print(">>>>", r)
 
-    for e in ["james@jrcs.net","aaa@bbb.com"]:
-        print(f">>>> sql exists -> {e} ->",sql_exists("users",{"email":e},["email"]))
+    for e in ["james@jrcs.net", "aaa@bbb.com"]:
+        print(f">>>> sql exists -> {e} ->",
+              sql_exists("users", {"email": e}, ["email"]))
 
     cnx.close()
-

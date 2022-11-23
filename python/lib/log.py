@@ -20,6 +20,6 @@ def log(line):
         syslog.syslog(line)
 
 
-def init(facility=syslog.LOG_LOCAL6,with_logging=True):
+def init(facility=syslog.LOG_LOCAL6, with_logging=True):
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
     done_init = True

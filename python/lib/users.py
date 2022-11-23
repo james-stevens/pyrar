@@ -7,8 +7,10 @@ import secrets
 import base64
 import hashlib
 import bcrypt
+import time
+import os
 
-from inspect import currentframe, getframeinfo
+from inspect import currentframe as czz, getframeinfo as gzz
 
 import lib.mysql
 import lib.event
@@ -18,11 +20,21 @@ def session_key(user_id, user_agent):
     hsh = hashlib.sha512()
     hsh.update(secrets.token_bytes(500))
     hsh.update(str(user_id).encode("utf-8"))
+    hsh.update(str(os.getpid()).encode("utf-8"))
+    hsh.update(str(time.time()).encode("utf-8"))
     hsh.update(user_agent.encode("utf-8"))
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
 
-def register(data,user_agent):
+def session_code(session_key, user_agent):
+    hsh = hashlib.sha512()
+    hsh.update(secrets.token_bytes(500))
+    hsh.update(str(user_id).encode("utf-8"))
+    hsh.update(user_agent.encode("utf-8"))
+    return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
+
+
+def register(data, user_agent):
     if data is None:
         return False, "Data missing"
 
@@ -43,11 +55,13 @@ def register(data,user_agent):
 
     return True, {"result": "OK"}
 
+
 def test_fn():
-    lib.event.event("here",getframeinfo(currentframe()))
+    lib.event.event("here", gzz(czz()))
+
 
 if __name__ == "__main__":
-    ## print(register({"email":"james@jrcs.net","password":"my_password"}))
-    ## print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
+    # print(register({"email":"james@jrcs.net","password":"my_password"}))
+    # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     print(session_key(100, "spam"))
     test_fn()

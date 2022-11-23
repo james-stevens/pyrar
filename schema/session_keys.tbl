@@ -2,22 +2,17 @@
 #################################################################
 #    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
 #################################################################
-
-
-
 . ./database
 
-sqlsh "drop table if exists session_codes"
-sqlsh "create table session_codes (
-    session_code_id			${auto},
-    session_code            ${password},
-	user_id					${row_id},
+sqlsh "drop table if exists session_keys"
+sqlsh "create table session_keys (
+	session_key				varchar(100) not null,
+	user_id					${row_id} not null,
 
-	last_used_dt			datetime,
+	amended_dt				datetime,
 	created_dt				datetime,
 
-	primary key (session_code),
-	unique key by_id (session_code_id)
+	primary key (session_key)
 )"
 
 sqlsh 'grant select, insert, update, delete on session_codes to webui,raradm'
