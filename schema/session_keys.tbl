@@ -15,4 +15,4 @@ sqlsh "create table session_keys (
 	primary key (session_key)
 )"
 
-sqlsh 'grant select, insert, update, delete on session_codes to webui,raradm'
+sqlsh 'grant select, insert, update, delete on session_keys to webui,raradm'

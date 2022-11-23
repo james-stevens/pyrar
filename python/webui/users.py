@@ -48,7 +48,10 @@ def register(data, user_agent):
     if lib.mysql.sql_exists("users", data, ["email"]):
         return False, "EMail address already in use"
 
-    all_cols = required + ["created_dt", "amended_dt"]
+    if "name" not in data:
+        data["name"] = data["email"].split("@")[0]
+
+    all_cols = required + ["name", "created_dt", "amended_dt"]
 
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
@@ -57,10 +60,20 @@ def register(data, user_agent):
     if not ret:
         return False, "Registration failed"
 
-    print(">>>>> user_id",user_id)
-    ses_code = session_code(user_id)
+    ret, user_data = lib.mysql.sql_get_one("users", {"user_id": user_id})
+    if not ret:
+        return False, "Registration failed"
 
-    return True, {"result": "OK"}
+    ses_code = session_code(user_id)
+    lib.mysql.sql_insert(
+        "session_keys", {
+            "session_key": session_key(ses_code, user_agent),
+            "user_id": user_id,
+            "amended_dt": None,
+            "created_dt": None
+        })
+
+    return True, {"user": user_data, "session": ses_code}
 
 
 def test_fn():

@@ -93,6 +93,12 @@ def sql_exists(table, data, items=None):
     return ret and (cnx.affected_rows() > 0)
 
 
+def sql_get_one(table, data, items=None):
+    sql = f"select * from {table} where " + data_set(data, items, " and ") + " limit 1"
+    ret, data = run_query(sql)
+    return ret and (cnx.affected_rows() > 0), data
+
+
 def convert_string(data):
     if isinstance(data, bytes):
         return data.decode("utf8")
@@ -209,5 +215,8 @@ if __name__ == "__main__":
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
         print(f">>>> sql exists -> {e} ->",
               sql_exists("users", {"email": e}, ["email"]))
+
+    ret, data = sql_get_one("events", {"event_id": 10452})
+    print(">>>>>",ret,json.dumps(data,indent=4))
 
     cnx.close()
