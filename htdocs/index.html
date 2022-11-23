@@ -307,16 +307,16 @@ function errMsg(txt,elem,min_width)
 
 <div class="popup">
 <span style='width: 75px;' tabindex=0 title="Register me" class=myBtn onClick="toggleRegister(); return false;">Register</span>
-<span onClick="toggleRegister();" class="popuptext" id="registerPopup">
+<span class="popuptext" id="registerPopup">
 <form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>
-<tr><Td colspan=2><div style="height: 15px;"></div></td></tr>
+<tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
-		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn>Cancel</span>
+		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleRegister();">Cancel</span>
 		<span style='width: 75px;' tabindex=0 title="Register" class=myBtn onClick="doRegister();">OK</span>
 	</td>
 </tr></form></table>
@@ -325,15 +325,15 @@ function errMsg(txt,elem,min_width)
 
 <div class="popup">
 <span style='width: 75px;' tabindex=0 title="Get me logged in" class=myBtn onClick="toggleLogin(); return false;">Login</span>
-<span onclick="toggleLogin()" class="popuptext" id="loginPopup">
+<span class="popuptext" id="loginPopup">
 <form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>
-<tr><Td colspan=2><div style="height: 15px;"></div></td></tr>
+<tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
-		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn>Cancel</span>
+		<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleLogin()">Cancel</span>
 		<span style='width: 75px;' tabindex=0 title="Login" class=myBtn onClick="doLogin(); return false;">OK</span>
 	</td>
 </tr></form>
