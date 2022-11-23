@@ -22,7 +22,7 @@ sqlsh "CREATE TABLE users (
 	unique key by_login(email)
 	) ${utf8}"
 
-sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
+sqlsh "ALTER TABLE users AUTO_INCREMENT = 10450"
 
 sqlsh 'grant select, insert, update on users to webui'
 sqlsh 'grant select on users to epprun,raradm'

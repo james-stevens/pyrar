@@ -15,9 +15,11 @@ import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
+from inspect import currentframe as czz, getframeinfo as gzz
+
 import flask
 import lib.policy as policy
-import lib.log as log
+from lib.log import log
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 PROVIDERS_FILE = os.environ["BASE"] + "/etc/providers.json"
@@ -82,7 +84,7 @@ def closeEPP():
         return
     ret, js = xmlRequest({"logout": None})
     flask.Response(js)
-    log.log(f"Logout {ret}")
+    log(f"Logout {ret}",gzz(czz()))
     conn.close()
 
 
@@ -258,7 +260,7 @@ def jsonRequest(in_js, addr):
             conn = None
             return abort(400, "Lost connection to EPP Server")
 
-    log.log(f"User request: {addr} asked '{t1}/{t2}' -> {ret}")
+    log(f"User request: {addr} asked '{t1}/{t2}' -> {ret}",gzz(czz()))
 
     return js
 
@@ -284,21 +286,21 @@ def connectToEPP():
                                server_side=False,
                                server_hostname=this_epp["server"])
 
-    log.log(f"Connecting to EPP Server: {this_epp['server']}")
+    log(f"Connecting to EPP Server: {this_epp['server']}",gzz(czz()))
     try:
         conn.connect((this_epp["server"], EPP_PORT))
         conn.setblocking(True)
     except Exception as e:
-        log.log(str(e))
+        log(str(e),gzz(czz()))
         conn.close()
         conn = None
         return
 
     ret, js = jsonReply(conn, None)
-    log.log(f"Greeting {ret}")
+    log(f"Greeting {ret}",gzz(czz()))
 
     ret, js = xmlRequest(makeLogin(this_epp["username"], this_epp["password"]))
-    log.log(f"Login to '{provider}' gives {ret}")
+    log(f"Login to '{provider}' gives {ret}",gzz(czz()))
 
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()

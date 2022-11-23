@@ -14,6 +14,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 
 import lib.mysql
 from lib.event import event
+import lib.validate as validate
 
 
 def session_code(user_id):
@@ -41,6 +42,9 @@ def register(data, user_agent):
         if item not in data:
             return False, f"Missing data item '{item}'"
 
+    if not validate.is_valid_email(data["email"]):
+        return False, "Invalid email address"
+
     if lib.mysql.sql_exists("users", data, ["email"]):
         return False, "EMail address already in use"
 
@@ -48,8 +52,13 @@ def register(data, user_agent):
 
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
-    if not lib.mysql.sql_insert("users", data, all_cols):
+
+    ret, user_id = lib.mysql.sql_insert("users", data, all_cols)
+    if not ret:
         return False, "Registration failed"
+
+    print(">>>>> user_id",user_id)
+    ses_code = session_code(user_id)
 
     return True, {"result": "OK"}
 

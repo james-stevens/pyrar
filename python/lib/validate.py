@@ -7,6 +7,13 @@ import re
 
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
+IS_EMAIL = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{1,}\b'
+
+
+def is_valid_email(name):
+    if name is None or not isinstance(name, str):
+        return False
+    return re.match(IS_EMAIL, name, re.IGNORECASE) is not None
 
 
 def is_valid_tld(name):

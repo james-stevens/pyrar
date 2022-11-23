@@ -30,5 +30,5 @@ sqlsh "create table events (
 
 sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert on events to webui"
+sqlsh "grant insert,select on events to webui"
 sqlsh "grant insert,update,select on events to raradm"

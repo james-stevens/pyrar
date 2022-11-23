@@ -4,22 +4,29 @@
 
 import syslog
 
-debug = False
 done_init = False
-with_logging = True
+
+hold_debug = False
+hold_with_logging = True
 
 
-def log(line):
-    if not with_logging:
-        return
-    if debug:
-        print(">>>DEBUG>>>", line)
+def log(line, where = None):
+    if hold_debug:
+        txt=""
+        if where is not None:
+        	txt = "["+where.filename.split("/")[-1]+":"+str(where.lineno)+"]"
+        print(f">>>SYSLOG{txt}>>>", line)
     else:
         if not done_init:
             init()
-        syslog.syslog(line)
+        if hold_with_logging:
+            syslog.syslog(line)
 
 
-def init(facility=syslog.LOG_LOCAL6, with_logging=True):
+def init(facility=syslog.LOG_LOCAL6, debug=False, with_logging=True):
+    global hold_debug
+    global hold_with_logging
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
+    hold_with_logging = with_logging
+    hold_debug = debug
     done_init = True

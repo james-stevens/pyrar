@@ -15,7 +15,7 @@ import lib.validate as validate
 from lib.log import log as log, init as log_init
 import lib.fileloader as fileloader
 import lib.policy as policy
-import lib.users as users
+import users
 import lib.mysql
 import lib.event
 from lib.event import event
@@ -126,7 +126,7 @@ class DomainName:
                 return
 
 
-def http_price_domains(domobj,years=1,which = ["create","renew"]):
+def http_price_domains(domobj,years,which):
 
     if domobj.provider is None or domobj.url is None:
         return 400, "Unsupported TLD"
@@ -141,15 +141,15 @@ def http_price_domains(domobj,years=1,which = ["create","renew"]):
     try:
         return 200, json.loads(resp.content)
     except ValueError as err:
-        log(f"{resp.status_code} === {resp.content.decode('utf8')}")
-        log(f"**** JSON FAILED TO PARSE ***** {err}")
+        log(f"{resp.status_code} === {resp.content.decode('utf8')}",gzz(czz()))
+        log(f"**** JSON FAILED TO PARSE ***** {err}",gzz(czz()))
         return 400, "Returned JSON Parse Error"
 
     return 400, "Unexpected Error"
 
 
 def check_and_parse(domobj):
-    ret, out_js = http_price_domains(domobj)
+    ret, out_js = http_price_domains(domobj,1,["create","renew"])
     if ret != 200:
         return abort(ret, out_js)
 
@@ -166,7 +166,6 @@ def check_and_parse(domobj):
 
 
 def abort(err_no, message):
-    log(f'ERROR: #{err_no} {message}')
     response = flask.jsonify({'error': message})
     response.status_code = err_no
     return response
@@ -255,7 +254,7 @@ def run_one(domain):
     ret, out_js = http_price_domains(domobj,1,["create","renew","transfer","restore"])
 
     if ret != 200:
-        log("ERROR:", ret, out_js)
+        log(f"ERROR: {ret} {out_js}",gzz(czz()))
     else:
         xml_p = parsexml.XmlParser(out_js)
         code, ret_js = xml_p.parse_check_message()

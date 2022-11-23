@@ -8,7 +8,9 @@ import os
 import json
 
 import lib.fileloader
-import lib.log
+from lib.log import log, init as log_init
+
+from inspect import currentframe as czz, getframeinfo as gzz
 
 import MySQLdb as mdb
 
@@ -48,26 +50,28 @@ def format_data(data):
 def data_set(data, items=None, joiner=","):
     """ for list of {items} in dictionary {data} create a `item=val` pair """
     the_list = items if items is not None else [item for item in data]
-    out = {
-        item: format_data(data[item] if item in data else None)
-        for item in the_list
-    }
+    out = {}
+    for item in the_list:
+        if item in data:
+            out[item] = format_data(data[item])
+        fmt = format_data(data[item] if item in data else None)
     return joiner.join([item + "=" + out[item] for item in out])
 
 
 def sql_run_one(sql):
     if cnx is None:
-        lib.log.log("MySQL not connected")
+        log("MySQL not connected",gzz(czz()))
         return False
 
     try:
         cursor = cnx.cursor()
         cursor.execute(sql)
+        lastrowid = cursor.lastrowid
         cnx.commit()
-        return True
+        return True, lastrowid
     except Exception as exc:
-        lib.log.log(exc)
-        return False
+        log(exc,gzz(czz()))
+        return False, None
 
 
 def sql_insert(table, data, items=None):
@@ -84,12 +88,9 @@ def sql_insert(table, data, items=None):
 
 
 def sql_exists(table, data, items=None):
-    sql = f"select 1 from {table} where " + data_set(data, items, " and ")
-    if (run_query(sql)):
-        res = cnx.store_result()
-        rows = [r for r in res.fetch_row(maxrows=0, how=1)]
-        return (len(rows) > 0)
-    return False
+    sql = f"select 1 from {table} where " + data_set(data, items, " and ") + " limit 1"
+    ret, __ = run_query(sql)
+    return ret and (cnx.affected_rows() > 0)
 
 
 def convert_string(data):
@@ -146,38 +147,41 @@ def connect(login):
                       charset='utf8mb4',
                       init_command='set names utf8mb4')
 
+def qry_worked(cnx):
+    res = cnx.store_result()
+    data = res.fetch_row(maxrows=0, how=1)
+    return data
+
 
 def run_query(sql):
     """ run the {sql}, reconnecting to MySQL, if necessary """
     global cnx
     try:
         cnx.query(sql)
-        return True
+        return True, qry_worked(cnx)
 
     except MySQLdb.OperationalError as exc:
         cnx.close()
         connect(my_login)
         try:
             cnx.query(sql)
-            return True
+            return True, qry_worked(cnx)
 
         except MySQLdb.OperationalError as exc:
-            lib.log.log(exc)
+            log(exc,gzz(czz()))
             cnx.close()
             cnx = None
-            return False
+            return False, None
         except MySQLdb.Error as exc:
-            lib.log.log(exc)
-            return False
+            log(exc,gzz(czz()))
+            return False, None
 
     except MySQLdb.Error as exc:
-        lib.log.log(exc)
-        return False
+        log(exc,gzz(czz()))
+        return False, None
 
 
-if __name__ == "__main__":
-    print(ashex("james"))
-
+def other_tests():
     print(
         data_set({
             "one": 1,
@@ -187,17 +191,21 @@ if __name__ == "__main__":
             "five": None
         }))
 
-    lib.log.debug = True
+
+if __name__ == "__main__":
+    log_init(debug=True)
 
     connect("webui")
 
-    if (run_query("show tables")):
+    ret, data = run_query("select * from events limit 3")
+    if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
-        res = cnx.store_result()
-        for r in res.fetch_row(maxrows=0, how=1):
-            print(">>>>", r)
+        for r in data:
+            print(">>>>", json.dumps(r,indent=4))
 
+    print(f">>>> sql exists -> 10452 ->",
+          sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
         print(f">>>> sql exists -> {e} ->",
               sql_exists("users", {"email": e}, ["email"]))
