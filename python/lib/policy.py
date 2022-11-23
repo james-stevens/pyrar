@@ -30,5 +30,5 @@ class Policy:
 
 if __name__ == "__main__":
     mine = Policy("log_python_code")
-    print(">>>>>", mine.policy("business_name", "Unk"))
-    print(">>>>>", mine.policy("log_python_code", "Unk"))
+    print(">>>TEST>>>", mine.policy("business_name", "Unk"))
+    print(">>>TEST>>>", mine.policy("log_python_code", "Unk"))

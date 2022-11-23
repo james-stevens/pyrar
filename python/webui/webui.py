@@ -40,7 +40,7 @@ def fees_one(action,years):
         }
 
 
-def xml_check_with_fees(domobj, years=1, which=["create","renew"]):
+def xml_check_with_fees(domobj, years, which):
     fees_extra = [ fees_one(name,years) for name in which ]
     return {
         "check": {
@@ -55,19 +55,7 @@ def xml_check_with_fees(domobj, years=1, which=["create","renew"]):
                 xmlns[domobj.provider]["fee"],
                 "fee:currency":
                 "USD",
-                "fee:command": [{
-                    "@name": "create",
-                    "fee:period": {
-                        "@unit": "y",
-                        "#text": str(years),
-                    }
-                }, {
-                    "@name": "renew",
-                    "fee:period": {
-                        "@unit": "y",
-                        "#text": str(years)
-                    }
-                }]
+                "fee:command": fees_extra
             }
         }
     }
@@ -138,13 +126,13 @@ class DomainName:
                 return
 
 
-def http_price_domains(domobj):
+def http_price_domains(domobj,years=1,which = ["create","renew"]):
 
     if domobj.provider is None or domobj.url is None:
         return 400, "Unsupported TLD"
 
     resp = clients[domobj.provider].post(domobj.url,
-                                         json=xml_check_with_fees(domobj, 1),
+                                         json=xml_check_with_fees(domobj, years ,which),
                                          headers=HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
@@ -264,7 +252,7 @@ def run_one(domain):
     if domobj.names is None:
         sys.exit(1)
 
-    ret, out_js = http_price_domains(domobj)
+    ret, out_js = http_price_domains(domobj,1,["create","renew","transfer","restore"])
 
     if ret != 200:
         log("ERROR:", ret, out_js)
@@ -273,7 +261,7 @@ def run_one(domain):
         code, ret_js = xml_p.parse_check_message()
         if code == 1000:
             tld_lib.multiply_values(ret_js)
-        print(">>>>>", code, json.dumps(ret_js, indent=3))
+        print(">>>TEST>>>", code, json.dumps(ret_js, indent=3))
     for client in clients:
         clients[client].close()
 

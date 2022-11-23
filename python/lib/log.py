@@ -13,7 +13,7 @@ def log(line):
     if not with_logging:
         return
     if debug:
-        print(">>>>>>", line)
+        print(">>>DEBUG>>>", line)
     else:
         if not done_init:
             init()
