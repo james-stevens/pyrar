@@ -29,15 +29,36 @@ http {
 
 	upstream wsgi_checker {
 		server unix:/run/wsgi_checker.sock;
-		}
+		}"
+
+
+if test -f ${BASE}/pems/server.pem
+	then
+		cp -a ${BASE}/pems/server.pem /run/server.pem
+		echo "
+    server {
+        listen 443 ssl;
+
+        ssl_certificate /run/server.pem;
+        ssl_certificate_key /run/server.pem;
+
+        ssl_session_cache    shared:SSL:1m;
+        ssl_session_timeout  5m;
+
+        ssl_ciphers  HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers  on;"
+	else
+		echo "
 	server {
-		listen 80;
+		listen 80;"
+	fi
+
+echo "
 		location /api {
 			proxy_pass http://wsgi_checker/api;
 			}
 		root ${BASE}/htdocs;
-		}
-"
+		}"
 
 awk '{
 	printf "\tupstream epp_%s {\n",$1

@@ -26,9 +26,7 @@ function callApi(sfx,callback,inData)
         console.log("API>>>",inData);
         }
 
-    let p = "https";
-    if (!gbl.with_https) p = "http";
-    let url = `${p}://${gbl.server}/api/v1.0/${sfx}`;
+    let url = `${window.location.origin}/api/v1.0/${sfx}`;
 
     let okResp = 200;
     let httpCmd = { headers: { }, method: 'GET' };

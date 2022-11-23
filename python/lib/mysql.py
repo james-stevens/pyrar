@@ -12,8 +12,7 @@ from lib.log import log, init as log_init
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-import MySQLdb as mdb
-
+from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
@@ -143,12 +142,12 @@ def connect(login):
             host = svr[0]
             port = int(svr[1])
 
-    cnx = mdb.connect(user=login,
-                      passwd=mysql_json[login],
+    cnx = _mysql.connect(user=login,
+                      password=mysql_json[login],
                       unix_socket=sock,
                       host=host,
                       port=port,
-                      db=mysql_json["database"],
+                      database=mysql_json["database"],
                       conv=my_conv,
                       charset='utf8mb4',
                       init_command='set names utf8mb4')

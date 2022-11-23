@@ -7,7 +7,8 @@ RUN rmdir /run
 RUN ln -s /dev/shm /run
 RUN apk add nginx curl
 
-RUN apk add python3 py3-flask py3-gunicorn jq py-pip py3-xmltodict py3-tz tzdata
+RUN apk add python3 jq py-pip
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
 RUN pip install apscheduler httpx
 
 RUN apk add sysklogd
@@ -20,6 +21,7 @@ RUN ln -s /dev/shm /var/lib/nginx/tmp
 RUN ln -s /dev/shm /var/log/nginx
 RUN ln -s /dev/shm /run/nginx
 RUN ln -fns /run/nginx.conf /etc/nginx/nginx.conf
+RUN ln -fns /run/server.pem /etc/nginx/server.pem
 RUN ln -fns /run/inittab /etc/inittab
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems

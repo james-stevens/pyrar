@@ -19,7 +19,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 
 import flask
 import lib.policy as policy
-from lib.log import log
+from lib.log import log, init as log_init
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 PROVIDERS_FILE = os.environ["BASE"] + "/etc/providers.json"
@@ -57,7 +57,7 @@ if not os.path.isfile(client_pem):
         f"Client PEM file for '{provider}' at '{client_pem}' not found")
 
 my_policy = policy.Policy()
-log.init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
+log_init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
 
 jobInterval = 0
 if "EPP_KEEPALIVE" in os.environ:
