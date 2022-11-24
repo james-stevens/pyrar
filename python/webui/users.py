@@ -12,6 +12,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 
 import lib.mysql
 import lib.validate as validate
+from lib.policy import this_policy as policy
 
 
 def session_code(user_id):
@@ -60,7 +61,7 @@ def register(data, user_agent):
                                      bcrypt.gensalt()).decode("utf-8")
 
     ret, user_id = lib.mysql.sql_insert("users", { item:data[item] for item in all_cols })
-    if not ret:
+    if ret == 1:
         return False, "Registration insert failed"
 
     ret, user_data = lib.mysql.sql_get_one("users", {"user_id": user_id})
@@ -76,8 +77,30 @@ def register(data, user_agent):
             "created_dt": None
         })
 
-    block_from_users(user_data[0])
-    return True, {"user": user_data[0], "session": ses_code}
+    block_from_users(user_data)
+    return True, {"user": user_data, "session": ses_code}
+
+
+def check_session(ses_code, user_agent):
+    key = session_key(ses_code, user_agent)
+    hexkey = lib.mysql.ashex(key)
+    session_timout = policy.policy("session_timout",60)
+    sql = f"update session_keys set amended_dt=now() where date_add(amended_dt, interval {session_timout} minute) > now() and session_key = unhex('{hexkey}')"
+
+    ret, __ = lib.mysql.sql_exec(sql)
+    if ret != 1:
+        return False, None
+
+    ret, ses_data = lib.mysql.sql_get_one("session_keys",{"session_key":key})
+    if ret != 1:
+        return False, None
+
+    ret, user_data = lib.mysql.sql_get_one("users", {"user_id": ses_data["user_id"]})
+    if ret != 1:
+        return False, None
+
+    block_from_users(user_data)
+    return True, {"user": user_data, "session": ses_code}
 
 
 if __name__ == "__main__":
@@ -87,3 +110,4 @@ if __name__ == "__main__":
     print(session_code(100))
     print(session_key("fred", "Windows"))
     lib.mysql.connect("webui")
+    print(check_session("KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A","curl/7.83.1"))

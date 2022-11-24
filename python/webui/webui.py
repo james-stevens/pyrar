@@ -12,7 +12,7 @@ import parsexml
 import lib.validate as validate
 from lib.log import log as log, init as log_init
 import lib.fileloader as fileloader
-import lib.policy as policy
+from lib.policy import this_policy as policy
 import users
 import lib.mysql
 
@@ -50,9 +50,8 @@ def xml_check_with_fees(domobj, years, which):
     }
 
 
-my_policy = policy.Policy()
-log_init(my_policy.policy("facility_python_code"),
-         my_policy.policy("log_python_code"))
+log_init(policy.policy("facility_python_code"),
+         policy.policy("log_python_code"))
 
 tld_lib = zonelib.ZoneLib()
 tld_lib.check_for_new_files()
@@ -192,7 +191,7 @@ def get_config():
     ret = {
         "providers": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
-        "policy": my_policy.data()
+        "policy": policy.data()
     }
     return flask.jsonify(ret)
 

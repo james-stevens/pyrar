@@ -9,12 +9,9 @@ WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
 
 
 class Policy:
-    def __init__(self, var=None):
+    def __init__(self):
         self.file = None
-
         self.file = fileloader.FileLoader(WEBUI_POLICY)
-        if var is not None:
-            log.with_logging = self.policy(var, True)
 
     def policy(self, name, val=None):
         our_policy = self.file.data()
@@ -26,7 +23,8 @@ class Policy:
         return self.file.data()
 
 
+this_policy = Policy()
+
 if __name__ == "__main__":
-    mine = Policy("log_python_code")
-    print(">>>TEST>>>", mine.policy("business_name", "Unk"))
-    print(">>>TEST>>>", mine.policy("log_python_code", "Unk"))
+    print(">>>TEST>>>", this_policy.policy("business_name", "Unk"))
+    print(">>>TEST>>>", this_policy.policy("log_python_code", "Unk"))

@@ -53,36 +53,37 @@ def data_set(data, joiner):
     return joiner.join([item + "=" + format_data(item,data[item]) for item in data])
 
 
-def sql_run_one(sql):
+def sql_exec(sql):
     if cnx is None:
         log("MySQL not connected", gzz(czz()))
-        return False
+        return None, None
 
     try:
         cnx.query(sql)
         lastrowid = cnx.insert_id()
+        affected_rows = cnx.affected_rows()
         cnx.store_result()
         cnx.commit()
-        return True, lastrowid
+        return affected_rows, lastrowid
     except Exception as exc:
         log(exc, gzz(czz()))
-        return False, None
+        return None, None
 
 
 def sql_insert(table, data):
-    return sql_run_one(f"insert into {table} set " + data_set(data,","))
+    return sql_exec(f"insert into {table} set " + data_set(data,","))
 
 
 def sql_exists(table, data):
     sql = f"select 1 from {table} where " + data_set(data, " and ") + " limit 1"
     ret, __ = run_query(sql)
-    return ret and (cnx.affected_rows() > 0)
+    return (ret is not None) and (cnx.affected_rows() > 0)
 
 
 def sql_get_one(table, data):
     sql = f"select * from {table} where " + data_set(data, " and ") + " limit 1"
     ret, data = run_query(sql)
-    return ret and (cnx.affected_rows() > 0), data
+    return ret and (cnx.affected_rows() > 0), data[0]
 
 
 def convert_string(data):
