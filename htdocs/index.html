@@ -82,7 +82,9 @@ function toggleRegister() {
 function bodyLoaded()
 {
 	gbl.elm = {};
-	["topSpan","searchForm","businessName"].forEach(i => { gbl.elm[i] = document.getElementById(i); } );
+	["output","topSpan","searchForm","businessName"].forEach(i => {
+		gbl.elm[i] = document.getElementById(i);
+		} );
 
 	callApi("config",(ret,data) => {
 		if (ret) {
@@ -94,8 +96,8 @@ function bodyLoaded()
 			let site_name = policy("business_name","Registrar");
 			document.title = site_name;
 			if (my_icon) {
-				changeFavicon("/"+my_icon)
-				gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/${my_icon}">&nbsp;${site_name}`;
+				changeFavicon("/icons/"+my_icon)
+				gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
 				}
 			else gbl.elm.businessName.innerHTML = site_name;
 
@@ -152,12 +154,11 @@ function one_search_line(item,block_not_avail)
 function showSearch(ret,data)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
-	let e = document.getElementById("output");
 
 	if ((!ret)&&("error" in data)) { errMsg(data.error,document.searchForm.search); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
-	e.innerHTML = "<table width=100%>" + ctx.search.result + "</table>";
+	gbl.elm.output.innerHTML = "<table width=100%>" + ctx.search.result + "</table>";
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
@@ -177,8 +178,7 @@ function buyOneName(name)
 	callApi("domain/check",(ret,data) => {
 
 		let item = data.shift();
-		let e = document.getElementById("output");
-		e.innerHTML = `<h2>Buy '${item.name}' for ${gbl.cur}${item.create}</h2>`;
+		gbl.elm.output.innerHTML = `<h2>Buy '${item.name}' for ${gbl.cur}${item.create}</h2>`;
 
 		}, { json: { "domain" : name }});
 }
@@ -229,8 +229,7 @@ function doSearch()
 
 	delete ctx.search;
 
-	let e = document.getElementById("output");
-	e.innerHTML = "";
+	gbl.elm.output.innerHTML = "";
 
 	ctx.search = {};
 	ctx.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
