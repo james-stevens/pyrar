@@ -288,9 +288,9 @@ td {
 
 /* Popup container */
 .popup {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
 }
 
 /* The actual popup (appears on top) */
@@ -338,28 +338,28 @@ td {
 .fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
 .msgPop {
-    position: absolute;
-    left: 10px;
-    top: 20px;
-    font-family:inherit;
-    font-size:16pt;
-    background: #${cols[2]};
-    text-align: center;
+	position: absolute;
+	left: 10px;
+	top: 20px;
+	font-family:inherit;
+	font-size:16pt;
+	background: #${cols[2]};
+	text-align: center;
 	color: #${cols[16]};
-    padding: 5px;
-    border-radius: 6px;
+	padding: 5px;
+	border-radius: 6px;
 	box-shadow: 5px 5px #${cols[3]};
-    }
+	}
 
 .msgPopNo {
-    visibility: hidden;
-    opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
-    }
+	visibility: hidden;
+	opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
+	}
 
 .msgPopYes {
-    visibility: visible;
-    opacity: 1; transition: opacity 0.5s linear;
-    }
+	visibility: visible;
+	opacity: 1; transition: opacity 0.5s linear;
+	}
 
 
 `;

@@ -19,45 +19,45 @@ const validations = {
 
 function callApi(sfx,callback,inData)
 {
-    document.body.style.cursor="progress";
+	document.body.style.cursor="progress";
 
-    if (debugAPI) {
-        console.log("API>>>",sfx);
-        console.log("API>>>",inData);
-        }
+	if (debugAPI) {
+		console.log("API>>>",sfx);
+		console.log("API>>>",inData);
+		}
 
-    let url = `${window.location.origin}/api/v1.0/${sfx}`;
+	let url = `${window.location.origin}/api/v1.0/${sfx}`;
 
-    let okResp = 200;
-    let httpCmd = { headers: { }, method: 'GET' };
+	let okResp = 200;
+	let httpCmd = { headers: { }, method: 'GET' };
 
-    if (inData != null) {
-        if ("method" in inData) httpCmd.method = inData.method;
-        if ("json" in inData) {
-        	httpCmd.body = JSON.stringify(inData.json);
-        	httpCmd.headers["Content-type"] = "application/json";
+	if (inData != null) {
+		if ("method" in inData) httpCmd.method = inData.method;
+		if ("json" in inData) {
+			httpCmd.body = JSON.stringify(inData.json);
+			httpCmd.headers["Content-type"] = "application/json";
 			httpCmd.method = "POST";
-        	}
-        if ("okResp" in inData) okResp = inData.okResp;
-        }
+			}
+		if ("okResp" in inData) okResp = inData.okResp;
+		}
 
-    fetch(url,httpCmd).then(response => {
-        if (debugAPI) console.log("API>>> Resp",response);
+	fetch(url,httpCmd).then(response => {
+		if (debugAPI) console.log("API>>> Resp",response);
 
-        if (response.status != okResp) {
-            response.text().then(
-                data => {
+		if (response.status != okResp) {
+			response.text().then(
+				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
-                    try { 
-                    	return callback(false,JSON.parse(data));
+					try { 
+						return callback(false,JSON.parse(data));
 					} catch {
-                        errMsg(`ERROR:1: ${data} ${response.status} ${response.statusText}`)
-                        }
-                    },
-                () => errMsg(`ERROR:2: ${response.status} ${response.statusText}`)
-                );
-            return;
-            }
+						errMsg(`ERROR:1: ${data} ${response.status} ${response.statusText}`)
+						}
+					},
+				() => errMsg(`ERROR:2: ${response.status} ${response.statusText}`)
+				);
+			return;
+			}
 		else {
 			response.text().then(data => {
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
@@ -73,43 +73,44 @@ function callApi(sfx,callback,inData)
 					}
 				});
 			}
-        })
-        .catch(err => callback(false,{"error":"Server connection error"}))
+		})
+		.catch(err => callback(false,{"error":"Server connection error"}))
 
-    document.body.style.cursor="auto";
+	document.body.style.cursor="auto";
 }
 
 
 
 function policy(name,val)
 {
-    if (!("config" in gbl)) return val;
-    if (!("policy" in gbl.config)) return val;
-    if (!(name in gbl.config.policy)) return val;
-    return gbl.config.policy[name];
+	if (!("config" in gbl)) return val;
+	if (!("policy" in gbl.config)) return val;
+	if (!(name in gbl.config.policy)) return val;
+	return gbl.config.policy[name];
 }
 
 
 
 function fromPuny(fqdn)
 {
-    if ((fqdn.substr(0,4)=="xn--")||(fqdn.indexOf(".xn--") > 0))
-        return toUnicode(fqdn);
-    return fqdn;
+	if ((fqdn.substr(0,4)=="xn--")||(fqdn.indexOf(".xn--") > 0))
+		return toUnicode(fqdn);
+	return fqdn;
 }
 
 
 
-function btn(call,txt,hlp,sz) {
-    let ex=""
-    if (sz != null) ex = `style='width: ${sz}px;'`
-    return `<span ${ex} tabindex=0 title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
+function btn(call,txt,hlp,sz) 
+{
+	let ex=""
+	if (sz != null) ex = `style='width: ${sz}px;'`
+	return `<span ${ex} tabindex=0 title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
 }
 
 
 function supported_tld(fqdn)
 {
-    if ((pos = fqdn.indexOf(".")) < 0) return false;
-    return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
+	if ((pos = fqdn.indexOf(".")) < 0) return false;
+	return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
 }
 
