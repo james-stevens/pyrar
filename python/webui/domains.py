@@ -6,7 +6,7 @@ import sys
 import json
 import httpx
 
-from zonelib import tld_lib
+from lib.providers import tld_lib
 import lib.validate as validate
 from inspect import currentframe as czz, getframeinfo as gzz
 from lib.log import log
@@ -156,7 +156,7 @@ def check_one_domain(domain):
     ret, out_js = http_price_domains(
         domobj, 1, ["create", "renew", "transfer", "restore"])
 
-    print(">>>>",ret,out_js)
+    print(">>>> REPLY",ret,out_js)
 
     if ret != 200:
         log(f"ERROR: {ret} {out_js}", gzz(czz()))
@@ -176,4 +176,4 @@ if __name__ == "__main__":
         check_one_domain(x)
     else:
         check_one_domain("tiny.for.men")
-    domain_close()
+    close_epp_sess()

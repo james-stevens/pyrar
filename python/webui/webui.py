@@ -7,7 +7,7 @@ import json
 import httpx
 import flask
 
-from zonelib import tld_lib
+from lib.providers import tld_lib
 from lib.log import log as log, init as log_init
 from lib.policy import this_policy as policy
 import users
