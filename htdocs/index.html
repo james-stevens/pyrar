@@ -1,7 +1,7 @@
 <html>
 <head>
-    <title>Python Registrar</title>
-    <meta charSet="utf-8"/>
+	<title>Python Registrar</title>
+	<meta charSet="utf-8"/>
 	<script src="/theme.js"></script>
 	<script src="/punycode.js"></script>
 	<script src="/lib.js"></script>
@@ -15,22 +15,22 @@ debugAPI = true;
 gbl = {
 	"theme": window.localStorage.getItem("theme"),
 
-    tick: "&#x2611;",
-    cross: "&#x2612;",
-    timer: "&#x23f3;",
-    bin: "&#x2702;",
-    warn: "&#x26a0;",
-    page: "&#x1F5CE;",
-    nsec: "&#x1F512;",
-    nsec3: "&#x1F510;",
-    clip: "&#x1F4CE;",
+	tick: "&#x2611;",
+	cross: "&#x2612;",
+	timer: "&#x23f3;",
+	bin: "&#x2702;",
+	warn: "&#x26a0;",
+	page: "&#x1F5CE;",
+	nsec: "&#x1F512;",
+	nsec3: "&#x1F510;",
+	clip: "&#x1F4CE;",
 
-    cur: "$",
-    cur_iso: "USD",
+	cur: "$",
+	cur_iso: "USD",
 
-    gap: "<div style='height: 7px;'></div>",
+	gap: "<div style='height: 7px;'></div>",
 
-    def_max_checks: 2
+	def_max_checks: 2
 	};
 
 ctx = {};
@@ -58,24 +58,24 @@ function changeFavicon(src) {
 
 
 function toggleLogin() {
-    var popup = document.getElementById("loginPopup");
-    popup.classList.toggle("show");
-    for(x of popup.classList)
-        if (x == "show") {
-            let e = document.formLogin.username;
-            e.focus(); e.select();
-            }
+	var popup = document.getElementById("loginPopup");
+	popup.classList.toggle("show");
+	for(x of popup.classList)
+		if (x == "show") {
+			let e = document.formLogin.username;
+			e.focus(); e.select();
+			}
 }
 
 
 function toggleRegister() {
-    var popup = document.getElementById("registerPopup");
-    popup.classList.toggle("show");
-    for(x of popup.classList)
-        if (x == "show") {
-            let e = document.formRegister.username;
-            e.focus(); e.select();
-            }
+	var popup = document.getElementById("registerPopup");
+	popup.classList.toggle("show");
+	for(x of popup.classList)
+		if (x == "show") {
+			let e = document.formRegister.username;
+			e.focus(); e.select();
+			}
 }
 
 
@@ -180,7 +180,7 @@ function buyOneName(name)
 		let e = document.getElementById("output");
 		e.innerHTML = `<h2>Buy '${item.name}' for ${gbl.cur}${item.create}</h2>`;
 
-		}, { json: { "domain" : name }}); 
+		}, { json: { "domain" : name }});
 }
 
 
@@ -221,24 +221,24 @@ function multiSearch(srch,not_me_tld)
 
 function doSearch()
 {
-    function do_end() {
+	function do_end() {
 		f.search.focus();
 		f.search.select();
 		return false;
-    	}
+		}
 
-    delete ctx.search;
+	delete ctx.search;
 
 	let e = document.getElementById("output");
 	e.innerHTML = "";
 
-    ctx.search = {};
+	ctx.search = {};
 	ctx.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
 
-    f = document.searchForm;
-    let srch = toASCII(f.search.value);
+	f = document.searchForm;
+	let srch = toASCII(f.search.value);
 
-    if (srch.indexOf(".") >= 0) {
+	if (srch.indexOf(".") >= 0) {
 		if (!fqdnCheck.test(srch)) {
 			errMsg("Invald domain name",document.searchForm.search);
 			return do_end(); }
@@ -264,19 +264,19 @@ function doSearch()
 
 function unerrMsg()
 {
-    let m = document.getElementById("myMsgPop");
-    let t1 = m.innerHTML;
-    let t2 = ctx.lastErrMsg;
-    if (t2 == null) t2 = "";
-    if (t1 == t2) m.className = "msgPop msgPopNo";
-    delete ctx.lastErrMsg;
+	let m = document.getElementById("myMsgPop");
+	let t1 = m.innerHTML;
+	let t2 = ctx.lastErrMsg;
+	if (t2 == null) t2 = "";
+	if (t1 == t2) m.className = "msgPop msgPopNo";
+	delete ctx.lastErrMsg;
 }
 
 
 
 function errMsg(txt,elem,min_width)
 {
-    let m = document.getElementById("myMsgPop");
+	let m = document.getElementById("myMsgPop");
 
 	if (elem) {
 		let box = elem.getBoundingClientRect();
@@ -288,10 +288,10 @@ function errMsg(txt,elem,min_width)
 		console.log(box);
 		}
 
-    m.className = 'msgPop msgPopYes';
-    m.innerHTML = `${gbl.warn} ${txt}`;
-    ctx.lastErrMsg = m.innerHTML;
-    setTimeout(unerrMsg,2500);
+	m.className = 'msgPop msgPopYes';
+	m.innerHTML = `${gbl.warn} ${txt}`;
+	ctx.lastErrMsg = m.innerHTML;
+	setTimeout(unerrMsg,2500);
 }
 
 
