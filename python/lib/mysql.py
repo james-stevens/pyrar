@@ -15,6 +15,7 @@ from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
+DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
 
 cnx = None
 my_login = None
@@ -30,8 +31,11 @@ def ashex(line):
     return ret
 
 
-def format_data(data):
+def format_data(item, data):
     """ convert {data} to SQL string """
+    if item in DATE_FIELDS:
+        return "now()"
+
     if data is None:
         return "NULL"
 
@@ -44,15 +48,9 @@ def format_data(data):
     return "unhex('" + ashex(data) + "')"
 
 
-def data_set(data, items=None, joiner=","):
-    """ for list of {items} in dictionary {data} create a `item=val` pair """
-    the_list = items if items is not None else [item for item in data]
-    out = {}
-    for item in the_list:
-        if item in data:
-            out[item] = format_data(data[item])
-        fmt = format_data(data[item] if item in data else None)
-    return joiner.join([item + "=" + out[item] for item in out])
+def data_set(data, joiner):
+    """ create list of `col=val` from dict {data}, joined by {joiner} """
+    return joiner.join([item + "=" + format_data(item,data[item]) for item in data])
 
 
 def sql_run_one(sql):
@@ -71,29 +69,18 @@ def sql_run_one(sql):
         return False, None
 
 
-def sql_insert(table, data, items=None):
-    extra = ""
-    chk = items if items is not None else data
-    for item in ["when_dt", "amended_dt", "created_dt", "deleted_dt"]:
-        if item in chk:
-            extra = extra + "," + item + "=now()"
-        if item in data:
-            del data[item]
-
-    return sql_run_one(f"insert into {table} set " + data_set(data, items) +
-                       extra)
+def sql_insert(table, data):
+    return sql_run_one(f"insert into {table} set " + data_set(data,","))
 
 
-def sql_exists(table, data, items=None):
-    sql = f"select 1 from {table} where " + data_set(data, items,
-                                                     " and ") + " limit 1"
+def sql_exists(table, data):
+    sql = f"select 1 from {table} where " + data_set(data, " and ") + " limit 1"
     ret, __ = run_query(sql)
     return ret and (cnx.affected_rows() > 0)
 
 
-def sql_get_one(table, data, items=None):
-    sql = f"select * from {table} where " + data_set(data, items,
-                                                     " and ") + " limit 1"
+def sql_get_one(table, data):
+    sql = f"select * from {table} where " + data_set(data, " and ") + " limit 1"
     ret, data = run_query(sql)
     return ret and (cnx.affected_rows() > 0), data
 
@@ -214,7 +201,7 @@ if __name__ == "__main__":
           sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
         print(f">>>> sql exists -> {e} ->",
-              sql_exists("users", {"email": e}, ["email"]))
+              sql_exists("users", {"email": e} ))
 
     ret, data = sql_get_one("events", {"event_id": 10452})
     print(">>>>>", ret, json.dumps(data, indent=4))

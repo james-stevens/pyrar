@@ -47,24 +47,25 @@ def register(data, user_agent):
     if not validate.is_valid_email(data["email"]):
         return False, "Invalid email address"
 
-    if lib.mysql.sql_exists("users", data, ["email"]):
+    if lib.mysql.sql_exists("users", {"email":data["email"]}):
         return False, "EMail address already in use"
 
     if "name" not in data:
         data["name"] = data["email"].split("@")[0]
 
     all_cols = required + ["name", "created_dt", "amended_dt"]
+    data.update({ col:None for col in all_cols if col not in data })
 
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
 
-    ret, user_id = lib.mysql.sql_insert("users", data, all_cols)
+    ret, user_id = lib.mysql.sql_insert("users", { item:data[item] for item in all_cols })
     if not ret:
-        return False, "Registration failed"
+        return False, "Registration insert failed"
 
     ret, user_data = lib.mysql.sql_get_one("users", {"user_id": user_id})
     if not ret:
-        return False, "Registration failed"
+        return False, "Registration retrieve failed"
 
     ses_code = session_code(user_id)
     lib.mysql.sql_insert(
