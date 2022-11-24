@@ -1,13 +1,19 @@
 #! /usr/bin/python3
-
-import sys
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
 import os
+import argparse
 
 from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
-with_verbose = True
+parser = argparse.ArgumentParser(description='Command line SQL runner')
+parser.add_argument("-o", '--output-long', action="store_true")
+parser.add_argument("sql",nargs='+')
+args = parser.parse_args()
+
 
 def convert_string(data):
     if isinstance(data, bytes):
@@ -24,7 +30,7 @@ my_conv[FIELD_TYPE.VARCHAR] = convert_string
 my_conv[FIELD_TYPE.CHAR] = convert_string
 my_conv[FIELD_TYPE.STRING] = convert_string
 my_conv[FIELD_TYPE.VAR_STRING] = convert_string
-my_conv[FIELD_TYPE.DATETIME] = convert_datetime
+my_conv[FIELD_TYPE.DATETIME] = convert_string
 
 
 def mysql_connect():
@@ -44,6 +50,7 @@ def mysql_connect():
                 host = svr[0]
                 port = int(svr[1])
 
+    # pylint: disable=c-extension-no-member
     return _mysql.connect(
         user=os.environ["MYSQL_USERNAME"],
         password=os.environ["MYSQL_PASSWORD"],
@@ -57,36 +64,37 @@ def mysql_connect():
     )
 
 
-def max_width(row):
+def max_width(this_row):
     max_len = 0
-    for r in row:
-        l = len(r)
-        if l > max_len:
-            max_len = l
+    for item in this_row:
+        this_len = len(item)
+        if this_len > max_len:
+            max_len = this_len
     return max_len
 
 
-def verbose_output(row):
-    wdth = max_width(row)
-    for r in row:
-        print(f"{r:{wdth}} = {row[r]}")
+def verbose_output(this_row):
+    wdth = max_width(this_row)
+    for item in this_row:
+        print(f"{item:{wdth}} = {this_row[item]}")
     print("")
 
 
 cnx = mysql_connect()
 
-del sys.argv[0]
-for sql in sys.argv:
+print(">>>>>",args.sql)
+for sql in args.sql:
+    print(">>>>",sql)
     cnx.query(sql)
     res = cnx.store_result()
-    first_row = True
+    FIRST_ROW = True  # pylint incorrectly thinks this is a Constant
     for row in res.fetch_row(maxrows=0, how=1):
-        if with_verbose:
+        if args.output_long:
             verbose_output(row)
         else:
-            if first_row:
+            if FIRST_ROW:
                 print("|".join([str(i) for i in row]))
-                first_row = False
+                FIRST_ROW = False
             print("|".join([str(row[i]) for i in row]))
     cnx.commit()
 

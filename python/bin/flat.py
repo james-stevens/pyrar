@@ -1,33 +1,28 @@
 #! /usr/bin/python3
-
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+""" display JSON files as flat text For processing in shall scripts """
 import sys
 import json
 import collections
 
 
-class flatDict:
-    def __init__(self, js):
-        self.flat = {}
-        self.dispatch([], js)
-
-    def dispatch(self, pfx, js):
-        if isinstance(js, dict) or isinstance(js, collections.OrderedDict):
-            for itm in js:
-                self.dispatch(pfx + [itm], js[itm])
-        elif isinstance(js, list):
-            i = 0
-            for itm in js:
-                self.dispatch(pfx + ["[{0:02x}]".format(i := i + 1)], itm)
-        else:
-            s = ".".join(pfx)
-            self.flat[s] = js
+def flatten(pfx, inp_js):
+    """ recursive function to display {inp_js} JSON in a flat format """
+    if isinstance(inp_js, (dict, collections.OrderedDict)):
+        for itm in inp_js:
+            flatten(pfx + [itm], inp_js[itm])
+    elif isinstance(inp_js, list):
+        i = 0
+        for itm in inp_js:
+            flatten(pfx + [f"[{(i := i + 1):02x}]"], itm)
+    else:
+        print(f"{'.'.join(pfx)}={inp_js}")
 
 
-del (sys.argv[0])
+del sys.argv[0]
 for file in sys.argv:
-    with open(file, "r") as fd:
-        inpjs = json.load(fd)
-
-    flat = flatDict(inpjs).flat
-    for item in flat:
-        print(f"{item}={flat[item]}")
+    with open(file, "r", encoding='UTF-8') as fd:
+        read_js = json.load(fd)
+        flatten([], read_js)

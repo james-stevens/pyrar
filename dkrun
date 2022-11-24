@@ -1,6 +1,7 @@
 #! /bin/sh
 
 docker run \
+	--env-file ./env \
 	-v /opt/github/pyrar/etc:/opt/pyrar/etc \
 	-v /opt/github/pyrar/htdocs:/opt/pyrar/htdocs \
 	-p 10000:10000 \
