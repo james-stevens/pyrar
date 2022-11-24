@@ -48,7 +48,7 @@ function callApi(sfx,callback,inData)
 			response.text().then(
 				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
-					try { 
+					try {
 						return callback(false,JSON.parse(data));
 					} catch {
 						errMsg(`ERROR:1: ${data} ${response.status} ${response.statusText}`)
@@ -100,7 +100,7 @@ function fromPuny(fqdn)
 
 
 
-function btn(call,txt,hlp,sz) 
+function btn(call,txt,hlp,sz)
 {
 	let ex=""
 	if (sz != null) ex = `style='width: ${sz}px;'`
