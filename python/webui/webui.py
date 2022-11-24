@@ -1,8 +1,6 @@
 #! /usr/bin/python3
-#######################################################
-#    (c) Copyright 2022-2022 - All Rights Reserved    #
-#######################################################
-
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
 import os
 import sys
 import json
@@ -17,12 +15,9 @@ import lib.fileloader as fileloader
 import lib.policy as policy
 import users
 import lib.mysql
-import lib.event
-from lib.event import event
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-http_heads = {}
 
 HEADER = {
     'Access-Control-Allow-Origin': '*',
@@ -175,16 +170,28 @@ def abort(err_no, message):
 application = flask.Flask("EPP Registrar")
 
 
-def start_req():
-    global http_heads
-    http_heads = dict(flask.request.headers)
-    tld_lib.check_for_new_files()
-    lib.event.http_start("webui", flask.request.remote_addr, 99)
+class WebuiReq:
+    def __init__(self):
+        tld_lib.check_for_new_files()
+        self.base_event = {}
+        self.base_event["from_where"] = "webui"
+        self.base_event["user_id"] = 99
+        self.base_event["who_did_it"] = flask.request.remote_addr
+        self.headers = dict(flask.request.headers)
+
+    def event(self, data, frameinfo):
+        print(">>>>",data,frameinfo)
+        data["program"] = frameinfo.filename.split("/")[-1]
+        data["function"] = frameinfo.function
+        data["line_num"] = frameinfo.lineno
+        data["when_dt"] = None
+        data.update(self.base_event)
+        lib.mysql.sql_insert("events", data)
 
 
 @application.route('/api/v1.0/config', methods=['GET'])
 def get_config():
-    start_req()
+    this_req = WebuiReq()
     ret = {
         "providers": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
@@ -195,19 +202,20 @@ def get_config():
 
 @application.route('/api/v1.0/zones', methods=['GET'])
 def get_supported_zones():
-    start_req()
+    this_req = WebuiReq()
     return flask.jsonify(tld_lib.return_zone_list())
 
 
 @application.route('/api/v1.0/hello', methods=['GET'])
 def hello():
-    start_req()
+    this_req = WebuiReq()
+    this_req.event({"notes":"Hello World"},gzz(czz()))
     return "Hello World\n"
 
 
 @application.route('/api/v1.0/users/register', methods=['POST'])
 def users_register():
-    start_req()
+    this_req = WebuiReq()
     if flask.request.json is None:
         return abort(400, "No JSON posted")
 
@@ -221,7 +229,7 @@ def users_register():
 
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
-    start_req()
+    this_req = WebuiReq()
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
         if not isinstance(dom, str) and not isinstance(dom, list):

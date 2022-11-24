@@ -1,8 +1,6 @@
 #! /usr/bin/python3
-#######################################################
-#    (c) Copyright 2022-2022 - All Rights Reserved    #
-#######################################################
-
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
 import sys
 import os
 import json
@@ -63,9 +61,9 @@ def sql_run_one(sql):
         return False
 
     try:
-        cursor = cnx.cursor()
-        cursor.execute(sql)
-        lastrowid = cursor.lastrowid
+        cnx.query(sql)
+        lastrowid = cnx.insert_id()
+        cnx.store_result()
         cnx.commit()
         return True, lastrowid
     except Exception as exc:

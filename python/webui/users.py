@@ -1,8 +1,6 @@
 #! /usr/bin/python3
-#######################################################
-#    (c) Copyright 2022-2022 - All Rights Reserved    #
-#######################################################
-
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
 import secrets
 import base64
 import hashlib
@@ -13,7 +11,6 @@ import os
 from inspect import currentframe as czz, getframeinfo as gzz
 
 import lib.mysql
-from lib.event import event
 import lib.validate as validate
 
 
@@ -76,10 +73,6 @@ def register(data, user_agent):
     return True, {"user": user_data, "session": ses_code}
 
 
-def test_fn():
-    event({"notes": "some notes"}, gzz(czz()))
-
-
 if __name__ == "__main__":
     lib.log.debug = True
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
@@ -87,4 +80,3 @@ if __name__ == "__main__":
     print(session_code(100))
     print(session_key("fred", "Windows"))
     lib.mysql.connect("webui")
-    test_fn()
