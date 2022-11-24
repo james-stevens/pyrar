@@ -30,6 +30,11 @@ def session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
 
+def block_from_users(data):
+    for block in ["password","payment_data"]:
+        del data[block]
+
+
 def register(data, user_agent):
     if data is None:
         return False, "Data missing"
@@ -70,7 +75,8 @@ def register(data, user_agent):
             "created_dt": None
         })
 
-    return True, {"user": user_data, "session": ses_code}
+    block_from_users(user_data[0])
+    return True, {"user": user_data[0], "session": ses_code}
 
 
 if __name__ == "__main__":

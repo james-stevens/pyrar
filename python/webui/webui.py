@@ -18,10 +18,7 @@ import lib.mysql
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-HEADER = {
-    'Content-type': 'application/json',
-    'Accept': 'application/json'
-}
+HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 
 def fees_one(action, years):
@@ -173,10 +170,12 @@ class WebuiReq:
     def __init__(self):
         tld_lib.check_for_new_files()
         self.base_event = {}
-        self.base_event["from_where"] = "webui"
-        self.base_event["user_id"] = 99
-        self.base_event["who_did_it"] = flask.request.remote_addr
+        self.base_event["from_where"] = flask.request.remote_addr
+        self.base_event["user_id"] = 0
+        self.base_event["who_did_it"] = "webui"
         self.headers = dict(flask.request.headers)
+        self.user_agent = self.headers[
+            "User-Agent"] if "User-Agent" in self.headers else "Unknown"
 
     def event(self, data, frameinfo):
         data["program"] = frameinfo.filename.split("/")[-1]
@@ -207,7 +206,6 @@ def get_supported_zones():
 @application.route('/api/v1.0/hello', methods=['GET'])
 def hello():
     this_req = WebuiReq()
-    this_req.event({"notes": "Hello World"}, gzz(czz()))
     return "Hello World\n"
 
 
@@ -217,11 +215,19 @@ def users_register():
     if flask.request.json is None:
         return abort(400, "No JSON posted")
 
-    user_agent = http_heads[
-        "User-Agent"] if "User-Agent" in http_heads else "Unknown"
-    ret, val = users.register(flask.request.json, user_agent)
+    ret, val = users.register(flask.request.json, this_req.user_agent)
     if not ret:
         return abort(400, val)
+
+    user_id = val["user"]["user_id"]
+    this_req.base_event["user_id"] = user_id
+    this_req.event(
+        {
+            "user_id": user_id,
+            "notes": "User registered",
+            "event_type": "new_user"
+        }, gzz(czz()))
+
     return flask.jsonify(val)
 
 
