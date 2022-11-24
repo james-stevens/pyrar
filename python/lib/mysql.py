@@ -70,6 +70,10 @@ def sql_exec(sql):
         return None, None
 
 
+def sql_delete_one(table, data):
+    return sql_exec(f"delete from {table} where " + data_set(data," and ") + " limit 1")
+
+
 def sql_insert(table, data):
     return sql_exec(f"insert into {table} set " + data_set(data,","))
 

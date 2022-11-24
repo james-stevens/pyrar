@@ -41,9 +41,12 @@ class WebuiReq:
         self.headers = dict(flask.request.headers)
         self.user_agent = self.headers[
             "User-Agent"] if "User-Agent" in self.headers else "Unknown"
-        if "X-PyRar-Sess" in self.headers:
+
+        if "X-Pyrar-Sess" in self.headers:
             self.logged_in, self.user_data = users.check_session(
-                self.headers["X-PyRar-Sess"], self.user_agent)
+                self.headers["X-Pyrar-Sess"], self.user_agent)
+            if self.logged_in:
+                print(">>>> LOGGED-IN",self.user_data["user"])
 
     def event(self, data, frameinfo):
         data["program"] = frameinfo.filename.split("/")[-1]
