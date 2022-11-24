@@ -18,9 +18,7 @@ import lib.mysql
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-
 HEADER = {
-    'Access-Control-Allow-Origin': '*',
     'Content-type': 'application/json',
     'Accept': 'application/json'
 }
@@ -171,6 +169,7 @@ application = flask.Flask("EPP Registrar")
 
 
 class WebuiReq:
+    """ data unique to each request to keep different users data separate """
     def __init__(self):
         tld_lib.check_for_new_files()
         self.base_event = {}
@@ -180,7 +179,6 @@ class WebuiReq:
         self.headers = dict(flask.request.headers)
 
     def event(self, data, frameinfo):
-        print(">>>>",data,frameinfo)
         data["program"] = frameinfo.filename.split("/")[-1]
         data["function"] = frameinfo.function
         data["line_num"] = frameinfo.lineno
@@ -209,7 +207,7 @@ def get_supported_zones():
 @application.route('/api/v1.0/hello', methods=['GET'])
 def hello():
     this_req = WebuiReq()
-    this_req.event({"notes":"Hello World"},gzz(czz()))
+    this_req.event({"notes": "Hello World"}, gzz(czz()))
     return "Hello World\n"
 
 
