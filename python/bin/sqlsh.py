@@ -2,18 +2,18 @@
 
 import sys
 import os
-import json
 
-import MySQLdb as mdb
-
+from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
+with_verbose = True
 
 def convert_string(data):
     if isinstance(data, bytes):
         return data.decode("utf8")
     return data
+
 
 def convert_datetime(data):
     return data
@@ -44,50 +44,50 @@ def mysql_connect():
                 host = svr[0]
                 port = int(svr[1])
 
-    return mdb.connect(
+    return _mysql.connect(
         user=os.environ["MYSQL_USERNAME"],
-        passwd=os.environ["MYSQL_PASSWORD"],
+        password=os.environ["MYSQL_PASSWORD"],
         unix_socket=sock,
         host=host,
         port=port,
-        db=os.environ["MYSQL_DATABASE"],
+        database=os.environ["MYSQL_DATABASE"],
         conv=my_conv,
         charset='utf8mb4',
         init_command='set names utf8mb4',
     )
 
-def max_width(titles):
-    max=0
-    for t in titles:
-        l = len(t)
-        if l > max:
-            max = l
-    return max
+
+def max_width(row):
+    max_len = 0
+    for r in row:
+        l = len(r)
+        if l > max_len:
+            max_len = l
+    return max_len
 
 
-def verbose_output(cursor):
-    titles = [ t[0] for t in cursor.description ]
-    wdth = max_width(titles)
-    for r in cursor:
-        x=0;
-        for c in r:
-            print(f"{titles[x]:{wdth}} = {c}")
-            x += 1
-        print("")
-
+def verbose_output(row):
+    wdth = max_width(row)
+    for r in row:
+        print(f"{r:{wdth}} = {row[r]}")
+    print("")
 
 
 cnx = mysql_connect()
 
 del sys.argv[0]
 for sql in sys.argv:
-    cursor = cnx.cursor()
-    cursor.execute(sql)
-    res = cursor.fetchall()
-    print("|".join([ t[0] for t in cursor.description ]))
-    for r in res:
-        print("|".join([ str(i) for i in r]))
+    cnx.query(sql)
+    res = cnx.store_result()
+    first_row = True
+    for row in res.fetch_row(maxrows=0, how=1):
+        if with_verbose:
+            verbose_output(row)
+        else:
+            if first_row:
+                print("|".join([str(i) for i in row]))
+                first_row = False
+            print("|".join([str(row[i]) for i in row]))
     cnx.commit()
-
 
 cnx.close()

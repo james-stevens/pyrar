@@ -59,7 +59,7 @@ def data_set(data, items=None, joiner=","):
 
 def sql_run_one(sql):
     if cnx is None:
-        log("MySQL not connected",gzz(czz()))
+        log("MySQL not connected", gzz(czz()))
         return False
 
     try:
@@ -69,7 +69,7 @@ def sql_run_one(sql):
         cnx.commit()
         return True, lastrowid
     except Exception as exc:
-        log(exc,gzz(czz()))
+        log(exc, gzz(czz()))
         return False, None
 
 
@@ -87,13 +87,15 @@ def sql_insert(table, data, items=None):
 
 
 def sql_exists(table, data, items=None):
-    sql = f"select 1 from {table} where " + data_set(data, items, " and ") + " limit 1"
+    sql = f"select 1 from {table} where " + data_set(data, items,
+                                                     " and ") + " limit 1"
     ret, __ = run_query(sql)
     return ret and (cnx.affected_rows() > 0)
 
 
 def sql_get_one(table, data, items=None):
-    sql = f"select * from {table} where " + data_set(data, items, " and ") + " limit 1"
+    sql = f"select * from {table} where " + data_set(data, items,
+                                                     " and ") + " limit 1"
     ret, data = run_query(sql)
     return ret and (cnx.affected_rows() > 0), data
 
@@ -143,14 +145,15 @@ def connect(login):
             port = int(svr[1])
 
     cnx = _mysql.connect(user=login,
-                      password=mysql_json[login],
-                      unix_socket=sock,
-                      host=host,
-                      port=port,
-                      database=mysql_json["database"],
-                      conv=my_conv,
-                      charset='utf8mb4',
-                      init_command='set names utf8mb4')
+                         password=mysql_json[login],
+                         unix_socket=sock,
+                         host=host,
+                         port=port,
+                         database=mysql_json["database"],
+                         conv=my_conv,
+                         charset='utf8mb4',
+                         init_command='set names utf8mb4')
+
 
 def qry_worked(cnx):
     res = cnx.store_result()
@@ -173,16 +176,16 @@ def run_query(sql):
             return True, qry_worked(cnx)
 
         except MySQLdb.OperationalError as exc:
-            log(exc,gzz(czz()))
+            log(exc, gzz(czz()))
             cnx.close()
             cnx = None
             return False, None
         except MySQLdb.Error as exc:
-            log(exc,gzz(czz()))
+            log(exc, gzz(czz()))
             return False, None
 
     except MySQLdb.Error as exc:
-        log(exc,gzz(czz()))
+        log(exc, gzz(czz()))
         return False, None
 
 
@@ -207,7 +210,7 @@ if __name__ == "__main__":
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
         for r in data:
-            print(">>>>", json.dumps(r,indent=4))
+            print(">>>>", json.dumps(r, indent=4))
 
     print(f">>>> sql exists -> 10452 ->",
           sql_exists("events", {"event_id": 10452}))
@@ -216,6 +219,6 @@ if __name__ == "__main__":
               sql_exists("users", {"email": e}, ["email"]))
 
     ret, data = sql_get_one("events", {"event_id": 10452})
-    print(">>>>>",ret,json.dumps(data,indent=4))
+    print(">>>>>", ret, json.dumps(data, indent=4))
 
     cnx.close()

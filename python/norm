@@ -1,0 +1,14 @@
+#! /bin/sh
+
+f=$(mktemp)
+for file in $(find -type f -name '*.py')
+do
+	python3 -m yapf ${file} > ${f}
+	if test -s ${f} && ! cmp ${file} ${f}
+		then
+			echo "-> ${file}"
+			cat ${f} > ${file}
+			python3 -m pycodestyle ${file}
+		fi
+	rm -f ${f}
+done

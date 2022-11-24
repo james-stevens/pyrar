@@ -33,7 +33,7 @@ RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 COPY python /opt/pyrar/python/
 RUN python3 -m compileall /opt/pyrar/python/
 
-RUN ln -fns /opt/pyrar/python/bin/pysqlsh /usr/bin/sqlsh
+RUN ln -fns /opt/pyrar/python/bin/sqlsh.py /usr/bin/sqlsh
 RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
 
 COPY bin /usr/local/bin/

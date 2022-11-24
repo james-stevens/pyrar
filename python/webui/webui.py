@@ -30,18 +30,19 @@ HEADER = {
     'Accept': 'application/json'
 }
 
-def fees_one(action,years):
+
+def fees_one(action, years):
     return {
         "@name": action,
         "fee:period": {
             "@unit": "y",
             "#text": str(years),
-            }
         }
+    }
 
 
 def xml_check_with_fees(domobj, years, which):
-    fees_extra = [ fees_one(name,years) for name in which ]
+    fees_extra = [fees_one(name, years) for name in which]
     return {
         "check": {
             "domain:check": {
@@ -51,10 +52,8 @@ def xml_check_with_fees(domobj, years, which):
         },
         "extension": {
             "fee:check": {
-                "@xmlns:fee":
-                xmlns[domobj.provider]["fee"],
-                "fee:currency":
-                "USD",
+                "@xmlns:fee": xmlns[domobj.provider]["fee"],
+                "fee:currency": "USD",
                 "fee:command": fees_extra
             }
         }
@@ -126,13 +125,14 @@ class DomainName:
                 return
 
 
-def http_price_domains(domobj,years,which):
+def http_price_domains(domobj, years, which):
 
     if domobj.provider is None or domobj.url is None:
         return 400, "Unsupported TLD"
 
     resp = clients[domobj.provider].post(domobj.url,
-                                         json=xml_check_with_fees(domobj, years ,which),
+                                         json=xml_check_with_fees(
+                                             domobj, years, which),
                                          headers=HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
@@ -141,15 +141,16 @@ def http_price_domains(domobj,years,which):
     try:
         return 200, json.loads(resp.content)
     except ValueError as err:
-        log(f"{resp.status_code} === {resp.content.decode('utf8')}",gzz(czz()))
-        log(f"**** JSON FAILED TO PARSE ***** {err}",gzz(czz()))
+        log(f"{resp.status_code} === {resp.content.decode('utf8')}",
+            gzz(czz()))
+        log(f"**** JSON FAILED TO PARSE ***** {err}", gzz(czz()))
         return 400, "Returned JSON Parse Error"
 
     return 400, "Unexpected Error"
 
 
 def check_and_parse(domobj):
-    ret, out_js = http_price_domains(domobj,1,["create","renew"])
+    ret, out_js = http_price_domains(domobj, 1, ["create", "renew"])
     if ret != 200:
         return abort(ret, out_js)
 
@@ -251,10 +252,11 @@ def run_one(domain):
     if domobj.names is None:
         sys.exit(1)
 
-    ret, out_js = http_price_domains(domobj,1,["create","renew","transfer","restore"])
+    ret, out_js = http_price_domains(
+        domobj, 1, ["create", "renew", "transfer", "restore"])
 
     if ret != 200:
-        log(f"ERROR: {ret} {out_js}",gzz(czz()))
+        log(f"ERROR: {ret} {out_js}", gzz(czz()))
     else:
         xml_p = parsexml.XmlParser(out_js)
         code, ret_js = xml_p.parse_check_message()

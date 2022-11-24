@@ -10,11 +10,12 @@ hold_debug = False
 hold_with_logging = True
 
 
-def log(line, where = None):
+def log(line, where=None):
     if hold_debug:
-        txt=""
+        txt = ""
         if where is not None:
-        	txt = "["+where.filename.split("/")[-1]+":"+str(where.lineno)+"]"
+            txt = "[" + where.filename.split("/")[-1] + ":" + str(
+                where.lineno) + "]"
         print(f">>>SYSLOG{txt}>>>", line)
     else:
         if not done_init:
