@@ -32,7 +32,7 @@ def session_key(session_code, user_agent):
 
 
 def block_from_users(data):
-    for block in ["password","payment_data"]:
+    for block in ["password", "payment_data"]:
         del data[block]
 
 
@@ -48,19 +48,21 @@ def register(data, user_agent):
     if not validate.is_valid_email(data["email"]):
         return False, "Invalid email address"
 
-    if lib.mysql.sql_exists("users", {"email":data["email"]}):
+    if lib.mysql.sql_exists("users", {"email": data["email"]}):
         return False, "EMail address already in use"
 
     if "name" not in data:
         data["name"] = data["email"].split("@")[0]
 
     all_cols = required + ["name", "created_dt", "amended_dt"]
-    data.update({ col:None for col in all_cols if col not in data })
+    data.update({col: None for col in all_cols if col not in data})
 
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
 
-    ret, user_id = lib.mysql.sql_insert("users", { item:data[item] for item in all_cols })
+    ret, user_id = lib.mysql.sql_insert(
+        "users", {item: data[item]
+                  for item in all_cols})
     if ret == 1:
         return False, "Registration insert failed"
 
@@ -84,18 +86,20 @@ def register(data, user_agent):
 def check_session(ses_code, user_agent):
     key = session_key(ses_code, user_agent)
     hexkey = lib.mysql.ashex(key)
-    session_timout = policy.policy("session_timout",60)
-    sql = f"update session_keys set amended_dt=now() where date_add(amended_dt, interval {session_timout} minute) > now() and session_key = unhex('{hexkey}')"
+    session_timeout = policy.policy("session_timeout", 60)
+    sql = "update session_keys set amended_dt=now() where date_add(amended_dt, interval "
+    sql += f"{session_timeout} minute) > now() and session_key = unhex('{hexkey}')"
 
     ret, __ = lib.mysql.sql_exec(sql)
     if ret != 1:
         return False, None
 
-    ret, ses_data = lib.mysql.sql_get_one("session_keys",{"session_key":key})
+    ret, ses_data = lib.mysql.sql_get_one("session_keys", {"session_key": key})
     if ret != 1:
         return False, None
 
-    ret, user_data = lib.mysql.sql_get_one("users", {"user_id": ses_data["user_id"]})
+    ret, user_data = lib.mysql.sql_get_one("users",
+                                           {"user_id": ses_data["user_id"]})
     if ret != 1:
         return False, None
 
@@ -110,4 +114,7 @@ if __name__ == "__main__":
     print(session_code(100))
     print(session_key("fred", "Windows"))
     lib.mysql.connect("webui")
-    print(check_session("KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A","curl/7.83.1"))
+    print(
+        check_session(
+            "KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A",
+            "curl/7.83.1"))

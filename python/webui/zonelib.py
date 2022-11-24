@@ -234,12 +234,14 @@ class ZoneLib:
         return ret_xmlns
 
 
+tld_lib = ZoneLib()
+
+
 if __name__ == "__main__":
-    my_zone_lib = ZoneLib()
-    # print(my_zone_lib.zone_file.json)
-    print("ZONE_DATA", json.dumps(my_zone_lib.zone_data, indent=3))
-    print("ZONE_LIST", json.dumps(my_zone_lib.zone_list, indent=3))
-    print("ZONE_PRIORITY", json.dumps(my_zone_lib.zone_priority, indent=3))
-    print("PORTS", json.dumps(my_zone_lib.ports, indent=3))
-    # print(json.dumps(my_zone_lib.return_zone_list(), indent=3))
-    # print(json.dumps(my_zone_lib.make_xmlns(), indent=3))
+    # print(tld_lib.zone_file.json)
+    print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
+    print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
+    print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
+    print("PORTS", json.dumps(tld_lib.ports, indent=3))
+    # print(json.dumps(tld_lib.return_zone_list(), indent=3))
+    # print(json.dumps(tld_lib.make_xmlns(), indent=3))
