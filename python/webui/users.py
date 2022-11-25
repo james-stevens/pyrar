@@ -4,18 +4,19 @@
 import secrets
 import base64
 import hashlib
-import bcrypt
 import time
 import os
-
 from inspect import currentframe as czz, getframeinfo as gzz
+import bcrypt
 
 import lib.mysql
-import lib.validate as validate
+from lib import validate
 from lib.policy import this_policy as policy
+from lib.log import log, debug, init as log_init
 
+USER_REQUIRED = ["email", "password"]
 
-def session_code(user_id):
+def make_session_code(user_id):
     hsh = hashlib.sha512()
     hsh.update(secrets.token_bytes(500))
     hsh.update(str(user_id).encode("utf-8"))
@@ -24,7 +25,7 @@ def session_code(user_id):
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
 
-def session_key(session_code, user_agent):
+def make_session_key(session_code, user_agent):
     hsh = hashlib.sha512()
     hsh.update(session_code.encode("utf-8"))
     hsh.update(user_agent.encode("utf-8"))
@@ -36,13 +37,14 @@ def remove_from_users(data):
         del data[block]
 
 
-def start_session(user_data,user_agent):
+def start_session(user_data, user_agent):
     user_id = user_data['user_id']
-    lib.mysql.sql_exec(f"delete from session_keys where user_id = {user_id}")
-    ses_code = session_code(user_id)
+    lib.mysql.sql_delete_one("session_keys", {"user_id": user_id})
+
+    ses_code = make_session_code(user_id)
     lib.mysql.sql_insert(
         "session_keys", {
-            "session_key": session_key(ses_code, user_agent),
+            "session_key": make_session_key(ses_code, user_agent),
             "user_id": user_id,
             "amended_dt": None,
             "created_dt": None
@@ -55,8 +57,7 @@ def start_user_check(data):
     if data is None:
         return False, "Data missing"
 
-    required = ["email", "password"]
-    for item in required:
+    for item in USER_REQUIRED:
         if item not in data:
             return False, f"Missing data item '{item}'"
 
@@ -77,7 +78,7 @@ def register(data, user_agent):
     if "name" not in data:
         data["name"] = data["email"].split("@")[0]
 
-    all_cols = required + ["name", "created_dt", "amended_dt"]
+    all_cols = USER_REQUIRED + ["name", "created_dt", "amended_dt"]
     data.update({col: None for col in all_cols if col not in data})
 
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
@@ -93,27 +94,30 @@ def register(data, user_agent):
     if not ret:
         return False, "Registration retrieve failed"
 
-    return start_session(user_data,user_agent)
+    return start_session(user_data, user_agent)
 
 
 def check_session(ses_code, user_agent):
-    key = session_key(ses_code, user_agent)
-    hexkey = lib.mysql.ashex(key)
-    session_timeout = policy.policy("session_timeout", 60)
-    sql = "update session_keys set amended_dt=now() where date_add(amended_dt, interval "
-    sql += f"{session_timeout} minute) > now() and session_key = unhex('{hexkey}')"
-
-    ret, __ = lib.mysql.sql_exec(sql)
-    if ret != 1:
+    if not is_valid_ses_code(ses_code):
         return False, None
 
-    ret, ses_data = lib.mysql.sql_select_one("session_keys", {"session_key": key},"user_id")
-    if ret != 1:
+    key = make_session_key(ses_code, user_agent)
+    session_timeout = policy.policy('session_timeout', 60)
+    cols = f"date_add(amended_dt, interval {session_timeout} minute) > now() 'ok',user_id"
+    ret, data = lib.mysql.sql_select_one("session_keys", {"session_key": key}, cols)
+
+    if not ret:
         return False, None
+    if not data["ok"]:
+        lib.mysql.sql_delete_one("session_keys", {"session_key": key})
+        return False, None
+
+    lib.mysql.sql_update_one("session_keys", {"amended_dt": None},
+                             {"session_key": key})
 
     ret, user_data = lib.mysql.sql_select_one("users",
-                                           {"user_id": ses_data["user_id"]})
-    if ret != 1:
+                                              {"user_id": data["user_id"]})
+    if not ret:
         return False, None
 
     remove_from_users(user_data)
@@ -121,7 +125,11 @@ def check_session(ses_code, user_agent):
 
 
 def log_out(ses_code, user_id, user_agent):
-    return lib.mysql.sql_delete_one("session_keys",{"session_key":session_key(ses_code, user_agent),"user_id":user_id})
+    return lib.mysql.sql_delete_one(
+        "session_keys", {
+            "session_key": make_session_key(ses_code, user_agent),
+            "user_id": user_id
+        })
 
 
 def login(data, user_agent):
@@ -129,29 +137,38 @@ def login(data, user_agent):
     if not ret:
         return None
 
-    ret, user_data = lib.mysql.sql_select_one("users", {"email": data["email"]})
+    ret, user_data = lib.mysql.sql_select_one("users",
+                                              {"email": data["email"]})
     if not ret:
         return None
 
     encoded_pass = user_data["password"].encode("utf8")
-    enc_pass = bcrypt.hashpw(data["password"].encode("utf8"),encoded_pass)
+    enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
     if encoded_pass != enc_pass:
         return None
 
-    return start_session(user_data,user_agent)
-
+    log("User {user_data['user']['user_id']} logged in",gzz(czz()))
+    return start_session(user_data, user_agent)
 
 
 if __name__ == "__main__":
     lib.mysql.connect("webui")
-    lib.log.debug = True
-    print(">>> LOGIN",login({"email":"james@jrcs.net","password":"pass"},"curl/7.83.1"))
+    log_init(debug=True)
+    login_data = login({
+        "email": "james@jrcs.net",
+        "password": "pass"
+    }, "curl/7.83.1")
+    debug(">>> LOGIN "+str(login_data),gzz(czz()))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
-    # print(session_code(100))
-    # print(session_key("fred", "Windows"))
-    # print(
-    #     check_session(
-    #         "KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A",
-    #         "curl/7.83.1"))
+    # print(make_session_code(100))
+    # print(make_session_key("fred", "Windows"))
+    debug(
+        ">>>>SELECT "+str(
+        lib.mysql.sql_select(
+            "session_keys", "1=1",
+            "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")),gzz(czz()))
+    debug(">>>> "+ str(login_data["session"]),gzz(czz()))
+    debug(">>>>CHECK-SESSION "+
+          str(check_session(login_data["session"], "curl/7.83.1")),gzz(czz()))
     # print("DELETE",log_out("KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A",10465,"curl/7.83.1"))

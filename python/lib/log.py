@@ -9,6 +9,9 @@ done_init = False
 hold_debug = False
 hold_with_logging = True
 
+def debug(line,where):
+    if hold_debug:
+        log("[DEUBG]"+line, where)
 
 def log(line, where=None):
     if hold_debug:
@@ -16,7 +19,7 @@ def log(line, where=None):
         if where is not None:
             txt = "[" + where.filename.split("/")[-1] + ":" + str(
                 where.lineno) + "]"
-        print(f">>>SYSLOG{txt}>>>", line)
+        print(f">>>SYSLOG{txt} {line}")
     else:
         if not done_init:
             init()

@@ -2,6 +2,8 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import binascii
+import base64
 import sys
 import re
 
@@ -33,8 +35,23 @@ def is_valid_fqdn(name):
     return re.match(IS_FQDN, name, re.IGNORECASE) is not None
 
 
+def is_valid_ses_code(code):
+    if len(code) != 86:
+        return False
+    try:
+        base64.b64decode(code+"==")
+    except binascii.Error as exc:
+        return False
+    return True
+
+
 if __name__ == "__main__":
     for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
         print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))
+    del sys.argv[0]
     for host in sys.argv:
         print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))
+    code = "CLLGnM7+xqKvhHmi5sfIIuszEHuqhVxNbV1IHGRVYZtuTkFC6mHUucxU/gSd5U/cExZrsdu9rRK7d0VtY1bW2g"
+    print("SESS",code,is_valid_ses_code(code))
+    for code in sys.argv:
+        print("SESS",code,is_valid_ses_code(code))

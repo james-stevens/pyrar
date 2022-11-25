@@ -25,6 +25,6 @@ sqlsh "CREATE TABLE deleted_users (
 	unique key by_login(email)
 	) ${utf8}"
 
-sqlsh "ALTER TABLE events AUTO_INCREMENT = 10450"
+sqlsh "ALTER TABLE deleted_users AUTO_INCREMENT = 10450"
 
 sqlsh 'grant select on deleted_users to raradm'

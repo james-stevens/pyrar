@@ -12,7 +12,8 @@ sqlsh "create table session_keys (
 	amended_dt				datetime,
 	created_dt				datetime,
 
-	primary key (session_key)
+	primary key (session_key),
+	unique key by_user_id(user_id)
 )"
 
 sqlsh 'grant select, insert, update, delete on session_keys to webui,raradm'

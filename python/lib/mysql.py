@@ -6,7 +6,7 @@ import os
 import json
 
 import lib.fileloader
-from lib.log import log, init as log_init
+from lib.log import log, debug, init as log_init
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
@@ -52,6 +52,8 @@ def format_data(item, data):
 
 def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
+    if isinstance(data,str):
+        return data
     return joiner.join(
         [item + "=" + format_data(item, data[item]) for item in data])
 
@@ -72,6 +74,7 @@ def return_select():
 
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
+    debug(" SQL "+sql,gzz(czz()))
     try:
         cnx.query(sql)
         return func()
@@ -127,11 +130,7 @@ def sql_update_one(table, data, where):
 
 
 def sql_update(table, data, where, limit=None):
-    sql = f"update {table} set " + data_set(data, ",") + " "
-    if isinstance(where, str):
-        sql += where
-    else:
-        sql += "where " + data_set(where, " and ")
+    sql = f"update {table} set " + data_set(data, ",") + " where " + data_set(where, " and ")
     if limit is not None:
         sql += f" limit {limit}"
     return sql_exec(sql)

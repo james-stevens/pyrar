@@ -16,7 +16,6 @@ import domains
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-
 log_init(policy.policy("facility_python_code"),
          policy.policy("log_python_code"))
 
@@ -46,7 +45,7 @@ class WebuiReq:
             self.logged_in, self.user_data = users.check_session(
                 self.headers["X-Pyrar-Sess"], self.user_agent)
             if self.logged_in:
-                print(">>>> LOGGED-IN",self.user_data["user"])
+                print(">>>> LOGGED-IN", self.user_data["user"])
 
     def event(self, data, frameinfo):
         data["program"] = frameinfo.filename.split("/")[-1]

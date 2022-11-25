@@ -14,7 +14,6 @@ import lib.api as api
 import parsexml
 
 
-
 def check_domain_name(name):
     if not tld_lib.supported_tld(name):
         return "Unsupported TLD"
@@ -66,6 +65,7 @@ class DomainName:
                 self.err = err
                 self.names = None
                 return
+
 
 def http_price_domains(domobj, years, which):
 
@@ -142,7 +142,6 @@ def xml_check_with_fees(domobj, years, which):
     }
 
 
-
 clients = {p: httpx.Client() for p in tld_lib.ports}
 xmlns = tld_lib.make_xmlns()
 
@@ -150,13 +149,13 @@ xmlns = tld_lib.make_xmlns()
 def check_one_domain(domain):
     domobj = DomainName(domain)
     if domobj.names is None:
-        print(">>>>>",domobj.err)
+        print(">>>>>", domobj.err)
         sys.exit(1)
 
     ret, out_js = http_price_domains(
         domobj, 1, ["create", "renew", "transfer", "restore"])
 
-    print(">>>> REPLY",ret,out_js)
+    print(">>>> REPLY", ret, out_js)
 
     if ret != 200:
         log(f"ERROR: {ret} {out_js}", gzz(czz()))
