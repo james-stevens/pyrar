@@ -294,6 +294,31 @@ td {
 }
 
 /* The actual popup (appears on top) */
+.popBelow .popBelowText {
+	visibility: hidden;
+	background-color: #${cols[6]};
+	color: #fff;
+	border-radius: 6px;
+	padding: 8px;
+	position: absolute;
+	z-index: 1;
+	height: 175px
+	left: 75%;
+	margin-left: -120;
+	margin-top: 30px;
+	border: 1px solid;
+	border-color: #${cols[10]};
+	box-shadow: 5px 5px #${cols[3]};
+	}
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+.popBelow .show {
+	visibility: visible;
+	-webkit-animation: fadeIn 1s;
+	animation: fadeIn 1s
+	}
+
+/* The actual popup (appears on top) */
 .popup .popuptext {
 	visibility: hidden;
 	background-color: #${cols[6]};

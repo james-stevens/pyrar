@@ -57,25 +57,49 @@ function changeFavicon(src) {
 	}
 
 
+theme_lazy_hide = null;
+function toggleTheme()
+{
+	let popup = document.getElementById("themePopup");
+	if (popup.classList.toggle("show"))
+		theme_lazy_hide = setTimeout(hideTheme,10000);
+	else {
+		if (theme_lazy_hide) clearTimeout(theme_lazy_hide);
+	}
+}
+
+
+function hideTheme()
+{
+	if (!theme_lazy_hide) return;
+	let popup = document.getElementById("themePopup");
+	popup.classList.remove("show")
+	theme_lazy_hide = null;
+}
+
+
+function doThemeChnage(sel)
+{
+	if (sel.value in theme_colours) changeTheme(sel.value);
+	toggleTheme();
+}
+
+
 function toggleLogin() {
-	var popup = document.getElementById("loginPopup");
-	popup.classList.toggle("show");
-	for(x of popup.classList)
-		if (x == "show") {
-			let e = document.formLogin.username;
-			e.focus(); e.select();
-			}
+	let popup = document.getElementById("loginPopup");
+	if (popup.classList.toggle("show")) {
+		let e = document.formLogin.email;
+		e.focus(); e.select();
+		}
 }
 
 
 function toggleRegister() {
-	var popup = document.getElementById("registerPopup");
-	popup.classList.toggle("show");
-	for(x of popup.classList)
-		if (x == "show") {
-			let e = document.formRegister.username;
-			e.focus(); e.select();
-			}
+	let popup = document.getElementById("registerPopup");
+	if (popup.classList.toggle("show")) {
+		let e = document.formRegister.email;
+		e.focus(); e.select();
+		}
 }
 
 
@@ -299,7 +323,7 @@ function errMsg(txt,elem,min_width)
 </script>
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
-<table border=0 width=100% style="margin-top: 30px;">
+<table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
 <tr>
 <td align=left><span id="businessName" class="businessName">Registrar</span></td>
 <td align=right><span id="noLoginBtns">
@@ -309,7 +333,7 @@ function errMsg(txt,elem,min_width)
 <span class="popuptext" id="registerPopup">
 <form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>
 <tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="email">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
@@ -327,7 +351,7 @@ function errMsg(txt,elem,min_width)
 <span class="popuptext" id="loginPopup">
 <form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>
 <tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="username">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="email">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
@@ -337,12 +361,29 @@ function errMsg(txt,elem,min_width)
 	</td>
 </tr></form>
 </table>
-</span></td></tr></table>
-</td></tr></table>
+</span></td></tr>
+</td></tr>
 
+
+<tr><Td>
+<div class="popBelow">
+<span style='width: 75px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
+<span class="popBelowText" id="themePopup">
+<select onChange="doThemeChnage(this);">
+<option>-- select --
+<option>dark
+<option>light
+<option>red
+<option>green
+<option>blue
+</span>
 </div>
 
+</td></tr></table>
+
+<div style='height: 30px;'></div>
 <div id="searchForm">
+<div style='height: 30px;'></div>
 <table align=center>
 <form action="#" name=searchForm onSubmit="return doSearch();">
 <tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>

@@ -21,6 +21,7 @@ error_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx error;
 
 http {
 	access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx,severity=${lvl};
+	fastcgi_intercept_errors on;
 
 	include         mime.types;
 	default_type    application/octet-stream;
@@ -29,14 +30,18 @@ http {
 
 	upstream wsgi_checker {
 		server unix:/run/wsgi_checker.sock;
-		}"
+		}
+	server {
+		error_page 404 =200 /;
+
+
+"
 
 
 if test -f ${BASE}/pems/server.pem
 	then
 		cp -a ${BASE}/pems/server.pem /run/server.pem
 		echo "
-    server {
         listen 443 ssl;
 
         ssl_certificate /run/server.pem;
@@ -48,9 +53,7 @@ if test -f ${BASE}/pems/server.pem
         ssl_ciphers  HIGH:!aNULL:!MD5;
         ssl_prefer_server_ciphers  on;"
 	else
-		echo "
-	server {
-		listen 80;"
+		echo "listen 80;"
 	fi
 
 echo "
