@@ -9,12 +9,13 @@ import os
 from inspect import currentframe as czz, getframeinfo as gzz
 import bcrypt
 
-import lib.mysql
+from lib import mysql as sql
 from lib import validate
 from lib.policy import this_policy as policy
 from lib.log import log, debug, init as log_init
 
 USER_REQUIRED = ["email", "password"]
+
 
 def make_session_code(user_id):
     hsh = hashlib.sha512()
@@ -39,10 +40,10 @@ def remove_from_users(data):
 
 def start_session(user_data, user_agent):
     user_id = user_data['user_id']
-    lib.mysql.sql_delete_one("session_keys", {"user_id": user_id})
+    sql.sql_delete_one("session_keys", {"user_id": user_id})
 
     ses_code = make_session_code(user_id)
-    lib.mysql.sql_insert(
+    sql.sql_insert(
         "session_keys", {
             "session_key": make_session_key(ses_code, user_agent),
             "user_id": user_id,
@@ -50,7 +51,7 @@ def start_session(user_data, user_agent):
             "created_dt": None
         })
     remove_from_users(user_data)
-    return {"user": user_data, "session": ses_code}
+    return True, {"user": user_data, "session": ses_code}
 
 
 def start_user_check(data):
@@ -72,7 +73,7 @@ def register(data, user_agent):
     if not ret:
         return ret, msg
 
-    if lib.mysql.sql_exists("users", {"email": data["email"]}):
+    if sql.sql_exists("users", {"email": data["email"]}):
         return False, "EMail address already in use"
 
     if "name" not in data:
@@ -84,13 +85,13 @@ def register(data, user_agent):
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
 
-    ret, user_id = lib.mysql.sql_insert(
+    ret, user_id = sql.sql_insert(
         "users", {item: data[item]
                   for item in all_cols})
-    if ret == 1:
+    if not ret:
         return False, "Registration insert failed"
 
-    ret, user_data = lib.mysql.sql_select_one("users", {"user_id": user_id})
+    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False, "Registration retrieve failed"
 
@@ -98,24 +99,24 @@ def register(data, user_agent):
 
 
 def check_session(ses_code, user_agent):
-    if not is_valid_ses_code(ses_code):
+    if not validate.is_valid_ses_code(ses_code):
         return False, None
 
     key = make_session_key(ses_code, user_agent)
-    session_timeout = policy.policy('session_timeout', 60)
-    cols = f"date_add(amended_dt, interval {session_timeout} minute) > now() 'ok',user_id"
-    ret, data = lib.mysql.sql_select_one("session_keys", {"session_key": key}, cols)
-
+    timeout = policy.policy('session_timeout', 60)
+    cols = f"date_add(amended_dt, interval {timeout} minute) > now() 'ok',user_id"
+    ret, data = sql.sql_select_one("session_keys", {"session_key": key},
+                                         cols)
     if not ret:
         return False, None
     if not data["ok"]:
-        lib.mysql.sql_delete_one("session_keys", {"session_key": key})
+        sql.sql_delete_one("session_keys", {"session_key": key})
         return False, None
 
-    lib.mysql.sql_update_one("session_keys", {"amended_dt": None},
+    sql.sql_update_one("session_keys", {"amended_dt": None},
                              {"session_key": key})
 
-    ret, user_data = lib.mysql.sql_select_one("users",
+    ret, user_data = sql.sql_select_one("users",
                                               {"user_id": data["user_id"]})
     if not ret:
         return False, None
@@ -125,7 +126,7 @@ def check_session(ses_code, user_agent):
 
 
 def log_out(ses_code, user_id, user_agent):
-    return lib.mysql.sql_delete_one(
+    return sql.sql_delete_one(
         "session_keys", {
             "session_key": make_session_key(ses_code, user_agent),
             "user_id": user_id
@@ -137,7 +138,7 @@ def login(data, user_agent):
     if not ret:
         return None
 
-    ret, user_data = lib.mysql.sql_select_one("users",
+    ret, user_data = sql.sql_select_one("users",
                                               {"email": data["email"]})
     if not ret:
         return None
@@ -147,28 +148,30 @@ def login(data, user_agent):
     if encoded_pass != enc_pass:
         return None
 
-    log("User {user_data['user']['user_id']} logged in",gzz(czz()))
+    log("User {user_data['user']['user_id']} logged in", gzz(czz()))
     return start_session(user_data, user_agent)
 
 
 if __name__ == "__main__":
-    lib.mysql.connect("webui")
+    sql.connect("webui")
     log_init(debug=True)
-    login_data = login({
-        "email": "james@jrcs.net",
-        "password": "pass"
-    }, "curl/7.83.1")
-    debug(">>> LOGIN "+str(login_data),gzz(czz()))
+    login_ok, login_data = login(
+        {
+            "email": "james@jrcs.net",
+            "password": "pass"
+        }, "curl/7.83.1")
+    debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data), gzz(czz()))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     # print(make_session_code(100))
     # print(make_session_key("fred", "Windows"))
     debug(
-        ">>>>SELECT "+str(
-        lib.mysql.sql_select(
-            "session_keys", "1=1",
-            "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")),gzz(czz()))
-    debug(">>>> "+ str(login_data["session"]),gzz(czz()))
-    debug(">>>>CHECK-SESSION "+
-          str(check_session(login_data["session"], "curl/7.83.1")),gzz(czz()))
-    # print("DELETE",log_out("KhbceHALIcjrP4jquXeqAVESXE5bOTcBOor2UHPzHF0kRDJeaLgv1Li/uN1b7hOGWQFX5dq16RvWZp2vo7VI4A",10465,"curl/7.83.1"))
+        ">>>>SELECT " + str(
+            sql.sql_select(
+                "session_keys", "1=1",
+                "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id"
+            )), gzz(czz()))
+    debug(">>>> " + str(login_data["session"]), gzz(czz()))
+    debug(
+        ">>>>CHECK-SESSION " +
+        str(check_session(login_data["session"], "curl/7.83.1")), gzz(czz()))

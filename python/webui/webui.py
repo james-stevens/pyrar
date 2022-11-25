@@ -8,10 +8,10 @@ import httpx
 import flask
 
 from lib.providers import tld_lib
-from lib.log import log as log, init as log_init
+from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 import users
-import lib.mysql
+from lib import mysql as sql
 import domains
 
 from inspect import currentframe as czz, getframeinfo as gzz
@@ -19,7 +19,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 log_init(policy.policy("facility_python_code"),
          policy.policy("log_python_code"))
 
-lib.mysql.connect("webui")
+sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 
 
@@ -53,7 +53,7 @@ class WebuiReq:
         data["line_num"] = frameinfo.lineno
         data["when_dt"] = None
         data.update(self.base_event)
-        lib.mysql.sql_insert("events", data)
+        sql.sql_insert("events", data)
 
 
 @application.route('/api/v1.0/config', methods=['GET'])
@@ -88,6 +88,8 @@ def users_register():
     ret, val = users.register(flask.request.json, this_req.user_agent)
     if not ret:
         return abort(400, val)
+
+    debug(str(val), gzz(czz()))
 
     user_id = val["user"]["user_id"]
     this_req.base_event["user_id"] = user_id

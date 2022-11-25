@@ -11,7 +11,7 @@ hold_with_logging = True
 
 def debug(line,where):
     if hold_debug:
-        log("[DEUBG]"+line, where)
+        log("[DEUBG] "+line, where)
 
 def log(line, where=None):
     if hold_debug:
