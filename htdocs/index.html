@@ -61,12 +61,16 @@ theme_lazy_hide = null;
 function toggleTheme()
 {
 	let popup = document.getElementById("themePopup");
+
+	if (theme_lazy_hide) {
+		clearTimeout(theme_lazy_hide);
+		theme_lazy_hide = null;
+		}
+
 	if (popup.classList.toggle("show"))
 		theme_lazy_hide = setTimeout(hideTheme,10000);
-	else {
-		if (theme_lazy_hide) clearTimeout(theme_lazy_hide);
-	}
 }
+
 
 
 function hideTheme()
@@ -78,14 +82,24 @@ function hideTheme()
 }
 
 
-function doThemeChnage(sel)
+
+function do_theme_change(value)
 {
-	if (sel.value in theme_colours) changeTheme(sel.value);
-	toggleTheme();
+	if (theme_lazy_hide) {
+		clearTimeout(theme_lazy_hide);
+		theme_lazy_hide = null;
+		}
+
+	if (value in theme_colours) changeTheme(value);
+	let popup = document.getElementById("themePopup");
+	popup.classList.remove("show")
+	if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
 }
 
 
-function toggleLogin() {
+
+function toggleLogin()
+{
 	let popup = document.getElementById("loginPopup");
 	if (popup.classList.toggle("show")) {
 		let e = document.formLogin.email;
@@ -94,7 +108,9 @@ function toggleLogin() {
 }
 
 
-function toggleRegister() {
+
+function toggleRegister()
+{
 	let popup = document.getElementById("registerPopup");
 	if (popup.classList.toggle("show")) {
 		let e = document.formRegister.email;
@@ -106,7 +122,7 @@ function toggleRegister() {
 function bodyLoaded()
 {
 	gbl.elm = {};
-	["output","topSpan","searchForm","businessName"].forEach(i => {
+	["output","topSpan","search","businessName"].forEach(i => {
 		gbl.elm[i] = document.getElementById(i);
 		} );
 
@@ -369,20 +385,20 @@ function errMsg(txt,elem,min_width)
 <div class="popBelow">
 <span style='width: 75px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
 <span class="popBelowText" id="themePopup">
-<select onChange="doThemeChnage(this);">
-<option>-- select --
-<option>dark
-<option>light
-<option>red
-<option>green
-<option>blue
+<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>
+<tr class=dataRow onClick='do_theme_change("dark");'><td>dark</td></tr>
+<tr class=dataRow onClick='do_theme_change("light");'><td>light</td></tr>
+<tr class=dataRow onClick='do_theme_change("red");'><td>red</td></tr>
+<tr class=dataRow onClick='do_theme_change("green");'><td>green</td></tr>
+<tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
+</table>
 </span>
 </div>
 
 </td></tr></table>
 
 <div style='height: 30px;'></div>
-<div id="searchForm">
+<div id="search">
 <div style='height: 30px;'></div>
 <table align=center>
 <form action="#" name=searchForm onSubmit="return doSearch();">

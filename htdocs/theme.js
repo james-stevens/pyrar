@@ -160,12 +160,16 @@ input {
 
 body {
 	background-image: url("/img/bg-${theme}.jpg");
+	background-size: 100% 100%;
 	color: #${cols[16]};
 	font-family: inherit;
 	font-size: inherit;
 	margin-top: 0px;
 	margin-left: 0px;
 	margin-right: 0px;
+	margin-bottom: 0px;
+	height: 100%;
+	width: 100%;
 	background-color: #${cols[4]};
 	scrollbar-base-color: #${cols[5]};
 	scrollbar-arrow-color: #${cols[14]};
