@@ -31,6 +31,11 @@ def session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
 
 
+def remove_from_users(data):
+    for block in ["password", "payment_data"]:
+        del data[block]
+
+
 def start_session(user_data,user_agent):
     user_id = user_data['user_id']
     lib.mysql.sql_exec(f"delete from session_keys where user_id = {user_id}")
@@ -42,13 +47,8 @@ def start_session(user_data,user_agent):
             "amended_dt": None,
             "created_dt": None
         })
-    block_from_users(user_data)
+    remove_from_users(user_data)
     return {"user": user_data, "session": ses_code}
-
-
-def block_from_users(data):
-    for block in ["password", "payment_data"]:
-        del data[block]
 
 
 def start_user_check(data):
@@ -89,7 +89,7 @@ def register(data, user_agent):
     if ret == 1:
         return False, "Registration insert failed"
 
-    ret, user_data = lib.mysql.sql_get_one("users", {"user_id": user_id})
+    ret, user_data = lib.mysql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False, "Registration retrieve failed"
 
@@ -107,16 +107,16 @@ def check_session(ses_code, user_agent):
     if ret != 1:
         return False, None
 
-    ret, ses_data = lib.mysql.sql_get_one("session_keys", {"session_key": key})
+    ret, ses_data = lib.mysql.sql_select_one("session_keys", {"session_key": key},"user_id")
     if ret != 1:
         return False, None
 
-    ret, user_data = lib.mysql.sql_get_one("users",
+    ret, user_data = lib.mysql.sql_select_one("users",
                                            {"user_id": ses_data["user_id"]})
     if ret != 1:
         return False, None
 
-    block_from_users(user_data)
+    remove_from_users(user_data)
     return True, {"user": user_data, "session": ses_code}
 
 
@@ -129,7 +129,7 @@ def login(data, user_agent):
     if not ret:
         return None
 
-    ret, user_data = lib.mysql.sql_get_one("users", {"email": data["email"]})
+    ret, user_data = lib.mysql.sql_select_one("users", {"email": data["email"]})
     if not ret:
         return None
 

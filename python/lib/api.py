@@ -3,4 +3,3 @@
 # Alternative license arrangements possible, contact me for more information
 
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
-

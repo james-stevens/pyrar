@@ -236,7 +236,6 @@ class ZoneLib:
 
 tld_lib = ZoneLib()
 
-
 if __name__ == "__main__":
     # print(tld_lib.zone_file.json)
     print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))

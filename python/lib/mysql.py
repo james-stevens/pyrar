@@ -22,6 +22,8 @@ my_login = None
 
 HEXLIB = "0123456789ABCDEF"
 
+logins = lib.fileloader.FileLoader(LOGINS_JSON)
+
 
 def ashex(line):
     ret = ""
@@ -50,44 +52,104 @@ def format_data(item, data):
 
 def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
-    return joiner.join([item + "=" + format_data(item,data[item]) for item in data])
+    return joiner.join(
+        [item + "=" + format_data(item, data[item]) for item in data])
+
+
+def reconnect():
+    try:
+        cnx.close()
+    except Exception as exc:
+        pass
+    connect(my_login)
+
+
+def return_select():
+    res = cnx.store_result()
+    data = res.fetch_row(maxrows=0, how=1)
+    return True, data
+
+
+def run_sql(sql, func):
+    """ run the {sql}, reconnecting to MySQL, if necessary """
+    try:
+        cnx.query(sql)
+        return func()
+
+    except Exception as exc:
+        this_exc = exc
+        if exc.args[0] == 2006:
+            reconnect()
+            try:
+                cnx.query(sql)
+                return func()
+            except Exception as exc:
+                this_exc = exc
+                pass
+        log(this_exc, gzz(czz()))
+        return False, None
+
+
+def run_select(sql):
+    return run_sql(sql, return_select)
+
+
+def return_exec():
+    lastrowid = cnx.insert_id()
+    affected_rows = cnx.affected_rows()
+    cnx.store_result()
+    cnx.commit()
+    return affected_rows, lastrowid
 
 
 def sql_exec(sql):
-    if cnx is None:
-        log("MySQL not connected", gzz(czz()))
-        return None, None
-
-    try:
-        cnx.query(sql)
-        lastrowid = cnx.insert_id()
-        affected_rows = cnx.affected_rows()
-        cnx.store_result()
-        cnx.commit()
-        return affected_rows, lastrowid
-    except Exception as exc:
-        log(exc, gzz(czz()))
-        return None, None
+    return run_sql(sql, return_exec)
 
 
 def sql_delete_one(table, data):
-    return sql_exec(f"delete from {table} where " + data_set(data," and ") + " limit 1")
+    return sql_exec(f"delete from {table} where " + data_set(data, " and ") +
+                    " limit 1")
 
 
 def sql_insert(table, data):
-    return sql_exec(f"insert into {table} set " + data_set(data,","))
+    return sql_exec(f"insert into {table} set " + data_set(data, ","))
 
 
 def sql_exists(table, data):
-    sql = f"select 1 from {table} where " + data_set(data, " and ") + " limit 1"
-    ret, __ = run_query(sql)
+    sql = f"select 1 from {table} where " + data_set(data,
+                                                     " and ") + " limit 1"
+    ret, __ = run_select(sql)
     return (ret is not None) and (cnx.affected_rows() > 0)
 
 
-def sql_get_one(table, data):
-    sql = f"select * from {table} where " + data_set(data, " and ") + " limit 1"
-    ret, data = run_query(sql)
-    return ret and (cnx.affected_rows() > 0), data[0]
+def sql_update_one(table, data, where):
+    return sql_update(table, data, where, 1)
+
+
+def sql_update(table, data, where, limit=None):
+    sql = f"update {table} set " + data_set(data, ",") + " "
+    if isinstance(where, str):
+        sql += where
+    else:
+        sql += "where " + data_set(where, " and ")
+    if limit is not None:
+        sql += f" limit {limit}"
+    return sql_exec(sql)
+
+
+def sql_select(table, data, columns="*", limit=None):
+    sql = f"select {columns} from {table} where " + data_set(data, " and ")
+    if limit is not None:
+        sql += f" limit {limit}"
+    ret, data = run_select(sql)
+    if not ret:
+        return 0, None
+    num_rows = cnx.affected_rows()
+    return num_rows, data[0] if num_rows > 0 else None
+
+
+def sql_select_one(table, data, columns="*"):
+    return sql_select(table, data, columns, 1)
 
 
 def convert_string(data):
@@ -114,8 +176,8 @@ def connect(login):
     global cnx
     global my_login
 
+    logins.check_for_new()
     my_login = login
-    logins = lib.fileloader.FileLoader(LOGINS_JSON)
     mysql_json = logins.data()["pyrar"]
 
     conn = mysql_json["connect"]
@@ -145,57 +207,11 @@ def connect(login):
                          init_command='set names utf8mb4')
 
 
-def qry_worked(cnx):
-    res = cnx.store_result()
-    data = res.fetch_row(maxrows=0, how=1)
-    return data
-
-
-def run_query(sql):
-    """ run the {sql}, reconnecting to MySQL, if necessary """
-    global cnx
-    try:
-        cnx.query(sql)
-        return True, qry_worked(cnx)
-
-    except MySQLdb.OperationalError as exc:
-        cnx.close()
-        connect(my_login)
-        try:
-            cnx.query(sql)
-            return True, qry_worked(cnx)
-
-        except MySQLdb.OperationalError as exc:
-            log(exc, gzz(czz()))
-            cnx.close()
-            cnx = None
-            return False, None
-        except MySQLdb.Error as exc:
-            log(exc, gzz(czz()))
-            return False, None
-
-    except MySQLdb.Error as exc:
-        log(exc, gzz(czz()))
-        return False, None
-
-
-def other_tests():
-    print(
-        data_set({
-            "one": 1,
-            "two": "22",
-            "three": True,
-            "four": "this is four",
-            "five": None
-        }))
-
-
 if __name__ == "__main__":
     log_init(debug=True)
-
     connect("webui")
 
-    ret, data = run_query("select * from events limit 3")
+    ret, data = run_select("select * from events limit 3")
     if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
@@ -205,10 +221,18 @@ if __name__ == "__main__":
     print(f">>>> sql exists -> 10452 ->",
           sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
-        print(f">>>> sql exists -> {e} ->",
-              sql_exists("users", {"email": e} ))
+        print(f">>>> sql exists -> {e} ->", sql_exists("users", {"email": e}))
 
-    ret, data = sql_get_one("events", {"event_id": 10452})
-    print(">>>>>", ret, json.dumps(data, indent=4))
+    cnx.close()
+
+    ret, data = sql_select_one("Xevents", {"event_id": 10452})
+    print(">>SELECT>>>", ret, json.dumps(data, indent=4))
+
+    ret, data = sql_select_one("events", {"event_id": 10471})
+    print(">>SELECT>>>", ret, json.dumps(data, indent=4))
+
+    ret, data = sql_update_one("session_keys", {"amended_dt": None},
+                               {"user_id": 10465})
+    print(">>UPDATE>>>", ret, data)
 
     cnx.close()
