@@ -30,6 +30,7 @@ my_conv[FIELD_TYPE.CHAR] = convert_string
 my_conv[FIELD_TYPE.STRING] = convert_string
 my_conv[FIELD_TYPE.VAR_STRING] = convert_string
 my_conv[FIELD_TYPE.DATETIME] = convert_string
+my_conv[FIELD_TYPE.JSON] = convert_string
 
 
 def mysql_connect():

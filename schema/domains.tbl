@@ -14,8 +14,6 @@ sqlsh "create table domains (
 	status_id			${row_id},
 	renew_id			${row_id},
 
-	name_servers		text,
-
 	created_dt			datetime null,
 	amended_dt			datetime null,
 	expiry_dt			datetime not null,

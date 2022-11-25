@@ -5,9 +5,7 @@
 
 export MYSQL_DATABASE="pyrar"
 
-
-ROOT_PASSWORD="6tjSpeo5SKpoc"
-root="sqlsh -u root -p ${ROOT_PASSWORD} -d mysql"
+root="sqlsh -u root -p ${MYSQL_ROOT_PASSWORD} -d mysql"
 cmd="${root}"
 
 row_id_null="int unsigned"

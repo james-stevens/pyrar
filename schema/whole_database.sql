@@ -96,7 +96,6 @@ CREATE TABLE `domains` (
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(10) unsigned NOT NULL DEFAULT 0,
   `renew_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `name_servers` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   `expiry_dt` datetime NOT NULL,
@@ -215,7 +214,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-25 14:48:55
+-- Dump completed on 2022-11-25 16:59:37
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;

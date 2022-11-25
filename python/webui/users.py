@@ -85,9 +85,9 @@ def register(data, user_agent):
     data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
                                      bcrypt.gensalt()).decode("utf-8")
 
-    ret, user_id = sql.sql_insert(
-        "users", {item: data[item]
-                  for item in all_cols})
+    ret, user_id = sql.sql_insert("users",
+                                  {item: data[item]
+                                   for item in all_cols})
     if not ret:
         return False, "Registration insert failed"
 
@@ -103,10 +103,9 @@ def check_session(ses_code, user_agent):
         return False, None
 
     key = make_session_key(ses_code, user_agent)
-    timeout = policy.policy('session_timeout', 60)
-    cols = f"date_add(amended_dt, interval {timeout} minute) > now() 'ok',user_id"
-    ret, data = sql.sql_select_one("session_keys", {"session_key": key},
-                                         cols)
+    tout = policy.policy('session_timeout', 60)
+    cols = f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id"
+    ret, data = sql.sql_select_one("session_keys", {"session_key": key}, cols)
     if not ret:
         return False, None
     if not data["ok"]:
@@ -114,10 +113,9 @@ def check_session(ses_code, user_agent):
         return False, None
 
     sql.sql_update_one("session_keys", {"amended_dt": None},
-                             {"session_key": key})
+                       {"session_key": key})
 
-    ret, user_data = sql.sql_select_one("users",
-                                              {"user_id": data["user_id"]})
+    ret, user_data = sql.sql_select_one("users", {"user_id": data["user_id"]})
     if not ret:
         return False, None
 
@@ -125,7 +123,7 @@ def check_session(ses_code, user_agent):
     return True, {"user": user_data, "session": ses_code}
 
 
-def log_out(ses_code, user_id, user_agent):
+def logout(ses_code, user_id, user_agent):
     return sql.sql_delete_one(
         "session_keys", {
             "session_key": make_session_key(ses_code, user_agent),
@@ -136,17 +134,16 @@ def log_out(ses_code, user_id, user_agent):
 def login(data, user_agent):
     ret, __ = start_user_check(data)
     if not ret:
-        return None
+        return False, None
 
-    ret, user_data = sql.sql_select_one("users",
-                                              {"email": data["email"]})
+    ret, user_data = sql.sql_select_one("users", {"email": data["email"]})
     if not ret:
-        return None
+        return False, None
 
     encoded_pass = user_data["password"].encode("utf8")
     enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
     if encoded_pass != enc_pass:
-        return None
+        return False, None
 
     log("User {user_data['user']['user_id']} logged in", gzz(czz()))
     return start_session(user_data, user_agent)

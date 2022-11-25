@@ -136,19 +136,20 @@ def sql_update(table, data, where, limit=None):
     return sql_exec(sql)
 
 
-def sql_select(table, data, columns="*", limit=None):
-    sql = f"select {columns} from {table} where " + data_set(data, " and ")
+def sql_select(table, where, columns="*", limit=None):
+    sql = f"select {columns} from {table} where " + data_set(where, " and ")
     if limit is not None:
         sql += f" limit {limit}"
     ret, data = run_select(sql)
     if not ret:
         return 0, None
     num_rows = cnx.affected_rows()
-    return num_rows, data[0] if num_rows > 0 else None
+    return num_rows, data if num_rows > 0 else None
 
 
-def sql_select_one(table, data, columns="*"):
-    return sql_select(table, data, columns, 1)
+def sql_select_one(table, where, columns="*"):
+    num, data = sql_select(table, where, columns, 1)
+    return num, data[0] if num == 1 else None
 
 
 def convert_string(data):
@@ -157,16 +158,14 @@ def convert_string(data):
     return data
 
 
-def convert_datetime(data):
-    return data
-
-
 my_conv = MySQLdb.converters.conversions.copy()
 my_conv[FIELD_TYPE.VARCHAR] = convert_string
 my_conv[FIELD_TYPE.CHAR] = convert_string
 my_conv[FIELD_TYPE.STRING] = convert_string
 my_conv[FIELD_TYPE.VAR_STRING] = convert_string
-my_conv[FIELD_TYPE.DATETIME] = convert_datetime
+my_conv[FIELD_TYPE.VAR_STRING] = convert_string
+my_conv[FIELD_TYPE.DATETIME] = convert_string
+my_conv[FIELD_TYPE.JSON] = convert_string
 
 
 def connect(login):
@@ -214,8 +213,10 @@ if __name__ == "__main__":
     if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
-        for r in data:
-            print(">>>>", json.dumps(r, indent=4))
+        print(">>>>", json.dumps(data, indent=4))
+
+    ret,data = run_select("select * from domains")
+    print(">>>> DOMAINS",ret,json.dumps(data,indent=4))
 
     print(f">>>> sql exists -> 10452 ->",
           sql_exists("events", {"event_id": 10452}))
