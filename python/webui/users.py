@@ -94,6 +94,7 @@ def register(data, user_agent):
     if not ret:
         return False, "Registration insert failed"
 
+    update_user_login_dt(user_id)
     ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False, "Registration retrieve failed"
