@@ -9,7 +9,7 @@
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
 
-debugAPI = true;
+debugAPI = false;
 
 
 gbl = {
@@ -272,7 +272,6 @@ function bodyLoaded()
 
 		if ("session" in ctx) {
 			callApi("users/details",(ret,reply) => {
-				console.log(ret,reply);
 				if (ret) {
 					if ("user" in reply) ctx.user = reply.user;
 					if ("domains" in reply) ctx.domains = reply.domains;
