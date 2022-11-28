@@ -119,7 +119,10 @@ def check_session(ses_code, user_agent):
     sql.sql_update_one("session_keys", {"amended_dt": None},
                        {"session_key": key})
 
-    ret, user_data = sql.sql_select_one("users", {"user_id": data["user_id"]})
+    ret, user_data = sql.sql_select_one("users", {
+        "account_closed": 0,
+        "user_id": data["user_id"]
+    })
     if not ret:
         return False, None
 
@@ -146,7 +149,10 @@ def login(data, user_agent):
     if not ret:
         return False, None
 
-    ret, user_data = sql.sql_select_one("users", {"email": data["email"]})
+    ret, user_data = sql.sql_select_one("users", {
+        "account_closed": 0,
+        "email": data["email"]
+    })
     if not ret:
         return False, None
 
