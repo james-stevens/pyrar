@@ -1,0 +1,20 @@
+#! /bin/sh
+
+if test "$1"; then imgs="$*"; else imgs="$(cat list)"; fi
+
+for img in ${imgs}
+do
+	id=$(docker image ls | awk '{ if ($1=="'"${img}"'") print $3 }')
+
+	docker tag ${id} docker.jrcs.net/${img}
+	docker push docker.jrcs.net/${img}
+done
+
+while test "$(docker ps -aq)"
+    do
+        docker rm $(docker ps -aq)
+    done
+while test "$(docker images -f "dangling=true" -q)"
+    do
+        docker rmi $(docker images -f "dangling=true" -q)
+    done
