@@ -4,6 +4,7 @@
 
 HEXLIB = "0123456789ABCDEF"
 
+
 def ashex(line):
     ret = ""
     for item in line:

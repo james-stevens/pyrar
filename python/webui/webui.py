@@ -32,7 +32,10 @@ class WebuiReq:
         tld_lib.check_for_new_files()
         self.session = None
         self.user_id = 0
-        self.headers = { item.lower():val for item,val in dict(flask.request.headers).items() }
+        self.headers = {
+            item.lower(): val
+            for item, val in dict(flask.request.headers).items()
+        }
         self.user_agent = self.headers[
             "user-agent"] if "user-agent" in self.headers else "Unknown"
 
@@ -43,14 +46,14 @@ class WebuiReq:
 
         self.base_event = self.set_base_event()
 
-    def parse_user_data(self,logged_in,user_data):
+    def parse_user_data(self, logged_in, user_data):
         if not logged_in or "session" not in user_data:
             return
 
         self.user_data = user_data
         self.session = self.user_data["session"]
         self.user_id = self.user_data['user']['user_id']
-        debug(f"Logged in as {self.user_id}",gzz(czz()))
+        debug(f"Logged in as {self.user_id}", gzz(czz()))
 
     def set_base_event(self):
         return {
@@ -63,7 +66,7 @@ class WebuiReq:
         return self.response(data, err_no)
 
     def response(self, data, code=200):
-        resp =  flask.make_response(data, code)
+        resp = flask.make_response(data, code)
         if self.session is not None:
             resp.headers[PYRAR_TAG] = self.session
         return resp
@@ -110,9 +113,9 @@ def users_login():
     if not ret or not data:
         return req.abort("Login failed")
 
-    req.parse_user_data(ret,data)
+    req.parse_user_data(ret, data)
 
-    ret, doms = sql.sql_select("domains",{"user_id":req.user_id})
+    ret, doms = sql.sql_select("domains", {"user_id": req.user_id})
     if ret:
         data["domains"] = doms
 

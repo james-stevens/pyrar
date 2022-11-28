@@ -65,6 +65,9 @@ def start_user_check(data):
     if not validate.is_valid_email(data["email"]):
         return False, "Invalid email address"
 
+    if "name" in data and not validate.is_valid_display_name(data["name"]):
+        return False, "Invalid display name"
+
     return True, None
 
 
@@ -76,7 +79,7 @@ def register(data, user_agent):
     if sql.sql_exists("users", {"email": data["email"]}):
         return False, "EMail address already in use"
 
-    if "name" not in data:
+    if "name" not in data and data["email"].find("@") >= 0:
         data["name"] = data["email"].split("@")[0]
 
     all_cols = USER_REQUIRED + ["name", "created_dt", "amended_dt"]

@@ -10,7 +10,7 @@ import MySQLdb.converters
 
 parser = argparse.ArgumentParser(description='Command line SQL runner')
 parser.add_argument("-o", '--output-long', action="store_true")
-parser.add_argument("sql",nargs='+')
+parser.add_argument("sql", nargs='+')
 args = parser.parse_args()
 
 

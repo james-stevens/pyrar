@@ -29,6 +29,7 @@ def convert_string(data):
         return data.decode("utf8")
     return data
 
+
 my_conv = MySQLdb.converters.conversions.copy()
 my_conv[FIELD_TYPE.VARCHAR] = convert_string
 my_conv[FIELD_TYPE.CHAR] = convert_string
@@ -61,7 +62,7 @@ def format_data(item, data):
 
 def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
-    if isinstance(data,str):
+    if isinstance(data, str):
         return data
     return joiner.join(
         [item + "=" + format_data(item, data[item]) for item in data])
@@ -83,7 +84,7 @@ def return_select():
 
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
-    debug(" SQL "+sql,gzz(czz()))
+    debug(" SQL " + sql, gzz(czz()))
     try:
         cnx.query(sql)
         return func()
@@ -139,7 +140,8 @@ def sql_update_one(table, data, where):
 
 
 def sql_update(table, data, where, limit=None):
-    sql = f"update {table} set " + data_set(data, ",") + " where " + data_set(where, " and ")
+    sql = f"update {table} set " + data_set(data, ",") + " where " + data_set(
+        where, " and ")
     if limit is not None:
         sql += f" limit {limit}"
     return sql_exec(sql)
@@ -208,8 +210,8 @@ if __name__ == "__main__":
         print("ROWID:", cnx.insert_id())
         print(">>>>", json.dumps(data, indent=4))
 
-    ret,data = run_select("select * from domains")
-    print(">>>> DOMAINS",ret,json.dumps(data,indent=4))
+    ret, data = run_select("select * from domains")
+    print(">>>> DOMAINS", ret, json.dumps(data, indent=4))
 
     print(f">>>> sql exists -> 10452 ->",
           sql_exists("events", {"event_id": 10452}))
