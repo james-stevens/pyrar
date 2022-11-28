@@ -4,37 +4,37 @@ const theme_colours = {
 		"000000","383855","4f4f6f","555577","666688",
 		"666699","777799","8888aa","9999bb","a0a0cc",
 		"aaaacc","b0b0ff","8080b0","d0d0ff","ddddff",
-		"ffd0d0","ffffff","8888aa"
+		"ffd0d0","ffffff","8888aa","555577"
 		],
 	"red": [
 		"000000","553838","6f4f4f","775555","886666",
 		"996666","997777","aa8888","bb9999","cca0a0",
 		"ccaaaa","ffb0b0","b08080","ffd0d0","ffdddd",
-		"d0d0ff","ffffff","aa8888"
+		"d0d0ff","ffffff","aa8888","775555"
 		],
 	"green": [
 		"000000","385538","4f6f4f","557755","668866",
 		"669966","779977","88aa88","99bb99","a0cca0",
 		"aaccaa","b0ffb0","80b080","d0ffd0","ddffdd",
-		"d0d0ff","ffffff","88aa88"
+		"d0d0ff","ffffff","88aa88","557755"
 		],
 	"light": [
 		"000000","555555","F0F2F4","F6F8FA","ffffff",
 		"999999","F6F8FA","aaaaaa","F6F8FA","cccccc",
 		"cccccc","9898ff","e0e0e0","303030","ffffff",
-		"000000","000000","F0F2F4"
+		"000000","000000","F0F2F4","d6d8dA"
 		],
 	"dark": [
-		"C9D1D9","555555","25303B","010409","15202B",
+		"C9D1D9","555555","45505B","010409","15202B",
 		"999999","25303B","464B52","35404B","464B52",
 		"464B52","9898ff","808080","767B92","ffffff",
-		"ffd0d0","C9D1D9","25303B"
+		"ffd0d0","C9D1D9","25303B","010409"
 		],
 	"custom": [
 		"C9D1D9","555555","25303B","010409","15202B",
 		"999999","25303B","464B52","35404B","464B52",
 		"464B52","9898ff","e0e0e0","767B92","ffffff",
-		"ffd0d0","C9D1D9","25303B"
+		"ffd0d0","C9D1D9","25303B","010409"
 		]
 	};
 
@@ -88,7 +88,6 @@ h2 { text-align: center; }
 	margin-top: 0px;
 	padding-left: 0px;
 	padding-top: 1px;
-	margin-bottom: 50px;
 	top: 0px;
 	}
 
@@ -158,8 +157,14 @@ input {
 	font-size: 14px;
 	}
 
-body {
+#allBottom {
 	background-image: url("/img/bg-${theme}.jpg");
+	background-size: 100% 100%;
+	height: 100%;
+	width: 100%;
+	}
+
+body {
 	background-size: 100% 100%;
 	color: #${cols[16]};
 	font-family: inherit;
@@ -312,7 +317,7 @@ td {
 	margin-top: 30px;
 	border: 1px solid;
 	border-color: #${cols[10]};
-	box-shadow: 5px 5px #${cols[3]};
+	box-shadow: 3px 3px #${cols[18]};
 	}
 
 /* Toggle this class when clicking on the popup container (hide and show the popup) */
@@ -336,7 +341,7 @@ td {
 	margin-left: -350px;
 	border: 1px solid;
 	border-color: #${cols[10]};
-	box-shadow: 5px 5px #${cols[3]};
+	box-shadow: 3px 3px #${cols[18]};
 	}
 
 /* Toggle this class when clicking on the popup container (hide and show the popup) */
@@ -377,7 +382,7 @@ td {
 	color: #${cols[16]};
 	padding: 5px;
 	border-radius: 6px;
-	box-shadow: 5px 5px #${cols[3]};
+	box-shadow: 3px 3px #${cols[18]};
 	}
 
 .msgPopNo {

@@ -6,6 +6,7 @@ import os
 import json
 
 import lib.fileloader
+from lib import misc
 from lib.log import log, debug, init as log_init
 
 from inspect import currentframe as czz, getframeinfo as gzz
@@ -20,17 +21,25 @@ DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
 cnx = None
 my_login = None
 
-HEXLIB = "0123456789ABCDEF"
-
 logins = lib.fileloader.FileLoader(LOGINS_JSON)
 
 
-def ashex(line):
-    ret = ""
-    for item in line:
-        asc = ord(item)
-        ret = ret + HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
-    return ret
+def convert_string(data):
+    if isinstance(data, bytes):
+        return data.decode("utf8")
+    return data
+
+my_conv = MySQLdb.converters.conversions.copy()
+my_conv[FIELD_TYPE.VARCHAR] = convert_string
+my_conv[FIELD_TYPE.CHAR] = convert_string
+my_conv[FIELD_TYPE.STRING] = convert_string
+my_conv[FIELD_TYPE.VAR_STRING] = convert_string
+my_conv[FIELD_TYPE.DATETIME] = convert_string
+my_conv[FIELD_TYPE.JSON] = convert_string
+my_conv[FIELD_TYPE.TINY_BLOB] = convert_string
+my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
+my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
+my_conv[FIELD_TYPE.BLOB] = convert_string
 
 
 def format_data(item, data):
@@ -47,7 +56,7 @@ def format_data(item, data):
     if not isinstance(data, str):
         data = str(data)
 
-    return "unhex('" + ashex(data) + "')"
+    return "unhex('" + misc.ashex(data) + "')"
 
 
 def data_set(data, joiner):
@@ -150,22 +159,6 @@ def sql_select(table, where, columns="*", limit=None):
 def sql_select_one(table, where, columns="*"):
     num, data = sql_select(table, where, columns, 1)
     return num, data[0] if num == 1 else None
-
-
-def convert_string(data):
-    if isinstance(data, bytes):
-        return data.decode("utf8")
-    return data
-
-
-my_conv = MySQLdb.converters.conversions.copy()
-my_conv[FIELD_TYPE.VARCHAR] = convert_string
-my_conv[FIELD_TYPE.CHAR] = convert_string
-my_conv[FIELD_TYPE.STRING] = convert_string
-my_conv[FIELD_TYPE.VAR_STRING] = convert_string
-my_conv[FIELD_TYPE.VAR_STRING] = convert_string
-my_conv[FIELD_TYPE.DATETIME] = convert_string
-my_conv[FIELD_TYPE.JSON] = convert_string
 
 
 def connect(login):

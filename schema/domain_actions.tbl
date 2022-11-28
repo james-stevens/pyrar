@@ -1,0 +1,21 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+. ./database
+
+sqlsh "drop table if exists domain_actions"
+sqlsh "CREATE TABLE domain_actions (
+
+	domain_id			${row_id},
+	when_dt				datetime not null default 0,
+	new_status_id		int,
+	action				varchar(25),
+
+	primary key by_dom (domain_id,when_dt),
+	key by_date (when_dt)
+	)"
+
+sqlsh "grant select,insert,update,delete on domain_actions to webui,raradm,epprun"

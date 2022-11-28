@@ -83,6 +83,32 @@ LOCK TABLES `deleted_users` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `domain_actions`
+--
+
+DROP TABLE IF EXISTS `domain_actions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `domain_actions` (
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `when_dt` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `new_status_id` int(11) DEFAULT NULL,
+  `action` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`domain_id`,`when_dt`),
+  KEY `by_date` (`when_dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `domain_actions`
+--
+
+LOCK TABLES `domain_actions` WRITE;
+/*!40000 ALTER TABLE `domain_actions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `domain_actions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `domains`
 --
 
@@ -95,7 +121,6 @@ CREATE TABLE `domains` (
   `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `renew_id` int(10) unsigned NOT NULL DEFAULT 0,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   `expiry_dt` datetime NOT NULL,
@@ -188,6 +213,7 @@ CREATE TABLE `users` (
   `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email_varified` tinyint(1) NOT NULL DEFAULT 0,
   `payment_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_data`)),
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
@@ -214,8 +240,9 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-25 16:59:37
+-- Dump completed on 2022-11-28 11:38:43
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
@@ -225,7 +252,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`events` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;

@@ -57,39 +57,45 @@ function changeFavicon(src) {
 	}
 
 
-theme_lazy_hide = null;
-function toggleTheme()
+popup_lazy_hide = popup_lazy_name = null;
+function clr_lazy_hide()
 {
-	let popup = document.getElementById("themePopup");
+	if (!popup_lazy_hide) return;
+	clearTimeout(popup_lazy_hide);
+	popup_lazy_hide = popup_lazy_name = null;
+}
 
-	if (theme_lazy_hide) {
-		clearTimeout(theme_lazy_hide);
-		theme_lazy_hide = null;
-		}
 
-	if (popup.classList.toggle("show"))
-		theme_lazy_hide = setTimeout(hideTheme,10000);
+function togglePopUp(name,tmout)
+{
+	clr_lazy_hide();
+	let popup = document.getElementById(name);
+	if (!popup.classList.toggle("show")) return;
+
+	popup_lazy_hide = setTimeout(hidePopUp,tmout);
+	popup_lazy_name = name;
+
+	let e = null;
+	if (name=="loginPopup") e = document.formLogin.email;
+	if (name=="registerPopup") e = document.formRegister.email;
+	if (e) { e.focus(); e.select(); }
 }
 
 
 
-function hideTheme()
+function hidePopUp()
 {
-	if (!theme_lazy_hide) return;
-	let popup = document.getElementById("themePopup");
+	if (!popup_lazy_hide) return;
+	let popup = document.getElementById(popup_lazy_name);
 	popup.classList.remove("show")
-	theme_lazy_hide = null;
+	clr_lazy_hide();
 }
 
 
 
 function do_theme_change(value)
 {
-	if (theme_lazy_hide) {
-		clearTimeout(theme_lazy_hide);
-		theme_lazy_hide = null;
-		}
-
+	clr_lazy_hide()
 	if (value in theme_colours) changeTheme(value);
 	let popup = document.getElementById("themePopup");
 	popup.classList.remove("show")
@@ -97,26 +103,10 @@ function do_theme_change(value)
 }
 
 
+function toggleLogin() { togglePopUp("loginPopup",30000); }
+function toggleRegister() { togglePopUp("registerPopup",30000); }
+function toggleTheme() { togglePopUp("themePopup",5000); }
 
-function toggleLogin()
-{
-	let popup = document.getElementById("loginPopup");
-	if (popup.classList.toggle("show")) {
-		let e = document.formLogin.email;
-		e.focus(); e.select();
-		}
-}
-
-
-
-function toggleRegister()
-{
-	let popup = document.getElementById("registerPopup");
-	if (popup.classList.toggle("show")) {
-		let e = document.formRegister.email;
-		e.focus(); e.select();
-		}
-}
 
 
 function bodyLoaded()
@@ -350,6 +340,7 @@ function errMsg(txt,elem,min_width)
 <form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>
 <tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="email">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input size=30 name="name">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
@@ -396,7 +387,9 @@ function errMsg(txt,elem,min_width)
 </div>
 
 </td></tr></table>
+</div>
 
+<div id="allBottom" onClick="hidePopUp();">
 <div style='height: 30px;'></div>
 <div id="search">
 <div style='height: 30px;'></div>
@@ -407,7 +400,8 @@ function errMsg(txt,elem,min_width)
 <tr><td><div id="output"></div></div></td></tr>
 </table>
 
-<div id=myMsgPop class='msgPop msgPopNo'></div>
+</div>
+<div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 
 </body>
 </html>

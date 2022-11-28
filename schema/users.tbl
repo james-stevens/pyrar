@@ -13,6 +13,8 @@ sqlsh "CREATE TABLE users (
 	password		${password},
 	name			varchar(100),
 
+	email_varified	boolean not null default false,
+
 	payment_data	json default null,
 
 	created_dt		datetime,

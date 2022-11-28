@@ -31,6 +31,10 @@ my_conv[FIELD_TYPE.STRING] = convert_string
 my_conv[FIELD_TYPE.VAR_STRING] = convert_string
 my_conv[FIELD_TYPE.DATETIME] = convert_string
 my_conv[FIELD_TYPE.JSON] = convert_string
+my_conv[FIELD_TYPE.TINY_BLOB] = convert_string
+my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
+my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
+my_conv[FIELD_TYPE.BLOB] = convert_string
 
 
 def mysql_connect():
@@ -82,9 +86,7 @@ def verbose_output(this_row):
 
 cnx = mysql_connect()
 
-print(">>>>>",args.sql)
 for sql in args.sql:
-    print(">>>>",sql)
     cnx.query(sql)
     res = cnx.store_result()
     FIRST_ROW = True  # pylint incorrectly thinks this is a Constant
