@@ -15,7 +15,10 @@ IS_EMAIL = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{1,}\b'
 def is_valid_display_name(name):
     if len(name.split(" ")) > 3:
         return False
-    for illegal in "&'\";)(][<>\n\t":
+    for illegal in "\\/:%=&'\";)({}#][<>\n\t":
+        if name.find(illegal) >= 0:
+            return False
+    for illegal in ["--", ".."]:
         if name.find(illegal) >= 0:
             return False
     return True

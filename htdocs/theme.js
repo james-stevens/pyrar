@@ -364,7 +364,14 @@ td {
 
 #noLoginBtns {
 	margin-right: 50px;
-	margin-left: 500px;
+	}
+
+#isLoggedIn {
+	margin-right: 50px;
+	}
+
+#userInfo {
+	margin-right: 50px;
 	}
 
 .fullvis { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; text-align: center; }

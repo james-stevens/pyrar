@@ -84,7 +84,7 @@ def return_select():
 
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
-    debug(" SQL " + sql, gzz(czz()))
+    log(" SQL " + sql, gzz(czz()))
     try:
         cnx.query(sql)
         return func()
@@ -151,11 +151,14 @@ def sql_select(table, where, columns="*", limit=None):
     sql = f"select {columns} from {table} where " + data_set(where, " and ")
     if limit is not None:
         sql += f" limit {limit}"
+
     ret, data = run_select(sql)
+
     if not ret:
-        return 0, None
+        return None, None
+
     num_rows = cnx.affected_rows()
-    return num_rows, data if num_rows > 0 else None
+    return num_rows, data
 
 
 def sql_select_one(table, where, columns="*"):

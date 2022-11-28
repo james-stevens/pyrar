@@ -5,6 +5,8 @@ const fqdnCheck = /^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*(
 // regex for adding a host name
 const hostnameCheck = /^([a-zA-Z0-9_*]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])(\.([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_]))*$/
 
+const valid_email = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
 // regex's for RR validation - just add more here and they will work
 const validations = {
     rrAAAA: /^(([0-9A-F]{1,4}:){7,7}[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,7}:|([0-9A-F]{1,4}:){1,6}:[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,5}(:[0-9A-F]{1,4}){1,2}|([0-9A-F]{1,4}:){1,4}(:[0-9A-F]{1,4}){1,3}|([0-9A-F]{1,4}:){1,3}(:[0-9A-F]{1,4}){1,4}|([0-9A-F]{1,4}:){1,2}(:[0-9A-F]{1,4}){1,5}|[0-9A-F]{1,4}:((:[0-9A-F]{1,4}){1,6})|:((:[0-9A-F]{1,4}){1,7}|:)|fe80:(:[0-9A-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9A-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/i,
@@ -41,6 +43,13 @@ function callApi(sfx,callback,inData)
 		if ("okResp" in inData) okResp = inData.okResp;
 		}
 
+	if ("session" in ctx) {
+		httpCmd.headers["X-Pyrar-Sess"] = ctx.session
+	} else {
+		let s = window.localStorage.getItem("session");
+		if (s != null) httpCmd.headers["X-Pyrar-Sess"] = s;
+		}
+
 	fetch(url,httpCmd).then(response => {
 		if (debugAPI) console.log("API>>> Resp",response);
 
@@ -51,7 +60,7 @@ function callApi(sfx,callback,inData)
 					try {
 						return callback(false,JSON.parse(data));
 					} catch {
-						errMsg(`ERROR:1: ${data} ${response.status} ${response.statusText}`)
+						return callback(false,{"error":data});
 						}
 					},
 				() => errMsg(`ERROR:2: ${response.status} ${response.statusText}`)
@@ -60,7 +69,24 @@ function callApi(sfx,callback,inData)
 			}
 		else {
 			response.text().then(data => {
+				had_ses = false;
+				response.headers.forEach((val, key) => {
+					if (key=="x-pyrar-sess") {
+						had_ses = true;
+						if (!("session" in ctx)) {
+							window.localStorage.setItem("session",val);
+							loggedIn(val);
+							}
+						}
+					});
+
+				if ((!had_ses)&&("session" in ctx)) {
+					window.localStorage.removeItem("session");
+					loggedOut();
+					}
+
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
+
 				if ((inData != null)&&(inData.noData)) {
 					return callback(true,true);
 				} else {
@@ -69,6 +95,7 @@ function callApi(sfx,callback,inData)
 						param = JSON.parse(data); }
 					catch {
 						param = data; }
+
 					return callback(true,param);
 					}
 				});

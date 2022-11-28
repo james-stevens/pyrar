@@ -57,6 +57,7 @@ function changeFavicon(src) {
 	}
 
 
+
 popup_lazy_hide = popup_lazy_name = null;
 function clr_lazy_hide()
 {
@@ -95,7 +96,7 @@ function hidePopUp()
 
 function do_theme_change(value)
 {
-	clr_lazy_hide()
+	clr_lazy_hide();
 	if (value in theme_colours) changeTheme(value);
 	let popup = document.getElementById("themePopup");
 	popup.classList.remove("show")
@@ -108,6 +109,136 @@ function toggleRegister() { togglePopUp("registerPopup",30000); }
 function toggleTheme() { togglePopUp("themePopup",5000); }
 
 
+function goSearch()
+{
+	gbl.elm.search.style.display = "block";
+	document.searchForm.search.focus();
+}
+
+
+function loggedIn(session)
+{
+	ctx.session = session;
+	let e = document.getElementById("noLoginBtns");
+	e.style.display = "none";
+	e = document.getElementById("isLoggedIn");
+	e.style.display = "block";
+}
+
+
+
+function doRegister()
+{
+	function regErr(err,item)
+	{
+		errMsg(err,document.getElementById("registerPopup"));
+		clr_lazy_hide();
+		item.focus();
+	}
+
+	let f = document.formRegister;
+
+	if (f.password.value != f.confirm.value) return regErr("Passwords do not match",f.password);
+	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",f.email);
+
+	data = {
+		"name":f.name.value,
+		"email":f.email.value,
+		"password":f.password.value
+		};
+
+	callApi("users/register",(ret,reply) => {
+		if (!ret) {
+			let msg="Error in registration";
+			if ("error" in reply) msg = reply["error"];
+			return regErr(msg,f.email);
+			}
+		hidePopUp();
+
+		if ("user" in reply) ctx.user = reply.user;
+		if ("domains" in reply) ctx.domains = reply.domains;
+
+		login_name();
+
+		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+
+		f.email.value = "";
+		f.password.value = "";
+		f.confirm.value = "";
+		f.name.value = "";
+
+		}, { json: data });
+}
+
+
+
+function login_name()
+{
+	if (("user" in ctx)&&("name" in ctx.user)) {
+		let e = document.getElementById("userInfo");
+		e.innerHTML = "Logged in as: <b>" + ctx.user.name + "</b>";
+		}
+}
+
+
+function doLogin()
+{
+	function regErr(err,item)
+	{
+		errMsg(err,document.getElementById("loginPopup"));
+		clr_lazy_hide();
+		item.focus();
+	}
+
+	let f = document.formLogin;
+	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",f.email);
+
+	data = { "email":f.email.value, "password":f.password.value };
+
+	callApi("users/login",(ret,reply) => {
+		if (!ret) {
+			let msg="Error logging in";
+			if ("error" in reply) msg = reply["error"];
+			return regErr(msg,f.email);
+			}
+		hidePopUp();
+
+		if ("user" in reply) ctx.user = reply.user;
+		if ("domains" in reply) ctx.domains = reply.domains;
+
+		login_name();
+
+		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+
+		f.email.value = "";
+		f.password.value = "";
+
+		}, { json: data });
+}
+
+
+
+function doLogOut()
+{
+	callApi("users/logout",(ret,reply) => {});
+	if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+}
+
+
+
+function loggedOut()
+{
+	delete ctx.session;
+
+	let e = document.getElementById("noLoginBtns");
+	e.style.display = "block";
+	e = document.getElementById("isLoggedIn");
+	e.style.display = "none";
+	e = document.getElementById("userInfo");
+	e.innerHTML = "";
+}
+
+
 
 function bodyLoaded()
 {
@@ -116,45 +247,41 @@ function bodyLoaded()
 		gbl.elm[i] = document.getElementById(i);
 		} );
 
-	callApi("config",(ret,data) => {
-		if (ret) {
-			gbl.config = data;
-			gbl.config.ok_tlds = {};
-			for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
+	callApi("config",(ret,reply) => {
+		if (!ret) {
+			let msg = "Error contacting servers";
+			if ("error" in reply) msg = reply["error"];
+			return errMsg(msg,document.searchForm.search);
+			}
 
-			let my_icon = policy("icon",null);
-			let site_name = policy("business_name","Registrar");
-			document.title = site_name;
-			if (my_icon) {
-				changeFavicon("/icons/"+my_icon)
-				gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
-				}
-			else gbl.elm.businessName.innerHTML = site_name;
+		gbl.config = reply;
+		gbl.config.ok_tlds = {};
+		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
-			gbl.cur = policy("currency_symbol","$");
-			gbl.cur_iso = policy("currency_iso","USD");
+		let my_icon = policy("icon",null);
+		let site_name = policy("business_name","Registrar");
+		document.title = site_name;
+		if (my_icon) {
+			changeFavicon("/icons/"+my_icon)
+			gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
+			}
+		else gbl.elm.businessName.innerHTML = site_name;
+
+		gbl.cur = policy("currency_symbol","$");
+		gbl.cur_iso = policy("currency_iso","USD");
+
+		if ("session" in ctx) {
+			callApi("users/details",(ret,reply) => {
+				console.log(ret,reply);
+				if (ret) {
+					if ("user" in reply) ctx.user = reply.user;
+					if ("domains" in reply) ctx.domains = reply.domains;
+					login_name()
+					}
+				});
 			}
 		});
 }
-
-
-/*
-function fromIDN()
-{
-	let f = document.form1;
-	f.puny.value = toASCII(f.idn.value);
-	f.idn.value = "";
-}
-
-
-
-function fromPuny()
-{
-	let f = document.form1;
-	f.idn.value = toUnicode(f.puny.value);
-	f.puny.value = "";
-}
-*/
 
 
 function one_search_line(item,block_not_avail)
@@ -314,7 +441,6 @@ function errMsg(txt,elem,min_width)
 		if (!min_width) min_width = box.width - 10;
 		m.style.minWidth = min_width + "px";
 		m.style.width = min_width + "px";
-		console.log(box);
 		}
 
 	m.className = 'msgPop msgPopYes';
@@ -332,17 +458,19 @@ function errMsg(txt,elem,min_width)
 <table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
 <tr>
 <td align=left><span id="businessName" class="businessName">Registrar</span></td>
-<td align=right><span id="noLoginBtns">
+<td align=right>
+
+<span id="noLoginBtns">
 
 <div class="popup">
 <span style='width: 75px;' tabindex=0 title="Register me" class=myBtn onClick="toggleRegister(); return false;">Register</span>
 <span class="popuptext" id="registerPopup">
-<form onSubmit='return doRegister();' method=submit action='#' name=formRegister><table>
+<form onSubmit='doRegister(); return False;' method=submit action='#' name=formRegister><table>
 <tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="email">&nbsp;</td></tr>
 	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input size=30 name="name">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 type=password name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input size=30 type=password name="confirm">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
@@ -356,10 +484,10 @@ function errMsg(txt,elem,min_width)
 <div class="popup">
 <span style='width: 75px;' tabindex=0 title="Get me logged in" class=myBtn onClick="toggleLogin(); return false;">Login</span>
 <span class="popuptext" id="loginPopup">
-<form onSubmit='return doLogin();' method=submit action='#' name=formLogin><table>
+<form onSubmit='doLogin();return False;' method=post name=formLogin><table>
 <tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input size=30 name="email">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input size=30 type=password name="password">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
@@ -368,7 +496,16 @@ function errMsg(txt,elem,min_width)
 	</td>
 </tr></form>
 </table>
-</span></td></tr>
+</span>
+</div>
+</span>
+
+<span style="display:none;" id="isLoggedIn">
+	<span style='width: 75px;' tabindex=0 title="List my domains" class=myBtn onClick="myDoamins(); return false;">Domains</span>
+	<span style='width: 75px;' tabindex=0 title="My account details" class=myBtn onClick="myAccount(); return false;">Account</span>
+	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
+</span>
+</td></tr>
 </td></tr>
 
 
@@ -384,24 +521,25 @@ function errMsg(txt,elem,min_width)
 <tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
 </table>
 </span>
+<span style='width: 75px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch();">Search</span>
 </div>
 
-</td></tr></table>
+</td>
+<td align=right><span id="userInfo"></span></tr></table>
 </div>
 
 <div id="allBottom" onClick="hidePopUp();">
-<div style='height: 30px;'></div>
+	<div style='height: 30px;'></div>
 <div id="search">
-<div style='height: 30px;'></div>
-<table align=center>
-<form action="#" name=searchForm onSubmit="return doSearch();">
-<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>
-</form>
-<tr><td><div id="output"></div></div></td></tr>
-</table>
-
+	<div style='height: 30px;'></div>
+	<table align=center>
+	<form action="#" name=searchForm onSubmit="return doSearch();">
+	<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>
+	</form>
+		<tr><td><div id="output"></div></td></tr>
+	</table>
+</div>
 </div>
 <div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
-
 </body>
 </html>

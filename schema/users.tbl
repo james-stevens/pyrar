@@ -17,6 +17,7 @@ sqlsh "CREATE TABLE users (
 
 	payment_data	json default null,
 
+	last_login_dt	datetime,
 	created_dt		datetime,
 	amended_dt		datetime,
 

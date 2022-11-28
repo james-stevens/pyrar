@@ -20,7 +20,7 @@ PYRAR_TAG = "X-Pyrar-Sess"
 PYRAR_TAG_LOWER = "x-pyrar-sess"
 
 log_init(policy.policy("facility_python_code"),
-         policy.policy("log_python_code"))
+         with_logging=policy.policy("log_python_code"))
 
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
@@ -63,7 +63,7 @@ class WebuiReq:
         }
 
     def abort(self, data, err_no=400):
-        return self.response(data, err_no)
+        return self.response({"error": data}, err_no)
 
     def response(self, data, code=200):
         resp = flask.make_response(data, code)
@@ -101,6 +101,27 @@ def get_supported_zones():
 def hello():
     req = WebuiReq()
     return req.response("Hello World\n")
+
+
+@application.route('/api/v1.0/users/details', methods=['GET'])
+def users_details():
+    req = WebuiReq()
+    if req.user_id == 0 or req.session is None:
+        return req.abort("Not logged in")
+
+    ret, user_data = sql.sql_select_one("users", {"user_id": req.user_id})
+    debug(f"USER>>>> {ret} {user_data}", gzz(czz()))
+    if not ret:
+        return req.abort("User-Id not found")
+
+    ret, doms = sql.sql_select("domains", {"user_id": req.user_id})
+    debug(f"DOMS>>>> {ret} {doms}", gzz(czz()))
+    if ret is None:
+        return req.abort("Failed to load domains")
+
+    data = {"session": req.session, "user": user_data, "domains": doms}
+
+    return req.response(data)
 
 
 @application.route('/api/v1.0/users/login', methods=['POST'])
@@ -145,6 +166,8 @@ def users_register():
     debug("REGISTER " + str(val), gzz(czz()))
 
     user_id = val["user"]["user_id"]
+    req.user_id = user_id
+    req.session = val["session"]
     req.base_event["user_id"] = user_id
     req.event(
         {

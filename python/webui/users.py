@@ -79,7 +79,7 @@ def register(data, user_agent):
     if sql.sql_exists("users", {"email": data["email"]}):
         return False, "EMail address already in use"
 
-    if "name" not in data and data["email"].find("@") >= 0:
+    if ("name" not in data) or (data["name"] == "") or (data["name"] is None):
         data["name"] = data["email"].split("@")[0]
 
     all_cols = USER_REQUIRED + ["name", "created_dt", "amended_dt"]
@@ -134,6 +134,12 @@ def logout(ses_code, user_id, user_agent):
         })
 
 
+def update_user_login_dt(user_id):
+    qry = "update users set last_login_dt = now()"
+    qry += f" where user_id = {int(user_id)} limit 1"
+    sql.sql_exec(qry)
+
+
 def login(data, user_agent):
     ret, __ = start_user_check(data)
     if not ret:
@@ -148,6 +154,7 @@ def login(data, user_agent):
     if encoded_pass != enc_pass:
         return False, None
 
+    update_user_login_dt(user_data['user_id'])
     log("User {user_data['user']['user_id']} logged in", gzz(czz()))
     return start_session(user_data, user_agent)
 

@@ -23,10 +23,14 @@ def log(line, where=None):
                 where.lineno) + "]"
         print(f">>>SYSLOG{txt} {line}")
     else:
+        txt = ""
+        if where is not None:
+            txt = "[" + where.filename.split("/")[-1] + ":" + str(
+                where.lineno) + "]"
         if not done_init:
             init()
         if hold_with_logging:
-            syslog.syslog(line)
+            syslog.syslog(txt + line)
 
 
 def init(facility=syslog.LOG_LOCAL6, debug=False, with_logging=True):
