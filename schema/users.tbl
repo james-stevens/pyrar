@@ -14,6 +14,10 @@ sqlsh "CREATE TABLE users (
 	name			varchar(100),
 
 	email_varified	boolean not null default false,
+	auto_renew_all	boolean not null default false,
+	account_closed	boolean not null default false,
+
+	password_reset  varchar(100),
 
 	payment_data	json default null,
 

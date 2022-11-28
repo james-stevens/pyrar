@@ -118,13 +118,13 @@ DROP TABLE IF EXISTS `domains`;
 CREATE TABLE `domains` (
   `domain_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `name_servers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`name_servers`)),
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   `expiry_dt` datetime NOT NULL,
-  PRIMARY KEY (`zone`,`name`),
+  PRIMARY KEY (`name`),
   UNIQUE KEY `by_id` (`domain_id`),
   KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
@@ -214,7 +214,11 @@ CREATE TABLE `users` (
   `password` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_varified` tinyint(1) NOT NULL DEFAULT 0,
+  `auto_renew_all` tinyint(1) NOT NULL DEFAULT 0,
+  `account_closed` tinyint(1) NOT NULL DEFAULT 0,
+  `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_data`)),
+  `last_login_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`),
@@ -240,7 +244,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-28 11:38:43
+-- Dump completed on 2022-11-28 17:24:52
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
