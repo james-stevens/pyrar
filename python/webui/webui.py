@@ -109,19 +109,13 @@ def users_details():
     if req.user_id == 0 or req.session is None:
         return req.abort("Not logged in")
 
-    ret, user_data = sql.sql_select_one("users", {"user_id": req.user_id})
-    debug(f"USER>>>> {ret} {user_data}", gzz(czz()))
-    if not ret:
-        return req.abort("User-Id not found")
-
     ret, doms = sql.sql_select("domains", {"user_id": req.user_id})
-    debug(f"DOMS>>>> {ret} {doms}", gzz(czz()))
     if ret is None:
         return req.abort("Failed to load domains")
 
-    data = {"session": req.session, "user": user_data, "domains": doms}
+    req.user_data["domains"] = doms
 
-    return req.response(data)
+    return req.response(req.user_data)
 
 
 @application.route('/api/v1.0/users/login', methods=['POST'])
@@ -213,5 +207,8 @@ def rest_domain_price():
 
 
 if __name__ == "__main__":
+    log_init(policy.policy("facility_python_code"),
+             debug=True,
+             with_logging=policy.policy("log_python_code"))
     application.run()
     domains.close_epp_sess()

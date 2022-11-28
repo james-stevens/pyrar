@@ -84,7 +84,7 @@ def return_select():
 
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
-    log(" SQL " + sql, gzz(czz()))
+    debug(" SQL " + sql, gzz(czz()))
     try:
         cnx.query(sql)
         return func()
