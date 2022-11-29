@@ -19,5 +19,10 @@
 	"loglevel_nginx": "info",
 
 	"webui_sessions": 10,
-	"syslog_server" : null
+	"syslog_server" : null,
+
+	"epp_retry_attempts": 3,
+	"default_dns_servers": ["ns1.dns.com","ns2.dns.com" ],
+	"my_dns_servers": ["ns1.dns.com","ns2.dns.com" ],
+	"max_renew_years": 10
 }

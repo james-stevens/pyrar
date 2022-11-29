@@ -141,6 +141,35 @@ LOCK TABLES `domains` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `epp_jobs`
+--
+
+DROP TABLE IF EXISTS `epp_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `epp_jobs` (
+  `epp_job_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `job_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
+  `failures` int(11) NOT NULL DEFAULT 0,
+  `execute_dt` datetime DEFAULT NULL,
+  `created_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`epp_job_id`),
+  KEY `by_user` (`execute_dt`)
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `epp_jobs`
+--
+
+LOCK TABLES `epp_jobs` WRITE;
+/*!40000 ALTER TABLE `epp_jobs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `epp_jobs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `events`
 --
 
@@ -244,10 +273,11 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-28 17:24:52
+-- Dump completed on 2022-11-29 11:34:17
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`epp_jobs` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
@@ -255,10 +285,12 @@ GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`events` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;

@@ -4,6 +4,7 @@
 import sys
 import os
 import json
+import datetime    
 
 import lib.fileloader
 from lib import misc
@@ -58,6 +59,12 @@ def format_data(item, data):
         data = str(data)
 
     return "unhex('" + misc.ashex(data) + "')"
+
+
+def now(offset=0):
+    now = datetime.datetime.now()
+    now += datetime.timedelta(seconds=offset)
+    return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def data_set(data, joiner):

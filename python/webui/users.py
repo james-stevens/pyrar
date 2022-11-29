@@ -139,9 +139,7 @@ def logout(ses_code, user_id, user_agent):
 
 
 def update_user_login_dt(user_id):
-    qry = "update users set last_login_dt = now()"
-    qry += f" where user_id = {int(user_id)} limit 1"
-    sql.sql_exec(qry)
+    sql.sql_update_one("users",{"last_login_dt":sql.now()},{"user_id":int(user_id)})
 
 
 def login(data, user_agent):

@@ -47,11 +47,11 @@ if provider not in provs:
     raise ValueError(f"Provider '{provider}' not in '{PROVIDERS_FILE}'")
 
 this_epp = provs[provider]
-for item in ["username", "password", "server", "certpem"]:
+for item in ["username", "password", "server"]:
     if item not in this_epp:
         raise ValueError(f"Item '{item}' missing from provider '{provider}'")
 
-client_pem = f"{CLIENT_PEM_DIR}/{this_epp['certpem']}"
+client_pem = f"{CLIENT_PEM_DIR}/{provider}.pem"
 if not os.path.isfile(client_pem):
     raise ValueError(
         f"Client PEM file for '{provider}' at '{client_pem}' not found")

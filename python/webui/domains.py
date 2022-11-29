@@ -14,14 +14,6 @@ import lib.api as api
 import parsexml
 
 
-def check_domain_name(name):
-    if not tld_lib.supported_tld(name):
-        return "Unsupported TLD"
-    if not validate.is_valid_fqdn(name):
-        return "Domain failed validation"
-    return None
-
-
 class DomainName:
     def __init__(self, domain):
         self.names = None
@@ -40,7 +32,7 @@ class DomainName:
 
     def process_string(self, domain):
         name = domain.lower()
-        if (err := check_domain_name(name)) is None:
+        if (err := validate.check_domain_name(name)) is None:
             self.names = name
         else:
             self.err = err
@@ -51,7 +43,7 @@ class DomainName:
         self.names = []
         for dom in domain:
             name = dom.lower()
-            if (err := check_domain_name(name)) is None:
+            if (err := validate.check_domain_name(name)) is None:
                 self.names.append(name)
                 if self.provider is None:
                     self.provider, self.url = tld_lib.http_req(name)
