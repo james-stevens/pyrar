@@ -4,14 +4,14 @@
 
 import sys
 import json
-import httpx
 import argparse
-
+import time
 from inspect import currentframe as czz, getframeinfo as gzz
+import httpx
 
 from lib import mysql as sql
 from lib.providers import tld_lib
-from lib.log import log, init as log_init
+from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 from lib import api
 from lib import validate
@@ -20,7 +20,7 @@ import domxml
 import xmlapi
 
 clients = None
-retries = policy.policy("epp_retry_attempts", 3)
+max_retries = policy.policy("epp_retry_attempts", 3)
 
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
@@ -44,7 +44,6 @@ def request_json(prov, in_json, url=None):
 
 def start_up_check():
     for prov in clients:
-        ret = request_json(prov, {"hello": None})
         if request_json(prov, {"hello": None}) is None:
             log(f"ERROR: Provider '{prov}' is not working", gzz(czz()))
             sys.exit(0)
@@ -57,14 +56,8 @@ def start_up_check():
             sys.exit(1)
 
 
-def make_add_del_lists(truth, desire):
-    """ make lists of NS to add/remove """
-    return [item for item in desire if item not in truth
-            ], [item for item in truth if item not in desire]
-
-
 def check_dom_data(domain, data_list, validate_func):
-    if (ret := validate.check_domain_name(domain)) is not None:
+    if validate.check_domain_name(domain) is not None:
         log(f"Check: '{domain}' failed validation")
         return False
 
@@ -80,28 +73,6 @@ def check_dom_data(domain, data_list, validate_func):
     return True
 
 
-def update_domain_ns(domain, ns_list):
-    """ update name server of {domain} to {ns_list} """
-    if not check_dom_data(domain, ns_list, validate.is_valid_fqdn):
-        return None
-
-    prov, url = tld_lib.http_req(domain)
-    ret = request_json(prov, domxml.domain_info(domain), url)
-
-    dom_data = domxml.parse_domain_info(ret)
-    if "ns" not in dom_data:
-        return False
-
-    add_ns, del_ns = make_add_del_lists(dom_data["ns"], ns_list)
-
-    if len(add_ns) == 0 and len(del_ns) == 0:
-        return True
-
-    update_xml = domxml.domain_update(domain, add_ns, del_ns, [], [])
-    ret = request_json(prov, update_xml, url)
-    return xmlapi.xmlcode(ret) == 1000
-
-
 def ds_in_list(ds_data, ds_list):
     for ds_item in ds_list:
         if (ds_item["keyTag"] == ds_data["keyTag"]
@@ -110,34 +81,6 @@ def ds_in_list(ds_data, ds_list):
                 and ds_item["digest"] == ds_data["digest"]):
             return True
     return False
-
-
-def make_add_del_ds(truth, desire):
-    return [ds_data for ds_data in desire if not ds_in_list(ds_data, truth)], [
-        ds_data for ds_data in truth if not ds_in_list(ds_data, desire)
-    ]
-
-
-def update_domain_ds(domain, ds_list):
-    """ update ds records of {domain} to {ds_list} """
-    if not check_dom_data(domain, ds_list, validate.is_valid_ds):
-        return None
-
-    prov, url = tld_lib.http_req(domain)
-    ret = request_json(prov, domxml.domain_info(domain), url)
-
-    dom_data = domxml.parse_domain_info(ret)
-    if "ds" not in dom_data:
-        return False
-
-    add_ds, del_ds = make_add_del_ds(dom_data["ds"], ds_list)
-
-    if len(add_ds) == 0 and len(del_ds) == 0:
-        return True
-
-    update_xml = domxml.domain_update(domain, [], [], add_ds, del_ds)
-    ret = request_json(prov, update_xml, url)
-    return xmlapi.xmlcode(ret) == 1000
 
 
 def domain_create(domain, ns_list, years):
@@ -180,48 +123,108 @@ def epp_get_domain_info(domain_name):
     return domxml.parse_domain_info(xml)
 
 
-def update_domain_from_db(domain_id):
-    ret, dom_db = sql.sql_select_one("domains",{"domain_id":domain_id})
+def update_domain_from_db(epp_job):
+    if not sql.has_data(epp_job, "domain_id"):
+        return None
+
+    domain_id = epp_job["domain_id"]
+    ret, dom_db = sql.sql_select_one("domains", {"domain_id": domain_id})
     if not ret:
-        log(f"Domain id {domain_id} could not be found",gzz(czz()))
+        log(f"Domain id {domain_id} could not be found", gzz(czz()))
         return None
 
-    if not sql.has_data(dom_db,"name") or validate.check_domain_name(dom_db["name"]) is not None:
-        log(f"Domain name missing or invalid or not supported",gzz(czz()))
+    if not sql.has_data(dom_db, "name") or validate.check_domain_name(
+            dom_db["name"]) is not None:
+        log(f"EPP[{domain_id}]: Domain name missing or invalid", gzz(czz()))
         return None
 
-    prov, url = tld_lib.http_req(dom_db["name"])
+    name = dom_db["name"]
+
+    prov, url = tld_lib.http_req(name)
     if prov is None or url is None:
-        log(f"Odd: prov or url returned None for '{dom_db['name']}",gzz(czz()))
+        log(f"Odd: prov or url returned None for '{dom_db['name']}",
+            gzz(czz()))
         return None
 
-    xml = request_json(prov, domxml.domain_info(dom_db["name"]), url)
+    xml = request_json(prov, domxml.domain_info(name), url)
     if xmlapi.xmlcode(xml) != 1000:
         return False
 
     epp_info = domxml.parse_domain_info(xml)
 
-    if sql.has_data(dom_db,"name_servers"):
-        ns_list = dom_db["name_servers"].split(",")
-        add_ns, del_ns = make_add_del_lists(epp_info["ns"], ns_list)
-    else:
-        add_ns = del_ns = []
+    return do_domain_update(name, dom_db, epp_info, prov, url)
 
-    if sql.has_data(dom_db,"ds_recs"):
-        ds_list = [ validate.frag_ds(item) for item in dom_db["ds_recs"].split(",") ]
-        add_ds, del_ds = make_add_del_ds(epp_info["ds"], ds_list)
-    else:
-        add_ds = del_ds = []
 
-    if (len(add_ns+del_ns+add_ds+del_ds)) <= 0:
+def do_domain_update(name, dom_db, epp_info, prov, url):
+
+    ns_list = dom_db["name_servers"].split(",") if sql.has_data(
+        dom_db, "name_servers") else []
+    add_ns = [item for item in ns_list if item not in epp_info["ns"]]
+    del_ns = [item for item in epp_info["ns"] if item not in ns_list]
+
+    ds_list = [
+        validate.frag_ds(item) for item in dom_db["ds_recs"].split(",")
+    ] if sql.has_data(dom_db, "ds_recs") else []
+
+    add_ds = [
+        ds_data for ds_data in ds_list
+        if not ds_in_list(ds_data, epp_info["ds"])
+    ]
+
+    del_ds = [
+        ds_data for ds_data in epp_info["ds"]
+        if not ds_in_list(ds_data, ds_list)
+    ]
+
+    if (len(add_ns + del_ns + add_ds + del_ds)) <= 0:
         return True
 
-    update_xml = domxml.domain_update(dom_db["name"], add_ns, del_ns, add_ds, del_ds)
+    update_xml = domxml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
     update_ret = request_json(prov, update_xml, url)
 
     return xmlapi.xmlcode(update_ret) == 1000
 
 
+def job_worked(epp_job):
+    sql.sql_delete_one("epp_jobs", {"epp_job_id": epp_job["epp_job_id"]})
+
+
+def job_abort(epp_job):
+    sql.sql_update_one("epp_jobs", {
+        "amended_dt": None,
+        "failures": 1000
+    }, {"epp_job_id": epp_job["epp_job_id"]})
+
+
+def job_failed(epp_job):
+    sql.sql_update_one(
+        "epp_jobs", {
+            "amended_dt": None,
+            "failures": epp_job["failures"] + 1,
+            "execute_dt": sql.now(60)
+        }, {"epp_job_id": epp_job["epp_job_id"]})
+
+
+EEP_JOB_FUNC = {"dom/update": update_domain_from_db}
+
+
+def run_epp_item(epp_job):
+    if (not sql.has_data(epp_job, "job_type")
+            or epp_job["job_type"] not in EEP_JOB_FUNC):
+        log(f"ABORT: Missing or invalid job_type for {epp_job['epp_job_id']}",
+            gzz(czz()))
+        return job_abort(epp_job)
+
+    log(
+        f"Executing epp_job {epp_job['epp_job_id']} type " +
+        "'{epp_job['job_type']}' retries {epp_job['failures']}", gzz(czz()))
+    job_run = EEP_JOB_FUNC[epp_job["job_type"]](epp_job)
+
+    if job_run is None:
+        return job_abort(epp_job)
+    if job_run:
+        return job_worked(epp_job)
+    return job_failed(epp_job)
 
 
 def main():
@@ -231,14 +234,14 @@ def main():
     parser.add_argument("-l", '--live', action="store_true")
     parser.add_argument("-c", '--create', help="Create a new domain")
     parser.add_argument("-i", '--info', help="Info a domain")
-    parser.add_argument("-n", '--ns-list', help="list of name servers")
-    parser.add_argument("-d", '--ds-list', help="list of DS records")
-    parser.add_argument("-u", '--update-domain', help="Update a domain based on its database data",type=int)
+    parser.add_argument("-u",
+                        '--update-domain',
+                        help="Update a domain based on its database data",
+                        type=int)
     args = parser.parse_args()
-    debug = not args.live
 
     log_init(policy.policy("facility_eppsvr", 170),
-             debug=debug,
+             debug=not args.live,
              with_logging=True)
 
     clients = {p: httpx.Client() for p in tld_lib.ports}
@@ -255,25 +258,19 @@ def main():
         return
 
     if args.info is not None:
-        if args.ns_list is not None:
-            print(">>>> Update NS",
-                  update_domain_ns(args.info, args.ns_list.split(",")))
-            return
-        elif args.ds_list is not None:
-            print(
-                ">>>> Update DS",
-                update_domain_ds(
-                    args.info,
-                    [validate.frag_ds(ds) for ds in args.ds_list.split(",")]))
-            return
-        else:
-            return test_domain_info(args.info)
+        return test_domain_info(args.info)
 
     start_up_check()
 
-    print("RUNNING")
-
-
+    log("EEP-SVR RUNNING", gzz(czz()))
+    while True:
+        query = (f"select * from epp_jobs where execute_dt <= now()" +
+                 " and failures < {max_retries} limit 1")
+        ret, data = sql.run_select(query)
+        if ret and len(data) > 0:
+            run_epp_item(data[0])
+        else:
+            time.sleep(5)
 
 
 if __name__ == "__main__":

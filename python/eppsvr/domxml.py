@@ -68,12 +68,20 @@ def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
     full_xml = {"update": {"domain:update": update_data}}
 
     if len(add_ds) > 0 or len(del_ds) > 0:
-        full_xml["extension"] = { "secDNS:update": { "@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1" } }
+        full_xml["extension"] = {
+            "secDNS:update": {
+                "@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
+            }
+        }
         sec_dns = full_xml["extension"]["secDNS:update"]
         if len(add_ds) > 0:
-            sec_dns["secDNS:add"] = { "secDNS:dsData": [pad_ds(ds) for ds in add_ds] }
+            sec_dns["secDNS:add"] = {
+                "secDNS:dsData": [pad_ds(ds) for ds in add_ds]
+            }
         if len(del_ds) > 0:
-            sec_dns["secDNS:rem"] = { "secDNS:dsData": [pad_ds(ds) for ds in del_ds] }
+            sec_dns["secDNS:rem"] = {
+                "secDNS:dsData": [pad_ds(ds) for ds in del_ds]
+            }
 
     return full_xml
 
@@ -94,7 +102,7 @@ def unroll_one_ns_attr(ns_data):
 
 
 def parse_domain_info(xml):
-    data = {}
+    data = {"ds": [], "ns": [], "status": []}
     if "extension" in xml and "secDNS:infData" in xml[
             "extension"] and "secDNS:dsData" in xml["extension"][
                 "secDNS:infData"]:

@@ -10,8 +10,10 @@ sqlsh "create table epp_jobs (
 	domain_id			${row_id},
 	job_type			varchar(20) not null default 'none',
 	failures			int not null default 0,
+
 	execute_dt			datetime null,
 	created_dt			datetime null,
+	amended_dt			datetime null,
 
 	CONSTRAINT primary key (epp_job_id),
 	key by_user (execute_dt)
