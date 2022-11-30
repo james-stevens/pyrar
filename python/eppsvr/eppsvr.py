@@ -32,7 +32,7 @@ def request_json(prov, in_json, url=None):
     try:
         resp = clients[prov].post(url, json=in_json, headers=api.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
-            debug(">>>>> STATUS: {resp.status_code} {url}", gzz(czz()))
+            debug(f">>>>> STATUS: {resp.status_code} {url}", gzz(czz()))
             return None
         ret = json.loads(resp.content)
         return ret
@@ -56,17 +56,22 @@ def start_up_check():
             sys.exit(1)
 
 
-def check_dom_data(domain, data_list, validate_func):
+def check_dom_data(domain, ns_list, ds_list):
     if validate.check_domain_name(domain) is not None:
         log(f"Check: '{domain}' failed validation")
         return False
 
-    if len(data_list) <= 0:
+    if len(ns_list) <= 0:
         log(f"Check: No NS given for '{domain}'")
         return False
 
-    for item in data_list:
-        if not validate_func(item):
+    for item in ns_list:
+        if not validate.is_valid_fqdn(item):
+            log(f"Check: '{domain}' - data item '{item}' failed validation")
+            return False
+
+    for item in ds_list:
+        if not validate.is_valid_ds(item):
             log(f"Check: '{domain}' - data item '{item}' failed validation")
             return False
 
@@ -83,16 +88,97 @@ def ds_in_list(ds_data, ds_list):
     return False
 
 
-def domain_create(domain, ns_list, years):
-    if not check_dom_data(domain, ns_list, validate.is_valid_fqdn):
+def domain_renew(epp_job):
+    if (dom_db := get_dom_from_db(epp_job)) is None:
         return None
+    name = dom_db["name"]
 
+    if not sql.has_data(dom_db, "num_years") or not sql.has_data(
+            dom_db, "expiry_dt"):
+        return False
+
+    years = int(dom_db["num_years"])
     if years < 1 or years > policy.policy("max_renew_years", 10):
         return None
 
-    prov, url = tld_lib.http_req(domain)
-    ret = request_json(prov, domxml.domain_create(domain, ns_list, years), url)
-    return xmlapi.xmlcode(ret) == 1000
+    prov, url = tld_lib.http_req(name)
+    xml = request_json(
+        prov, domxml.domain_renew(name, years, dom_db["expiry_dt"].split()[0]),
+        url)
+    if xml is None or xmlapi.xmlcode(xml) != 1000:
+        return False
+
+    data = domxml.parse_domain_xml(xml, "ren")
+    sql.sql_update_one("domains", {
+        "amended_dt": None,
+        "num_years": None,
+        "expiry_dt": data["expiry_dt"]
+    }, {"domain_id": dom_db["domain_id"]})
+
+    return True
+
+
+def domain_request_transfer(epp_job):
+    if (dom_db := get_dom_from_db(epp_job)) is None:
+        return None
+    name = dom_db["name"]
+
+    if not sql.has_data(dom_db, "num_years") or not sql.has_data(
+            dom_db, "authcode"):
+        return False
+
+    years = int(dom_db["num_years"])
+    if years < 1 or years > policy.policy("max_renew_years", 10):
+        return None
+
+    prov, url = tld_lib.http_req(name)
+    xml = request_json(
+        prov, domxml.domain_request_transfer(name, dom_db["authcode"], years),
+        url)
+    if xml is None or xmlapi.xmlcode(xml) > 1050:
+        return False
+
+    updt = {"amended_dt": None, "num_years": None}
+
+    if xmlapi.xmlcode(xml) == 1000:
+        data = domxml.parse_domain_xml(xml, "trn")
+        updt["expiry_dt"] = data["expiry_dt"]
+
+    sql.sql_update_one("domains", updt, {"domain_id": dom_db["domain_id"]})
+
+    return True
+
+
+def domain_create(epp_job):
+    if (dom_db := get_dom_from_db(epp_job)) is None:
+        return None
+    name = dom_db["name"]
+
+    ns_list, ds_list = get_domain_lists(dom_db)
+    if not check_dom_data(name, ns_list, ds_list):
+        return None
+
+    years = int(dom_db["num_years"])
+    if years < 1 or years > policy.policy("max_renew_years", 10):
+        return None
+
+    prov, url = tld_lib.http_req(name)
+    xml = request_json(prov, domxml.domain_create(name, ns_list, ds_list,
+                                                  years), url)
+    if xml is None or xmlapi.xmlcode(xml) != 1000:
+        return False
+
+    data = domxml.parse_domain_xml(xml, "cre")
+
+    sql.sql_update_one(
+        "domains", {
+            "amended_dt": None,
+            "status_id": 10,
+            "num_years": None,
+            "expiry_dt": data["expiry_dt"]
+        }, {"domain_id": dom_db["domain_id"]})
+
+    return True
 
 
 def debug_one_xml(domain, xml_js, parser=None):
@@ -110,7 +196,7 @@ def debug_one_xml(domain, xml_js, parser=None):
 
 def test_domain_info(domain):
     return debug_one_xml(domain, domxml.domain_info(domain),
-                         domxml.parse_domain_info)
+                         domxml.parse_domain_xml)
 
 
 def epp_get_domain_info(domain_name):
@@ -118,17 +204,17 @@ def epp_get_domain_info(domain_name):
     if prov is None or url is None:
         return None
     xml = request_json(prov, domxml.domain_info(domain_name), url)
-    if xmlapi.xmlcode(xml) != 1000:
+    if xml is None or xmlapi.xmlcode(xml) != 1000:
         return None
-    return domxml.parse_domain_info(xml)
+    return domxml.parse_domain_xml(xml, "inf")
 
 
-def update_domain_from_db(epp_job):
+def get_dom_from_db(epp_job):
     if not sql.has_data(epp_job, "domain_id"):
         return None
 
     domain_id = epp_job["domain_id"]
-    ret, dom_db = sql.sql_select_one("domains", {"domain_id": domain_id})
+    ret, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
     if not ret:
         log(f"Domain id {domain_id} could not be found", gzz(czz()))
         return None
@@ -138,33 +224,54 @@ def update_domain_from_db(epp_job):
         log(f"EPP[{domain_id}]: Domain name missing or invalid", gzz(czz()))
         return None
 
+    return dom_db
+
+
+def set_authcode(epp_job):
+    if (dom_db := get_dom_from_db(epp_job)) is None:
+        return None
     name = dom_db["name"]
 
     prov, url = tld_lib.http_req(name)
     if prov is None or url is None:
-        log(f"Odd: prov or url returned None for '{dom_db['name']}",
-            gzz(czz()))
+        log(f"Odd: prov or url returned None for '{name}", gzz(czz()))
         return None
 
-    xml = request_json(prov, domxml.domain_info(name), url)
-    if xmlapi.xmlcode(xml) != 1000:
+    req = domxml.domain_set_authcode(name, dom_db["authcode"])
+    xml = request_json(prov, req, url)
+    return xml is not None and xmlapi.xmlcode(xml) == 1000
+
+
+def update_domain_from_db(epp_job):
+    if (dom_db := get_dom_from_db(epp_job)) is None:
+        return None
+
+    name = dom_db["name"]
+    if (epp_info := epp_get_domain_info(name)) is None:
         return False
 
-    epp_info = domxml.parse_domain_info(xml)
-
-    return do_domain_update(name, dom_db, epp_info, prov, url)
+    return do_domain_update(name, dom_db, epp_info)
 
 
-def do_domain_update(name, dom_db, epp_info, prov, url):
-
+def get_domain_lists(dom_db):
     ns_list = dom_db["name_servers"].split(",") if sql.has_data(
         dom_db, "name_servers") else []
-    add_ns = [item for item in ns_list if item not in epp_info["ns"]]
-    del_ns = [item for item in epp_info["ns"] if item not in ns_list]
 
     ds_list = [
         validate.frag_ds(item) for item in dom_db["ds_recs"].split(",")
     ] if sql.has_data(dom_db, "ds_recs") else []
+
+    return ns_list, ds_list
+
+
+def do_domain_update(name, dom_db, epp_info):
+    prov, url = tld_lib.http_req(name)
+    ns_list, ds_list = get_domain_lists(dom_db)
+    if not check_dom_data(name, ns_list, ds_list):
+        return None
+
+    add_ns = [item for item in ns_list if item not in epp_info["ns"]]
+    del_ns = [item for item in epp_info["ns"] if item not in ns_list]
 
     add_ds = [
         ds_data for ds_data in ds_list
@@ -182,7 +289,7 @@ def do_domain_update(name, dom_db, epp_info, prov, url):
     update_xml = domxml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
     update_ret = request_json(prov, update_xml, url)
 
-    return xmlapi.xmlcode(update_ret) == 1000
+    return update_ret is not None and xmlapi.xmlcode(update_ret) == 1000
 
 
 def job_worked(epp_job):
@@ -205,7 +312,13 @@ def job_failed(epp_job):
         }, {"epp_job_id": epp_job["epp_job_id"]})
 
 
-EEP_JOB_FUNC = {"dom/update": update_domain_from_db}
+EEP_JOB_FUNC = {
+    "dom/update": update_domain_from_db,
+    "dom/create": domain_create,
+    "dom/renew": domain_renew,
+    "dom/transfer": domain_request_transfer,
+    "dom/authcode": set_authcode
+}
 
 
 def run_epp_item(epp_job):
@@ -215,10 +328,10 @@ def run_epp_item(epp_job):
             gzz(czz()))
         return job_abort(epp_job)
 
-    log(
-        f"Executing epp_job {epp_job['epp_job_id']} type " +
-        "'{epp_job['job_type']}' retries {epp_job['failures']}", gzz(czz()))
     job_run = EEP_JOB_FUNC[epp_job["job_type"]](epp_job)
+    log(
+        f"Executing EPP {epp_job['epp_job_id']} type '{epp_job['job_type']}' "
+        + f"retries {epp_job['failures']} gave {job_run}", gzz(czz()))
 
     if job_run is None:
         return job_abort(epp_job)
@@ -227,50 +340,66 @@ def run_epp_item(epp_job):
     return job_failed(epp_job)
 
 
-def main():
-    global clients
-
-    parser = argparse.ArgumentParser(description='EPP Jobs Runner')
-    parser.add_argument("-l", '--live', action="store_true")
-    parser.add_argument("-c", '--create', help="Create a new domain")
-    parser.add_argument("-i", '--info', help="Info a domain")
-    parser.add_argument("-u",
-                        '--update-domain',
-                        help="Update a domain based on its database data",
-                        type=int)
-    args = parser.parse_args()
-
-    log_init(policy.policy("facility_eppsvr", 170),
-             debug=not args.live,
-             with_logging=True)
-
-    clients = {p: httpx.Client() for p in tld_lib.ports}
-    sql.connect("epprun")
-
-    if args.update_domain is not None:
-        return update_domain_from_db(args.update_domain)
-
-    if args.create is not None:
-        print(
-            ">>> CREATE",
-            domain_create(args.create,
-                          policy.policy("default_dns_servers", DEFAULT_NS), 1))
-        return
-
-    if args.info is not None:
-        return test_domain_info(args.info)
-
+def run_server():
     start_up_check()
 
-    log("EEP-SVR RUNNING", gzz(czz()))
+    log("EPP-SERVER RUNNING", gzz(czz()))
     while True:
-        query = (f"select * from epp_jobs where execute_dt <= now()" +
-                 " and failures < {max_retries} limit 1")
+        query = ("select * from epp_jobs where execute_dt <= now()" +
+                 f" and failures < {max_retries} limit 1")
         ret, data = sql.run_select(query)
         if ret and len(data) > 0:
             run_epp_item(data[0])
         else:
             time.sleep(5)
+
+
+def main():
+    global clients
+
+    parser = argparse.ArgumentParser(description='EPP Jobs Runner')
+    parser.add_argument("-l", '--live', action="store_true")
+    parser.add_argument("-i", '--info', help="Info a domain")
+    parser.add_argument("-c", '--create', help="Create a new domain", type=int)
+    parser.add_argument("-p", '--password', help="set authcode", type=int)
+    parser.add_argument("-u", '--update', help="Update a domain", type=int)
+    parser.add_argument("-n", '--renew', help="Renew a domain", type=int)
+    parser.add_argument("-t", '--transfer', help="Transfer a domain", type=int)
+    args = parser.parse_args()
+
+    clients = {p: httpx.Client() for p in tld_lib.ports}
+    sql.connect("epprun")
+
+    if args.live:
+        log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
+        return run_server()
+
+    log_init(policy.policy("facility_eppsvr", 170),
+             debug=True,
+             with_logging=True)
+    if args.password is not None:
+        print(">>>> SET_AUTH", set_authcode({"domain_id": args.password}))
+        return
+
+    if args.update is not None:
+        print(">>>>", update_domain_from_db({"domain_id": args.update}))
+        return
+
+    if args.create is not None:
+        print(">>> CREATE", domain_create({"domain_id": args.create}))
+        return
+
+    if args.renew is not None:
+        print(">>> CREATE", domain_renew({"domain_id": args.renew}))
+        return
+
+    if args.transfer is not None:
+        print(">>> TRANSFER",
+              domain_request_transfer({"domain_id": args.transfer}))
+        return
+
+    if args.info is not None:
+        return test_domain_info(args.info)
 
 
 if __name__ == "__main__":

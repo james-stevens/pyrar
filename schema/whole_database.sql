@@ -119,7 +119,8 @@ CREATE TABLE `domains` (
   `domain_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `status_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `status_id` int(11) NOT NULL DEFAULT 0,
+  `num_years` int(11) NOT NULL DEFAULT 0,
   `name_servers` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `ds_recs` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `authcode` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -156,9 +157,10 @@ CREATE TABLE `epp_jobs` (
   `failures` int(11) NOT NULL DEFAULT 0,
   `execute_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
+  `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`epp_job_id`),
   KEY `by_user` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10464 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -274,7 +276,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-11-30 11:44:55
+-- Dump completed on 2022-11-30 16:08:35
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
@@ -292,6 +294,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;
