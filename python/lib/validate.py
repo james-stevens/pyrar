@@ -11,10 +11,14 @@ from lib.providers import tld_lib
 
 from lib import misc
 
-
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
 IS_EMAIL = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{1,}\b'
+
+MAX_DS_LEN = {"keyTag": 5, "alg": 2, "digestType": 1}
+MAX_DS_VAL = {"keyTag": 65535, "alg": 20, "digestType": 4}
+VALID_DS_LEN = {1: 40, 2: 64, 3: 64, 4: 96}
+
 
 def check_domain_name(name):
     if not tld_lib.supported_tld(name):
@@ -73,43 +77,33 @@ def frag_ds(ds_data):
     items = ds_data.split(" ")
     if len(items) < 4:
         return None
-    return {
-        "keyTag":items[0],
-        "alg":items[1],
-        "digestType":items[2],
-        "digest": ds_data[ds_data.find(items[3]):].replace(" ","").upper()
-        }
+    data = {"keyTag": items[0], "alg": items[1], "digestType": items[2]}
+    del items[0:3]
+    data["digest"] = "".join(items).replace(" ", "").upper()
+    return data
 
 
 def is_valid_ds(ds_rec):
-    if not ds_rec["keyTag"].isdigit() or not ds_rec["alg"].isdigit() or not ds_rec["digestType"].isdigit():    
-        return False
+    ints = {}
+    for item in ["keyTag", "alg", "digestType"]:
+        if not ds_rec[item].isdigit() or len(ds_rec[item]) > MAX_DS_LEN[item]:
+            return False
 
-    if len(ds_rec["keyTag"]) > 5 or len(ds_rec["alg"]) > 2 or len(ds_rec["digestType"]) > 1:
-        return False
+        ints[item] = int(ds_rec[item])
+        if ints[item] > MAX_DS_VAL[item] or ints[item] < 1:
+            return False
 
-    key_tag = int(ds_rec["keyTag"])
-    if key_tag < 0 or key_tag > 65536:
-        return False
-
-    alg = int(ds_rec["alg"])
-    if alg < 1 or alg > 20 or alg in [4,9,11]:
-        return False
-
-    digest_tp = int(ds_rec["digestType"])
-    if digest_tp not in [1,2,3,4]:
+    if ints["alg"] in [4, 9, 11]:
         return False
 
     for ch in ds_rec["digest"]:
         if ch not in misc.HEXLIB:
             return False
 
-    if {1:40,2:64,3:64,4:96}[digest_tp] != len(ds_rec["digest"]):
+    if VALID_DS_LEN[ints["digestType"]] != len(ds_rec["digest"]):
         return False
 
     return True
-
-
 
 
 if __name__ == "__main__":
@@ -123,5 +117,5 @@ if __name__ == "__main__":
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
     for x in sys.argv:
+        print(">>>>>", x, frag_ds(x))
         print(x, is_valid_ds(frag_ds(x)))
-

@@ -9,6 +9,7 @@ import argparse
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
+from lib import mysql as sql
 from lib.providers import tld_lib
 from lib.log import log, init as log_init
 from lib.policy import this_policy as policy
@@ -45,14 +46,12 @@ def start_up_check():
     for prov in clients:
         ret = request_json(prov, {"hello": None})
         if request_json(prov, {"hello": None}) is None:
-            print(f"ERROR: Provider '{prov}' is not working")
             log(f"ERROR: Provider '{prov}' is not working", gzz(czz()))
             sys.exit(0)
 
     for prov in clients:
         if not whois_priv.check_privacy_exists(clients[prov],
                                                tld_lib.url(prov)):
-            print(f"ERROR: Provider '{prov}' privacy record failed to create")
             log(f"ERROR: Provider '{prov}' privacy record failed to create",
                 gzz(czz()))
             sys.exit(1)
@@ -98,8 +97,6 @@ def update_domain_ns(domain, ns_list):
     if len(add_ns) == 0 and len(del_ns) == 0:
         return True
 
-    print(">>>>> ADD_NS", add_ns)
-    print(">>>>> DEL_NS", del_ns)
     update_xml = domxml.domain_update(domain, add_ns, del_ns, [], [])
     ret = request_json(prov, update_xml, url)
     return xmlapi.xmlcode(ret) == 1000
@@ -138,13 +135,8 @@ def update_domain_ds(domain, ds_list):
     if len(add_ds) == 0 and len(del_ds) == 0:
         return True
 
-    print(">>>>> ADD_DS", add_ds)
-    print(">>>>> DEL_DS", del_ds)
-
     update_xml = domxml.domain_update(domain, [], [], add_ds, del_ds)
     ret = request_json(prov, update_xml, url)
-    print(json.dumps(update_xml,indent=2))
-    print(json.dumps(ret,indent=2))
     return xmlapi.xmlcode(ret) == 1000
 
 
@@ -178,6 +170,60 @@ def test_domain_info(domain):
                          domxml.parse_domain_info)
 
 
+def epp_get_domain_info(domain_name):
+    prov, url = tld_lib.http_req(domain_name)
+    if prov is None or url is None:
+        return None
+    xml = request_json(prov, domxml.domain_info(domain_name), url)
+    if xmlapi.xmlcode(xml) != 1000:
+        return None
+    return domxml.parse_domain_info(xml)
+
+
+def update_domain_from_db(domain_id):
+    ret, dom_db = sql.sql_select_one("domains",{"domain_id":domain_id})
+    if not ret:
+        log(f"Domain id {domain_id} could not be found",gzz(czz()))
+        return None
+
+    if not sql.has_data(dom_db,"name") or validate.check_domain_name(dom_db["name"]) is not None:
+        log(f"Domain name missing or invalid or not supported",gzz(czz()))
+        return None
+
+    prov, url = tld_lib.http_req(dom_db["name"])
+    if prov is None or url is None:
+        log(f"Odd: prov or url returned None for '{dom_db['name']}",gzz(czz()))
+        return None
+
+    xml = request_json(prov, domxml.domain_info(dom_db["name"]), url)
+    if xmlapi.xmlcode(xml) != 1000:
+        return False
+
+    epp_info = domxml.parse_domain_info(xml)
+
+    if sql.has_data(dom_db,"name_servers"):
+        ns_list = dom_db["name_servers"].split(",")
+        add_ns, del_ns = make_add_del_lists(epp_info["ns"], ns_list)
+    else:
+        add_ns = del_ns = []
+
+    if sql.has_data(dom_db,"ds_recs"):
+        ds_list = [ validate.frag_ds(item) for item in dom_db["ds_recs"].split(",") ]
+        add_ds, del_ds = make_add_del_ds(epp_info["ds"], ds_list)
+    else:
+        add_ds = del_ds = []
+
+    if (len(add_ns+del_ns+add_ds+del_ds)) <= 0:
+        return True
+
+    update_xml = domxml.domain_update(dom_db["name"], add_ns, del_ns, add_ds, del_ds)
+    update_ret = request_json(prov, update_xml, url)
+
+    return xmlapi.xmlcode(update_ret) == 1000
+
+
+
+
 def main():
     global clients
 
@@ -187,6 +233,7 @@ def main():
     parser.add_argument("-i", '--info', help="Info a domain")
     parser.add_argument("-n", '--ns-list', help="list of name servers")
     parser.add_argument("-d", '--ds-list', help="list of DS records")
+    parser.add_argument("-u", '--update-domain', help="Update a domain based on its database data",type=int)
     args = parser.parse_args()
     debug = not args.live
 
@@ -195,6 +242,10 @@ def main():
              with_logging=True)
 
     clients = {p: httpx.Client() for p in tld_lib.ports}
+    sql.connect("epprun")
+
+    if args.update_domain is not None:
+        return update_domain_from_db(args.update_domain)
 
     if args.create is not None:
         print(
@@ -223,5 +274,9 @@ def main():
     print("RUNNING")
 
 
+
+
 if __name__ == "__main__":
     main()
+    if sql.cnx is not None:
+        sql.cnx.close()

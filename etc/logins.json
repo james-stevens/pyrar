@@ -2,7 +2,9 @@
 	"pyrar": {
 		"connect":"192.168.1.240:3306",
 		"database":"pyrar",
-		"webui": "BWB39B9M1c1ig"
+		"webui": "BWB39B9M1c1ig",
+		"raradm": "132wSQI9Qik76",
+		"epprun": "P0tsOvAJ2iMqo"
 		},
 	"pdns" : {
 		"connect":"192.168.1.240:3306",

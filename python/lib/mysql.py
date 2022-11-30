@@ -4,7 +4,7 @@
 import sys
 import os
 import json
-import datetime    
+import datetime
 
 import lib.fileloader
 from lib import misc
@@ -59,6 +59,11 @@ def format_data(item, data):
         data = str(data)
 
     return "unhex('" + misc.ashex(data) + "')"
+
+
+
+def has_data(row,col):
+    return (col in row and row[col] is not None and row[col] != "")
 
 
 def now(offset=0):
