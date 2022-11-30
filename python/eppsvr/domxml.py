@@ -52,55 +52,41 @@ def domain_create(name, ns_list, years):
     }
 
 
-def domain_update_ns(domain, add_ns, del_ns):
-    return {
-        "update": {
-            "domain:update": {
-                "@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0",
-                "domain:name": domain,
-                "domain:rem": {
-                    "domain:ns": {
-                        "domain:hostObj": del_ns
-                    }
-                },
-                "domain:add": {
-                    "domain:ns": {
-                        "domain:hostObj": add_ns
-                    }
-                }
-            }
-        }
+def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
+
+    update_data = {
+        "@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0",
+        "domain:name": domain
     }
+
+    if len(add_ns) > 0:
+        update_data["domain:add"] = {"domain:ns": {"domain:hostObj": add_ns}}
+
+    if len(del_ns) > 0:
+        update_data["domain:rem"] = {"domain:ns": {"domain:hostObj": del_ns}}
+
+    full_xml = {"update": {"domain:update": update_data}}
+
+    if len(add_ds) > 0 or len(del_ds) > 0:
+        full_xml["extension"] = { "secDNS:update": { "@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1" } }
+        sec_dns = full_xml["extension"]["secDNS:update"]
+        if len(add_ds) > 0:
+            sec_dns["secDNS:add"] = { "secDNS:dsData": [pad_ds(ds) for ds in add_ds] }
+        if len(del_ds) > 0:
+            sec_dns["secDNS:rem"] = { "secDNS:dsData": [pad_ds(ds) for ds in del_ds] }
+
+    return full_xml
 
 
 def pad_ds(ds_dt):
-    return { "secDNS:"+tag:val for tag,val in ds_dt.items() }
-
-
-def domain_update_ds(domain, add_ds, del_ds):
-    return {
-       "update": {
-          "domain:update": {
-             "@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0",
-             "domain:name": domain
-          }
-       },
-       "extension": {
-          "secDNS:update": {
-             "@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1",
-             "secDNS:add": {
-                "secDNS:dsData": [ pad_ds(ds) for ds in add_ds ]
-             },
-             "secDNS:rem": {
-                "secDNS:dsData": [ pad_ds(ds) for ds in del_ds ]
-             }
-          }
-       }
-    }
+    return {"secDNS:" + tag: val for tag, val in ds_dt.items()}
 
 
 def unroll_one_ds(ds_data):
-    return { tag:ds_data["secDNS:"+tag] for tag in ["keyTag","alg","digestType","digest"]}
+    return {
+        tag: ds_data["secDNS:" + tag]
+        for tag in ["keyTag", "alg", "digestType", "digest"]
+    }
 
 
 def unroll_one_ns_attr(ns_data):
@@ -114,7 +100,7 @@ def parse_domain_info(xml):
                 "secDNS:infData"]:
         ds_data = xml["extension"]["secDNS:infData"]["secDNS:dsData"]
         if isinstance(ds_data, dict):
-            data["ds"] = [ unroll_one_ds(ds_data) ]
+            data["ds"] = [unroll_one_ds(ds_data)]
         elif isinstance(ds_data, list):
             data["ds"] = [unroll_one_ds(item) for item in ds_data]
 

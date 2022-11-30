@@ -9,7 +9,6 @@ sqlsh "create table epp_jobs (
 	epp_job_id			${auto},
 	domain_id			${row_id},
 	job_type			varchar(20) not null default 'none',
-	data				json,
 	failures			int not null default 0,
 	execute_dt			datetime null,
 	created_dt			datetime null,

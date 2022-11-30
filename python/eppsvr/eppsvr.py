@@ -100,7 +100,7 @@ def update_domain_ns(domain, ns_list):
 
     print(">>>>> ADD_NS", add_ns)
     print(">>>>> DEL_NS", del_ns)
-    update_xml = domxml.domain_update_ns(domain, add_ns, del_ns)
+    update_xml = domxml.domain_update(domain, add_ns, del_ns, [], [])
     ret = request_json(prov, update_xml, url)
     return xmlapi.xmlcode(ret) == 1000
 
@@ -141,7 +141,7 @@ def update_domain_ds(domain, ds_list):
     print(">>>>> ADD_DS", add_ds)
     print(">>>>> DEL_DS", del_ds)
 
-    update_xml = domxml.domain_update_ds(domain, add_ds, del_ds)
+    update_xml = domxml.domain_update(domain, [], [], add_ds, del_ds)
     ret = request_json(prov, update_xml, url)
     print(json.dumps(update_xml,indent=2))
     print(json.dumps(ret,indent=2))

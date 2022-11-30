@@ -12,7 +12,9 @@ sqlsh "create table domains (
 
 	status_id			${row_id},
 
-	name_servers		json,
+	name_servers		varchar(3500) not null default '',
+	ds_recs				varchar(3500) not null default '',
+	authcode			varchar(30),
 
 	created_dt			datetime null,
 	amended_dt			datetime null,

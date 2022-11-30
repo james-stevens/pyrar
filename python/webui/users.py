@@ -18,7 +18,7 @@ USER_REQUIRED = ["email", "password"]
 
 
 def make_session_code(user_id):
-    hsh = hashlib.sha512()
+    hsh = hashlib.sha256()
     hsh.update(secrets.token_bytes(500))
     hsh.update(str(user_id).encode("utf-8"))
     hsh.update(str(os.getpid()).encode("utf-8"))
@@ -27,7 +27,7 @@ def make_session_code(user_id):
 
 
 def make_session_key(session_code, user_agent):
-    hsh = hashlib.sha512()
+    hsh = hashlib.sha256()
     hsh.update(session_code.encode("utf-8"))
     hsh.update(user_agent.encode("utf-8"))
     return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
