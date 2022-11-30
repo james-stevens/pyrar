@@ -33,10 +33,10 @@
 
 	"extra": {
 		"desc": "Somebody Else",
-		"username": "NIC-2010",
-		"password": "abc123",
+		"username": "NIC-2012",
+		"password": "xyz987",
 		"server": "contain.jrcs.net",
-		"sessions": 2,
+		"sessions": 3,
 		"max_checks": 10,
 		"prices" : { "default": "x2" },
 		"domains" : {
