@@ -209,12 +209,6 @@ function doRegister()
 }
 
 
-
-function login_name()
-{
-}
-
-
 function doLogin()
 {
 	function regErr(err,item)
@@ -241,7 +235,7 @@ function doLogin()
 		if ("user" in reply) ctx.user = reply.user;
 		if ("domains" in reply) ctx.domains = reply.domains;
 
-		login_name();
+		loggedIn();
 
 		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
 
