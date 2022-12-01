@@ -30,7 +30,7 @@ const theme_colours = {
 		"464B52","9898ff","808080","767B92","ffffff",
 		"ffd0d0","C9D1D9","25303B","010409"
 		],
-	"custom": [
+	"default": [
 		"C9D1D9","555555","25303B","010409","15202B",
 		"999999","25303B","464B52","35404B","464B52",
 		"464B52","9898ff","e0e0e0","767B92","ffffff",
@@ -114,7 +114,7 @@ h2 { text-align: center; }
 	font-weight: bold;
 	padding-left: 30px;
 	font-size: 25px;
-	magrin-left: 50px;
+	margin-left: 10px;
 	}
 
 html {
