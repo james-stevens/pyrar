@@ -7,4 +7,5 @@ echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
 awk '{ printf "::respawn:/usr/local/bin/start_wsgi_epprest 1 %s\n",$1 }' /run/prov_ports
 echo "::respawn:/usr/local/bin/start_wsgi_webui"
 echo "::respawn:/usr/local/bin/start_nginx"
+echo "::respawn:/usr/local/bin/start_epp_job_runner"
 } > /run/inittab

@@ -10,7 +10,7 @@ from lib.providers import tld_lib
 import lib.validate as validate
 from inspect import currentframe as czz, getframeinfo as gzz
 from lib.log import log
-import lib.api as api
+from lib import misc
 import parsexml
 
 
@@ -67,7 +67,7 @@ def http_price_domains(domobj, years, which):
     resp = clients[domobj.provider].post(domobj.url,
                                          json=xml_check_with_fees(
                                              domobj, years, which),
-                                         headers=api.HEADER)
+                                         headers=misc.HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"

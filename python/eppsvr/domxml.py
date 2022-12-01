@@ -203,6 +203,7 @@ def parse_domain_xml(xml, data_type):
     data["create_dt"] = dt_to_sql(dom_data, "domain:crDate")
     data["expiry_dt"] = dt_to_sql(dom_data, "domain:exDate")
     data["name"] = dom_data["domain:name"]
+    data["registrar"] = dom_data["domain:clID"]
     return data
 
 

@@ -23,10 +23,7 @@ function callApi(sfx,callback,inData)
 {
 	document.body.style.cursor="progress";
 
-	if (debugAPI) {
-		console.log("API>>>",sfx);
-		console.log("API>>>",inData);
-		}
+	if (debugAPI) { console.log("API>>>",sfx); console.log("API>>>",inData); }
 
 	let url = `${window.location.origin}/api/v1.0/${sfx}`;
 
@@ -44,11 +41,15 @@ function callApi(sfx,callback,inData)
 		}
 
 	if ("session" in ctx) {
-		httpCmd.headers["X-Pyrar-Sess"] = ctx.session
+		httpCmd.headers["X-Session-Code"] = ctx.session
 	} else {
 		let s = window.localStorage.getItem("session");
-		if (s != null) httpCmd.headers["X-Pyrar-Sess"] = s;
+		if (s != null) {
+			httpCmd.headers["X-Session-Code"] = s;
+			ctx.session = s;
+			}
 		}
+	if (debugAPI) { console.log("OUT-HEAD",httpCmd.headers); console.log("OUT-METHOD",httpCmd.method); }
 
 	fetch(url,httpCmd).then(response => {
 		if (debugAPI) console.log("API>>> Resp",response);
@@ -69,19 +70,22 @@ function callApi(sfx,callback,inData)
 			}
 		else {
 			response.text().then(data => {
-				had_ses = false;
+				got_ses = false;
 				response.headers.forEach((val, key) => {
-					if (key=="x-pyrar-sess") {
-						had_ses = true;
+					// console.log("HEAD",key,"=",val);
+					if (key=="x-session-code") {
+						got_ses = true;
 						if (!("session" in ctx)) {
 							window.localStorage.setItem("session",val);
-							loggedIn(val);
+							ctx.session = val;
+							loggedIn();
 							}
 						}
 					});
 
-				if ((!had_ses)&&("session" in ctx)) {
+				if ((!got_ses)&&("session" in ctx)) {
 					window.localStorage.removeItem("session");
+					delete ctx.session;
 					loggedOut();
 					}
 

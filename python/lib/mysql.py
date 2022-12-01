@@ -111,7 +111,7 @@ def run_sql(sql, func):
             except Exception as exc:
                 this_exc = exc
                 pass
-        log(this_exc, gzz(czz()))
+        log("ERROR:"+str(this_exc), gzz(czz()))
         return False, None
 
 
@@ -159,8 +159,10 @@ def sql_update(table, data, where, limit=None):
     return sql_exec(sql)
 
 
-def sql_select(table, where, columns="*", limit=None):
+def sql_select(table, where, columns="*", limit=None, order_by=None):
     sql = f"select {columns} from {table} where " + data_set(where, " and ")
+    if order_by is not None:
+        sql += f" order by {order_by}"
     if limit is not None:
         sql += f" limit {limit}"
 

@@ -11,7 +11,7 @@
 	"log_python_code": true,
 	"facility_python_code": 170,
 
-	"log_python_req": true,
+	"log_python_req": false,
 	"facility_python": "local0",
 	"loglevel_python": "info",
 

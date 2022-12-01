@@ -55,6 +55,25 @@ function theme_css(theme) {
 .fadein  { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
 .fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
+
+.userIcons {
+	margin-right: 10px;
+	cursor: pointer;
+	font-size: 22px;
+	}
+
+#userSpace {
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: #${cols[4]};
+	border: 1px solid;
+	border-color: #${cols[10]};
+	box-shadow: 3px 3px #${cols[18]};
+	padding: 10px;
+	border-radius: 6px;
+	}
+
 ::placeholder {
 	color: #${cols[12]};
 	opacity: 1; }
@@ -231,16 +250,29 @@ form {
 
 td {
 	font-family:inherit;
-	font-size: 14px;
+	font-size: inherit;
 	vertical-align: top;
 	padding-left: 7px;
 	padding-right: 7px;
 	white-space: nowrap;
 	}
 
+.promptCell {
+	font-weight: bold;
+	font-family:inherit;
+	font-size: inherit;
+	vertical-align: top;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: normal;
+	min-width: 50%;
+	overflow-wrap: anywhere;
+	text-align: right;
+	}
+
 .dataCell {
 	font-family:inherit;
-	font-size: 14px;
+	font-size: inherit;
 	vertical-align: top;
 	padding-left: 7px;
 	padding-right: 7px;
@@ -257,9 +289,17 @@ td {
 	background-color: #${cols[4]};
 	}
 
-.dataRow:hover {
-	background-color: #${cols[2]};
+.dataRow:hover { background-color: #${cols[2]}; }
+
+.dataRowBig {
+	font-family: inherit;
+	font-size: 16px;
+	cursor: pointer;
+	color: #${cols[16]};
+	background-color: #${cols[4]};
 	}
+
+.dataRowBig:hover { background-color: #${cols[2]}; }
 
 
 .formPrompt {

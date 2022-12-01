@@ -3,7 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 HEXLIB = "0123456789ABCDEF"
-
+HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 def ashex(line):
     ret = ""

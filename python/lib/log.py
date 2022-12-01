@@ -18,8 +18,8 @@ def debug(line, where):
 def log(line, where=None):
     txt = ""
     if where is not None:
-        txt = "[" + where.filename.split("/")[-1] + ":" + str(
-            where.lineno) + "]"
+        fname = where.filename.split("/")[-1].split(".")[0]
+        txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
     if hold_debug:
         print(f">>>SYSLOG{txt} {line}")
     else:

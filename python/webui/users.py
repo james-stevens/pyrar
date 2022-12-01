@@ -23,17 +23,17 @@ def make_session_code(user_id):
     hsh.update(str(user_id).encode("utf-8"))
     hsh.update(str(os.getpid()).encode("utf-8"))
     hsh.update(str(time.time()).encode("utf-8"))
-    return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
+    return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
 def make_session_key(session_code, user_agent):
     hsh = hashlib.sha256()
     hsh.update(session_code.encode("utf-8"))
     hsh.update(user_agent.encode("utf-8"))
-    return base64.b64encode(hsh.digest()).decode("utf-8")[:-2]
+    return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
-def remove_from_users(data):
+def secure_user_data(data):
     for block in ["password", "payment_data"]:
         del data[block]
 
@@ -43,15 +43,16 @@ def start_session(user_data, user_agent):
     sql.sql_delete_one("session_keys", {"user_id": user_id})
 
     ses_code = make_session_code(user_id)
-    sql.sql_insert(
-        "session_keys", {
-            "session_key": make_session_key(ses_code, user_agent),
-            "user_id": user_id,
-            "amended_dt": None,
-            "created_dt": None
-        })
-    remove_from_users(user_data)
-    return True, {"user": user_data, "session": ses_code}
+    sess_data = {
+        "session_key": make_session_key(ses_code, user_agent),
+        "user_id": user_id,
+        "amended_dt": None,
+        "created_dt": None
+    }
+
+    sql.sql_insert("session_keys", sess_data)
+    secure_user_data(user_data)
+    return True, {"user_id": user_id, "user": user_data, "session": ses_code}
 
 
 def start_user_check(data):
@@ -108,10 +109,13 @@ def check_session(ses_code, user_agent):
 
     key = make_session_key(ses_code, user_agent)
     tout = policy.policy('session_timeout', 60)
-    cols = f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id"
-    ret, data = sql.sql_select_one("session_keys", {"session_key": key}, cols)
+    ret, data = sql.sql_select_one(
+        "session_keys", {"session_key": key},
+        f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
+
     if not ret:
         return False, None
+
     if not data["ok"]:
         sql.sql_delete_one("session_keys", {"session_key": key})
         return False, None
@@ -119,15 +123,7 @@ def check_session(ses_code, user_agent):
     sql.sql_update_one("session_keys", {"amended_dt": None},
                        {"session_key": key})
 
-    ret, user_data = sql.sql_select_one("users", {
-        "account_closed": 0,
-        "user_id": data["user_id"]
-    })
-    if not ret:
-        return False, None
-
-    remove_from_users(user_data)
-    return True, {"user": user_data, "session": ses_code}
+    return True, {"session": ses_code, "user_id": data["user_id"]}
 
 
 def logout(ses_code, user_id, user_agent):
@@ -139,7 +135,8 @@ def logout(ses_code, user_id, user_agent):
 
 
 def update_user_login_dt(user_id):
-    sql.sql_update_one("users",{"last_login_dt":sql.now()},{"user_id":int(user_id)})
+    sql.sql_update_one("users", {"last_login_dt": sql.now()},
+                       {"user_id": int(user_id)})
 
 
 def login(data, user_agent):
@@ -160,7 +157,7 @@ def login(data, user_agent):
         return False, None
 
     update_user_login_dt(user_data['user_id'])
-    log("User {user_data['user']['user_id']} logged in", gzz(czz()))
+    log(f"USR-{user_data['user_id']} logged in", gzz(czz()))
     return start_session(user_data, user_agent)
 
 

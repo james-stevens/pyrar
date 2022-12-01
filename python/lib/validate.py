@@ -64,10 +64,10 @@ def is_valid_fqdn(name):
 
 
 def is_valid_ses_code(code):
-    if len(code) != 86:
+    if len(code) != 44:
         return False
     try:
-        base64.b64decode(code + "==")
+        base64.b64decode(code)
     except binascii.Error as exc:
         return False
     return True

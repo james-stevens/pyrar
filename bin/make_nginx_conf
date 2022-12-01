@@ -20,7 +20,6 @@ user nginx;
 error_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx error;
 
 http {
-	access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx,severity=${lvl};
 	fastcgi_intercept_errors on;
 
 	include         mime.types;
@@ -32,6 +31,7 @@ http {
 		server unix:/run/wsgi_checker.sock;
 		}
 	server {
+		access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx_webui,severity=${lvl};
 		error_page 404 =200 /;
 
 
@@ -63,11 +63,13 @@ echo "
 		root ${BASE}/htdocs;
 		}"
 
-awk '{
+awk 'BEGIN { fac="'"${fac}"'"; lvl="'"${lvl}"'"; }
+	{
 	printf "\tupstream epp_%s {\n",$1
 	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$1
 	print "\t\t}"
 	printf "\tserver {\n\t\tlisten %d;\n\t\tlocation / {\n",$2
+	printf "\t\t\taccess_log syslog:server=unix:/dev/log,facility=%s,tag=nginx_epp_%s,severity=%s;\n",fac,$1,lvl;
 	printf "\t\t\tproxy_pass http://epp_%s;\n",$1;
 	print "\t\t\t}\n\t\t}\n"
 	}' /run/prov_ports

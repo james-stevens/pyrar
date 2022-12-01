@@ -16,8 +16,8 @@ import domains
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
-PYRAR_TAG = "X-Pyrar-Sess"
-PYRAR_TAG_LOWER = "x-pyrar-sess"
+SESSION_TAG = "X-Session-Code"
+SESSION_TAG_LOWER = SESSION_TAG.lower()
 
 log_init(policy.policy("facility_python_code"),
          with_logging=policy.policy("log_python_code"))
@@ -30,8 +30,8 @@ class WebuiReq:
     """ data unique to each request to keep different users data separate """
     def __init__(self):
         tld_lib.check_for_new_files()
-        self.session = None
-        self.user_id = 0
+        self.sess_code = None
+        self.user_id = None
         self.headers = {
             item.lower(): val
             for item, val in dict(flask.request.headers).items()
@@ -39,20 +39,20 @@ class WebuiReq:
         self.user_agent = self.headers[
             "user-agent"] if "user-agent" in self.headers else "Unknown"
 
-        if PYRAR_TAG_LOWER in self.headers:
-            logged_in, user_data = users.check_session(
-                self.headers[PYRAR_TAG_LOWER], self.user_agent)
-            self.parse_user_data(logged_in, user_data)
+        if SESSION_TAG_LOWER in self.headers:
+            logged_in, check_sess_data = users.check_session(
+                self.headers[SESSION_TAG_LOWER], self.user_agent)
+            self.parse_user_data(logged_in, check_sess_data)
 
         self.base_event = self.set_base_event()
 
-    def parse_user_data(self, logged_in, user_data):
-        if not logged_in or "session" not in user_data:
+    def parse_user_data(self, logged_in, check_sess_data):
+        if not logged_in or "session" not in check_sess_data:
             return
 
-        self.user_data = user_data
-        self.session = self.user_data["session"]
-        self.user_id = self.user_data['user']['user_id']
+        self.user_data = check_sess_data
+        self.sess_code = check_sess_data["session"]
+        self.user_id = check_sess_data['user_id']
         debug(f"Logged in as {self.user_id}", gzz(czz()))
 
     def set_base_event(self):
@@ -67,8 +67,8 @@ class WebuiReq:
 
     def response(self, data, code=200):
         resp = flask.make_response(data, code)
-        if self.session is not None:
-            resp.headers[PYRAR_TAG] = self.session
+        if self.sess_code is not None:
+            resp.headers[SESSION_TAG] = self.sess_code
         return resp
 
     def event(self, data, frameinfo):
@@ -103,17 +103,32 @@ def hello():
     return req.response("Hello World\n")
 
 
+@application.route('/api/v1.0/users/domains', methods=['GET'])
+def users_domains():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort("Not logged in")
+
+    ret, doms = sql.sql_select("domains", {"user_id": req.user_id},order_by="name")
+    if ret is None:
+        return req.abort("Failed to load domains")
+    req.user_data["domains"] = doms
+
+    return req.response(req.user_data)
+
+
 @application.route('/api/v1.0/users/details', methods=['GET'])
 def users_details():
     req = WebuiReq()
-    if req.user_id == 0 or req.session is None:
+    if req.user_id is None or req.sess_code is None:
         return req.abort("Not logged in")
 
-    ret, doms = sql.sql_select("domains", {"user_id": req.user_id})
+    ret, user = sql.sql_select_one("users", {"user_id": req.user_id})
     if ret is None:
-        return req.abort("Failed to load domains")
+        return req.abort("Failed to load user account")
 
-    req.user_data["domains"] = doms
+    users.secure_user_data(user)
+    req.user_data["user"] = user
 
     return req.response(req.user_data)
 
@@ -129,21 +144,16 @@ def users_login():
         return req.abort("Login failed")
 
     req.parse_user_data(ret, data)
-
-    ret, doms = sql.sql_select("domains", {"user_id": req.user_id})
-    if ret:
-        data["domains"] = doms
-
     return req.response(data)
 
 
 @application.route('/api/v1.0/users/logout', methods=['GET'])
 def users_logout():
     req = WebuiReq()
-    if not req.session:
+    if not req.sess_code:
         return req.abort("Not logged in")
-    users.logout(req.session, req.user_id, req.user_agent)
-    req.session = None
+    users.logout(req.sess_code, req.user_id, req.user_agent)
+    req.sess_code = None
     return req.response("logged-out")
 
 
@@ -161,7 +171,7 @@ def users_register():
 
     user_id = val["user"]["user_id"]
     req.user_id = user_id
-    req.session = val["session"]
+    req.sess_code = val["session"]
     req.base_event["user_id"] = user_id
     req.event(
         {

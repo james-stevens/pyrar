@@ -11,4 +11,4 @@ cd ${BASE}/python/webui
 exec gunicorn \
         --workers ${ses} \
 		${extra} --bind unix:/run/wsgi_checker.sock \
-        wsgi >/tmp/start_wsgi.log 2>&1
+        wsgi >/tmp/start_webui.log 2>&1
