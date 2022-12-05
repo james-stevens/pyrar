@@ -1,0 +1,29 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+. ./database
+
+sqlsh "drop table if exists sales_items"
+sqlsh "create table sales_items (
+	sales_item_id		${auto},
+
+	price_charged		${money},
+	currrency_charged	${currency},
+	price_paid			${money},
+	currrency_paid		${currency},
+
+	domain_name			${domain_name},
+	sales_type			varchar(20) not null default 'none',
+	num_years			int not null,
+
+	created_dt			datetime null,
+	amended_dt			datetime null,
+
+	primary key (sales_item_id)
+)"
+
+sqlsh "ALTER TABLE sales_items AUTO_INCREMENT = 10450"
+
+sqlsh "grant insert,update,select on sales_items to webui"
+sqlsh "grant select,insert,update,delete on sales_items to raradm,epprun"

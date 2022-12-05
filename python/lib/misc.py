@@ -5,6 +5,20 @@
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
+CLIENT_DOM_FLAGS = [
+    "DeleteProhibited", "RenewProhibited", "TransferProhibited",
+    "UpdateProhibited"
+]
+
+DOMAIN_STATUS = {
+    1: "Live",
+    10: "Awating Payment",
+    100: "Transfer Queued",
+    101: "Transfer Requested",
+    120: "Transfer Failed"
+}
+
+
 def ashex(line):
     ret = ""
     for item in line:

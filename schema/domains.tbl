@@ -11,12 +11,12 @@ sqlsh "create table domains (
 	user_id				${row_id},
 
 	status_id			int not null default 0,
-	num_years			int,
 
 	name_servers		varchar(3500) not null default '',
 	ds_recs				varchar(3500) not null default '',
-	authcode			varchar(30),
+	client_locks		varchar(100),
 
+	reg_create_dt		datetime null,
 	created_dt			datetime null,
 	amended_dt			datetime null,
 	expiry_dt			datetime not null,

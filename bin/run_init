@@ -16,7 +16,7 @@ if test "${syslog}" = "null"
 mkdir -p /run/epp
 mkdir /run/nginx; chown nginx: /run/nginx
 
-flat ${BASE}/etc/providers.json | awk -F. 'BEGIN { n=10000 }
+flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 	{ if (have[$1]=="") have[$1]=n++; }
 	/\.sessions=/ { ses[$1]=substr($0,index($0,"=")+1) } 
 	END {

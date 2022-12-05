@@ -1,11 +1,9 @@
 {
 	"nol": {
 		"desc": "Names.of.London",
-		"username": "NIC-2010",
-		"password": "abc123",
-		"server": "contain.jrcs.net",
 		"sessions": 3,
 		"max_checks": 10,
+		"currency": "USD",
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"and.mom": null,
@@ -33,16 +31,16 @@
 
 	"extra": {
 		"desc": "Somebody Else",
-		"username": "NIC-2012",
-		"password": "xyz987",
-		"server": "contain.jrcs.net",
 		"sessions": 3,
 		"max_checks": 10,
+		"currency": "USD",
 		"prices" : { "default": "x2" },
 		"domains" : {
 			"frog": null,
 			"chug": { "default": "x1.5" },
-			"xp": { "default": "x1.5" }
+			"xp": { "default": "x1.5" },
+			"xn--dp8h": null,
+			"xn--k3hw410f": null
 			}
 		}
 }

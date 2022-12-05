@@ -22,7 +22,7 @@ import lib.policy as policy
 from lib.log import log, init as log_init
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
-PROVIDERS_FILE = os.environ["BASE"] + "/etc/providers.json"
+LOGINS_FILE = os.environ["BASE"] + "/etc/logins.json"
 
 application = flask.Flask("EPP/REST/API")
 conn = None
@@ -36,25 +36,25 @@ NETWORK_BYTE_ORDER = "big"
 if "PYRAR_PROVIDER" not in os.environ:
     raise ValueError("No `PYRAR_PROVIDER` specified")
 
-if not os.path.isfile(PROVIDERS_FILE):
-    raise ValueError(f"Providers file `{PROVIDERS_FILE}` is missing")
+if not os.path.isfile(LOGINS_FILE):
+    raise ValueError(f"Logins file `{LOGINS_FILE}` is missing")
 
-with open(PROVIDERS_FILE, "r") as fd:
-    provs = json.load(fd)
+with open(LOGINS_FILE, "r") as fd:
+    logins = json.load(fd)
 
-provider = os.environ["PYRAR_PROVIDER"]
-if provider not in provs:
-    raise ValueError(f"Provider '{provider}' not in '{PROVIDERS_FILE}'")
+this_reg = os.environ["PYRAR_PROVIDER"]
+if this_reg not in logins:
+    raise ValueError(f"Registry '{this_reg}' not in '{LOGINS_FILE}'")
 
-this_epp = provs[provider]
+this_login = logins[this_reg]
 for item in ["username", "password", "server"]:
-    if item not in this_epp:
-        raise ValueError(f"Item '{item}' missing from provider '{provider}'")
+    if item not in this_login:
+        raise ValueError(f"Item '{item}' missing from registry '{this_reg}'")
 
-client_pem = f"{CLIENT_PEM_DIR}/{provider}.pem"
+client_pem = f"{CLIENT_PEM_DIR}/{this_reg}.pem"
 if not os.path.isfile(client_pem):
     raise ValueError(
-        f"Client PEM file for '{provider}' at '{client_pem}' not found")
+        f"Client PEM file for '{this_reg}' at '{client_pem}' not found")
 
 my_policy = policy.Policy()
 log_init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
@@ -230,7 +230,7 @@ def jsonRequest(in_js, addr):
         if conn is None:
             return abort(
                 400,
-                f"Failed to connect to EPP Server - `{this_epp['server']}`")
+                f"Failed to connect to EPP Server - `{this_login['server']}`")
 
     t1 = firstDict(in_js)
     if t1 == "hello":
@@ -284,11 +284,11 @@ def connectToEPP():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn = context.wrap_socket(s,
                                server_side=False,
-                               server_hostname=this_epp["server"])
+                               server_hostname=this_login["server"])
 
-    log(f"Connecting to EPP Server: {this_epp['server']}", gzz(czz()))
+    log(f"Connecting to EPP Server: {this_login['server']}", gzz(czz()))
     try:
-        conn.connect((this_epp["server"], EPP_PORT))
+        conn.connect((this_login["server"], EPP_PORT))
         conn.setblocking(True)
     except Exception as e:
         log(str(e), gzz(czz()))
@@ -297,10 +297,11 @@ def connectToEPP():
         return
 
     ret, js = jsonReply(conn, None)
-    log(f"Greeting {ret}", gzz(czz()))
+    log(f"Greeting '{this_reg}' gave {ret}", gzz(czz()))
 
-    ret, js = xmlRequest(makeLogin(this_epp["username"], this_epp["password"]))
-    log(f"Login to '{provider}' gives {ret}", gzz(czz()))
+    ret, js = xmlRequest(
+        makeLogin(this_login["username"], this_login["password"]))
+    log(f"Login to '{this_reg}' gives {ret}", gzz(czz()))
 
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()

@@ -11,6 +11,9 @@ sqlsh "create table epp_jobs (
 	job_type			varchar(20) not null default 'none',
 	failures			int not null default 0,
 
+	num_years			int,
+	authcode			varchar(50),
+
 	execute_dt			datetime null,
 	created_dt			datetime null,
 	amended_dt			datetime null,

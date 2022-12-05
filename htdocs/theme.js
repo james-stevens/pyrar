@@ -74,6 +74,18 @@ function theme_css(theme) {
 	border-radius: 6px;
 	}
 
+#basketSpace {
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: #${cols[4]};
+	border: 1px solid;
+	border-color: #${cols[10]};
+	box-shadow: 3px 3px #${cols[18]};
+	padding: 10px;
+	border-radius: 6px;
+	}
+
 ::placeholder {
 	color: #${cols[12]};
 	opacity: 1; }
@@ -91,9 +103,8 @@ h2 { text-align: center; }
 	}
 
 
-.searchDomain {
-	font-size: 20px;
-	}
+.searchDomain { font-size: 20px; }
+.searchDomain:hover { background-color: #${cols[6]}; }
 
 .searchRenew {
 	font-size: 12px;
@@ -167,6 +178,7 @@ input {
 	border-radius: 6px;
 	border: 1px solid;
 	border-color: #${cols[7]};
+	width: 100%;
 	}
 
 .inputBad {
@@ -379,6 +391,7 @@ td {
 	height: 175px
 	left: 75%;
 	margin-left: -350px;
+	margin-top: 30px;
 	border: 1px solid;
 	border-color: #${cols[10]};
 	box-shadow: 3px 3px #${cols[18]};

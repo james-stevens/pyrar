@@ -61,8 +61,7 @@ def format_data(item, data):
     return "unhex('" + misc.ashex(data) + "')"
 
 
-
-def has_data(row,col):
+def has_data(row, col):
     return (col in row and row[col] is not None and row[col] != "")
 
 
@@ -111,7 +110,7 @@ def run_sql(sql, func):
             except Exception as exc:
                 this_exc = exc
                 pass
-        log("ERROR:"+str(this_exc), gzz(czz()))
+        log("ERROR:" + str(this_exc), gzz(czz()))
         return False, None
 
 

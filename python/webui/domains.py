@@ -5,11 +5,12 @@
 import sys
 import json
 import httpx
-
-from lib.providers import tld_lib
-import lib.validate as validate
 from inspect import currentframe as czz, getframeinfo as gzz
-from lib.log import log
+
+from lib.registry import tld_lib
+from lib import validate
+from lib.policy import this_policy as policy
+from lib.log import log, debug, init as log_init
 from lib import misc
 import parsexml
 
@@ -18,8 +19,9 @@ class DomainName:
     def __init__(self, domain):
         self.names = None
         self.err = None
-        self.provider = None
+        self.registry = None
         self.url = None
+        self.currency = policy.policy("currency_iso", "USD")
 
         if isinstance(domain, str):
             if domain.find(",") >= 0:
@@ -30,6 +32,14 @@ class DomainName:
         if isinstance(domain, list):
             self.process_list(domain)
 
+        if self.registry is None:
+            self.err = "TLD not supported"
+            self.names = None
+        else:
+            regs_file = tld_lib.regs_file.data()
+            if "currency" in regs_file[self.registry]:
+                self.currency = regs_file[self.registry]["currency"]
+
     def process_string(self, domain):
         name = domain.lower()
         if (err := validate.check_domain_name(name)) is None:
@@ -37,7 +47,7 @@ class DomainName:
         else:
             self.err = err
             self.names = None
-        self.provider, self.url = tld_lib.http_req(name)
+        self.registry, self.url = tld_lib.http_req(name)
 
     def process_list(self, domain):
         self.names = []
@@ -45,12 +55,12 @@ class DomainName:
             name = dom.lower()
             if (err := validate.check_domain_name(name)) is None:
                 self.names.append(name)
-                if self.provider is None:
-                    self.provider, self.url = tld_lib.http_req(name)
+                if self.registry is None:
+                    self.registry, self.url = tld_lib.http_req(name)
                 else:
                     prov, __ = tld_lib.http_req(name)
-                    if prov != self.provider:
-                        self.err = "ERROR: Split providers request"
+                    if prov != self.registry:
+                        self.err = "ERROR: Split registry request"
                         self.names = None
                         return
             else:
@@ -61,10 +71,10 @@ class DomainName:
 
 def http_price_domains(domobj, years, which):
 
-    if domobj.provider is None or domobj.url is None:
+    if domobj.registry is None or domobj.url is None:
         return 400, "Unsupported TLD"
 
-    resp = clients[domobj.provider].post(domobj.url,
+    resp = clients[domobj.registry].post(domobj.url,
                                          json=xml_check_with_fees(
                                              domobj, years, which),
                                          headers=misc.HEADER)
@@ -83,8 +93,8 @@ def http_price_domains(domobj, years, which):
     return 400, "Unexpected Error"
 
 
-def check_and_parse(domobj):
-    ret, out_js = http_price_domains(domobj, 1, ["create", "renew"])
+def check_and_parse(domobj, num_years=1):
+    ret, out_js = http_price_domains(domobj, num_years, ["create", "renew"])
     if ret != 200:
         return abort(ret, out_js)
 
@@ -120,14 +130,14 @@ def xml_check_with_fees(domobj, years, which):
     return {
         "check": {
             "domain:check": {
-                "@xmlns:domain": xmlns[domobj.provider]["domain"],
+                "@xmlns:domain": xmlns[domobj.registry]["domain"],
                 "domain:name": domobj.names
             }
         },
         "extension": {
             "fee:check": {
-                "@xmlns:fee": xmlns[domobj.provider]["fee"],
-                "fee:currency": "USD",
+                "@xmlns:fee": xmlns[domobj.registry]["fee"],
+                "fee:currency": domobj.currency,
                 "fee:command": fees_extra
             }
         }
@@ -160,7 +170,7 @@ def check_one_domain(domain):
 
 
 if __name__ == "__main__":
-    log.debug = True
+    log_init(debug=True)
     if len(sys.argv) > 1:
         x = sys.argv[1].lower()
         print("====>> RUN ONE", x, "=>", sys.argv[1])

@@ -7,7 +7,7 @@ import base64
 import sys
 import re
 
-from lib.providers import tld_lib
+from lib.registry import tld_lib
 
 from lib import misc
 

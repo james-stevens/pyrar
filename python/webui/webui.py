@@ -7,7 +7,7 @@ import json
 import httpx
 import flask
 
-from lib.providers import tld_lib
+from lib.registry import tld_lib
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 import users
@@ -84,7 +84,7 @@ class WebuiReq:
 def get_config():
     req = WebuiReq()
     ret = {
-        "providers": tld_lib.zone_send,
+        "registry": tld_lib.zone_send,
         "zones": tld_lib.return_zone_list(),
         "policy": policy.data()
     }
@@ -109,7 +109,8 @@ def users_domains():
     if req.user_id is None or req.sess_code is None:
         return req.abort("Not logged in")
 
-    ret, doms = sql.sql_select("domains", {"user_id": req.user_id},order_by="name")
+    ret, doms = sql.sql_select("domains", {"user_id": req.user_id},
+                               order_by="name")
     if ret is None:
         return req.abort("Failed to load domains")
     req.user_data["domains"] = doms
@@ -150,8 +151,9 @@ def users_login():
 @application.route('/api/v1.0/users/logout', methods=['GET'])
 def users_logout():
     req = WebuiReq()
-    if not req.sess_code:
+    if req.user_id is None or req.sess_code is None:
         return req.abort("Not logged in")
+
     users.logout(req.sess_code, req.user_id, req.user_agent)
     req.sess_code = None
     return req.response("logged-out")
@@ -186,10 +188,13 @@ def users_register():
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
     req = WebuiReq()
+    num_yrs = 1
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
         if not isinstance(dom, str) and not isinstance(dom, list):
             return req.abort("Unsupported data type for domain")
+        if "num_years" in flask.request.json:
+            num_yrs = int(flask.request.json["num_years"])
     else:
         data = None
         if flask.request.method == "POST":
@@ -200,6 +205,8 @@ def rest_domain_price():
             return req.abort("No data sent")
         if (dom := data.get("domain")) is None:
             return req.abort("No domain sent")
+        if (yrs := data.get("num_years")) is not None:
+            num_yrs = int(yrs)
 
     dom_obj = domains.DomainName(dom)
 
@@ -209,7 +216,7 @@ def rest_domain_price():
         return req.abort("Invalid domain name")
 
     try:
-        ret = domains.check_and_parse(dom_obj)
+        ret = domains.check_and_parse(dom_obj, num_yrs)
         return req.response(ret)
     except Exception as exc:
         debug(str(exc), gzz(czz()))

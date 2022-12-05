@@ -3,17 +3,17 @@
 # Alternative license arrangements are possible, contact me for more information
 
 session="${1}"
-provider="${2}"
+registry="${2}"
 
-ses="$(jq .${provider}.sessions ${BASE}/etc/providers.json)"
+ses="$(jq .${registry}.sessions ${BASE}/etc/registry.json)"
 if test "${ses}" = "null"; then ses="3"; fi
 
-export PYRAR_PROVIDER="${provider}"
+export PYRAR_PROVIDER="${registry}"
 
 . /usr/local/bin/get_py_log
 
 cd ${BASE}/python/epprest
 exec gunicorn \
         --workers ${ses} \
-        ${extra} --bind unix:/run/epp/wsgi_epprest_${provider}_${session}.sock \
-        wsgi >/tmp/start_wsgi.${provider}_${session}.log 2>&1
+        ${extra} --bind unix:/run/epp/wsgi_epprest_${registry}_${session}.sock \
+        wsgi >/tmp/start_wsgi.${registry}_${session}.log 2>&1

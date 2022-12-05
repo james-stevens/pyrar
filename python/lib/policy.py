@@ -13,11 +13,11 @@ class Policy:
         self.file = None
         self.file = fileloader.FileLoader(WEBUI_POLICY)
 
-    def policy(self, name, val=None):
+    def policy(self, name, def_val=None):
         our_policy = self.file.data()
         if name in our_policy:
             return our_policy[name]
-        return val
+        return def_val
 
     def data(self):
         return self.file.data()

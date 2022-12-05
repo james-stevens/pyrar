@@ -79,26 +79,29 @@ function changeFavicon(src) {
 
 
 
-popup_lazy_hide = popup_lazy_name = null;
 function clr_lazy_hide()
 {
-	if (!popup_lazy_hide) return;
-	clearTimeout(popup_lazy_hide);
-	popup_lazy_hide = popup_lazy_name = null;
+	if (!("popup" in ctx)) return;
+	clearTimeout(ctx.popup.timer);
+	delete ctx.popup;
 }
 
 
 function togglePopUp(name,tmout)
 {
-	clr_lazy_hide();
-	let popup = document.getElementById(name);
-	if (!popup.classList.toggle("show")) {
-		unerrMsg();
-		return;
+	if ("popup" in ctx) {
+		let save_name = ctx.popup.name;
+		hidePopUp();
+		if (save_name==name) { unerrMsg(); return; }
 		}
 
-	popup_lazy_hide = setTimeout(hidePopUp,tmout);
-	popup_lazy_name = name;
+	let popup = document.getElementById(name);
+	popup.classList.toggle("show");
+
+	ctx.popup = {
+		"timer": setTimeout(hidePopUp,tmout),
+		"name": name
+		}
 
 	let e = null;
 	if (name=="loginPopup") e = document.formLogin.email;
@@ -110,8 +113,8 @@ function togglePopUp(name,tmout)
 
 function hidePopUp()
 {
-	if (!popup_lazy_hide) return;
-	let popup = document.getElementById(popup_lazy_name);
+	if (!("popup" in ctx)) return;
+	let popup = document.getElementById(ctx.popup.name);
 	popup.classList.remove("show")
 	clr_lazy_hide();
 }
@@ -137,6 +140,7 @@ function goSearch()
 {
 	gbl.elm.userSpace.style.display = "none";
 	gbl.elm.search.style.display = "block";
+	gbl.elm.basketSpace.style.display = "none";
 	document.searchForm.search.focus();
 }
 
@@ -147,19 +151,66 @@ function loggedIn()
 	e.style.display = "none";
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "block";
+	user_info();
+}
 
+
+function emptyCart()
+{
+	delete ctx.basket;
+	user_info();
+	errMsg(`${gbl.bin} basket emptied`,gbl.elm.userInfo,350);
+}
+
+
+function removeBasketItem(i)
+{
+	if (ctx.basket.length == 1) {
+		delete ctx.basket;
+		if (gbl.elm.basketSpace.style.display == "block") {
+			gbl.elm.search.style.display = "block";
+			gbl.elm.basketSpace.style.display = "none";
+			}
+		}
+	else ctx.basket.splice(i,1);
+
+	clr_lazy_hide();
+	user_info()
+	errMsg(`${gbl.cross} item removed`,gbl.elm.userInfo,350);
+	if (gbl.elm.basketSpace.style.display == "block") basketCheckout();
+}
+
+
+function user_info()
+{
 	if (("user" in ctx)&&("name" in ctx.user)) {
-		let e = document.getElementById("userInfo");
-
 		let x = "",style="class=userIcons";
-		if (! ctx.user.email_verified)
-			x += `<span title="E-Mail address not yet verified" ${style}>${gbl.email}</span>`;
+		if (ctx.basket) {
+			x += `<span class="popup">${ctx.basket.length}`;
+			x += `<span title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>${gbl.cart}</span>`;
+			x += '<span class="popuptext" id="basketPopup">';
+			x += '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
+			x += '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
+			for(let i in ctx.basket) {
+				item = ctx.basket[i];
+				x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
+				x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
+				x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
+				}
+			x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
+			x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
+			x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
+			x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
+			x += "</table></span>"
+			x += '</span>&nbsp;&nbsp;&nbsp;'
+			}
 
-		x += `<span title="You have items waiting to checkout" ${style}>${gbl.cart}</span>`;
+		if (!ctx.user.email_verified)
+			x += `<span title="E-Mail address not yet verified" ${style}>${gbl.email}</span>`;
 
 		x += `<span style='margin-right: 10px;'></span>`;
 		x += `Logged in as: <b>${ctx.user.name}</b>`;
-		e.innerHTML = x;
+		gbl.elm.userInfo.innerHTML = x;
 		}
 }
 
@@ -253,6 +304,7 @@ function doLogOut()
 {
 	callApi("users/logout",(ret,reply) => {});
 	gbl.elm.userSpace.style.display = "none";
+	gbl.elm.basketSpace.style.display = "none";
 	gbl.elm.search.style.display = "block";
 	document.searchForm.search.focus();
 }
@@ -265,8 +317,7 @@ function loggedOut()
 	e.style.display = "block";
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "none";
-	e = document.getElementById("userInfo");
-	e.innerHTML = "";
+	gbl.elm.userInfo.innerHTML = "";
 }
 
 
@@ -274,7 +325,7 @@ function loggedOut()
 function bodyLoaded()
 {
 	gbl.elm = {};
-	["userSpace","output","topSpan","search","businessName"].forEach(i => {
+	["myMsgPop","userInfo","basketSpace","userSpace","output","topSpan","search","businessName"].forEach(i => {
 		gbl.elm[i] = document.getElementById(i);
 		} );
 
@@ -318,8 +369,8 @@ function one_search_line(item,block_not_avail)
 {
 	if ((block_not_avail)&&(!item.avail)) return "";
 
-	let x = "<tr>";
-	x += `<td><span title="${item.name}" class=searchDomain>${fromPuny(item.name)}</span>`;
+	let x = "<tr class=searchDomain>";
+	x += `<td><span title="${item.name}">${fromPuny(item.name)}</span>`;
 	if ("renew" in item)
 		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.renew}</span>`;
 	x += "</td>";
@@ -327,7 +378,7 @@ function one_search_line(item,block_not_avail)
 	if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
 	else {
 		if ("create" in item) {
-			x += "<td align=right>";
+			x += "<td style='vertical-align: middle; text-align: right;'>";
 			x += btn(`buyOneName('${item.name}')`,`<b>BUY ${gbl.cur}${item.create}</b>`,`Buy '${item.name}' for ${gbl.cur}${item.create}`,120);
 			x += "</td>";
 			}
@@ -345,7 +396,7 @@ function showSearch(ret,data)
 	if ((!ret)&&("error" in data)) { errMsg(data.error,document.searchForm.search); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
-	gbl.elm.output.innerHTML = "<table width=100%>" + ctx.search.result + "</table>";
+	gbl.elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
@@ -363,9 +414,25 @@ function showSearch(ret,data)
 function buyOneName(name)
 {
 	callApi("domain/check",(ret,data) => {
+		let found_it = false;
+		let dom = data.shift();
+		let new_item = { "domain": dom.name, "num_years": 1, "cost": dom.create, "action": "create" };
+		if (!("basket" in ctx)) { ctx.basket = [new_item]; }
+		else {
+			for(let item of ctx.basket) {
+				if ((item.domain==dom.name)&&(item.action=="create")) {
+					item.num_years++;
+					found_it = true;
+					}
+				}
+			if (!found_it) ctx.basket.push(new_item);
+			}
+		user_info();
 
-		let item = data.shift();
-		gbl.elm.output.innerHTML = `<h2>Buy '${item.name}' for ${gbl.cur}${item.create}</h2>`;
+		if (found_it)
+			errMsg(`${gbl.tick} incremented in basket`,gbl.elm.userInfo,350);
+		else
+			errMsg(`${gbl.tick} added to basket`,gbl.elm.userInfo,350);
 
 		}, { json: { "domain" : name }});
 }
@@ -379,10 +446,10 @@ function searchNext()
 
 	let max = gbl.def_max_checks;
 
-	if ((first.provider in gbl.config.providers)&&("max_checks" in gbl.config.providers[first.provider]))
-		max = gbl.config.providers[first.provider].max_checks;
+	if ((first.registry in gbl.config.registry)&&("max_checks" in gbl.config.registry[first.registry]))
+		max = gbl.config.registry[first.registry].max_checks;
 
-	while((ctx.search.todo.length > 0)&&(srch.length < max)&&(first.provider == ctx.search.todo[0].provider)) {
+	while((ctx.search.todo.length > 0)&&(srch.length < max)&&(first.registry == ctx.search.todo[0].registry)) {
 		let nxt = ctx.search.todo.shift();
 		srch.push(ctx.search.term + "." + nxt.name);
 		}
@@ -450,9 +517,9 @@ function userDomainList()
 	let x = "<table width=100% border=0>";
 	x += "<tr><th>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
-	for(i in ctx.domains) {
+	for(let i in ctx.domains) {
 		item = ctx.domains[i];
-		x += `<tr onClick="show_one_domain(${i});" class=${cls}><td title="${item.name}">${fromPuny(item.name)}</td>`;
+		x += `<tr onClick="show_one_domain(${i});" class=${cls}><td title="${item.name}">${item.display_name}</td>`;
 		x += `<td align=center>${item.expiry_dt.split(" ")[0]}</td>`
 		x += `<td>${item.name_servers.substr(0,30)}</td>`;
 		x += "</tr>";
@@ -465,6 +532,7 @@ function myDomains()
 {
 	gbl.elm.search.style.display = "none";
 	gbl.elm.userSpace.style.display = "block";
+	gbl.elm.basketSpace.style.display = "none";
 	gbl.elm.userSpace.innerHTML = "";
 	callApi("users/domains",(ret,reply) => {
 		if (!ret) {
@@ -472,7 +540,13 @@ function myDomains()
 			if ("error" in reply) msg = reply["error"];
 			return regErr(msg,document.getElementById("myDomainsBtn"));
 			}
-		if ("domains" in reply) ctx.domains = reply.domains; else delete ctx.domains;
+		if ("domains" in reply) {
+			ctx.domains = reply.domains;
+			for(let dom of ctx.domains) {
+				dom.display_name = fromPuny(dom.name);
+				}
+			}
+		else delete ctx.domains;
 		gbl.elm.userSpace.innerHTML = userDomainList()
 		});
 }
@@ -492,10 +566,31 @@ function userDetails()
 }
 
 
+
+function basketCheckout()
+{
+	hidePopUp();
+	gbl.elm.search.style.display = "none";
+	gbl.elm.userSpace.style.display = "none";
+	gbl.elm.basketSpace.style.display = "block";
+	let x = '<table align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>';
+	x += '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
+	for(let i in ctx.basket) {
+		item = ctx.basket[i];
+		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
+		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
+		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
+		}
+	gbl.elm.basketSpace.innerHTML = x+"</table>"
+}
+
+
+
 function myAccount()
 {
 	gbl.elm.search.style.display = "none";
 	gbl.elm.userSpace.style.display = "block";
+	gbl.elm.basketSpace.style.display = "none";
 	gbl.elm.userSpace.innerHTML = "";
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
@@ -512,9 +607,9 @@ function myAccount()
 function one_domain_html(dom)
 {
 	let x = "<table align=center border=0>";
-	let puny = fromPuny(dom.name);
-	if (puny != dom.name) puny = puny + `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
-	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${puny}</td></tr>`;
+	let puny = "";
+	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
+	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
@@ -526,6 +621,7 @@ function show_one_domain(idx)
 {
 	gbl.elm.search.style.display = "none";
 	gbl.elm.userSpace.style.display = "block";
+	gbl.elm.basketSpace.style.display = "none";
 	gbl.elm.userSpace.innerHTML = one_domain_html(ctx.domains[idx]);
 }
 
@@ -533,11 +629,10 @@ function show_one_domain(idx)
 
 function unerrMsg()
 {
-	let m = document.getElementById("myMsgPop");
-	let t1 = m.innerHTML;
+	let t1 = gbl.elm.myMsgPop.innerHTML;
 	let t2 = ctx.lastErrMsg;
 	if (t2 == null) t2 = "";
-	if (t1 == t2) m.className = "msgPop msgPopNo";
+	if (t1 == t2) gbl.elm.myMsgPop.className = "msgPop msgPopNo";
 	delete ctx.lastErrMsg;
 	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
 	delete ctx.err_msg_tout;
@@ -547,20 +642,19 @@ function unerrMsg()
 
 function errMsg(txt,elem,min_width)
 {
-	let m = document.getElementById("myMsgPop");
-
 	if (elem) {
 		let box = elem.getBoundingClientRect();
-		m.style.top = box.y + box.height + "px";
-		m.style.left = box.x + "px";
+		gbl.elm.myMsgPop.style.top = box.y + box.height + "px";
+		gbl.elm.myMsgPop.style.left = box.x + "px";
 		if (!min_width) min_width = box.width - 10;
-		m.style.minWidth = min_width + "px";
-		m.style.width = min_width + "px";
+		gbl.elm.myMsgPop.style.minWidth = min_width + "px";
+		gbl.elm.myMsgPop.style.width = min_width + "px";
 		}
 
-	m.className = 'msgPop msgPopYes';
-	m.innerHTML = `${gbl.warn} ${txt}`;
-	ctx.lastErrMsg = m.innerHTML;
+	gbl.elm.myMsgPop.className = 'msgPop msgPopYes';
+	if (txt.substr(0,1)!="&") txt = gbl.warn + " " + txt;
+	gbl.elm.myMsgPop.innerHTML = txt;
+	ctx.lastErrMsg = gbl.elm.myMsgPop.innerHTML;
 	ctx.err_msg_tout = setTimeout(unerrMsg,2500);
 }
 
@@ -582,10 +676,10 @@ function errMsg(txt,elem,min_width)
 <span class="popuptext" id="registerPopup">
 <form onSubmit='doRegister(); return false;' method=submit action='#' name=formRegister><table>
 <tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 name="email">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 name="name">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 type=password name="password">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 type=password name="confirm">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="name">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="confirm">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
@@ -599,20 +693,20 @@ function errMsg(txt,elem,min_width)
 <div class="popup">
 <span style='width: 75px;' tabindex=0 title="Get me logged in" class=myBtn onClick="toggleLogin(); return false;">Login</span>
 <span class="popuptext" id="loginPopup">
-<table>
-<form onSubmit='return doLogin();' action="#" method=post name=formLogin>
-	<tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-		<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 name="email">&nbsp;</td></tr>
-		<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" size=30 type=password name="password">&nbsp;</td></tr>
-	<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
-	<tr>
-		<td class=btmBtnBar colspan=2>
-			<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleLogin()">Cancel</span>
-			<input style='width: 110px;' tabindex=0 type=submit title="Login" class=myBtn value="OK">
-		</td>
-	</tr>
-</form>
-</table>
+	<table>
+		<form onSubmit='return doLogin();' action="#" method=post name=formLogin>
+		<tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
+			<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
+			<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
+		<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
+		<tr>
+			<td class=btmBtnBar colspan=2>
+				<span style='width: 75px;' tabindex=0 title="Cancel" class=myBtn onClick="toggleLogin()">Cancel</span>
+				<input style='width: 110px;' tabindex=0 type=submit title="Login" class=myBtn value="OK">
+			</td>
+		</tr>
+		</form>
+	</table>
 </span>
 </div>
 </span>
@@ -649,14 +743,15 @@ function errMsg(txt,elem,min_width)
 	<div style='height: 30px;'></div>
 	<div id="search">
 		<div style='height: 30px;'></div>
-		<table align=center>
+		<table align=center width=40% border=0>
 		<form action="#" name=searchForm onSubmit="return doSearch();">
-		<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search size=40></td></tr>
+			<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search></td></tr>
 		</form>
 			<tr><td><div id="output"></div></td></tr>
 		</table>
 	</div>
-	<span id="userSpace" style="display: none;"></div>
+	<span id="userSpace" style="display: none;"></span>
+	<span id="basketSpace" style="display: none;"></span>
 </div>
 
 <div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>

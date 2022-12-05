@@ -8,7 +8,8 @@ import random
 import lib.fileloader as fileloader
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
-EPP_PROVIDERS = os.environ["BASE"] + "/etc/providers.json"
+EPP_PROVIDERS = os.environ["BASE"] + "/etc/registry.json"
+EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
 EPP_PORTS_LIST = "/run/prov_ports"
 
 DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
@@ -44,7 +45,7 @@ class ZoneLib:
         self.zone_data = {}
         self.zone_priority = {}
 
-        self.zone_file = fileloader.FileLoader(EPP_PROVIDERS)
+        self.regs_file = fileloader.FileLoader(EPP_PROVIDERS)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
         self.process_json()
 
@@ -53,23 +54,23 @@ class ZoneLib:
         self.ports = {p[0]: int(p[1]) for p in port_lines}
 
     def check_for_new_files(self):
-        z_is_new = self.zone_file.check()
+        z_is_new = self.regs_file.check()
         p_is_new = self.priority_file.check()
 
         if z_is_new or p_is_new:
-            self.zone_priority = {
-                idx: pos
-                for pos, idx in enumerate(self.priority_file.json)
-            }
             self.process_json()
 
     def process_json(self):
+        self.zone_priority = {
+            idx: pos
+            for pos, idx in enumerate(self.priority_file.json)
+        }
         new_send = {}
         new_data = {}
-        for provider, prov in self.zone_file.json.items():
-            new_send[provider] = {}
+        for registry, prov in self.regs_file.json.items():
+            new_send[registry] = {}
             for item, val in DEFAULT_CONFIG.items():
-                new_send[provider][item] = prov[item] if item in prov else val
+                new_send[registry][item] = prov[item] if item in prov else val
             if "domains" in prov:
                 doms = prov["domains"]
                 for dom in doms:
@@ -77,7 +78,7 @@ class ZoneLib:
                         doms[dom] = {}
                 new_data.update({
                     dom: (doms[dom] | {
-                        "provider": provider
+                        "registry": registry
                     })
                     for dom in doms
                 })
@@ -111,26 +112,26 @@ class ZoneLib:
             return self.zone_priority[tld] + 10
         return random.randint(1000, 9999999)
 
-    def url(self, provider):
-        port = self.ports[provider]
+    def url(self, registry):
+        port = self.ports[registry]
         return f"http://127.0.0.1:{port}/epp/api/v1.0/request"
 
     def http_req(self, domain):
         tld = tld_of_name(domain)
         if tld not in self.zone_data:
             return None, None
-        provider = self.zone_data[tld]["provider"]
+        registry = self.zone_data[tld]["registry"]
 
-        if provider not in self.ports:
+        if registry not in self.ports:
             return None, None
 
-        return provider, self.url(provider)
+        return registry, self.url(registry)
 
     def extract_items(self, dom):
         return {
             "priority": self.tld_priority(dom, is_tld=True),
             "name": dom,
-            "provider": self.zone_data[dom]["provider"]
+            "registry": self.zone_data[dom]["registry"]
         }
 
     def return_zone_list(self):
@@ -163,7 +164,7 @@ class ZoneLib:
         if "default" in tld_data:
             return tld_data["default"]
 
-        if "provider" in tld_data:
+        if "registry" in tld_data:
             if (ret := self.get_prov_mulitple(tld, cls, action)) is not None:
                 return ret
 
@@ -174,11 +175,12 @@ class ZoneLib:
         cls_both = cls + "." + action
         default_both = "default." + action
 
-        prov = tld_data["provider"]
-        if prov not in self.zone_file.json:
+        regs_file = self.regs_file.data()
+        prov = tld_data["registry"]
+        if prov not in regs_file:
             return None
 
-        json_prov = self.zone_file.json[prov]
+        json_prov = regs_file[prov]
         if "prices" not in json_prov:
             return None
 
@@ -226,21 +228,22 @@ class ZoneLib:
             "secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
         }
         ret_xmlns = {}
-        for provider, data in self.zone_file.json.items():
-            ret_xmlns[provider] = default_xmlns
+        for registry, data in self.regs_file.json.items():
+            ret_xmlns[registry] = default_xmlns
             if "xmlns" in data:
                 for xml_name, xml_data in data["xmlns"].items():
-                    ret_xmlns[provider][xml_name] = xml_data
+                    ret_xmlns[registry][xml_name] = xml_data
         return ret_xmlns
 
 
 tld_lib = ZoneLib()
 
 if __name__ == "__main__":
-    # print(tld_lib.zone_file.json)
+    # print(tld_lib.regs_file.json)
     print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
     print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
+    print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
     print("PORTS", json.dumps(tld_lib.ports, indent=3))
     # print(json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.make_xmlns(), indent=3))

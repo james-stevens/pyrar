@@ -1,0 +1,30 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+. ./database
+
+sqlsh "drop table if exists order_items"
+sqlsh "create table order_items (
+	order_item_id		${auto},
+	order_id			${row_id},
+
+	price_charged		${money},
+	currency_charged	${currency},
+	price_paid			${money},
+	currency_paid		${currency},
+	domain_id			${row_id},
+	order_type			varchar(20) not null default 'none',
+	num_years			int not null,
+	auth_code			varchar(50),
+
+	created_dt			datetime null,
+	amended_dt			datetime null,
+
+	primary key (order_item_id)
+)"
+
+sqlsh "ALTER TABLE order_items AUTO_INCREMENT = 10450"
+
+sqlsh "grant insert,update,select on order_items to webui"
+sqlsh "grant select,insert,update,delete on order_items to raradm,epprun"

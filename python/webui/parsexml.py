@@ -83,6 +83,8 @@ class XmlParser:
             self.ret_js[dom_name]["reason"] = dom_item["domain:reason"]
 
     def fee_command_one(self, ret_dom, fee_item):
+        if "fee:period" in fee_item and "#text" in fee_item["fee:period"]:
+            ret_dom["num_years"] = int(fee_item["fee:period"]["#text"])
         if ("@name" in fee_item and "fee:fee" in fee_item
                 and "#text" in fee_item["fee:fee"]):
             ret_dom[fee_item["@name"]] = fee_item["fee:fee"]["#text"]

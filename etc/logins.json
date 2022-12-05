@@ -1,4 +1,14 @@
 {
+	"nol" : {
+		"username": "NIC-2010",
+		"password": "abc123",
+		"server": "contain.jrcs.net"
+		},
+	"extra": {
+		"username": "NIC-2012",
+		"password": "xyz987",
+		"server": "contain.jrcs.net"
+		},
 	"pyrar": {
 		"connect":"192.168.1.240:3306",
 		"database":"pyrar",

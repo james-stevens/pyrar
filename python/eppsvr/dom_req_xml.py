@@ -6,6 +6,10 @@ import json
 import whois_priv
 
 
+def pad_ds(ds_dt):
+    return {"secDNS:" + tag: val for tag, val in ds_dt.items()}
+
+
 def domain_info(name):
     return {
         "info": {
@@ -145,66 +149,6 @@ def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
             }
 
     return full_xml
-
-
-def pad_ds(ds_dt):
-    return {"secDNS:" + tag: val for tag, val in ds_dt.items()}
-
-
-def unroll_one_ds(ds_data):
-    return {
-        tag: ds_data["secDNS:" + tag]
-        for tag in ["keyTag", "alg", "digestType", "digest"]
-    }
-
-
-def unroll_one_ns_attr(ns_data):
-    return ns_data["domain:hostName"]
-
-
-def dt_to_sql(src, dt):
-    if dt not in src:
-        return None
-    return src[dt][:10] + " " + src[dt][11:19]
-
-
-def parse_domain_xml(xml, data_type):
-    data = {"ds": [], "ns": [], "status": []}
-    if "extension" in xml and "secDNS:{data_type}Data" in xml[
-            "extension"] and "secDNS:dsData" in xml["extension"][
-                "secDNS:{data_type}Data"]:
-        ds_data = xml["extension"]["secDNS:{data_type}Data"]["secDNS:dsData"]
-        if isinstance(ds_data, dict):
-            data["ds"] = [unroll_one_ds(ds_data)]
-        elif isinstance(ds_data, list):
-            data["ds"] = [unroll_one_ds(item) for item in ds_data]
-
-    dom_data = xml["resData"][f"domain:{data_type}Data"]
-    if "domain:status" in dom_data:
-        if isinstance(dom_data["domain:status"], dict):
-            data["status"] = [dom_data["domain:status"]["@s"]]
-        elif isinstance(dom_data["domain:status"], list):
-            data["status"] = [
-                item["@s"] for item in dom_data["domain:status"]
-                if "@s" in item
-            ]
-
-    if "domain:ns" in dom_data:
-        dom_ns = dom_data["domain:ns"]
-        if "domain:hostAttr" in dom_ns:
-            if isinstance(dom_ns["domain:hostAttr"], dict):
-                data["ns"] = [unroll_one_ns_attr(dom_ns["domain:hostAttr"])]
-            elif isinstance(dom_ns["domain:hostAttr"], list):
-                data["ns"] = [
-                    unroll_one_ns_attr(item)
-                    for item in dom_ns["domain:hostAttr"]
-                ]
-
-    data["create_dt"] = dt_to_sql(dom_data, "domain:crDate")
-    data["expiry_dt"] = dt_to_sql(dom_data, "domain:exDate")
-    data["name"] = dom_data["domain:name"]
-    data["registrar"] = dom_data["domain:clID"]
-    return data
 
 
 if __name__ == "__main__":
