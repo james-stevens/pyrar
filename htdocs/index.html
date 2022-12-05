@@ -9,7 +9,7 @@
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
 
-debugAPI = true;
+debugAPI = false;
 
 
 gbl = {
@@ -160,6 +160,7 @@ function emptyCart()
 	delete ctx.basket;
 	user_info();
 	errMsg(`${gbl.bin} basket emptied`,gbl.elm.userInfo,350);
+	if (gbl.elm.basketSpace.style.display == "block") goSearch();
 }
 
 
@@ -167,10 +168,7 @@ function removeBasketItem(i)
 {
 	if (ctx.basket.length == 1) {
 		delete ctx.basket;
-		if (gbl.elm.basketSpace.style.display == "block") {
-			gbl.elm.search.style.display = "block";
-			gbl.elm.basketSpace.style.display = "none";
-			}
+		if (gbl.elm.basketSpace.style.display == "block") goSearch();
 		}
 	else ctx.basket.splice(i,1);
 
