@@ -135,12 +135,17 @@ function toggleLogin() { togglePopUp("loginPopup",30000); }
 function toggleRegister() { togglePopUp("registerPopup",30000); }
 function toggleTheme() { togglePopUp("themePopup",5000); }
 
+function show_one_space(name)
+{
+	gbl.elm.userSpace.style.display = "none";
+	gbl.elm.search.style.display = "none";
+	gbl.elm.basketSpace.style.display = "none";
+	gbl.elm[name].style.display = "block";
+}
 
 function goSearch()
 {
-	gbl.elm.userSpace.style.display = "none";
-	gbl.elm.search.style.display = "block";
-	gbl.elm.basketSpace.style.display = "none";
+	show_one_space("search");
 	document.searchForm.search.focus();
 }
 
@@ -174,41 +179,48 @@ function removeBasketItem(i)
 
 	clr_lazy_hide();
 	user_info()
-	errMsg(`${gbl.cross} item removed`,gbl.elm.userInfo,350);
 	if (gbl.elm.basketSpace.style.display == "block") basketCheckout();
 }
 
 
+function start_basket_table()
+{
+	let x = '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
+	for(let i in ctx.basket) {
+		item = ctx.basket[i];
+		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
+		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
+		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
+		}
+	return x;
+}
+
+
+
 function user_info()
 {
+	if (ctx.basket) {
+		gbl.elm.basketIcon.style.display = "block";
+		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table()
+		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
+		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
+		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
+		x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
+		x += "</table>";
+		gbl.elm.basketPopup.innerHTML = x;
+		}
+	else
+		gbl.elm.basketIcon.style.display = "none";
+
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		let x = "",style="class=userIcons";
-		if (ctx.basket) {
-			x += `<span class="popup">${ctx.basket.length}`;
-			x += `<span title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>${gbl.cart}</span>`;
-			x += '<span class="popuptext" id="basketPopup">';
-			x += '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
-			x += '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
-			for(let i in ctx.basket) {
-				item = ctx.basket[i];
-				x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
-				x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
-				x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
-				}
-			x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
-			x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
-			x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
-			x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
-			x += "</table></span>"
-			x += '</span>&nbsp;&nbsp;&nbsp;'
-			}
 
+		/*
 		if (!ctx.user.email_verified)
 			x += `<span title="E-Mail address not yet verified" ${style}>${gbl.email}</span>`;
+		*/
 
-		x += `<span style='margin-right: 10px;'></span>`;
-		x += `Logged in as: <b>${ctx.user.name}</b>`;
-		gbl.elm.userInfo.innerHTML = x;
+		gbl.elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
 }
 
@@ -300,11 +312,12 @@ function doLogin()
 
 function doLogOut()
 {
+	delete ctx.user;
+	delete ctx.domains;
 	callApi("users/logout",(ret,reply) => {});
-	gbl.elm.userSpace.style.display = "none";
-	gbl.elm.basketSpace.style.display = "none";
-	gbl.elm.search.style.display = "block";
+	show_one_space("search");
 	document.searchForm.search.focus();
+	loggedOut();
 }
 
 
@@ -323,7 +336,7 @@ function loggedOut()
 function bodyLoaded()
 {
 	gbl.elm = {};
-	["myMsgPop","userInfo","basketSpace","userSpace","output","topSpan","search","businessName"].forEach(i => {
+	["myMsgPop","basketIcon","userInfo","basketSpace","basketPopup","userSpace","output","topSpan","search","businessName"].forEach(i => {
 		gbl.elm[i] = document.getElementById(i);
 		} );
 
@@ -377,7 +390,7 @@ function one_search_line(item,block_not_avail)
 	else {
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
-			x += btn(`buyOneName('${item.name}')`,`<b>BUY ${gbl.cur}${item.create}</b>`,`Buy '${item.name}' for ${gbl.cur}${item.create}`,120);
+			x += btn(`buy_one_name('${item.name}','create')`,`<b>BUY ${gbl.cur}${item.create}</b>`,`Buy '${item.name}' for ${gbl.cur}${item.create}`,120);
 			x += "</td>";
 			}
 		}
@@ -409,30 +422,54 @@ function showSearch(ret,data)
 
 
 
-function buyOneName(name)
+function buy_one_name(domain,action)
 {
+	let qry = { "domain" : domain, "num_years": 1 }
+
+	if ("basket" in ctx) {
+		for(let item of ctx.basket) {
+			if ((item.domain==domain)&&(item.action==action))
+				qry.num_years = item.num_years + 1;
+			}
+		}
+
 	callApi("domain/check",(ret,data) => {
+		if (!ret) {
+			console.log("PRICE ERROR:",data);
+			return;
+			}
+
 		let found_it = false;
 		let dom = data.shift();
-		let new_item = { "domain": dom.name, "num_years": 1, "cost": dom.create, "action": "create" };
+
+		if (!(action in dom)) {
+			let msg = "an error occured";
+			if ((action+":err") in dom) msg = dom[action+":err"];
+			errMsg(msg,gbl.elm.basketIcon,450);
+			return;
+			}
+
+		let new_item = {
+			"domain": dom.name,
+			"num_years": dom.num_years,
+			 "cost": dom[action],
+			 "action": action
+			 };
+
 		if (!("basket" in ctx)) { ctx.basket = [new_item]; }
 		else {
 			for(let item of ctx.basket) {
-				if ((item.domain==dom.name)&&(item.action=="create")) {
-					item.num_years++;
+				if ((item.domain==dom.name)&&(item.action==action)) {
+					item.num_years = dom.num_years
+					item.cost = dom[action];
 					found_it = true;
 					}
 				}
 			if (!found_it) ctx.basket.push(new_item);
 			}
 		user_info();
-
-		if (found_it)
-			errMsg(`${gbl.tick} incremented in basket`,gbl.elm.userInfo,350);
-		else
-			errMsg(`${gbl.tick} added to basket`,gbl.elm.userInfo,350);
-
-		}, { json: { "domain" : name }});
+		togglePopUp("basketPopup",2500);
+		}, { json: qry });
 }
 
 
@@ -528,15 +565,13 @@ function userDomainList()
 
 function myDomains()
 {
-	gbl.elm.search.style.display = "none";
-	gbl.elm.userSpace.style.display = "block";
-	gbl.elm.basketSpace.style.display = "none";
+	show_one_space("userSpace");
 	gbl.elm.userSpace.innerHTML = "";
 	callApi("users/domains",(ret,reply) => {
 		if (!ret) {
 			let msg="Error in registration";
 			if ("error" in reply) msg = reply["error"];
-			return regErr(msg,document.getElementById("myDomainsBtn"));
+			return errMsg(msg,document.getElementById("myDomainsBtn"));
 			}
 		if ("domains" in reply) {
 			ctx.domains = reply.domains;
@@ -568,17 +603,16 @@ function userDetails()
 function basketCheckout()
 {
 	hidePopUp();
-	gbl.elm.search.style.display = "none";
-	gbl.elm.userSpace.style.display = "none";
-	gbl.elm.basketSpace.style.display = "block";
-	let x = '<table align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>';
-	x += '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
-	for(let i in ctx.basket) {
-		item = ctx.basket[i];
-		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
-		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
-		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
+	show_one_space("basketSpace");
+	let x = '<table align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
+	let total = 0.0
+	for(let item of ctx.basket) {
+		total += parseFloat(item.cost);
 		}
+	x += `<tr><td colspan=4><hr></td></tr>`;
+	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${gbl.cur}${total.toFixed(2)}</td></tr>`;
+	x += `<tr><td colspan=4><hr></td></tr>`;
+	x += "<tr><td colspan=4 align=right>"+btn("something()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
 	gbl.elm.basketSpace.innerHTML = x+"</table>"
 }
 
@@ -586,15 +620,13 @@ function basketCheckout()
 
 function myAccount()
 {
-	gbl.elm.search.style.display = "none";
-	gbl.elm.userSpace.style.display = "block";
-	gbl.elm.basketSpace.style.display = "none";
+	show_one_space("userSpace");
 	gbl.elm.userSpace.innerHTML = "";
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
 			let msg="Error in registration";
 			if ("error" in reply) msg = reply["error"];
-			return regErr(msg,document.getElementById("myAccountBtn"));
+			return errMsg(msg,document.getElementById("myAccountBtn"));
 			}
 		if ("user" in reply) ctx.user = reply.user; else delete ctx.user;
 		gbl.elm.userSpace.innerHTML = userDetails();
@@ -602,9 +634,12 @@ function myAccount()
 }
 
 
+
 function one_domain_html(dom)
 {
 	let x = "<table align=center border=0>";
+	x += "<tr><td colspan=4 align=center>"+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain")+"</td></tr>";
+	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
 	let puny = "";
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
@@ -615,11 +650,10 @@ function one_domain_html(dom)
 }
 
 
+
 function show_one_domain(idx)
 {
-	gbl.elm.search.style.display = "none";
-	gbl.elm.userSpace.style.display = "block";
-	gbl.elm.basketSpace.style.display = "none";
+	show_one_space("userSpace");
 	gbl.elm.userSpace.innerHTML = one_domain_html(ctx.domains[idx]);
 }
 
@@ -643,8 +677,14 @@ function errMsg(txt,elem,min_width)
 	if (elem) {
 		let box = elem.getBoundingClientRect();
 		gbl.elm.myMsgPop.style.top = box.y + box.height + "px";
-		gbl.elm.myMsgPop.style.left = box.x + "px";
-		if (!min_width) min_width = box.width - 10;
+		let x_pos = box.x;
+		if (!min_width) {
+			min_width = box.width - 10;
+			}
+		else {
+			if (box.width < min_width) x_pos -= (min_width/2);
+			}
+		gbl.elm.myMsgPop.style.left = x_pos + "px";
 		gbl.elm.myMsgPop.style.minWidth = min_width + "px";
 		gbl.elm.myMsgPop.style.width = min_width + "px";
 		}
@@ -734,7 +774,12 @@ function errMsg(txt,elem,min_width)
 </div>
 
 </td>
-<td align=right><span id="userInfo"></span></tr></table>
+<td align=right><table border=0>
+<tr><td><span id="basketIcon" style="margin-right: 75px; display: none;" class="popup">
+<span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
+<span style="margin-left: -250px;" class="popuptext" id="basketPopup">
+</span></span></td><td><span id="userInfo"></span></td></tr></table></td>
+</tr></table>
 </div>
 
 <div id="allBottom" onClick="hidePopUp();">
@@ -748,8 +793,8 @@ function errMsg(txt,elem,min_width)
 			<tr><td><div id="output"></div></td></tr>
 		</table>
 	</div>
-	<span id="userSpace" style="display: none;"></span>
-	<span id="basketSpace" style="display: none;"></span>
+	<span class="botSapce" id="userSpace" style="display: none;"></span>
+	<span class="botSapce" id="basketSpace" style="display: none;"></span>
 </div>
 
 <div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>

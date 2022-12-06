@@ -63,19 +63,17 @@ def request_json(this_reg, in_json, url=None):
 def start_up_check():
     for this_reg in clients:
         if request_json(this_reg, {"hello": None}) is None:
-            print(f"ERROR: Provider '{this_reg}' is not working")
-            log(f"ERROR: Provider '{this_reg}' is not working", gzz(czz()))
+            print(f"ERROR: Regisry '{this_reg}' is not working")
+            log(f"ERROR: Regisry '{this_reg}' is not working", gzz(czz()))
             sys.exit(0)
 
     for this_reg in clients:
         if not whois_priv.check_privacy_exists(clients[this_reg],
                                                tld_lib.url(this_reg)):
-            print(
-                f"ERROR: Provider '{this_reg}' privacy record failed to create"
-            )
-            log(
-                f"ERROR: Provider '{this_reg}' privacy record failed to create",
-                gzz(czz()))
+            msg = (f"ERROR: Registry '{this_reg}' " +
+                   "privacy record failed to create")
+            print(msg)
+            log(msg, gzz(czz()))
             sys.exit(1)
 
 
@@ -121,8 +119,7 @@ def check_have_data(job_id, dom_db, items):
 
 def check_num_years(epp_job):
     job_id = epp_job["epp_job_id"]
-    if not sql.has_data(epp_job, "num_years"):
-        log(f"EPP-{job_id} num_years missing or blank", gzz(czz()))
+    if not check_have_data(job_id, epp_job, ["num_years"]):
         return None
     years = int(epp_job["num_years"])
     if years < 1 or years > policy.policy("max_renew_years", 10):
@@ -163,16 +160,24 @@ def domain_renew(epp_job):
     return True
 
 
+def transfer_failed(domain_id):
+    sql.sql_update_one("domains", {"status_id": misc.STATUE_TRANS_FAIL},
+                       {"domain_id": domain_id})
+    return False
+
+
 def domain_request_transfer(epp_job):
     if (dom_db := get_dom_from_db(epp_job)) is None:
         return None
+
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
     if not check_have_data(job_id, epp_job, ["num_years", "authcode"]):
-        return False
+        return transfer_failed(dom_db["domain_id"])
 
     if (years := check_num_years(epp_job)) is None:
+        transfer_failed(dom_db["domain_id"])
         return None
 
     this_reg, url = tld_lib.http_req(name)
@@ -182,12 +187,15 @@ def domain_request_transfer(epp_job):
             name, base64.b64decode(epp_job["authcode"]), years), url)
 
     if not xml_check_code(job_id, "transfer", xml):
+        if (epp_job["failures"] + 1) >= policy.policy("epp_retry_attempts", 3):
+            return transfer_failed(dom_db["domain_id"])
         return False
 
     updt = {"amended_dt": None}
     if xml_code == 1000:
         data = parse_dom_resp.parse_domain_info_xml(xml, "trn")
         updt["expiry_dt"] = data["expiry_dt"]
+        updt["status_id"] = misc.STATUS_LIVE
 
     sql.sql_update_one("domains", updt, {"domain_id": dom_db["domain_id"]})
     return True
@@ -220,7 +228,7 @@ def domain_create(epp_job):
     sql.sql_update_one(
         "domains", {
             "amended_dt": None,
-            "status_id": 10,
+            "status_id": misc.STATUS_LIVE,
             "reg_create_dt": data["created_dt"],
             "expiry_dt": data["expiry_dt"]
         }, {"domain_id": dom_db["domain_id"]})
@@ -408,7 +416,8 @@ def run_epp_item(epp_job):
     notes = (
         f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{epp_job['job_type']}' " +
         f"on DOM-{epp_job['domain_id']} " +
-        f"retries {epp_job['failures']}/{policy.policy('epp_retry_attempts', 3)}"
+        f"retries {epp_job['failures']}/" +
+        f"{policy.policy('epp_retry_attempts', 3)}"
     )
 
     log(notes, gzz(czz()))

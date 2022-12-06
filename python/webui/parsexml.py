@@ -85,9 +85,11 @@ class XmlParser:
     def fee_command_one(self, ret_dom, fee_item):
         if "fee:period" in fee_item and "#text" in fee_item["fee:period"]:
             ret_dom["num_years"] = int(fee_item["fee:period"]["#text"])
-        if ("@name" in fee_item and "fee:fee" in fee_item
-                and "#text" in fee_item["fee:fee"]):
-            ret_dom[fee_item["@name"]] = fee_item["fee:fee"]["#text"]
+        if "@name" in fee_item:
+            if "fee:fee" in fee_item and "#text" in fee_item["fee:fee"]:
+                ret_dom[fee_item["@name"]] = fee_item["fee:fee"]["#text"]
+            elif "fee:reason" in fee_item:
+                ret_dom[fee_item["@name"] + ":err"] = fee_item["fee:reason"]
 
     def parse_one_fee_cd(self, dom_fee):
         if "fee:objID" not in dom_fee or "fee:command" not in dom_fee:

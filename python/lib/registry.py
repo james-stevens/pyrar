@@ -8,9 +8,9 @@ import random
 import lib.fileloader as fileloader
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
-EPP_PROVIDERS = os.environ["BASE"] + "/etc/registry.json"
+EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
 EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
-EPP_PORTS_LIST = "/run/prov_ports"
+EPP_PORTS_LIST = "/run/regs_ports"
 
 DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
 
@@ -45,7 +45,8 @@ class ZoneLib:
         self.zone_data = {}
         self.zone_priority = {}
 
-        self.regs_file = fileloader.FileLoader(EPP_PROVIDERS)
+        self.logins_file = fileloader.FileLoader(EPP_LOGINS)
+        self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
         self.process_json()
 
@@ -67,12 +68,12 @@ class ZoneLib:
         }
         new_send = {}
         new_data = {}
-        for registry, prov in self.regs_file.json.items():
+        for registry, regs in self.regs_file.json.items():
             new_send[registry] = {}
             for item, val in DEFAULT_CONFIG.items():
-                new_send[registry][item] = prov[item] if item in prov else val
-            if "domains" in prov:
-                doms = prov["domains"]
+                new_send[registry][item] = regs[item] if item in regs else val
+            if "domains" in regs:
+                doms = regs["domains"]
                 for dom in doms:
                     if doms[dom] is None:
                         doms[dom] = {}
@@ -165,35 +166,35 @@ class ZoneLib:
             return tld_data["default"]
 
         if "registry" in tld_data:
-            if (ret := self.get_prov_mulitple(tld, cls, action)) is not None:
+            if (ret := self.get_regs_mulitple(tld, cls, action)) is not None:
                 return ret
 
         return 2
 
-    def get_prov_mulitple(self, tld, cls, action):
+    def get_regs_mulitple(self, tld, cls, action):
         tld_data = self.zone_data[tld]
         cls_both = cls + "." + action
         default_both = "default." + action
 
         regs_file = self.regs_file.data()
-        prov = tld_data["registry"]
-        if prov not in regs_file:
+        regs = tld_data["registry"]
+        if regs not in regs_file:
             return None
 
-        json_prov = regs_file[prov]
-        if "prices" not in json_prov:
+        json_regs = regs_file[regs]
+        if "prices" not in json_regs:
             return None
 
-        if cls_both in json_prov["prices"]:
-            return json_prov["prices"][cls_both]
+        if cls_both in json_regs["prices"]:
+            return json_regs["prices"][cls_both]
 
-        if cls in json_prov["prices"]:
-            return json_prov["prices"][cls]
+        if cls in json_regs["prices"]:
+            return json_regs["prices"][cls]
 
-        if default_both in json_prov["prices"]:
-            return json_prov["prices"][default_both]
+        if default_both in json_regs["prices"]:
+            return json_regs["prices"][default_both]
 
-        return json_prov["prices"]["default"] if "default" in json_prov[
+        return json_regs["prices"]["default"] if "default" in json_regs[
             "prices"] else None
 
     def multiply_values(self, data):

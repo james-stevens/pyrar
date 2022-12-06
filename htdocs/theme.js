@@ -62,19 +62,7 @@ function theme_css(theme) {
 	font-size: 22px;
 	}
 
-#userSpace {
-	width: 75%;
-	margin-left: auto;
-	margin-right: auto;
-	background-color: #${cols[4]};
-	border: 1px solid;
-	border-color: #${cols[10]};
-	box-shadow: 3px 3px #${cols[18]};
-	padding: 10px;
-	border-radius: 6px;
-	}
-
-#basketSpace {
+.botSapce {
 	width: 75%;
 	margin-left: auto;
 	margin-right: auto;

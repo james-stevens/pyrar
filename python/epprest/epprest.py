@@ -33,8 +33,8 @@ EPP_PORT = 700
 EPP_PKT_LEN_BYTES = 4
 NETWORK_BYTE_ORDER = "big"
 
-if "PYRAR_PROVIDER" not in os.environ:
-    raise ValueError("No `PYRAR_PROVIDER` specified")
+if "PYRAR_REGISTRY" not in os.environ:
+    raise ValueError("No `PYRAR_REGISTRY` specified")
 
 if not os.path.isfile(LOGINS_FILE):
     raise ValueError(f"Logins file `{LOGINS_FILE}` is missing")
@@ -42,7 +42,7 @@ if not os.path.isfile(LOGINS_FILE):
 with open(LOGINS_FILE, "r") as fd:
     logins = json.load(fd)
 
-this_reg = os.environ["PYRAR_PROVIDER"]
+this_reg = os.environ["PYRAR_REGISTRY"]
 if this_reg not in logins:
     raise ValueError(f"Registry '{this_reg}' not in '{LOGINS_FILE}'")
 

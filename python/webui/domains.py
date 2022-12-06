@@ -58,8 +58,8 @@ class DomainName:
                 if self.registry is None:
                     self.registry, self.url = tld_lib.http_req(name)
                 else:
-                    prov, __ = tld_lib.http_req(name)
-                    if prov != self.registry:
+                    regs, __ = tld_lib.http_req(name)
+                    if regs != self.registry:
                         self.err = "ERROR: Split registry request"
                         self.names = None
                         return
@@ -93,11 +93,12 @@ def http_price_domains(domobj, years, which):
     return 400, "Unexpected Error"
 
 
-def check_and_parse(domobj, num_years=1):
-    ret, out_js = http_price_domains(domobj, num_years, ["create", "renew"])
+def check_and_parse(domobj, num_years=1, qry_type=["create", "renew"]):
+    ret, out_js = http_price_domains(domobj, num_years, qry_type)
     if ret != 200:
         return abort(ret, out_js)
 
+    print(">>>>>>",json.dumps(out_js,indent=3))
     xml_p = parsexml.XmlParser(out_js)
     code, ret_js = xml_p.parse_check_message()
 

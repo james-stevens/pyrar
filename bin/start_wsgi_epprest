@@ -8,7 +8,7 @@ registry="${2}"
 ses="$(jq .${registry}.sessions ${BASE}/etc/registry.json)"
 if test "${ses}" = "null"; then ses="3"; fi
 
-export PYRAR_PROVIDER="${registry}"
+export PYRAR_REGISTRY="${registry}"
 
 . /usr/local/bin/get_py_log
 

@@ -72,7 +72,7 @@ awk 'BEGIN { fac="'"${fac}"'"; lvl="'"${lvl}"'"; }
 	printf "\t\t\taccess_log syslog:server=unix:/dev/log,facility=%s,tag=nginx_epp_%s,severity=%s;\n",fac,$1,lvl;
 	printf "\t\t\tproxy_pass http://epp_%s;\n",$1;
 	print "\t\t\t}\n\t\t}\n"
-	}' /run/prov_ports
+	}' /run/regs_ports
 
 echo "}"
 

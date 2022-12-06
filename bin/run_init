@@ -24,7 +24,7 @@ flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 			if (ses[x]=="") n=3; else n=ses[x];
 			print x,have[x],n 
 			}
-		}' > /run/prov_ports
+		}' > /run/regs_ports
 
 
 /usr/local/bin/make_inittab
