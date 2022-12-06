@@ -106,6 +106,13 @@ def is_valid_ds(ds_rec):
     return True
 
 
+def validate_binary(val):
+    if not isinstance(val,int):
+        return False
+    return val in [0,1]
+
+
+
 if __name__ == "__main__":
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))

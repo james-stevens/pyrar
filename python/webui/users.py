@@ -34,7 +34,7 @@ def make_session_key(session_code, user_agent):
 
 
 def secure_user_data(data):
-    for block in ["password", "payment_data"]:
+    for block in ["password", "payment_data", "two_fa"]:
         del data[block]
 
 
@@ -151,6 +151,9 @@ def login(data, user_agent):
     if not ret:
         return False, None
 
+    if not sql.has_data(user_data,"password"):
+        return False, None
+
     encoded_pass = user_data["password"].encode("utf8")
     enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
     if encoded_pass != enc_pass:
@@ -159,6 +162,38 @@ def login(data, user_agent):
     update_user_login_dt(user_data['user_id'])
     log(f"USR-{user_data['user_id']} logged in", gzz(czz()))
     return start_session(user_data, user_agent)
+
+
+USER_CAN_CHANGE = {"auto_renew_all":validate.validate_binary}
+def update_user(user_id, data):
+    for item in data:
+        if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](data[item]):
+            return False, None
+
+    ret, _ = sql.sql_update_one("users", data, {"user_id": req.user_id})
+    if not ret:
+        return False, None
+
+    ret, user_data = sql.sql_select_one("users", {"user_id": req.user_id})
+    if not ret:
+        return False, None
+
+    return ret, user_data
+
+
+def check_password(user_id,data):
+    if not sql.has_data(data,"password"):
+        return False
+
+    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
+    if not ret:
+        return False
+
+    encoded_pass = user_data["password"].encode("utf8")
+    enc_pass = bcrypt.hashpw(data["password"].encode("utf-8"), encoded_pass)
+
+    return encoded_pass == enc_pass
+
 
 
 if __name__ == "__main__":

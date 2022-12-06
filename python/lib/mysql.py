@@ -42,6 +42,7 @@ my_conv[FIELD_TYPE.TINY_BLOB] = convert_string
 my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
 my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
 my_conv[FIELD_TYPE.BLOB] = convert_string
+my_conv[FIELD_TYPE.TINY] = int
 
 
 def format_data(item, data):
@@ -62,7 +63,7 @@ def format_data(item, data):
 
 
 def has_data(row, col):
-    return (col in row and row[col] is not None and row[col] != "")
+    return (row is not None and col in row and row[col] is not None and row[col] != "")
 
 
 def now(offset=0):

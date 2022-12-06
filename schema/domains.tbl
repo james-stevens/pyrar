@@ -11,6 +11,7 @@ sqlsh "create table domains (
 	user_id				${row_id},
 
 	status_id			int not null default 0,
+	auto_renew			boolean not null default 0,
 
 	name_servers		varchar(3500) not null default '',
 	ds_recs				varchar(3500) not null default '',

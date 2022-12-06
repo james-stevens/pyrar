@@ -36,6 +36,8 @@ my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
 my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
 my_conv[FIELD_TYPE.BLOB] = convert_string
 
+my_conv[FIELD_TYPE.TINY] = int
+
 
 def mysql_connect():
     """ Connect to MySQL based on ENV vars """

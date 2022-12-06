@@ -82,7 +82,7 @@ function changeFavicon(src) {
 function clr_lazy_hide()
 {
 	if (!("popup" in ctx)) return;
-	clearTimeout(ctx.popup.timer);
+	if ("timer" in ctx.popup) clearTimeout(ctx.popup.timer);
 	delete ctx.popup;
 }
 
@@ -169,6 +169,7 @@ function emptyCart()
 }
 
 
+
 function removeBasketItem(i)
 {
 	if (ctx.basket.length == 1) {
@@ -177,10 +178,15 @@ function removeBasketItem(i)
 		}
 	else ctx.basket.splice(i,1);
 
-	clr_lazy_hide();
+	if (("popup" in ctx)&&("name" in ctx.popup)&&(ctx.popup.name=="basketPopup")) {
+		clearTimeout(ctx.popup.timer);
+		delete ctx.popup.timer;
+		}
+
 	user_info()
 	if (gbl.elm.basketSpace.style.display == "block") basketCheckout();
 }
+
 
 
 function start_basket_table()
@@ -585,16 +591,37 @@ function myDomains()
 }
 
 
+
 function userDetails()
 {
-	if (ctx.user.email_verified) verified=gbl.tick; else verified=gbl.cross;
+	let auto_renew = gbl.cross;
+	let verified = gbl.cross;
+	let has_twofa = gbl.cross;
+	if (ctx.user.auto_renew_all) auto_renew = gbl.tick;
+	if (ctx.user.email_verified) verified = gbl.tick;
+	if (ctx.user.two_fa) has_twofa = gbl.tick;
+
 	let x = "<table align=center border=0>";
+	x += "<tr><td colspan=2 align=center>"
+		+btn("close_account()","Close Account","Close this account")
+		+btn("change_password()","Change Password","Change your password")
+		+btn("flip_auto_renew()","Flip Auto-Renew","Flip Auto-Renew All Domains")
+		+btn("change_payment()","Change Payment","Change how you pay")
+
+	if (!ctx.user.two_fa)
+		x += btn("add_2fa()","Add 2FA","Add multi-factor authentication");
+	if (!ctx.user.email_verified) 
+		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification");
+
+	x += "</td></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += `<tr><td class=promptCell>E-Mail :</td><td class=dataCell>${ctx.user.email}</td></tr>`;
 	x += `<tr><td class=promptCell>E-Mail Verified :</td><td class=dataCell>${verified}</td></tr>`;
 	x += `<tr><td class=promptCell>Name :</td><td class=dataCell>${ctx.user.name}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${ctx.user.last_login_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${ctx.user.amended_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${ctx.user.created_dt}</td></tr>`;
+	x += `<tr><td class=promptCell>Auto Renew All :</td><td class=dataCell>${auto_renew}</td></tr>`;
 	return x + "</table>";
 }
 
@@ -637,15 +664,34 @@ function myAccount()
 
 function one_domain_html(dom)
 {
+	let auto_renew = gbl.cross;
+	if (ctx.user.auto_renew_all) auto_renew = gbl.tick + " by account";
+	else if (dom.auto_renew) auto_renew = gbl.tick;
+
 	let x = "<table align=center border=0>";
-	x += "<tr><td colspan=4 align=center>"+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain")+"</td></tr>";
+
+	x += "<tr><td colspan=4 align=center>"
+		+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain")
+		+btn(`edit_ns_ds('${dom.name}')`,"Edit NS/DS",`Edit the NS / DS records for ${dom.display_name}`)
+		+btn(`gift_domain('${dom.name}')`,"Gift Domain","Gift this domain to another user")
+
+	if (!ctx.user.auto_renew_all)
+		x += btn(`flip_dom_renew('${dom.name}','renew')`,"Flip Auto-Renew",`Flip auto-renew for ${dom.display_name}`)
+
+	x += "</td></tr>";
+
 	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
 	let puny = "";
+	let ns = item.name_servers.toLowerCase().split(",").sort().join("<br>")
+	let ds = item.ds_recs.toLowerCase().split(",").sort().join("<br>")
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
+	x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
+	x += `<tr><td class=promptCell>Auto Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
 	return x + "</table>";
 }
 

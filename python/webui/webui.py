@@ -6,6 +6,7 @@ import sys
 import json
 import httpx
 import flask
+import bcrypt
 
 from lib.registry import tld_lib
 from lib.log import log, debug, init as log_init
@@ -116,6 +117,70 @@ def users_domains():
     req.user_data["domains"] = doms
 
     return req.response(req.user_data)
+
+
+@application.route('/api/v1.0/users/update', methods=['POST'])
+def users_update():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort("Not logged in")
+
+    if flask.request.json is None:
+        return req.abort("No JSON posted")
+
+    ret, user_data = users.update_user(req.user_id, flask.request.json)
+    if not ret:
+        req.abort(user_data)
+
+    req.user_data["user"] = user_data
+
+    return req.response(req.user_data)
+
+
+@application.route('/api/v1.0/users/close', methods=['POST'])
+def users_close():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort("Not logged in")
+
+    if not users.check_password(req.user_id, flask.request.json):
+        return req.abort("Password match failed")
+
+    ret, __ = sql.sql_update_one("users", {
+        "password": None,
+        "amended_dt": None
+    }, {"user_id": req.user_id})
+
+    if not ret:
+        return req.abort("Close account failed")
+
+    sql.sql_delete_one("session_keys",{"user_id":req.user_id})
+
+    return req.response("OK")
+
+
+@application.route('/api/v1.0/users/password', methods=['POST'])
+def users_password():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort("Not logged in")
+
+    if not users.check_password(req.user_id, flask.request.json):
+        return req.abort("Password match failed")
+
+    new_pass = bcrypt.hashpw(
+        flask.request.json["new_password"].encode("utf-8"),
+        bcrypt.gensalt()).decode("utf-8")
+
+    ret, __ = sql.sql_update_one("users", {
+        "password": new_pass,
+        "amended_dt": None
+    }, {"user_id": req.user_id})
+
+    if ret:
+        return req.response("OK")
+
+    return req.abort("Failed")
 
 
 @application.route('/api/v1.0/users/details', methods=['GET'])
