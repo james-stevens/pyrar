@@ -58,6 +58,7 @@ function callApi(sfx,callback,inData)
 			response.text().then(
 				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
+					if (response.status != 499) return callback(false,{"error":"Unexecpted System Error"});
 					try {
 						return callback(false,JSON.parse(data));
 					} catch {
@@ -72,7 +73,6 @@ function callApi(sfx,callback,inData)
 			response.text().then(data => {
 				got_ses = false;
 				response.headers.forEach((val, key) => {
-					// console.log("HEAD",key,"=",val);
 					if (key=="x-session-code") {
 						got_ses = true;
 						if (!("session" in ctx)) {

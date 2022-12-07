@@ -63,7 +63,7 @@ class WebuiReq:
             "who_did_it": "webui"
         }
 
-    def abort(self, data, err_no=400):
+    def abort(self, data, err_no=499):
         return self.response({"error": data}, err_no)
 
     def response(self, data, code=200):
@@ -146,15 +146,14 @@ def users_close():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ret, __ = sql.sql_update_one("users", {
-        "password": None,
-        "amended_dt": None
-    }, {"user_id": req.user_id})
+    ret, __ = sql.sql_update_one(
+        "users", "password=concat('CLOSED:',password),amended_dt=now()",
+        {"user_id": req.user_id})
 
     if ret != 1:
         return req.abort("Close account failed")
 
-    sql.sql_delete_one("session_keys",{"user_id":req.user_id})
+    sql.sql_delete_one("session_keys", {"user_id": req.user_id})
     req.user_id = None
     req.sess_code = None
 

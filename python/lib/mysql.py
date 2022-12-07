@@ -153,8 +153,9 @@ def sql_update_one(table, data, where):
 
 
 def sql_update(table, data, where, limit=None):
-    sql = f"update {table} set " + data_set(data, ",") + " where " + data_set(
-        where, " and ")
+    updt_data = data if isinstance(data,str) else data_set(data, ",");
+    ipdt_where = where if isinstance(where,str) else data_set(where, " and ")
+    sql = f"update {table} set {updt_data} where {ipdt_where}"
     if limit is not None:
         sql += f" limit {limit}"
     return sql_exec(sql)

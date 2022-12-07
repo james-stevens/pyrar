@@ -158,6 +158,9 @@ def login(data, user_agent):
     if not sql.has_data(user_data, "password"):
         return False, None
 
+    if user_data["password"][:7]=="CLOSED:":
+        return False, None
+
     encoded_pass = user_data["password"].encode("utf8")
     enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
     if encoded_pass != enc_pass:
