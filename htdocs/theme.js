@@ -81,6 +81,12 @@ function theme_css(theme) {
 .topLink { font-size: 20px; }
 h2 { text-align: center; }
 
+.line {
+	background: #${cols[7]};
+	width: 100%;
+	height: 1px;
+	}
+
 .btmBtnBar {
 	text-align: center;
 	padding-top: 10px;
@@ -266,7 +272,7 @@ td {
 	padding-right: 7px;
 	white-space: normal;
 	min-width: 50%;
-	overflow-wrap: anywhere;
+	white-space: nowrap;
 	text-align: right;
 	}
 
@@ -278,7 +284,7 @@ td {
 	padding-right: 7px;
 	white-space: normal;
 	min-width: 50%;
-	overflow-wrap: anywhere;
+	white-space: nowrap;
 	}
 
 .dataRow {
@@ -313,16 +319,15 @@ td {
 
 .msgPop {
 	position: absolute;
-	left: 10px;
-	top: 20px;
 	font-family:inherit;
-	font-size:16pt;
+	font-size: 16pt;
 	width: 95%;
 	background: #${cols[15]};
 	text-align: center;
 	color: #${cols[0]};
 	padding: 5px;
 	border-radius: 6px;
+	width: auto;
 	}
 
 .msgPopNo {

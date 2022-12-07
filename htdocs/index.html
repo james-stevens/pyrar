@@ -12,6 +12,7 @@
 debugAPI = false;
 
 
+elm = {};
 gbl = {
 	"theme": window.localStorage.getItem("theme"),
 
@@ -51,7 +52,7 @@ function keyEsc(e) {
     if (e.key == "Escape") {
     	hideAllPopUp();
     	unerrMsg();
-		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none") document.searchForm.search.focus();
     	}
 }
 
@@ -127,7 +128,7 @@ function do_theme_change(value)
 	if (value in theme_colours) changeTheme(value);
 	let popup = document.getElementById("themePopup");
 	popup.classList.remove("show")
-	if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+	if (elm.search.style.display != "none") document.searchForm.search.focus();
 }
 
 
@@ -137,10 +138,10 @@ function toggleTheme() { togglePopUp("themePopup",5000); }
 
 function show_one_space(name)
 {
-	gbl.elm.userSpace.style.display = "none";
-	gbl.elm.search.style.display = "none";
-	gbl.elm.basketSpace.style.display = "none";
-	gbl.elm[name].style.display = "block";
+	elm.userSpace.style.display = "none";
+	elm.search.style.display = "none";
+	elm.basketSpace.style.display = "none";
+	elm[name].style.display = "block";
 }
 
 function goSearch()
@@ -164,8 +165,8 @@ function emptyCart()
 {
 	delete ctx.basket;
 	user_info();
-	errMsg(`${gbl.bin} basket emptied`,gbl.elm.userInfo,350);
-	if (gbl.elm.basketSpace.style.display == "block") goSearch();
+	errMsg(`${gbl.bin} basket emptied`,elm.userInfo,350);
+	if (elm.basketSpace.style.display == "block") goSearch();
 }
 
 
@@ -174,7 +175,7 @@ function removeBasketItem(i)
 {
 	if (ctx.basket.length == 1) {
 		delete ctx.basket;
-		if (gbl.elm.basketSpace.style.display == "block") goSearch();
+		if (elm.basketSpace.style.display == "block") goSearch();
 		}
 	else ctx.basket.splice(i,1);
 
@@ -184,7 +185,7 @@ function removeBasketItem(i)
 		}
 
 	user_info()
-	if (gbl.elm.basketSpace.style.display == "block") basketCheckout();
+	if (elm.basketSpace.style.display == "block") basketCheckout();
 }
 
 
@@ -206,17 +207,17 @@ function start_basket_table()
 function user_info()
 {
 	if (ctx.basket) {
-		gbl.elm.basketIcon.style.display = "block";
+		elm.basketIcon.style.display = "block";
 		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table()
 		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
 		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
 		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
 		x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
 		x += "</table>";
-		gbl.elm.basketPopup.innerHTML = x;
+		elm.basketPopup.innerHTML = x;
 		}
 	else
-		gbl.elm.basketIcon.style.display = "none";
+		elm.basketIcon.style.display = "none";
 
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		let x = "",style="class=userIcons";
@@ -226,7 +227,7 @@ function user_info()
 			x += `<span title="E-Mail address not yet verified" ${style}>${gbl.email}</span>`;
 		*/
 
-		gbl.elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
+		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
 }
 
@@ -234,17 +235,19 @@ function user_info()
 
 function doRegister()
 {
+	let p = document.getElementById("registerPopup");
+
 	function regErr(err,item)
 	{
-		errMsg(err,document.getElementById("registerPopup"));
+		errMsg(err,p);
 		clr_lazy_hide();
 		item.focus();
 	}
 
 	let f = document.formRegister;
 
-	if (f.password.value != f.confirm.value) return regErr("Passwords do not match",f.password);
-	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",f.email);
+	if (f.password.value != f.confirm.value) return regErr("Passwords do not match",p);
+	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",p);
 
 	data = {
 		"name":f.name.value,
@@ -265,7 +268,7 @@ function doRegister()
 
 		loggedIn();
 
-		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none") document.searchForm.search.focus();
 
 		f.email.value = "";
 		f.password.value = "";
@@ -304,7 +307,7 @@ function doLogin()
 
 		loggedIn();
 
-		if (gbl.elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none") document.searchForm.search.focus();
 
 		f.email.value = "";
 		f.password.value = "";
@@ -334,16 +337,15 @@ function loggedOut()
 	e.style.display = "block";
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "none";
-	gbl.elm.userInfo.innerHTML = "";
+	elm.userInfo.innerHTML = "";
 }
 
 
 
 function bodyLoaded()
 {
-	gbl.elm = {};
 	["myMsgPop","basketIcon","userInfo","basketSpace","basketPopup","userSpace","output","topSpan","search","businessName"].forEach(i => {
-		gbl.elm[i] = document.getElementById(i);
+		elm[i] = document.getElementById(i);
 		} );
 
 	callApi("config",(ret,reply) => {
@@ -362,9 +364,9 @@ function bodyLoaded()
 		document.title = site_name;
 		if (my_icon) {
 			changeFavicon("/icons/"+my_icon)
-			gbl.elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
+			elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
 			}
-		else gbl.elm.businessName.innerHTML = site_name;
+		else elm.businessName.innerHTML = site_name;
 
 		gbl.cur = policy("currency_symbol","$");
 		gbl.cur_iso = policy("currency_iso","USD");
@@ -413,7 +415,7 @@ function showSearch(ret,data)
 	if ((!ret)&&("error" in data)) { errMsg(data.error,document.searchForm.search); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
-	gbl.elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
+	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
@@ -451,7 +453,7 @@ function buy_one_name(domain,action)
 		if (!(action in dom)) {
 			let msg = "an error occured";
 			if ((action+":err") in dom) msg = dom[action+":err"];
-			errMsg(msg,gbl.elm.basketIcon,450);
+			errMsg(msg,elm.basketIcon,450);
 			return;
 			}
 
@@ -523,7 +525,7 @@ function doSearch()
 
 	delete ctx.search;
 
-	gbl.elm.output.innerHTML = "";
+	elm.output.innerHTML = "";
 
 	ctx.search = {};
 	ctx.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
@@ -533,7 +535,7 @@ function doSearch()
 
 	if (srch.indexOf(".") >= 0) {
 		if (!fqdnCheck.test(srch)) {
-			errMsg("Invald domain name",document.searchForm.search);
+			errMsg("Invalid domain name",document.searchForm.search);
 			return do_end(); }
 
 		if (!supported_tld(srch)) {
@@ -572,7 +574,7 @@ function userDomainList()
 function myDomains()
 {
 	show_one_space("userSpace");
-	gbl.elm.userSpace.innerHTML = "";
+	elm.userSpace.innerHTML = "";
 	callApi("users/domains",(ret,reply) => {
 		if (!ret) {
 			let msg="Error in registration";
@@ -586,7 +588,7 @@ function myDomains()
 				}
 			}
 		else delete ctx.domains;
-		gbl.elm.userSpace.innerHTML = userDomainList()
+		elm.userSpace.innerHTML = userDomainList()
 		});
 }
 
@@ -601,17 +603,12 @@ function userDetails()
 	if (ctx.user.email_verified) verified = gbl.tick;
 	if (ctx.user.two_fa) has_twofa = gbl.tick;
 
-	let x = "<table align=center border=0>";
-	x += "<tr><td colspan=2 align=center>"
-		+btn("close_account()","Close Account","Close this account")
-		+btn("change_password()","Change Password","Change your password")
-		+btn("flip_auto_renew()","Flip Auto-Renew","Flip Auto-Renew All Domains")
-		+btn("change_payment()","Change Payment","Change how you pay")
+	let x = "<table align=center width=50% border=0>";
+	x += "<tr><td colspan=2 class=btmBtnBar>"
+		+btn("user_settings()","Settings","Change this accounts settings",100)
 
-	if (!ctx.user.two_fa)
-		x += btn("add_2fa()","Add 2FA","Add multi-factor authentication");
 	if (!ctx.user.email_verified) 
-		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification");
+		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += "</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
@@ -636,11 +633,11 @@ function basketCheckout()
 	for(let item of ctx.basket) {
 		total += parseFloat(item.cost);
 		}
-	x += `<tr><td colspan=4><hr></td></tr>`;
+	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${gbl.cur}${total.toFixed(2)}</td></tr>`;
-	x += `<tr><td colspan=4><hr></td></tr>`;
+	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 	x += "<tr><td colspan=4 align=right>"+btn("something()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
-	gbl.elm.basketSpace.innerHTML = x+"</table>"
+	elm.basketSpace.innerHTML = x+"</table>"
 }
 
 
@@ -648,7 +645,7 @@ function basketCheckout()
 function myAccount()
 {
 	show_one_space("userSpace");
-	gbl.elm.userSpace.innerHTML = "";
+	elm.userSpace.innerHTML = "";
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
 			let msg="Error in registration";
@@ -656,7 +653,7 @@ function myAccount()
 			return errMsg(msg,document.getElementById("myAccountBtn"));
 			}
 		if ("user" in reply) ctx.user = reply.user; else delete ctx.user;
-		gbl.elm.userSpace.innerHTML = userDetails();
+		elm.userSpace.innerHTML = userDetails();
 		});
 }
 
@@ -668,15 +665,11 @@ function one_domain_html(dom)
 	if (ctx.user.auto_renew_all) auto_renew = gbl.tick + " by account";
 	else if (dom.auto_renew) auto_renew = gbl.tick;
 
-	let x = "<table align=center border=0>";
+	let x = "<table align=center width=50% border=0>";
 
-	x += "<tr><td colspan=4 align=center>"
-		+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain")
-		+btn(`edit_ns_ds('${dom.name}')`,"Edit NS/DS",`Edit the NS / DS records for ${dom.display_name}`)
-		+btn(`gift_domain('${dom.name}')`,"Gift Domain","Gift this domain to another user")
-
-	if (!ctx.user.auto_renew_all)
-		x += btn(`flip_dom_renew('${dom.name}','renew')`,"Flip Auto-Renew",`Flip auto-renew for ${dom.display_name}`)
+	x += "<tr><td colspan=4 class=btmBtnBar>"
+		+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain",100)
+		+btn(`domain_settings('${dom.name}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 
 	x += "</td></tr>";
 
@@ -700,17 +693,17 @@ function one_domain_html(dom)
 function show_one_domain(idx)
 {
 	show_one_space("userSpace");
-	gbl.elm.userSpace.innerHTML = one_domain_html(ctx.domains[idx]);
+	elm.userSpace.innerHTML = one_domain_html(ctx.domains[idx]);
 }
 
 
 
 function unerrMsg()
 {
-	let t1 = gbl.elm.myMsgPop.innerHTML;
+	let t1 = elm.myMsgPop.innerHTML;
 	let t2 = ctx.lastErrMsg;
 	if (t2 == null) t2 = "";
-	if (t1 == t2) gbl.elm.myMsgPop.className = "msgPop msgPopNo";
+	if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
 	delete ctx.lastErrMsg;
 	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
 	delete ctx.err_msg_tout;
@@ -720,25 +713,27 @@ function unerrMsg()
 
 function errMsg(txt,elem,min_width)
 {
-	if (elem) {
-		let box = elem.getBoundingClientRect();
-		gbl.elm.myMsgPop.style.top = box.y + box.height + "px";
-		let x_pos = box.x;
-		if (!min_width) {
-			min_width = box.width - 10;
-			}
-		else {
-			if (box.width < min_width) x_pos -= (min_width/2);
-			}
-		gbl.elm.myMsgPop.style.left = x_pos + "px";
-		gbl.elm.myMsgPop.style.minWidth = min_width + "px";
-		gbl.elm.myMsgPop.style.width = min_width + "px";
-		}
+	if (!elem) { console.log("ERROR: ${txt} gave no element to hook to "); return; }
 
-	gbl.elm.myMsgPop.className = 'msgPop msgPopYes';
+	let m = elm.myMsgPop;
 	if (txt.substr(0,1)!="&") txt = gbl.warn + " " + txt;
-	gbl.elm.myMsgPop.innerHTML = txt;
-	ctx.lastErrMsg = gbl.elm.myMsgPop.innerHTML;
+	m.innerHTML = txt;
+
+	let p_box = elem.getBoundingClientRect();
+	let m_box = m.getBoundingClientRect();
+	let m_width = m_box.width;
+
+	if (m_box.width < p_box.width) {
+		m.style.width = p_box.width + "px";
+		m_width = p_box.width;
+		}
+	let centre = p_box.x + (p_box.width/2);
+	let x_pos = centre - (m_width / 2)
+	m.style.left = x_pos + "px";
+	m.style.top = p_box.y + p_box.height + "px";
+
+	m.className = 'msgPop msgPopYes';
+	ctx.lastErrMsg = m.innerHTML;
 	ctx.err_msg_tout = setTimeout(unerrMsg,2500);
 }
 
