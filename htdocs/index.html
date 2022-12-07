@@ -344,7 +344,8 @@ function loggedOut()
 
 function bodyLoaded()
 {
-	["myMsgPop","basketIcon","userInfo","basketSpace","basketPopup","userSpace","output","topSpan","search","businessName"].forEach(i => {
+	["myMsgPop","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
 
@@ -801,7 +802,7 @@ function errMsg(txt,elem,min_width)
 
 <tr><Td>
 <div class="popBelow">
-<span style='width: 75px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
+<span style='width: 85px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
 <span class="popBelowText" id="themePopup">
 <table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>
 <tr class=dataRow onClick='do_theme_change("dark");'><td>dark</td></tr>
@@ -811,7 +812,8 @@ function errMsg(txt,elem,min_width)
 <tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
 </table>
 </span>
-<span style='width: 75px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch();">Search</span>
+<span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch();">Search</span>
+<span style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 
 </td>
@@ -836,6 +838,7 @@ function errMsg(txt,elem,min_width)
 	</div>
 	<span class="botSapce" id="userSpace" style="display: none;"></span>
 	<span class="botSapce" id="basketSpace" style="display: none;"></span>
+	<span class="botSapce" id="marketPlace" style="display: none;"></span>
 </div>
 
 <div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
