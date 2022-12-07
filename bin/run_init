@@ -10,7 +10,7 @@ if test "${syslog}" = "null"
 	then
 		echo "*.* -/dev/console"
 	else
-		echo "*.* @${SYSLOG_SERVER}"
+		echo "*.* @${syslog}"
 	fi > /run/syslog.conf
 
 mkdir -p /run/epp

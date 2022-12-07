@@ -50,7 +50,10 @@ def start_session(user_data, user_agent):
         "created_dt": None
     }
 
-    sql.sql_insert("session_keys", sess_data)
+    ret, __ = sql.sql_insert("session_keys", sess_data)
+    if ret is None:
+        return False, "Failed to start session"
+
     secure_user_data(user_data)
     return True, {"user_id": user_id, "user": user_data, "session": ses_code}
 
@@ -92,7 +95,7 @@ def register(data, user_agent):
     ret, user_id = sql.sql_insert("users",
                                   {item: data[item]
                                    for item in all_cols})
-    if not ret:
+    if ret is None:
         return False, "Registration insert failed"
 
     update_user_login_dt(user_id)
@@ -127,11 +130,12 @@ def check_session(ses_code, user_agent):
 
 
 def logout(ses_code, user_id, user_agent):
-    return sql.sql_delete_one(
+    ret, val = sql.sql_delete_one(
         "session_keys", {
             "session_key": make_session_key(ses_code, user_agent),
             "user_id": user_id
         })
+    return (ret is not None), val
 
 
 def update_user_login_dt(user_id):
@@ -151,7 +155,7 @@ def login(data, user_agent):
     if not ret:
         return False, None
 
-    if not sql.has_data(user_data,"password"):
+    if not sql.has_data(user_data, "password"):
         return False, None
 
     encoded_pass = user_data["password"].encode("utf8")
@@ -164,25 +168,32 @@ def login(data, user_agent):
     return start_session(user_data, user_agent)
 
 
-USER_CAN_CHANGE = {"auto_renew_all":validate.validate_binary}
+USER_CAN_CHANGE = {
+    "auto_renew_all": validate.validate_binary,
+    "email": validate.is_valid_email,
+    "name": validate.is_valid_display_name
+}
+
+
 def update_user(user_id, data):
     for item in data:
-        if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](data[item]):
-            return False, None
+        if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](
+                data[item]):
+            return False, f"Invalid data item - '{item}'"
 
-    ret, _ = sql.sql_update_one("users", data, {"user_id": req.user_id})
-    if not ret:
-        return False, None
+    ret, _ = sql.sql_update_one("users", data, {"user_id": user_id})
+    if ret is None:
+        return False, "Failed to update user"
 
-    ret, user_data = sql.sql_select_one("users", {"user_id": req.user_id})
+    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
-        return False, None
+        return False, "Failed to load user"
 
     return ret, user_data
 
 
-def check_password(user_id,data):
-    if not sql.has_data(data,"password"):
+def check_password(user_id, data):
+    if not sql.has_data(data, "password"):
         return False
 
     ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
@@ -195,14 +206,13 @@ def check_password(user_id,data):
     return encoded_pass == enc_pass
 
 
-
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(debug=True)
     login_ok, login_data = login(
         {
-            "email": "james@jrcs.net",
-            "password": "pass"
+            "email": "flip@flop.com",
+            "password": "aa"
         }, "curl/7.83.1")
     debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data), gzz(czz()))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))

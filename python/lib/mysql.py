@@ -112,7 +112,7 @@ def run_sql(sql, func):
                 this_exc = exc
                 pass
         log("ERROR:" + str(this_exc), gzz(czz()))
-        return False, None
+        return None, None
 
 
 def run_select(sql):
@@ -148,7 +148,8 @@ def sql_exists(table, data):
 
 
 def sql_update_one(table, data, where):
-    return sql_update(table, data, where, 1)
+    ret, val = sql_update(table, data, where, 1)
+    return (ret in [0,1]), val
 
 
 def sql_update(table, data, where, limit=None):

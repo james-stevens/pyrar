@@ -139,6 +139,7 @@ function toggleTheme() { togglePopUp("themePopup",5000); }
 function show_one_space(name)
 {
 	elm.userSpace.style.display = "none";
+	elm.marketPlace.style.display = "none";
 	elm.search.style.display = "none";
 	elm.basketSpace.style.display = "none";
 	elm[name].style.display = "block";
@@ -595,6 +596,155 @@ function myDomains()
 
 
 
+function postUserDetails()
+{
+	let f = document.editUserDetails;
+	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+
+	data = {
+		"name": f.user_name.value,
+		"email": f.user_email.value,
+		"auto_renew_all": parseInt(f.elements["user_auto_renew_all"].value)
+		};
+
+	if (!valid_email.test(data.email)) return regErr("Invalid email address",f.user_email);
+
+	callApi("users/update",(ret,reply) => {
+		if (ret) {
+			if ("user" in reply) {
+				ctx.user = reply.user;
+				user_info();
+				elm.userSpace.innerHTML = userDetails();
+				}
+			}
+		else {
+			if ("error" in reply) msg=reply["error"]; else msg="Failed";
+			errMsg(msg,f);
+			}
+		}, { json: data });
+
+	return false;
+}
+
+
+function postUserPassword()
+{
+	let f = document.editUserPassword;
+	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+
+	if (f.password.value=="") return regErr("Password missing",f.password);
+	if (f.new_password.value=="") return regErr("New password missing",f.new_password);
+	if (f.confirm_password.value=="") return regErr("Confirm password missing",f.confirm_password);
+
+	if (f.new_password.value != f.confirm_password.value)
+		return regErr("Passwords do not match",f.new_password);
+
+	data = {
+		"password": f.password.value,
+		"new_password": f.new_password.value,
+		};
+
+	callApi("users/password",(ret,reply) => {
+		if (ret) {
+			errMsg("Password changed",elm.userInfo);
+			user_info();
+			elm.userSpace.innerHTML = userDetails();
+			}
+		else {
+			if ("error" in reply) msg=reply["error"]; else msg="Failed";
+			errMsg(msg,f);
+			}
+		}, { json: data });
+
+	return false;
+}
+
+
+function postCloseAccount()
+{
+	let f = document.editCloseAccount;
+	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+
+	if (f.password.value=="") return regErr("Password missing",f.password);
+
+	callApi("users/close",(ret,reply) => {
+		if (ret) goSearch();
+		else {
+			if ("error" in reply) msg=reply["error"]; else msg="Failed";
+			errMsg(msg,f);
+			}
+		}, { json: { "password": f.password.value }});
+
+	return false;
+}
+
+
+
+function user_settings()
+{
+	let spacer = "<tr><td>"+gbl.gap+"<br><div class='line'></div><br>"+gbl.gap+"</td></tr>";
+	let x="<table align=center border=0>";
+	x += "<tr><td class=settingsBanner>Change User Details</td></tr>";
+	x += "<tr><td>";
+	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
+	x += "<table width=100%>";
+	x += `<tr><td class=formPrompt>E-Mail :</td><td><input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
+	x += `<tr><td class=formPrompt>Name :</td><td><input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
+    x += `<tr><td class=formPrompt>Auto Renew All :</td><td><select id='user_auto_renew_all'>`;
+
+    let yes_chk="",no_chk="";
+    if (ctx.user.auto_renew_all) yes_chk="selected"; else no_chk="selected";
+    x += `<option ${yes_chk} value=1>Yes<option ${no_chk} value=0>No</select></td></tr>`;
+	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
+	x += "</table></form></td></tr>";
+
+
+	x += spacer + "<tr><td class=settingsBanner>Control Two-Factor Authentication</td></tr>";
+	x += "<tr><td><table width=100%>";
+	if (("two_fa" in ctx.user) && (ctx.user.two_fa != null) && (ctx.user.two_fa != "")) {
+		x += "<tr><td colspan=2>Disable Google Authenticator two-factor authentication</td></tr>";
+		x += "<tr><td colspan=2></td><td align=right>"+btn("enable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		}
+	else {
+		x += "<tr><td colspan=2>Enable Google Authenticator two-factor authentication</td></tr>";
+		x += "<tr><td colspan=2></td><td align=right>"+btn("enable_two_fa()","Enable 2FA","Enable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		}
+	x += "</table></form></td></tr>";
+
+
+	x += spacer + "<tr><td class=settingsBanner>Change Your Password</td></tr>";
+	x += "<tr><td>";
+	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
+	x += "<table width=100%>";
+	x += `<tr><td class=formPrompt>Current Password :</td><td>`;
+	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
+	x += `<tr><td class=formPrompt>New Password :</td><td>`;
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Your new password" type=password id='new_password'></td></tr>`;
+	x += `<tr><td class=formPrompt>Confirm Password :</td><td>`;
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm your new password" type=password id='confirm_password'></td></tr>`;
+	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
+	x += "</table></form></td></tr>";
+
+
+	x += spacer + "<tr><td class=settingsBanner>Close This Account</td></tr>";
+	x += "<tr><td>";
+	x += "<form name=editCloseAccount method=post action=# onSubmit='postCloseAccount(); return false;'>";
+	x += "<table width=100%>";
+	x += "<tr><td colspan=2>To close your account, please enter your current password</td></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += `<tr><td class=formPrompt>Current Password :</td><td>`;
+	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
+	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
+	x += "</table></form></td></tr>";
+
+
+	elm.userSpace.innerHTML = x+"</table>";
+
+	document.editUserDetails.user_email.focus();
+}
+
+
+
 function userDetails()
 {
 	let auto_renew = gbl.cross;
@@ -717,8 +867,9 @@ function errMsg(txt,elem,min_width)
 	if (!elem) { console.log("ERROR: ${txt} gave no element to hook to "); return; }
 
 	let m = elm.myMsgPop;
+	m.style.width = "auto";
 	if (txt.substr(0,1)!="&") txt = gbl.warn + " " + txt;
-	m.innerHTML = txt;
+	m.innerHTML = "&nbsp;"+txt+"&nbsp;";
 
 	let p_box = elem.getBoundingClientRect();
 	let m_box = m.getBoundingClientRect();

@@ -130,7 +130,7 @@ def users_update():
 
     ret, user_data = users.update_user(req.user_id, flask.request.json)
     if not ret:
-        req.abort(user_data)
+        return req.abort(user_data)
 
     req.user_data["user"] = user_data
 
@@ -151,10 +151,12 @@ def users_close():
         "amended_dt": None
     }, {"user_id": req.user_id})
 
-    if not ret:
+    if ret != 1:
         return req.abort("Close account failed")
 
     sql.sql_delete_one("session_keys",{"user_id":req.user_id})
+    req.user_id = None
+    req.sess_code = None
 
     return req.response("OK")
 
@@ -177,7 +179,7 @@ def users_password():
         "amended_dt": None
     }, {"user_id": req.user_id})
 
-    if ret:
+    if ret is not None:
         return req.response("OK")
 
     return req.abort("Failed")
@@ -220,7 +222,10 @@ def users_logout():
         return req.abort("Not logged in")
 
     users.logout(req.sess_code, req.user_id, req.user_agent)
+
     req.sess_code = None
+    req.user_id = None
+
     return req.response("logged-out")
 
 

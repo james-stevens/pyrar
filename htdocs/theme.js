@@ -105,6 +105,12 @@ h2 { text-align: center; }
 	color: #${cols[1]};
 	}
 
+.settingsBanner {
+	font-size: 16px;
+	background-color: #${cols[6]};
+	padding: 5px;
+	}
+
 #topSpan{
 	background-color: #${cols[6]};
 	height: 100px;
