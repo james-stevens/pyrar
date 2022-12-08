@@ -106,9 +106,10 @@ h2 { text-align: center; }
 	}
 
 .settingsBanner {
-	font-size: 16px;
-	background-color: #${cols[6]};
-	padding: 5px;
+	font-weight: bold;
+	font-size: 18px;
+	padding: 7px;
+	border-bottom: 3px solid #${cols[6]};
 	}
 
 #topSpan{
@@ -126,6 +127,13 @@ h2 { text-align: center; }
 	padding-left: 30px;
 	font-size: 25px;
 	margin-left: 10px;
+	}
+
+.userMsg {
+	padding: 30px;
+	font-size: 32px;
+	margin-top: 50px;
+	text-align: center;
 	}
 
 html {

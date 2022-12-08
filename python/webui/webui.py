@@ -68,6 +68,7 @@ class WebuiReq:
 
     def response(self, data, code=200):
         resp = flask.make_response(data, code)
+        resp.charset= 'utf-8'
         if self.sess_code is not None:
             resp.headers[SESSION_TAG] = self.sess_code
         return resp

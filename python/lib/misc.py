@@ -26,8 +26,16 @@ DOMAIN_STATUS = {
 
 
 def ashex(line):
+    if isinstance(line,str):
+        line = line.encode("utf-8")
     ret = ""
-    for item in line:
-        asc = ord(item)
-        ret = ret + HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
+    for asc in line:
+        ret += HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
     return ret
+
+
+if __name__ == "__main__":
+    print(ashex("tst"))
+    print(ashex("tst".encode("utf-8")))
+    print(ashex("🐸tst".encode("utf-8")))
+

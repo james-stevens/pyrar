@@ -34,7 +34,7 @@ function callApi(sfx,callback,inData)
 		if ("method" in inData) httpCmd.method = inData.method;
 		if ("json" in inData) {
 			httpCmd.body = JSON.stringify(inData.json);
-			httpCmd.headers["Content-type"] = "application/json";
+			httpCmd.headers["Content-type"] = "application/json; charset=UTF-8";
 			httpCmd.method = "POST";
 			}
 		if ("okResp" in inData) okResp = inData.okResp;
@@ -85,7 +85,7 @@ function callApi(sfx,callback,inData)
 
 				if ((!got_ses)&&("session" in ctx)) {
 					window.localStorage.removeItem("session");
-					delete ctx.session;
+					ctx = {};
 					loggedOut();
 					}
 

@@ -59,7 +59,7 @@ def format_data(item, data):
     if not isinstance(data, str):
         data = str(data)
 
-    return "unhex('" + misc.ashex(data) + "')"
+    return "unhex('" + misc.ashex(data.encode("utf8")) + "')"
 
 
 def has_data(row, col):
@@ -221,6 +221,8 @@ def connect(login):
 
 if __name__ == "__main__":
     log_init(debug=True)
+    print(data_set({"JAMES":"STEVENS"},","))
+    sys.exit(0)
     connect("webui")
 
     ret, data = run_select("select * from events limit 3")

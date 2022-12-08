@@ -136,14 +136,17 @@ function toggleLogin() { togglePopUp("loginPopup",30000); }
 function toggleRegister() { togglePopUp("registerPopup",30000); }
 function toggleTheme() { togglePopUp("themePopup",5000); }
 
+
+
 function show_one_space(name)
 {
-	elm.userSpace.style.display = "none";
-	elm.marketPlace.style.display = "none";
-	elm.search.style.display = "none";
-	elm.basketSpace.style.display = "none";
+	for (let item of ["userSpace","marketPlace","search","basketSpace"]) {
+		if (item != name) elm[item].style.display = "none";
+		};
 	elm[name].style.display = "block";
 }
+
+
 
 function goSearch()
 {
@@ -322,8 +325,7 @@ function doLogin()
 
 function doLogOut()
 {
-	delete ctx.user;
-	delete ctx.domains;
+	ctx = {};
 	callApi("users/logout",(ret,reply) => {});
 	show_one_space("search");
 	document.searchForm.search.focus();
@@ -372,6 +374,8 @@ function bodyLoaded()
 
 		gbl.cur = policy("currency_symbol","$");
 		gbl.cur_iso = policy("currency_iso","USD");
+
+		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 
 		if ("session" in ctx) {
 			callApi("users/details",(ret,reply) => {
@@ -680,17 +684,37 @@ function postCloseAccount()
 
 
 
+function goMarketPlace()
+{
+	errMsg("Not yet implemented",document.getElementById("marketPlaceBtn"));
+}
+
+
+
+function enable_two_fa()
+{
+	errMsg("Not yet implemented",document.getElementById("edit2FA"));
+}
+
+
+
 function user_settings()
 {
-	let spacer = "<tr><td>"+gbl.gap+"<br><div class='line'></div><br>"+gbl.gap+"</td></tr>";
+	function header(title,spacer) {
+		let x = "";
+		if (!spacer) x = "<tr><td style='background=#ffffff;'><div style='height: 70px;'></div></td></tr>";
+		x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
+		return x;
+		}
+	function prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
+
 	let x="<table align=center border=0>";
-	x += "<tr><td class=settingsBanner>Change User Details</td></tr>";
-	x += "<tr><td>";
+	x += header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
-	x += "<table width=100%>";
-	x += `<tr><td class=formPrompt>E-Mail :</td><td><input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
-	x += `<tr><td class=formPrompt>Name :</td><td><input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
-    x += `<tr><td class=formPrompt>Auto Renew All :</td><td><select id='user_auto_renew_all'>`;
+	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += prompt("E-Mail")+`<input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
+	x += prompt("Name")+`<input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
+    x += prompt("Auto Renew All")+`<select id='user_auto_renew_all'>`;
 
     let yes_chk="",no_chk="";
     if (ctx.user.auto_renew_all) yes_chk="selected"; else no_chk="selected";
@@ -699,8 +723,8 @@ function user_settings()
 	x += "</table></form></td></tr>";
 
 
-	x += spacer + "<tr><td class=settingsBanner>Control Two-Factor Authentication</td></tr>";
-	x += "<tr><td><table width=100%>";
+	x += header("Control Two-Factor Authentication");
+	x += "<table id=edit2FA width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	if (("two_fa" in ctx.user) && (ctx.user.two_fa != null) && (ctx.user.two_fa != "")) {
 		x += "<tr><td colspan=2>Disable Google Authenticator two-factor authentication</td></tr>";
 		x += "<tr><td colspan=2></td><td align=right>"+btn("enable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
@@ -712,31 +736,28 @@ function user_settings()
 	x += "</table></form></td></tr>";
 
 
-	x += spacer + "<tr><td class=settingsBanner>Change Your Password</td></tr>";
-	x += "<tr><td>";
+	x += header("Change Your Password");
 	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
-	x += "<table width=100%>";
-	x += `<tr><td class=formPrompt>Current Password :</td><td>`;
+	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += prompt("Current Password");
 	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
-	x += `<tr><td class=formPrompt>New Password :</td><td>`;
+	x += prompt("New Password");
 	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Your new password" type=password id='new_password'></td></tr>`;
-	x += `<tr><td class=formPrompt>Confirm Password :</td><td>`;
+	x += prompt("Confirm Password");
 	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm your new password" type=password id='confirm_password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
 	x += "</table></form></td></tr>";
 
 
-	x += spacer + "<tr><td class=settingsBanner>Close This Account</td></tr>";
-	x += "<tr><td>";
+	x += header("Close This Account");
 	x += "<form name=editCloseAccount method=post action=# onSubmit='postCloseAccount(); return false;'>";
-	x += "<table width=100%>";
+	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += "<tr><td colspan=2>To close your account, please enter your current password</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
-	x += `<tr><td class=formPrompt>Current Password :</td><td>`;
+	x += prompt("Current Password");
 	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
 	x += "</table></form></td></tr>";
-
 
 	elm.userSpace.innerHTML = x+"</table>";
 
@@ -774,12 +795,17 @@ function userDetails()
 }
 
 
+function place_order()
+{
+	errMsg("Not yet implemented",document.getElementById("placeOrderBtn"));
+}
+
 
 function basketCheckout()
 {
 	hidePopUp();
 	show_one_space("basketSpace");
-	let x = '<table align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
+	let x = '<table id=placeOrderBtn align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
 	let total = 0.0
 	for(let item of ctx.basket) {
 		total += parseFloat(item.cost);
@@ -787,7 +813,7 @@ function basketCheckout()
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${gbl.cur}${total.toFixed(2)}</td></tr>`;
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-	x += "<tr><td colspan=4 align=right>"+btn("something()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
+	x += "<tr><td colspan=4 align=right>"+btn("place_order()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
 	elm.basketSpace.innerHTML = x+"</table>"
 }
 
@@ -964,10 +990,10 @@ function errMsg(txt,elem,min_width)
 </table>
 </span>
 <span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch();">Search</span>
-<span style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
+<span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
-
 </td>
+
 <td align=right><table border=0>
 <tr><td><span id="basketIcon" style="margin-right: 75px; display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
