@@ -20,7 +20,7 @@ sqlsh "CREATE TABLE users (
 	two_fa			varchar(100),
 	password_reset  varchar(100),
 
-	payment_data	json default null,
+	payment_data	varchar(1000) default null,
 
 	last_login_dt	datetime,
 	created_dt		datetime,

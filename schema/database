@@ -3,7 +3,7 @@
 #    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
 #################################################################
 
-export MYSQL_DATABASE="blank_pyrar"
+export MYSQL_DATABASE="pyrar"
 
 root="sqlsh -u root -p ${MYSQL_ROOT_PASSWORD} -d mysql"
 cmd="${root}"

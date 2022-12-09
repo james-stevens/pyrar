@@ -1,6 +1,6 @@
 -- MariaDB dump 10.19  Distrib 10.6.8-MariaDB, for Linux (x86_64)
 --
--- Host: 192.168.1.240    Database: blank_pyrar
+-- Host: 192.168.1.240    Database: pyrar
 -- ------------------------------------------------------
 -- Server version	10.6.8-MariaDB-log
 
@@ -346,7 +346,7 @@ CREATE TABLE `users` (
   `account_closed` tinyint(1) NOT NULL DEFAULT 0,
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_data`)),
+  `payment_data` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_login_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
@@ -373,35 +373,35 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-09 11:54:03
+-- Dump completed on 2022-12-09 12:03:53
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
-GRANT SELECT, INSERT ON `blank_pyrar`.`epp_jobs` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `blank_pyrar`.`users` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`domain_actions` TO `webui`@`%`;
-GRANT SELECT, INSERT ON `blank_pyrar`.`events` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`session_keys` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `blank_pyrar`.`sales_items` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `blank_pyrar`.`orders` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `blank_pyrar`.`order_items` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `blank_pyrar`.`domains` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`epp_jobs` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales_items` TO `webui`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`orders` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`order_items` TO `webui`@`%`;
 GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
-GRANT SELECT ON `blank_pyrar`.`deleted_users` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`deleted_domains` TO `raradm`@`%`;
-GRANT SELECT, INSERT ON `blank_pyrar`.`events` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`domain_actions` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`domains` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`session_keys` TO `raradm`@`%`;
-GRANT SELECT ON `blank_pyrar`.`users` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`epp_jobs` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`order_items` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`orders` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`sales_items` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `raradm`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`events` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
+GRANT SELECT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
+GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`orders` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`domains` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`sales_items` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`order_items` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`domain_actions` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `blank_pyrar`.`epp_jobs` TO `epprun`@`%`;
-GRANT SELECT, INSERT ON `blank_pyrar`.`events` TO `epprun`@`%`;
-GRANT SELECT ON `blank_pyrar`.`users` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
+GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
