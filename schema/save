@@ -1,0 +1,6 @@
+#! /bin/sh
+
+sqlsh 'show tables' | while read table
+do
+	sqlsh -z ${table} "select * from ${table}"
+done > /tmp/my_data.sql
