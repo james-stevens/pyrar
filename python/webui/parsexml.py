@@ -25,31 +25,22 @@ class XmlParser:
         if "domain:cd" not in self.js_inp["resData"]["domain:chkData"]:
             return 3002, "domain:cd is missing"
 
-        if isinstance(self.js_inp["resData"]["domain:chkData"]["domain:cd"],
-                      list):
-            for dom_item in self.js_inp["resData"]["domain:chkData"][
-                    "domain:cd"]:
+        if isinstance(self.js_inp["resData"]["domain:chkData"]["domain:cd"], list):
+            for dom_item in self.js_inp["resData"]["domain:chkData"]["domain:cd"]:
                 self.parse_one_dom_cd(dom_item)
         else:
-            self.parse_one_dom_cd(
-                self.js_inp["resData"]["domain:chkData"]["domain:cd"])
+            self.parse_one_dom_cd(self.js_inp["resData"]["domain:chkData"]["domain:cd"])
 
-        if ("extension" in self.js_inp) and (
-                "fee:chkData" in self.js_inp["extension"]) and (
-                    "fee:cd" in self.js_inp["extension"]["fee:chkData"]):
+        if ("extension" in self.js_inp) and ("fee:chkData" in self.js_inp["extension"]) and (
+                "fee:cd" in self.js_inp["extension"]["fee:chkData"]):
 
-            if isinstance(self.js_inp["extension"]["fee:chkData"]["fee:cd"],
-                          list):
-                for dom_fee in self.js_inp["extension"]["fee:chkData"][
-                        "fee:cd"]:
+            if isinstance(self.js_inp["extension"]["fee:chkData"]["fee:cd"], list):
+                for dom_fee in self.js_inp["extension"]["fee:chkData"]["fee:cd"]:
                     self.parse_one_fee_cd(dom_fee)
             else:
-                self.parse_one_fee_cd(
-                    self.js_inp["extension"]["fee:chkData"]["fee:cd"])
+                self.parse_one_fee_cd(self.js_inp["extension"]["fee:chkData"]["fee:cd"])
 
-        return 1000, [(dta | {
-            "name": idx
-        }) for idx, dta in self.ret_js.items()]
+        return 1000, [(dta | {"name": idx}) for idx, dta in self.ret_js.items()]
 
     def get_ret_code(self):
         if "result" in self.js_inp and "@code" in self.js_inp["result"]:
@@ -68,17 +59,13 @@ class XmlParser:
         return 5000, "No message"
 
     def parse_one_dom_cd(self, dom_item):
-        if "domain:name" not in dom_item or "#text" not in dom_item[
-                "domain:name"]:
+        if "domain:name" not in dom_item or "#text" not in dom_item["domain:name"]:
             return
 
         dom_detail = dom_item["domain:name"]
         dom_name = dom_detail["#text"]
 
-        self.ret_js[dom_name] = {
-            "avail":
-            int(dom_detail["@avail"]) == 1 if "@avail" in dom_detail else False
-        }
+        self.ret_js[dom_name] = {"avail": int(dom_detail["@avail"]) == 1 if "@avail" in dom_detail else False}
         if "domain:reason" in dom_item:
             self.ret_js[dom_name]["reason"] = dom_item["domain:reason"]
 
@@ -98,8 +85,7 @@ class XmlParser:
         dom = dom_fee["fee:objID"]
         ret_dom = self.ret_js[dom]
 
-        ret_dom["class"] = dom_fee["fee:class"].lower(
-        ) if "fee:class" in dom_fee else "standard"
+        ret_dom["class"] = dom_fee["fee:class"].lower() if "fee:class" in dom_fee else "standard"
 
         if isinstance(dom_fee["fee:command"], list):
             for fee_item in dom_fee["fee:command"]:

@@ -53,8 +53,7 @@ for item in ["username", "password", "server"]:
 
 client_pem = f"{CLIENT_PEM_DIR}/{this_reg}.pem"
 if not os.path.isfile(client_pem):
-    raise ValueError(
-        f"Client PEM file for '{this_reg}' at '{client_pem}' not found")
+    raise ValueError(f"Client PEM file for '{this_reg}' at '{client_pem}' not found")
 
 my_policy = policy.Policy()
 log_init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
@@ -72,10 +71,7 @@ scheduler = None
 if jobInterval > 0:
     scheduler = BackgroundScheduler(timezone=utc)
     scheduler.start(paused=True)
-    job = scheduler.add_job(keepAlive,
-                            'interval',
-                            minutes=jobInterval,
-                            id='keepAlive')
+    job = scheduler.add_job(keepAlive, 'interval', minutes=jobInterval, id='keepAlive')
 
 
 def closeEPP():
@@ -113,8 +109,7 @@ def hexId(i):
 def makeXML(cmd):
     global idSeq
     idSeq = idSeq + 1
-    clTRID = "ID:" + hexId(time.time()) + "_" + hexId(
-        os.getpid()) + "_" + hexId(idSeq)
+    clTRID = "ID:" + hexId(time.time()) + "_" + hexId(os.getpid()) + "_" + hexId(idSeq)
 
     verb = "command"
     if "hello" in cmd:
@@ -123,13 +118,9 @@ def makeXML(cmd):
     else:
         cmd["clTRID"] = clTRID
 
-    xml = xmltodict.unparse(
-        {"epp": {
-            "@xmlns": "urn:ietf:params:xml:ns:epp-1.0",
-            verb: cmd
-        }})
-    return clTRID, ((EPP_PKT_LEN_BYTES + len(xml)).to_bytes(
-        EPP_PKT_LEN_BYTES, NETWORK_BYTE_ORDER) + bytearray(xml, 'utf-8'))
+    xml = xmltodict.unparse({"epp": {"@xmlns": "urn:ietf:params:xml:ns:epp-1.0", verb: cmd}})
+    return clTRID, ((EPP_PKT_LEN_BYTES + len(xml)).to_bytes(EPP_PKT_LEN_BYTES, NETWORK_BYTE_ORDER) +
+                    bytearray(xml, 'utf-8'))
 
 
 def makeLogin(username, password):
@@ -143,15 +134,11 @@ def makeLogin(username, password):
             },
             "svcs": {
                 "objURI": [
-                    "urn:ietf:params:xml:ns:domain-1.0",
-                    "urn:ietf:params:xml:ns:contact-1.0",
+                    "urn:ietf:params:xml:ns:domain-1.0", "urn:ietf:params:xml:ns:contact-1.0",
                     "urn:ietf:params:xml:ns:host-1.0"
                 ],
                 "svcExtension": {
-                    "extURI": [
-                        "urn:ietf:params:xml:ns:secDNS-1.1",
-                        "urn:ietf:params:xml:ns:fee-1.0"
-                    ]
+                    "extURI": ["urn:ietf:params:xml:ns:secDNS-1.1", "urn:ietf:params:xml:ns:fee-1.0"]
                 }
             }
         }
@@ -228,9 +215,7 @@ def jsonRequest(in_js, addr):
     if conn is None:
         connectToEPP()
         if conn is None:
-            return abort(
-                400,
-                f"Failed to connect to EPP Server - `{this_login['server']}`")
+            return abort(400, f"Failed to connect to EPP Server - `{this_login['server']}`")
 
     t1 = firstDict(in_js)
     if t1 == "hello":
@@ -241,9 +226,7 @@ def jsonRequest(in_js, addr):
             t2 = in_js[t1][t2]
 
     if jobInterval > 0 and scheduler is not None:
-        scheduler.reschedule_job('keepAlive',
-                                 trigger='interval',
-                                 minutes=jobInterval)
+        scheduler.reschedule_job('keepAlive', trigger='interval', minutes=jobInterval)
         scheduler.resume()
 
     ret, js = xmlRequest(in_js)
@@ -282,9 +265,7 @@ def connectToEPP():
     context.load_cert_chain(client_pem)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    conn = context.wrap_socket(s,
-                               server_side=False,
-                               server_hostname=this_login["server"])
+    conn = context.wrap_socket(s, server_side=False, server_hostname=this_login["server"])
 
     log(f"Connecting to EPP Server: {this_login['server']}", gzz(czz()))
     try:
@@ -299,8 +280,7 @@ def connectToEPP():
     ret, js = jsonReply(conn, None)
     log(f"Greeting '{this_reg}' gave {ret}", gzz(czz()))
 
-    ret, js = xmlRequest(
-        makeLogin(this_login["username"], this_login["password"]))
+    ret, js = xmlRequest(makeLogin(this_login["username"], this_login["password"]))
     log(f"Login to '{this_reg}' gives {ret}", gzz(czz()))
 
     if jobInterval > 0 and scheduler is not None:

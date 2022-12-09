@@ -20,11 +20,12 @@ from inspect import currentframe as czz, getframeinfo as gzz
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
 
+NOT_LOGGED_IN = "Not logged in or login timed-out"
+
 SESSION_TAG = "X-Session-Code"
 SESSION_TAG_LOWER = SESSION_TAG.lower()
 
-log_init(policy.policy("facility_python_code"),
-         with_logging=policy.policy("log_python_code"))
+log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
 
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
@@ -36,16 +37,11 @@ class WebuiReq:
         tld_lib.check_for_new_files()
         self.sess_code = None
         self.user_id = None
-        self.headers = {
-            item.lower(): val
-            for item, val in dict(flask.request.headers).items()
-        }
-        self.user_agent = self.headers[
-            "user-agent"] if "user-agent" in self.headers else "Unknown"
+        self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
+        self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
 
         if SESSION_TAG_LOWER in self.headers:
-            logged_in, check_sess_data = users.check_session(
-                self.headers[SESSION_TAG_LOWER], self.user_agent)
+            logged_in, check_sess_data = users.check_session(self.headers[SESSION_TAG_LOWER], self.user_agent)
             self.parse_user_data(logged_in, check_sess_data)
 
         self.base_event = self.set_base_event()
@@ -60,18 +56,14 @@ class WebuiReq:
         debug(f"Logged in as {self.user_id}", gzz(czz()))
 
     def set_base_event(self):
-        return {
-            "from_where": flask.request.remote_addr,
-            "user_id": self.user_id,
-            "who_did_it": "webui"
-        }
+        return {"from_where": flask.request.remote_addr, "user_id": self.user_id, "who_did_it": "webui"}
 
     def abort(self, data):
         return self.response({"error": data}, HTML_CODE_ERR)
 
     def response(self, data, code=HTML_CODE_OK):
         resp = flask.make_response(flask.jsonify(data), code)
-        resp.charset= 'utf-8'
+        resp.charset = 'utf-8'
         if self.sess_code is not None:
             resp.headers[SESSION_TAG] = self.sess_code
         return resp
@@ -88,11 +80,7 @@ class WebuiReq:
 @application.route('/api/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    ret = {
-        "registry": tld_lib.zone_send,
-        "zones": tld_lib.return_zone_list(),
-        "policy": policy.data()
-    }
+    ret = {"registry": tld_lib.zone_send, "zones": tld_lib.return_zone_list(), "policy": policy.data()}
     return req.response(ret)
 
 
@@ -112,10 +100,9 @@ def hello():
 def users_domains():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
-    ret, doms = sql.sql_select("domains", {"user_id": req.user_id},
-                               order_by="name")
+    ret, doms = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
     if ret is None:
         return req.abort("Failed to load domains")
     req.user_data["domains"] = doms
@@ -127,7 +114,7 @@ def users_domains():
 def users_update():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
     if flask.request.json is None:
         return req.abort("No JSON posted")
@@ -145,14 +132,13 @@ def users_update():
 def users_close():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ret, __ = sql.sql_update_one(
-        "users", "password=concat('CLOSED:',password),amended_dt=now()",
-        {"user_id": req.user_id})
+    ret, __ = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()",
+                                 {"user_id": req.user_id})
 
     if ret != 1:
         return req.abort("Close account failed")
@@ -168,19 +154,14 @@ def users_close():
 def users_password():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    new_pass = bcrypt.hashpw(
-        flask.request.json["new_password"].encode("utf-8"),
-        bcrypt.gensalt()).decode("utf-8")
+    new_pass = bcrypt.hashpw(flask.request.json["new_password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    ret, __ = sql.sql_update_one("users", {
-        "password": new_pass,
-        "amended_dt": None
-    }, {"user_id": req.user_id})
+    ret, __ = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
 
     if ret is not None:
         return req.response("OK")
@@ -192,7 +173,7 @@ def users_password():
 def users_details():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
     ret, user = sql.sql_select_one("users", {"user_id": req.user_id})
     if ret is None:
@@ -222,7 +203,7 @@ def users_login():
 def users_logout():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
     users.logout(req.sess_code, req.user_id, req.user_agent)
 
@@ -248,12 +229,7 @@ def users_register():
     req.user_id = user_id
     req.sess_code = val["session"]
     req.base_event["user_id"] = user_id
-    req.event(
-        {
-            "user_id": user_id,
-            "notes": "User registered",
-            "event_type": "new_user"
-        }, gzz(czz()))
+    req.event({"user_id": user_id, "notes": "User registered", "event_type": "new_user"}, gzz(czz()))
 
     return req.response(val)
 
@@ -261,13 +237,13 @@ def users_register():
 @application.route('/api/v1.0/domain/update', methods=['POST'])
 def domain_update():
     req = WebuiReq()
-    if flask.request.json is None or not sql.has_data(flask.request.json,"name"):
+    if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if req.user_id is None or req.sess_code is None:
-        return req.abort("Not logged in")
+        return req.abort(NOT_LOGGED_IN)
 
-    ret, reply = domains.webui_update_domain(req.user_id,flask.request.json)
+    ret, reply = domains.webui_update_domain(req.user_id, flask.request.json)
 
     if not ret:
         return req.abort(reply)
@@ -279,7 +255,7 @@ def domain_update():
 def rest_domain_price():
     req = WebuiReq()
     num_yrs = 1
-    qry_type = ["create","renew"]
+    qry_type = ["create", "renew"]
 
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
@@ -320,8 +296,6 @@ def rest_domain_price():
 
 
 if __name__ == "__main__":
-    log_init(policy.policy("facility_python_code"),
-             debug=True,
-             with_logging=policy.policy("log_python_code"))
+    log_init(policy.policy("facility_python_code"), debug=True, with_logging=policy.policy("log_python_code"))
     application.run()
     domains.close_epp_sess()

@@ -6,10 +6,7 @@ import json
 
 
 def unroll_one_ds(ds_data):
-    return {
-        tag: ds_data["secDNS:" + tag]
-        for tag in ["keyTag", "alg", "digestType", "digest"]
-    }
+    return {tag: ds_data["secDNS:" + tag] for tag in ["keyTag", "alg", "digestType", "digest"]}
 
 
 def unroll_one_ns_attr(ns_data):
@@ -24,9 +21,8 @@ def dt_to_sql(src, dt):
 
 def parse_domain_info_xml(xml, data_type):
     data = {"ds": [], "ns": [], "status": []}
-    if "extension" in xml and "secDNS:{data_type}Data" in xml[
-            "extension"] and "secDNS:dsData" in xml["extension"][
-                "secDNS:{data_type}Data"]:
+    if "extension" in xml and "secDNS:{data_type}Data" in xml["extension"] and "secDNS:dsData" in xml["extension"][
+            "secDNS:{data_type}Data"]:
         ds_data = xml["extension"]["secDNS:{data_type}Data"]["secDNS:dsData"]
         if isinstance(ds_data, dict):
             data["ds"] = [unroll_one_ds(ds_data)]
@@ -39,10 +35,7 @@ def parse_domain_info_xml(xml, data_type):
         if isinstance(dom_data["domain:status"], dict):
             data["status"] = [dom_data["domain:status"]["@s"]]
         elif isinstance(dom_data["domain:status"], list):
-            data["status"] = [
-                item["@s"] for item in dom_data["domain:status"]
-                if "@s" in item
-            ]
+            data["status"] = [item["@s"] for item in dom_data["domain:status"] if "@s" in item]
         data["status"].sort()
 
     if "domain:ns" in dom_data:
@@ -51,10 +44,7 @@ def parse_domain_info_xml(xml, data_type):
             if isinstance(dom_ns["domain:hostAttr"], dict):
                 data["ns"] = [unroll_one_ns_attr(dom_ns["domain:hostAttr"])]
             elif isinstance(dom_ns["domain:hostAttr"], list):
-                data["ns"] = [
-                    unroll_one_ns_attr(item)
-                    for item in dom_ns["domain:hostAttr"]
-                ]
+                data["ns"] = [unroll_one_ns_attr(item) for item in dom_ns["domain:hostAttr"]]
         data["ns"].sort()
 
     data["created_dt"] = dt_to_sql(dom_data, "domain:crDate")

@@ -62,10 +62,7 @@ class ZoneLib:
             self.process_json()
 
     def process_json(self):
-        self.zone_priority = {
-            idx: pos
-            for pos, idx in enumerate(self.priority_file.json)
-        }
+        self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
         new_send = {}
         new_data = {}
         for registry, regs in self.regs_file.json.items():
@@ -77,19 +74,11 @@ class ZoneLib:
                 for dom in doms:
                     if doms[dom] is None:
                         doms[dom] = {}
-                new_data.update({
-                    dom: (doms[dom] | {
-                        "registry": registry
-                    })
-                    for dom in doms
-                })
+                new_data.update({dom: (doms[dom] | {"registry": registry}) for dom in doms})
 
         self.zone_send = new_send
         self.zone_data = new_data
-        new_list = [{
-            "name": dom,
-            "priority": self.tld_priority(dom, is_tld=True)
-        } for dom in self.zone_data]
+        new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
         self.sort_data_list(new_list, is_tld=True)
         self.zone_list = [dom["name"] for dom in new_list]
 
@@ -136,10 +125,7 @@ class ZoneLib:
         }
 
     def return_zone_list(self):
-        new_list = [
-            self.extract_items(dom) for dom in self.zone_list
-            if dom in self.zone_data
-        ]
+        new_list = [self.extract_items(dom) for dom in self.zone_list if dom in self.zone_data]
         new_list.sort(key=key_priority)
         return new_list
 
@@ -194,8 +180,7 @@ class ZoneLib:
         if default_both in json_regs["prices"]:
             return json_regs["prices"][default_both]
 
-        return json_regs["prices"]["default"] if "default" in json_regs[
-            "prices"] else None
+        return json_regs["prices"]["default"] if "default" in json_regs["prices"] else None
 
     def multiply_values(self, data):
 

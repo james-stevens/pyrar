@@ -107,10 +107,9 @@ def is_valid_ds(ds_rec):
 
 
 def validate_binary(val):
-    if not isinstance(val,int):
+    if not isinstance(val, int):
         return False
-    return val in [0,1]
-
+    return val in [0, 1]
 
 
 if __name__ == "__main__":

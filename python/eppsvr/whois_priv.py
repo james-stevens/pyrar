@@ -24,8 +24,7 @@ whois_privacy_contact = {
     "create": {
         "contact:create": {
             "@xmlns:contact": "urn:ietf:params:xml:ns:contact-1.0",
-            "@xsi:schemaLocation":
-            "urn:ietf:params:xml:ns:contact-1.0 contact-1.0.xsd",
+            "@xsi:schemaLocation": "urn:ietf:params:xml:ns:contact-1.0 contact-1.0.xsd",
             "contact:id": WHOIS_PRIVACY_ID,
             "contact:postalInfo": {
                 "@type": "int",

@@ -63,6 +63,11 @@ def format_data(item, data):
 
 
 def has_data(row, col):
+    if isinstance(col, list):
+        all_ok = True
+        for item in col:
+            all_ok = all_ok and has_data(row, item)
+        return all_ok
     return (row is not None and col in row and row[col] is not None and row[col] != "")
 
 
@@ -76,8 +81,7 @@ def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
     if isinstance(data, str):
         return data
-    return joiner.join(
-        [item + "=" + format_data(item, data[item]) for item in data])
+    return joiner.join([item + "=" + format_data(item, data[item]) for item in data])
 
 
 def reconnect():
@@ -132,8 +136,7 @@ def sql_exec(sql):
 
 
 def sql_delete_one(table, data):
-    return sql_exec(f"delete from {table} where " + data_set(data, " and ") +
-                    " limit 1")
+    return sql_exec(f"delete from {table} where " + data_set(data, " and ") + " limit 1")
 
 
 def sql_insert(table, data):
@@ -141,20 +144,19 @@ def sql_insert(table, data):
 
 
 def sql_exists(table, data):
-    sql = f"select 1 from {table} where " + data_set(data,
-                                                     " and ") + " limit 1"
+    sql = f"select 1 from {table} where " + data_set(data, " and ") + " limit 1"
     ret, __ = run_select(sql)
     return (ret is not None) and (cnx.affected_rows() > 0)
 
 
 def sql_update_one(table, data, where):
     ret, val = sql_update(table, data, where, 1)
-    return (ret in [0,1]), val
+    return (ret in [0, 1]), val
 
 
 def sql_update(table, data, where, limit=None):
-    updt_data = data if isinstance(data,str) else data_set(data, ",");
-    ipdt_where = where if isinstance(where,str) else data_set(where, " and ")
+    updt_data = data if isinstance(data, str) else data_set(data, ",")
+    ipdt_where = where if isinstance(where, str) else data_set(where, " and ")
     sql = f"update {table} set {updt_data} where {ipdt_where}"
     if limit is not None:
         sql += f" limit {limit}"
@@ -219,7 +221,7 @@ def connect(login):
                              charset='utf8mb4',
                              init_command='set names utf8mb4')
     except Exception as exc:
-        log("Failed to connet to MySQL: "+str(exc),gzz(czz()))
+        log("Failed to connet to MySQL: " + str(exc), gzz(czz()))
         cnx = None
 
 
@@ -236,8 +238,7 @@ if __name__ == "__main__":
     ret, data = run_select("select * from domains")
     print(">>>> DOMAINS", ret, json.dumps(data, indent=4))
 
-    print(f">>>> sql exists -> 10452 ->",
-          sql_exists("events", {"event_id": 10452}))
+    print(f">>>> sql exists -> 10452 ->", sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
         print(f">>>> sql exists -> {e} ->", sql_exists("users", {"email": e}))
 
@@ -249,8 +250,7 @@ if __name__ == "__main__":
     ret, data = sql_select_one("events", {"event_id": 10471})
     print(">>SELECT>>>", ret, json.dumps(data, indent=4))
 
-    ret, data = sql_update_one("session_keys", {"amended_dt": None},
-                               {"user_id": 10465})
+    ret, data = sql_update_one("session_keys", {"amended_dt": None}, {"user_id": 10465})
     print(">>UPDATE>>>", ret, data)
 
     cnx.close()

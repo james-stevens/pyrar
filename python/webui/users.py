@@ -33,13 +33,13 @@ def make_session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
-def secure_user_data(data):
+def secure_user_db_rec(data):
     for block in ["password", "payment_data", "two_fa"]:
         del data[block]
 
 
-def start_session(user_data, user_agent):
-    user_id = user_data['user_id']
+def start_session(user_db_rec, user_agent):
+    user_id = user_db_rec['user_id']
     sql.sql_delete_one("session_keys", {"user_id": user_id})
 
     ses_code = make_session_code(user_id)
@@ -54,8 +54,8 @@ def start_session(user_data, user_agent):
     if ret is None:
         return False, "Failed to start session"
 
-    secure_user_data(user_data)
-    return True, {"user_id": user_id, "user": user_data, "session": ses_code}
+    secure_user_db_rec(user_db_rec)
+    return True, {"user_id": user_id, "user": user_db_rec, "session": ses_code}
 
 
 def start_user_check(data):
@@ -89,21 +89,18 @@ def register(data, user_agent):
     all_cols = USER_REQUIRED + ["name", "created_dt", "amended_dt"]
     data.update({col: None for col in all_cols if col not in data})
 
-    data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"),
-                                     bcrypt.gensalt()).decode("utf-8")
+    data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    ret, user_id = sql.sql_insert("users",
-                                  {item: data[item]
-                                   for item in all_cols})
+    ret, user_id = sql.sql_insert("users", {item: data[item] for item in all_cols})
     if ret is None:
         return False, "Registration insert failed"
 
     update_user_login_dt(user_id)
-    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
+    ret, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False, "Registration retrieve failed"
 
-    return start_session(user_data, user_agent)
+    return start_session(user_db_rec, user_agent)
 
 
 def check_session(ses_code, user_agent):
@@ -112,9 +109,8 @@ def check_session(ses_code, user_agent):
 
     key = make_session_key(ses_code, user_agent)
     tout = policy.policy('session_timeout', 60)
-    ret, data = sql.sql_select_one(
-        "session_keys", {"session_key": key},
-        f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
+    ret, data = sql.sql_select_one("session_keys", {"session_key": key},
+                                   f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
 
     if not ret:
         return False, None
@@ -123,24 +119,21 @@ def check_session(ses_code, user_agent):
         sql.sql_delete_one("session_keys", {"session_key": key})
         return False, None
 
-    sql.sql_update_one("session_keys", {"amended_dt": None},
-                       {"session_key": key})
+    sql.sql_update_one("session_keys", {"amended_dt": None}, {"session_key": key})
 
     return True, {"session": ses_code, "user_id": data["user_id"]}
 
 
 def logout(ses_code, user_id, user_agent):
-    ret, val = sql.sql_delete_one(
-        "session_keys", {
-            "session_key": make_session_key(ses_code, user_agent),
-            "user_id": user_id
-        })
+    ret, val = sql.sql_delete_one("session_keys", {
+        "session_key": make_session_key(ses_code, user_agent),
+        "user_id": user_id
+    })
     return (ret is not None), val
 
 
 def update_user_login_dt(user_id):
-    sql.sql_update_one("users", {"last_login_dt": sql.now()},
-                       {"user_id": int(user_id)})
+    sql.sql_update_one("users", {"last_login_dt": sql.now()}, {"user_id": int(user_id)})
 
 
 def login(data, user_agent):
@@ -148,27 +141,24 @@ def login(data, user_agent):
     if not ret:
         return False, None
 
-    ret, user_data = sql.sql_select_one("users", {
-        "account_closed": 0,
-        "email": data["email"]
-    })
+    ret, user_db_rec = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
     if not ret:
         return False, None
 
-    if not sql.has_data(user_data, "password"):
+    if not sql.has_data(user_db_rec, "password"):
         return False, None
 
-    if user_data["password"][:7]=="CLOSED:":
+    if user_db_rec["password"][:7] == "CLOSED:":
         return False, None
 
-    encoded_pass = user_data["password"].encode("utf8")
+    encoded_pass = user_db_rec["password"].encode("utf8")
     enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
     if encoded_pass != enc_pass:
         return False, None
 
-    update_user_login_dt(user_data['user_id'])
-    log(f"USR-{user_data['user_id']} logged in", gzz(czz()))
-    return start_session(user_data, user_agent)
+    update_user_login_dt(user_db_rec['user_id'])
+    log(f"USR-{user_db_rec['user_id']} logged in", gzz(czz()))
+    return start_session(user_db_rec, user_agent)
 
 
 USER_CAN_CHANGE = {
@@ -178,32 +168,38 @@ USER_CAN_CHANGE = {
 }
 
 
-def update_user(user_id, data):
-    for item in data:
-        if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](
-                data[item]):
+def update_user(user_id, post_json):
+    for item in post_json:
+        if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](post_json[item]):
             return False, f"Invalid data item - '{item}'"
 
-    ret, _ = sql.sql_update_one("users", data, {"user_id": user_id})
-    if ret is None:
-        return False, "Failed to update user"
-
-    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
+    ret, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False, "Failed to load user"
 
-    return ret, user_data
+    if "email" in post_json and user_db_rec["email"] != post_json["email"]:
+        post_json["email_verified"] = 0
+
+    ret, _ = sql.sql_update_one("users", post_json, {"user_id": user_id})
+    if ret is None:
+        return False, "Failed to update user"
+
+    ret, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+    if not ret:
+        return False, "Failed to load user"
+
+    return ret, user_db_rec
 
 
 def check_password(user_id, data):
     if not sql.has_data(data, "password"):
         return False
 
-    ret, user_data = sql.sql_select_one("users", {"user_id": user_id})
+    ret, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
     if not ret:
         return False
 
-    encoded_pass = user_data["password"].encode("utf8")
+    encoded_pass = user_db_rec["password"].encode("utf8")
     enc_pass = bcrypt.hashpw(data["password"].encode("utf-8"), encoded_pass)
 
     return encoded_pass == enc_pass
@@ -212,23 +208,15 @@ def check_password(user_id, data):
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(debug=True)
-    login_ok, login_data = login(
-        {
-            "email": "flip@flop.com",
-            "password": "aa"
-        }, "curl/7.83.1")
+    login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
     debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data), gzz(czz()))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     # print(make_session_code(100))
     # print(make_session_key("fred", "Windows"))
     debug(
-        ">>>>SELECT " + str(
-            sql.sql_select(
-                "session_keys", "1=1",
-                "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id"
-            )), gzz(czz()))
+        ">>>>SELECT " +
+        str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")),
+        gzz(czz()))
     debug(">>>> " + str(login_data["session"]), gzz(czz()))
-    debug(
-        ">>>>CHECK-SESSION " +
-        str(check_session(login_data["session"], "curl/7.83.1")), gzz(czz()))
+    debug(">>>>CHECK-SESSION " + str(check_session(login_data["session"], "curl/7.83.1")), gzz(czz()))

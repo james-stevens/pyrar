@@ -8,7 +8,7 @@ do
 		then
 			echo "-> ${file}"
 			cat ${f} > ${file}
-			python3 -m pycodestyle ${file}
+			python3 -m pycodestyle --max-line-length=119 ${file}
 		fi
 	rm -f ${f}
 done

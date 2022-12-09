@@ -109,7 +109,15 @@ h2 { text-align: center; }
 	font-weight: bold;
 	font-size: 18px;
 	padding: 7px;
-	border-bottom: 3px solid #${cols[6]};
+	border-bottom: 1px solid #${cols[6]};
+	}
+
+.pageHeading {
+	font-weight: bold;
+	font-size: 25px;
+	padding: 7px;
+	text-align: center;
+	border-bottom: 1px solid #${cols[6]};
 	}
 
 #topSpan{

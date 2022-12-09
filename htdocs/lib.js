@@ -21,6 +21,27 @@ const validations = {
 
 function callApi(sfx,callback,inData)
 {
+	function check_session(headers)
+	{
+		let got_ses = false;
+		headers.forEach((val, key) => {
+			if (key=="x-session-code") {
+				got_ses = true;
+				if (!("session" in ctx)) {
+					window.localStorage.setItem("session",val);
+					ctx.session = val;
+					loggedIn();
+					}
+				}
+			});
+
+		if ((!got_ses)&&("session" in ctx)) {
+			window.localStorage.removeItem("session");
+			ctx = {};
+			loggedOut();
+			}
+	}
+
 	document.body.style.cursor="progress";
 
 	if (debugAPI) { console.log("API>>>",sfx); console.log("API>>>",inData); }
@@ -59,6 +80,7 @@ function callApi(sfx,callback,inData)
 				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
 					if (response.status != 499) return callback(false,{"error":"Unexecpted System Error"});
+					check_session(response.headers);
 					try {
 						return callback(false,JSON.parse(data));
 					} catch {
@@ -71,23 +93,7 @@ function callApi(sfx,callback,inData)
 			}
 		else {
 			response.text().then(data => {
-				got_ses = false;
-				response.headers.forEach((val, key) => {
-					if (key=="x-session-code") {
-						got_ses = true;
-						if (!("session" in ctx)) {
-							window.localStorage.setItem("session",val);
-							ctx.session = val;
-							loggedIn();
-							}
-						}
-					});
-
-				if ((!got_ses)&&("session" in ctx)) {
-					window.localStorage.removeItem("session");
-					ctx = {};
-					loggedOut();
-					}
+				check_session(response.headers);
 
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
 

@@ -5,10 +5,7 @@
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
-CLIENT_DOM_FLAGS = [
-    "DeleteProhibited", "RenewProhibited", "TransferProhibited",
-    "UpdateProhibited"
-]
+CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
 
 STATUS_LIVE = 1
 STATUE_WAITING_PAYMENT = 10
@@ -26,7 +23,7 @@ DOMAIN_STATUS = {
 
 
 def ashex(line):
-    if isinstance(line,str):
+    if isinstance(line, str):
         line = line.encode("utf-8")
     ret = ""
     for asc in line:
@@ -38,4 +35,3 @@ if __name__ == "__main__":
     print(ashex("tst"))
     print(ashex("tst".encode("utf-8")))
     print(ashex("🐸tst".encode("utf-8")))
-

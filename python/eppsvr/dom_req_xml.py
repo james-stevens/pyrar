@@ -119,10 +119,7 @@ def domain_set_authcode(domain, authcode):
 
 def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
 
-    update_data = {
-        "@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0",
-        "domain:name": domain
-    }
+    update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}
 
     if len(add_ns) > 0:
         update_data["domain:add"] = {"domain:ns": {"domain:hostObj": add_ns}}
@@ -133,25 +130,15 @@ def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
     full_xml = {"update": {"domain:update": update_data}}
 
     if len(add_ds) > 0 or len(del_ds) > 0:
-        full_xml["extension"] = {
-            "secDNS:update": {
-                "@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
-            }
-        }
+        full_xml["extension"] = {"secDNS:update": {"@xmlns:secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"}}
         sec_dns = full_xml["extension"]["secDNS:update"]
         if len(add_ds) > 0:
-            sec_dns["secDNS:add"] = {
-                "secDNS:dsData": [pad_ds(ds) for ds in add_ds]
-            }
+            sec_dns["secDNS:add"] = {"secDNS:dsData": [pad_ds(ds) for ds in add_ds]}
         if len(del_ds) > 0:
-            sec_dns["secDNS:rem"] = {
-                "secDNS:dsData": [pad_ds(ds) for ds in del_ds]
-            }
+            sec_dns["secDNS:rem"] = {"secDNS:dsData": [pad_ds(ds) for ds in del_ds]}
 
     return full_xml
 
 
 if __name__ == "__main__":
-    print(
-        json.dumps(domain_request_transfer("domain.zone", "pass", 1),
-                   indent=3))
+    print(json.dumps(domain_request_transfer("domain.zone", "pass", 1), indent=3))
