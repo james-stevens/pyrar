@@ -180,6 +180,7 @@ def update_user(user_id, post_json):
     if "email" in post_json and user_db_rec["email"] != post_json["email"]:
         post_json["email_verified"] = 0
 
+    post_json["amended_dt"] = None
     ret, _ = sql.sql_update_one("users", post_json, {"user_id": user_id})
     if ret is None:
         return False, "Failed to update user"

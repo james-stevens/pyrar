@@ -21,6 +21,7 @@ error_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx error;
 
 http {
 	fastcgi_intercept_errors on;
+	proxy_set_header X-Forwaded-For \$proxy_add_x_forwarded_for;
 
 	include         mime.types;
 	default_type    application/octet-stream;

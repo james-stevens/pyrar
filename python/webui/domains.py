@@ -5,6 +5,8 @@
 import sys
 import json
 import httpx
+import re
+import base64
 from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib.registry import tld_lib
@@ -14,6 +16,10 @@ from lib.log import log, debug, init as log_init
 from lib import mysql as sql
 from lib import misc
 import parsexml
+import users
+
+clients = {p: httpx.Client() for p in tld_lib.ports}
+xmlns = tld_lib.make_xmlns()
 
 
 class DomainName:
@@ -150,7 +156,7 @@ def xml_check_with_fees(domobj, years, which):
     }
 
 
-def webui_update_domain(user_id, domain):
+def check_domain_is_mine(user_id, domain):
     if not sql.has_data(domain, ["domain_id", "name"]):
         return False, "Domain data missing"
 
@@ -159,86 +165,106 @@ def webui_update_domain(user_id, domain):
         "name": domain["name"],
         "user_id": user_id
     })
+
     if not ok:
         return False, "Domain not found or not yours"
 
+    return True, dom_db
+
+
+def webui_update_domain(req, post_dom):
+    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    if not ok:
+        return False, msg
+
     update_cols = {"amended_dt": None}
 
-    if sql.has_data(domain, "name_servers"):
-        new_ns = domain["name_servers"].lower().split(",")
+    if sql.has_data(post_dom, "name_servers"):
+        new_ns = post_dom["name_servers"].lower().split(",")
         new_ns.sort()
         for ns in new_ns:
             if not validate.is_valid_fqdn(ns):
                 return False, "Invalid name server record"
         update_cols["name_servers"] = ",".join(new_ns)
 
-    if sql.has_data(domain, "ds_recs"):
-        new_ds = domain["ds_recs"].upper().split(",")
+    if sql.has_data(post_dom, "ds_recs"):
+        new_ds = post_dom["ds_recs"].upper().split(",")
         new_ds.sort()
         for ds in new_ds:
             if not validate.is_valid_ds(validate.frag_ds(ds)):
                 return False, "Invalid DS record"
         update_cols["ds_recs"] = ",".join(new_ds)
 
-    ok, reply = sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
+    ok, reply = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"]})
 
     if not ok:
         return False, "Domain update failed"
 
     epp_job = {
-        "domain_id": dom_db["domain_id"],
+        "domain_id": post_dom["domain_id"],
         "job_type": "dom/update",
         "execute_dt": sql.now(),
         "created_dt": None,
         "amended_dt": None
     }
-
     sql.sql_insert("epp_jobs", epp_job)
 
-    return ok, reply
+    return True, reply
 
 
-clients = {p: httpx.Client() for p in tld_lib.ports}
-xmlns = tld_lib.make_xmlns()
+def webui_set_auth_code(req, post_dom):
+    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    if not ok:
+        return False, msg
+
+    auth_code = users.make_session_key(f"{post_dom['name']}.{post_dom['domain_id']}", req.sess_code)
+    auth_code = re.sub('[+/=]', '', auth_code)[:15]
+
+    epp_job = {
+        "domain_id": post_dom["domain_id"],
+        "job_type": "dom/authcode",
+        "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
+        "execute_dt": sql.now(),
+        "created_dt": None,
+        "amended_dt": None
+    }
+    sql.sql_insert("epp_jobs", epp_job)
+    return True, {"auth_code": auth_code}
 
 
-def debug_one_domain(domain):
-    domobj = DomainName(domain)
-    if domobj.names is None:
-        print(">>>>>", domobj.err)
-        sys.exit(1)
+def webui_gift_domain(req, post_dom):
+    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    if not ok:
+        return False, msg
 
-    ok, out_js = http_price_domains(domobj, 1, ["create", "renew", "transfer", "restore"])
+    if "dest_email" not in post_dom or not validate.is_valid_email(post_dom["dest_email"]):
+        return False, "Recipient email missing or invalid"
 
-    print(">>>> REPLY", ok, out_js)
+    ok, user_db = sql.sql_select_one("users", {"email": post_dom["dest_email"]})
+    if not ok:
+        return False, "Recipient email invalid"
 
-    if ok != 200:
-        log(f"ERROR: {ok} {out_js}", gzz(czz()))
-    else:
-        xml_p = parsexml.XmlParser(out_js)
-        code, ret_js = xml_p.parse_check_message()
-        if code == 1000:
-            tld_lib.multiply_values(ret_js)
-        print(">>>TEST>>>", code, json.dumps(ret_js, indent=3))
+    where = {col: post_dom[col] for col in ["domain_id", "name", "user_id"]}
+    ok, __ = sql.sql_update_one("domains", {"amended_dt":None,"user_id": user_db["user_id"]}, where)
+
+    return ok, {"new_user_id": user_db["user_id"]}
+
+
+class Empty:
+    pass
 
 
 if __name__ == "__main__":
     log_init(debug=True)
     sql.connect("webui")
-
+    # print(">>>>>", set_auth_code(10450, {"domain_id": 10458, "name": "zip1.chug"}))
+    user = Empty()
+    user.user_id = 10450
     print(
         ">>>>>",
-        webui_update_domain(10450, {
+        webui_gift_domain(user, {
+            "user_id": user.user_id,
+            "dest_email": "fred@frod.com",
             "domain_id": 10458,
-            "name": "zip1.chug",
-            "name_servers": "ns239.dns.com,ns139.dns.com"
+            "name": "zip1.chug"
         }))
-
-    sys.exit(0)
-    if len(sys.argv) > 1:
-        x = sys.argv[1].lower()
-        print("====>> RUN ONE", x, "=>", sys.argv[1])
-        debug_one_domain(x)
-    else:
-        debug_one_domain("tiny.for.men")
-    close_epp_sess()

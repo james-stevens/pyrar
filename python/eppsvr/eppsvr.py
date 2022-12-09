@@ -50,7 +50,7 @@ def request_json(this_reg, in_json, url=None):
     try:
         resp = clients[this_reg].post(url, json=in_json, headers=misc.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
-            debug(f">>>>> STATUS: {resp.status_code} {url}", gzz(czz()))
+            log(f"ERROR: {resp.status_code} {url} {resp.content}", gzz(czz()))
             return None
         ret = json.loads(resp.content)
         return ret
@@ -173,7 +173,7 @@ def domain_request_transfer(epp_job):
         return None
 
     this_reg, url = tld_lib.http_req(name)
-    xml = request_json(this_reg, dom_req_xml.domain_request_transfer(name, base64.b64decode(epp_job["authcode"]),
+    xml = request_json(this_reg, dom_req_xml.domain_request_transfer(name, base64.b64decode(epp_job["authcode"]).decode("utf-8"),
                                                                      years), url)
 
     if not xml_check_code(job_id, "transfer", xml):
@@ -210,7 +210,6 @@ def domain_create(epp_job):
     if not xml_check_code(job_id, "create", xml):
         return False
 
-    print(">>>>>", json.dumps(xml, indent=3))
     data = parse_dom_resp.parse_domain_info_xml(xml, "cre")
 
     sql.sql_update_one(
@@ -272,6 +271,7 @@ def get_dom_from_db(epp_job):
 
 
 def set_authcode(epp_job):
+    job_id = epp_job["epp_job_id"]
     if (dom_db := get_dom_from_db(epp_job)) is None:
         return None
     name = dom_db["name"]
@@ -281,7 +281,7 @@ def set_authcode(epp_job):
         log(f"Odd: this_reg or url returned None for '{name}", gzz(czz()))
         return None
 
-    req = dom_req_xml.domain_set_authcode(name, base64.b64decode(epp_job["authcode"]))
+    req = dom_req_xml.domain_set_authcode(name, base64.b64decode(epp_job["authcode"]).decode("utf-8"),)
 
     return xml_check_code(job_id, "info", request_json(this_reg, req, url))
 
@@ -426,7 +426,7 @@ def main():
     log_init(policy.policy("facility_eppsvr", 170), debug=True, with_logging=True)
 
     if args.password is not None:
-        print(">>>> SET_AUTH", set_authcode({"epp_job_id": "TEST", "domain_id": args.password}))
+        print(">>>> SET_AUTH", set_authcode({"epp_job_id": "TEST", "domain_id": args.password,"authcode":"eFNaYTlXZ2FVcW8xcmcy"}))
         return
 
     if args.update is not None:

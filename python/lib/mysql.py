@@ -143,19 +143,19 @@ def sql_insert(table, data):
     return sql_exec(f"insert into {table} set " + data_set(data, ","))
 
 
-def sql_exists(table, data):
-    sql = f"select 1 from {table} where " + data_set(data, " and ") + " limit 1"
+def sql_exists(table, where):
+    sql = f"select 1 from {table} where " + data_set(where, " and ") + " limit 1"
     ret, __ = run_select(sql)
     return (ret is not None) and (cnx.affected_rows() > 0)
 
 
-def sql_update_one(table, data, where):
-    ret, val = sql_update(table, data, where, 1)
+def sql_update_one(table, column_vals, where):
+    ret, val = sql_update(table, column_vals, where, 1)
     return (ret in [0, 1]), val
 
 
-def sql_update(table, data, where, limit=None):
-    updt_data = data if isinstance(data, str) else data_set(data, ",")
+def sql_update(table, column_vals, where, limit=None):
+    updt_data = column_vals if isinstance(column_vals, str) else data_set(column_vals, ",")
     ipdt_where = where if isinstance(where, str) else data_set(where, " and ")
     sql = f"update {table} set {updt_data} where {ipdt_where}"
     if limit is not None:

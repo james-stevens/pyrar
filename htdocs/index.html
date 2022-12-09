@@ -169,9 +169,9 @@ function loggedIn()
 
 function emptyCart()
 {
-	delete ctx.basket;
+	delete gbl.basket;
 	user_info();
-	errMsg(`${gbl.bin} basket emptied`,elm.userInfo,350);
+	errMsg(`${gbl.bin} basket emptied`,elm.errorSpan);
 	if (elm.basketSpace.style.display == "block") goSearch();
 }
 
@@ -179,11 +179,11 @@ function emptyCart()
 
 function removeBasketItem(i)
 {
-	if (ctx.basket.length == 1) {
-		delete ctx.basket;
+	if (gbl.basket.length == 1) {
+		delete gbl.basket;
 		if (elm.basketSpace.style.display == "block") goSearch();
 		}
-	else ctx.basket.splice(i,1);
+	else gbl.basket.splice(i,1);
 
 	if (("popup" in ctx)&&("name" in ctx.popup)&&(ctx.popup.name=="basketPopup")) {
 		clearTimeout(ctx.popup.timer);
@@ -199,8 +199,8 @@ function removeBasketItem(i)
 function start_basket_table()
 {
 	let x = '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
-	for(let i in ctx.basket) {
-		let item = ctx.basket[i];
+	for(let i in gbl.basket) {
+		let item = gbl.basket[i];
 		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
 		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
 		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
@@ -212,7 +212,7 @@ function start_basket_table()
 
 function user_info()
 {
-	if (ctx.basket) {
+	if (gbl.basket) {
 		elm.basketIcon.style.display = "block";
 		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table()
 		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
@@ -342,7 +342,7 @@ function loggedOut()
 
 function bodyLoaded()
 {
-	["myMsgPop","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	["myMsgPop","errorSpan","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
 	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
@@ -443,8 +443,8 @@ function buy_one_name(domain,action)
 {
 	let qry = { "domain" : domain, "num_years": 1 }
 
-	if ("basket" in ctx) {
-		for(let item of ctx.basket) {
+	if ("basket" in gbl) {
+		for(let item of gbl.basket) {
 			if ((item.domain==domain)&&(item.action==action))
 				qry.num_years = item.num_years + 1;
 			}
@@ -452,6 +452,7 @@ function buy_one_name(domain,action)
 
 	callApi("domain/check",(ret,data) => {
 		if (!ret) {
+			errMsg("Unexpected price error",elm.userInfo);
 			console.log("PRICE ERROR:",data);
 			return;
 			}
@@ -462,7 +463,7 @@ function buy_one_name(domain,action)
 		if (!(action in dom)) {
 			let msg = "an error occured";
 			if ((action+":err") in dom) msg = dom[action+":err"];
-			errMsg(msg,elm.basketIcon,450);
+			errMsg(msg,elm.basketIcon);
 			return;
 			}
 
@@ -473,19 +474,24 @@ function buy_one_name(domain,action)
 			 "action": action
 			 };
 
-		if (!("basket" in ctx)) { ctx.basket = [new_item]; }
+		if (!("basket" in gbl)) { gbl.basket = [new_item]; }
 		else {
-			for(let item of ctx.basket) {
+			for(let item of gbl.basket) {
 				if ((item.domain==dom.name)&&(item.action==action)) {
 					item.num_years = dom.num_years
 					item.cost = dom[action];
 					found_it = true;
 					}
 				}
-			if (!found_it) ctx.basket.push(new_item);
+			if (!found_it) gbl.basket.push(new_item);
 			}
+
 		user_info();
-		togglePopUp("basketPopup",2500);
+		clr_lazy_hide();
+		let popup = document.getElementById("basketPopup")
+		popup.classList.add("show");
+		ctx.popup = { "timer": setTimeout(hidePopUp,2500), "name": "basketPopup" };
+
 		}, { json: qry });
 }
 
@@ -566,6 +572,8 @@ function doSearch()
 
 function userDomainList()
 {
+	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
+
 	let x = "<table width=75% align=center border=0>";
 	x += "<tr><th>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
@@ -816,7 +824,7 @@ function basketCheckout()
 	show_one_space("basketSpace");
 	let x = '<table id=placeOrderBtn align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
 	let total = 0.0
-	for(let item of ctx.basket) {
+	for(let item of gbl.basket) {
 		total += parseFloat(item.cost);
 		}
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
@@ -951,13 +959,19 @@ function copy_btn_internal(param)
 	let seen_ns = { };
 	if (default_dns_servers) seen_ns[default_dns_servers] = true;
 	let idx=param["idx"];
+	seen_ns[ctx.domains[idx].name_servers] = true;
+
 	let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
 	x += `<tr class=dataRow onClick='do_change_ns(${idx},-1);'><td>Our NS</td></tr>`;
+
 	for(let dom_loop in ctx.domains) {
 		let dom = ctx.domains[dom_loop];
-		if ((dom_loop==idx)||(seen_ns[dom.name_servers])) continue;
-		x += `<tr class=dataRow onClick='do_change_ns(${idx},${dom_loop});'><td>Copy ${dom.display_name}</td></tr>`;
+		if (!seen_ns[dom.name_servers]) {
+			x += `<tr class=dataRow onClick='do_change_ns(${idx},${dom_loop});'><td>Copy ${dom.display_name}</td></tr>`;
+			seen_ns[dom.name_servers] = true;
+			}
 		}
+
 	return x + "</table>";
 }
 
@@ -975,7 +989,6 @@ function add_copy_btn(idx)
 		"param": {"idx":idx}
 		});
 }
-
 
 
 
@@ -1020,7 +1033,14 @@ function saveDomDetails(idx)
 			delete dom.unsaved;
 			myDomains(idx);
 			}
-		else console.log(reply);
+		else {
+			let e = document.getElementById("saveButton");
+			if (e) {
+				let msg = "Domain save failed";
+				if ("error" in reply) msg = reply["error"];
+				errMsg(msg,e);
+				}
+			}
 		}, { json: dom });
 }
 
@@ -1103,14 +1123,113 @@ function domain_settings(idx)
 	x += add_rec_type_btn("DS",idx,inside_ds);
 
 	if ("unsaved" in dom)
-		x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' type=button class=myBtn value='Save'>`;
+		x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' id="saveButton" type=button class=myBtn value='Save'>`;
 
 	x += "</td></tr>";
 	x += "</table></td></tr>";
 
 	x += settings_header(`Get AuthCode`);
+	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
+	x += "<tr><td>Click to get the transfer AuthCode for this domain</td></tr>";
+	x += "<tr><Td><div id='showAuthCode'></div></td>";
+	x += "<td align=right>"+btn(`getAuthCode(${idx})`,"Get AuthCode","Get the transfer AuthCode for this domain",110)+"</td>";
+	x += "</tr></table>";
+	x += "</td></tr>";
 
+	x += settings_header("Push / Gift Domain");
+	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
+	x += "<tr><td>Push or Gift this domain to another user at this registrar.<p>"
+	x += "To transfer the domain to a user in a different registrar,<br>you need to give them the AuthCode "
+	x += "and they need<br>to request the transfer from their registrar.</td></tr>";
+	x += "<tr><td>Destination E-Mail : <input id='giftDomainDest' style='width: 300px;'></td>";
+	x += "<td align=right>"+btn(`giftDomain(${idx})`,"Send Domain","Send this domain to another user",110)+"</td>";
+	x += "</tr></table>";
+	x += "</td></tr>";
 	elm.userSpace.innerHTML = x+"</table>";
+}
+
+
+
+function giftDomain(idx)
+{
+	let e = document.getElementById("giftDomainDest");
+	let dom = ctx.domains[idx];
+
+	if (!valid_email.test(e.value)) {
+		errMsg("Invalid email address",e);
+		e.focus();
+		return;
+		}
+
+	dom["dest_email"] = e.value;
+	callApi("domain/gift",(ok, reply) => {
+		if (ok) {
+			errMsg(gbl.tick+" Domain gifted",elm.userInfo);
+			myDomains();
+			}
+		else {
+			let msg = "Domain gifting failed";
+			if ("error" in reply) msg = reply["error"];
+			errMsg(msg,e);
+			e.focus();
+			}
+		}, { json: dom });
+}
+
+
+
+function hideAuthCode()
+{
+	let e = document.getElementById("showAuthCode");
+	if (e) e.innerHTML = "";
+}
+
+
+function copyToClip(data)
+{
+	let ac = document.getElementById("editAuthCode");
+	navigator.clipboard.writeText(data).then(
+		() => {
+			errMsg("AuthCode copied to clipboard",ac)
+			let e = document.getElementById("showAuthCode");
+			if (e) e.innerHTML = "";
+			},
+		() => errMsg("Copy to clipboard failed",ac)
+		);
+
+	return false;
+}
+
+
+function getAuthCode(idx)
+{
+	let dom = ctx.domains[idx];
+	let e = document.getElementById("showAuthCode");
+
+	function show_auth_code(code) {
+		dom.authcode = code;
+		let x = `<input id="editAuthCode" style="width: 250px;" value="${code}">`;
+		x += `<a href=# onClick="copyToClip('${code}');">&nbsp;${gbl.page}</a>`;
+
+		e.innerHTML = x;
+		setTimeout(hideAuthCode,10000);
+		let ac = document.getElementById("editAuthCode");
+		if (ac) { ac.focus(); ac.select(); }
+		}
+
+	if ((e)&&(e.innerHTML!="")) { e.innerHTML = ""; return; }
+	if (dom.authcode) return show_auth_code(dom.authcode);
+
+	callApi("domain/authcode",(ok, reply) => {
+		if ((ok)&&("auth_code" in reply)) {
+			show_auth_code(reply["auth_code"]);
+			}
+		else {
+			msg = "Get AuthCode failed";
+			if ("error" in reply) msg=reply["error"];
+			errMsg(msg,e);
+			}
+		}, { json: dom });
 }
 
 
@@ -1136,8 +1255,8 @@ function one_domain_html(idx)
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
 	x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
 	x += `<tr><td class=promptCell>Auto Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
@@ -1167,9 +1286,9 @@ function unerrMsg()
 
 
 
-function errMsg(txt,elem,min_width)
+function errMsg(txt,elem)
 {
-	if (!elem) { console.log("ERROR: ${txt} gave no element to hook to "); return; }
+	if (!elem) elem = elm.userInfo;
 
 	let m = elm.myMsgPop;
 	m.style.width = "auto";
@@ -1201,6 +1320,7 @@ function errMsg(txt,elem,min_width)
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
 <table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
+<colgroup><col width=70%/><col/></colgroup>
 <tr>
 <td align=left><span id="businessName" class="businessName">Registrar</span></td>
 <td align=right>
@@ -1273,11 +1393,13 @@ function errMsg(txt,elem,min_width)
 </div>
 </td>
 
-<td align=right><table border=0>
-<tr><td><span id="basketIcon" style="margin-right: 75px; display: none;" class="popup">
+<td align=right><table width=100% border=0>
+<colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
+<tr><td><span id="errorSpan">&nbsp;</span></td>
+<td align=center><span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
 <span style="margin-left: -250px;" class="popuptext" id="basketPopup">
-</span></span></td><td><span id="userInfo"></span></td></tr></table></td>
+</span></span></td><td align=center><span id="userInfo"></span></td></tr></table></td>
 </tr></table>
 </div>
 

@@ -56,7 +56,10 @@ class WebuiReq:
         debug(f"Logged in as {self.user_id}", gzz(czz()))
 
     def set_base_event(self):
-        return {"from_where": flask.request.remote_addr, "user_id": self.user_id, "who_did_it": "webui"}
+        ip_addr = flask.request.remote_addr
+        if "x-forwaded-for" in self.headers:
+            ip_addr = self.headers["x-forwaded-for"]
+        return {"from_where": ip_addr, "user_id": self.user_id, "who_did_it": "webui"}
 
     def abort(self, data):
         return self.response({"error": data}, HTML_CODE_ERR)
@@ -73,7 +76,9 @@ class WebuiReq:
         data["function"] = frameinfo.function
         data["line_num"] = frameinfo.lineno
         data["when_dt"] = None
-        data.update(self.base_event)
+        for item in self.base_event:
+            if item not in data:
+                data[item] = self.base_event[item]
         sql.sql_insert("events", data)
 
 
@@ -179,7 +184,7 @@ def users_details():
     if ret is None:
         return req.abort("Failed to load user account")
 
-    users.secure_user_data(user)
+    users.secure_user_db_rec(user)
     req.user_data["user"] = user
 
     return req.response(req.user_data)
@@ -229,13 +234,27 @@ def users_register():
     req.user_id = user_id
     req.sess_code = val["session"]
     req.base_event["user_id"] = user_id
-    req.event({"user_id": user_id, "notes": "User registered", "event_type": "new_user"}, gzz(czz()))
+    req.event({"notes": "User registered", "event_type": "new_user"}, gzz(czz()))
 
     return req.response(val)
 
 
+@application.route('/api/v1.0/domain/gift', methods=['POST'])
+def domain_gift():
+    return run_user_domain_task(domains.webui_gift_domain, "Gift", gzz(czz()))
+
+
 @application.route('/api/v1.0/domain/update', methods=['POST'])
 def domain_update():
+    return run_user_domain_task(domains.webui_update_domain, "Update", gzz(czz()))
+
+
+@application.route('/api/v1.0/domain/authcode', methods=['POST'])
+def domain_authcode():
+    return run_user_domain_task(domains.webui_set_auth_code, "setAuth", gzz(czz()))
+
+
+def run_user_domain_task(domain_function, func_name, context):
     req = WebuiReq()
     if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -243,10 +262,24 @@ def domain_update():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, reply = domains.webui_update_domain(req.user_id, flask.request.json)
+    ret, reply = domain_function(req, flask.request.json)
 
     if not ret:
         return req.abort(reply)
+
+    notes = context.function
+    if "dest_email" in flask.request.json:
+        notes = f"Domain gifted from {req.user_id} to {flask.request.json['dest_email']}"
+
+    req.event({"domain_id": flask.request.json["domain_id"], "notes": notes, "event_type": context.function}, context)
+    if func_name == "Gift":
+        req.event(
+            {
+                "user_id": reply["new_user_id"],
+                "domain_id": flask.request.json["domain_id"],
+                "notes": notes,
+                "event_type": context.function
+            }, context)
 
     return req.response(reply)
 

@@ -20,9 +20,12 @@ from inspect import currentframe as czz, getframeinfo as gzz
 import flask
 import lib.policy as policy
 from lib.log import log, init as log_init
+from lib.policy import this_policy as policy
+
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 LOGINS_FILE = os.environ["BASE"] + "/etc/logins.json"
+
 
 application = flask.Flask("EPP/REST/API")
 conn = None
@@ -55,13 +58,9 @@ client_pem = f"{CLIENT_PEM_DIR}/{this_reg}.pem"
 if not os.path.isfile(client_pem):
     raise ValueError(f"Client PEM file for '{this_reg}' at '{client_pem}' not found")
 
-my_policy = policy.Policy()
-log_init(my_policy.policy("facility_epp_api"), my_policy.policy("log_epp_api"))
+log_init(policy.policy("facility_epp_api"), False, policy.policy("log_epp_api"))
 
-jobInterval = 0
-if "EPP_KEEPALIVE" in os.environ:
-    jobInterval = int(os.environ["EPP_KEEPALIVE"])
-
+jobInterval = 120
 
 def keepAlive():
     jsonRequest({"hello": None}, "keepAlive")
@@ -215,7 +214,7 @@ def jsonRequest(in_js, addr):
     if conn is None:
         connectToEPP()
         if conn is None:
-            return abort(400, f"Failed to connect to EPP Server - `{this_login['server']}`")
+            return abort(499, f"Failed to connect to EPP Server - `{this_login['server']}`")
 
     t1 = firstDict(in_js)
     if t1 == "hello":
@@ -232,16 +231,17 @@ def jsonRequest(in_js, addr):
     ret, js = xmlRequest(in_js)
 
     if ret is None or js is None:
+        log(f"Reconnecting to EPP",gzz(czz()))
         conn.close()
         conn = None
         connectToEPP()
         if conn is None:
-            return abort(400, "Failed to connect to EPP Server")
+            return abort(499, "Failed to connect to EPP Server")
         ret, js = xmlRequest(in_js)
         if ret is None or js is None:
             conn.close()
             conn = None
-            return abort(400, "Lost connection to EPP Server")
+            return abort(499, "Lost connection to EPP Server")
 
     log(f"User request: {addr} asked '{t1}/{t2}' -> {ret}", gzz(czz()))
 
@@ -252,7 +252,7 @@ def jsonRequest(in_js, addr):
 @application.route('/epp/api/v1.0/request', methods=['POST'])
 def eppJSON():
     if flask.request.json is None:
-        return abort(400, "No JSON data was POSTed")
+        return abort(499, "No JSON data was POSTed")
     return jsonRequest(flask.request.json, flask.request.remote_addr)
 
 
