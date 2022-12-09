@@ -11,6 +11,7 @@ from lib.registry import tld_lib
 from lib import validate
 from lib.policy import this_policy as policy
 from lib.log import log, debug, init as log_init
+from lib import mysql as sql
 from lib import misc
 import parsexml
 
@@ -93,22 +94,32 @@ def http_price_domains(domobj, years, which):
     return 400, "Unexpected Error"
 
 
-def check_and_parse(domobj, num_years=1, qry_type=["create", "renew"]):
+def check_and_parse(domobj,
+                    num_years=1,
+                    qry_type=["create", "renew"],
+                    user_id=None):
     ret, out_js = http_price_domains(domobj, num_years, qry_type)
     if ret != 200:
         return abort(ret, out_js)
 
-    print(">>>>>>",json.dumps(out_js,indent=3))
     xml_p = parsexml.XmlParser(out_js)
     code, ret_js = xml_p.parse_check_message()
 
     if not code == 1000:
         return abort(400, ret_js)
 
+    for item in ret_js:
+        if "avail" in item and not item["avail"]:
+            ret, reply = sql.sql_select_one("domains", {"name": item["name"]})
+            if (ret == 1 and sql.has_data(reply, "for_sale_msg")
+                    and (user_id is None or user_id != reply["user_id"])):
+                for i in ["user_id", "for_sale_msg"]:
+                    item[i] = reply[i]
+
     tld_lib.multiply_values(ret_js)
     tld_lib.sort_data_list(ret_js, is_tld=False)
 
-    return json.dumps(ret_js)
+    return ret_js
 
 
 def close_epp_sess():
@@ -145,11 +156,59 @@ def xml_check_with_fees(domobj, years, which):
     }
 
 
+def webui_update_domain(user_id,domain):
+    if not sql.has_data(domain,"name"):
+        return False, "Domain name missing"
+
+    ret, dom_db = sql.sql_select_one("domains",{"name":domain["name"]})
+    if not ret:
+        return False, "Domain not found"
+
+    if dom_db["user_id"] != user_id:
+        return False, "Not your domain"
+
+    update_data = {"amended_dt":None}
+
+    if sql.has_data(domain,"name_servers"):
+        new_ns = domain["name_servers"].split(",")
+        new_ns.sort()
+        for ns in new_ns:
+            if not validate.is_valid_fqdn(ns):
+                return False, "Invalid name server record"
+        update_data["name_servers"] = ",".join(new_ns)
+
+    if sql.has_data(domain,"ds_recs"):
+        new_ds = domain["ds_recs"].split(",")
+        new_ds.sort()
+        for ds in new_ds:
+            if not validate.is_valid_ds(validate.frag_ds(ds)):
+                return False, "Invalid DS record"
+        update_data["ds_recs"] = ",".join(new_ds)
+
+    ret, reply = sql.sql_update_one("domains",update_data,{"domain_id":dom_db["domain_id"]})
+
+    if not ret:
+        return False, "Domain update failed"
+
+    epp_job = {
+        "domain_id": dom_db["domain_id"],
+        "job_type": "dom/update",
+        "execute_dt": sql.now(),
+        "created_dt": None,
+        "amended_dt": None
+        }
+
+    sql.sql_insert("epp_jobs",epp_job)
+
+    return ret, reply
+
+
+
 clients = {p: httpx.Client() for p in tld_lib.ports}
 xmlns = tld_lib.make_xmlns()
 
 
-def check_one_domain(domain):
+def debug_one_domain(domain):
     domobj = DomainName(domain)
     if domobj.names is None:
         print(">>>>>", domobj.err)
@@ -172,10 +231,15 @@ def check_one_domain(domain):
 
 if __name__ == "__main__":
     log_init(debug=True)
+    sql.connect("webui")
+
+    print(">>>>>",webui_update_domain(10450,{"name":"zip1.chug","name_servers":"ns239.dns.com,ns139.dns.com"}))
+
+    sys.exit(0)
     if len(sys.argv) > 1:
         x = sys.argv[1].lower()
         print("====>> RUN ONE", x, "=>", sys.argv[1])
-        check_one_domain(x)
+        debug_one_domain(x)
     else:
-        check_one_domain("tiny.for.men")
+        debug_one_domain("tiny.for.men")
     close_epp_sess()

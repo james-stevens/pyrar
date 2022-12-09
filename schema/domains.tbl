@@ -17,6 +17,8 @@ sqlsh "create table domains (
 	ds_recs				varchar(3500) not null default '',
 	client_locks		varchar(100),
 
+	for_sale_msg		varchar(100),
+
 	reg_create_dt		datetime null,
 	created_dt			datetime null,
 	amended_dt			datetime null,

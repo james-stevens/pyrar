@@ -97,17 +97,19 @@ function togglePopUp(name,tmout)
 		}
 
 	let popup = document.getElementById(name);
-	popup.classList.toggle("show");
+	if (popup) popup.classList.toggle("show");
 
-	ctx.popup = {
-		"timer": setTimeout(hidePopUp,tmout),
-		"name": name
-		}
+	hide_now = setTimeout(hidePopUp,tmout);
+	ctx.popup = { "timer": hide_now, "name": name }
 
 	let e = null;
 	if (name=="loginPopup") e = document.formLogin.email;
 	if (name=="registerPopup") e = document.formRegister.email;
+	if (name=="AddNSPopup") e = document.getElementById("inputNS");
+	if (name=="AddDSPopup") e = document.getElementById("inputDS");
 	if (e) { e.focus(); e.select(); }
+
+	return false;
 }
 
 
@@ -116,7 +118,7 @@ function hidePopUp()
 {
 	if (!("popup" in ctx)) return;
 	let popup = document.getElementById(ctx.popup.name);
-	popup.classList.remove("show")
+	if (popup) popup.classList.remove("show")
 	clr_lazy_hide();
 }
 
@@ -198,7 +200,7 @@ function start_basket_table()
 {
 	let x = '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
 	for(let i in ctx.basket) {
-		item = ctx.basket[i];
+		let item = ctx.basket[i];
 		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
 		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
 		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
@@ -224,13 +226,6 @@ function user_info()
 		elm.basketIcon.style.display = "none";
 
 	if (("user" in ctx)&&("name" in ctx.user)) {
-		let x = "",style="class=userIcons";
-
-		/*
-		if (!ctx.user.email_verified)
-			x += `<span title="E-Mail address not yet verified" ${style}>${gbl.email}</span>`;
-		*/
-
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
 }
@@ -352,6 +347,11 @@ function bodyLoaded()
 		elm[i] = document.getElementById(i);
 		} );
 
+	let mainDiv = document.getElementById("allBottom");
+	mainDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
+	let srchDiv = document.getElementById("search");
+	srchDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
+
 	callApi("config",(ret,reply) => {
 		if (!ret) {
 			let msg = "Error contacting servers";
@@ -392,7 +392,9 @@ function bodyLoaded()
 
 function one_search_line(item,block_not_avail)
 {
-	if ((block_not_avail)&&(!item.avail)) return "";
+	if (block_not_avail) {
+		if ((!("for_sale_msg" in item))&&(!item.avail)) return "";
+		}
 
 	let x = "<tr class=searchDomain>";
 	x += `<td><span title="${item.name}">${fromPuny(item.name)}</span>`;
@@ -400,7 +402,8 @@ function one_search_line(item,block_not_avail)
 		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.renew}</span>`;
 	x += "</td>";
 
-	if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
+	if ("for_sale_msg" in item) x += `<td colspan=2>${item.for_sale_msg}</td>`;
+	else if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
 	else {
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
@@ -567,7 +570,7 @@ function userDomainList()
 	x += "<tr><th>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 	for(let i in ctx.domains) {
-		item = ctx.domains[i];
+		let item = ctx.domains[i];
 		x += `<tr onClick="show_one_domain(${i});" class=${cls}><td title="${item.name}">${item.display_name}</td>`;
 		x += `<td align=center>${item.expiry_dt.split(" ")[0]}</td>`
 		x += `<td>${item.name_servers.substr(0,30)}</td>`;
@@ -596,6 +599,7 @@ function myDomains()
 		else delete ctx.domains;
 		elm.userSpace.innerHTML = userDomainList()
 		});
+	return false;
 }
 
 
@@ -697,24 +701,26 @@ function enable_two_fa()
 }
 
 
+function settings_header(title,spacer)
+{
+	let x = "";
+	if (!spacer) x = "<tr><td style='background=#ffffff;'><div style='height: 70px;'></div></td></tr>";
+	x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
+	return x;
+}
+function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
+
+
 
 function user_settings()
 {
-	function header(title,spacer) {
-		let x = "";
-		if (!spacer) x = "<tr><td style='background=#ffffff;'><div style='height: 70px;'></div></td></tr>";
-		x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
-		return x;
-		}
-	function prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
-
 	let x="<table align=center border=0>";
-	x += header("Change User Details",true);
+	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
 	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
-	x += prompt("E-Mail")+`<input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
-	x += prompt("Name")+`<input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
-    x += prompt("Auto Renew All")+`<select id='user_auto_renew_all'>`;
+	x += settings_prompt("E-Mail")+`<input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
+	x += settings_prompt("Name")+`<input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
+    x += settings_prompt("Auto Renew All")+`<select id='user_auto_renew_all'>`;
 
     let yes_chk="",no_chk="";
     if (ctx.user.auto_renew_all) yes_chk="selected"; else no_chk="selected";
@@ -723,7 +729,7 @@ function user_settings()
 	x += "</table></form></td></tr>";
 
 
-	x += header("Control Two-Factor Authentication");
+	x += settings_header("Control Two-Factor Authentication");
 	x += "<table id=edit2FA width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	if (("two_fa" in ctx.user) && (ctx.user.two_fa != null) && (ctx.user.two_fa != "")) {
 		x += "<tr><td colspan=2>Disable Google Authenticator two-factor authentication</td></tr>";
@@ -736,25 +742,25 @@ function user_settings()
 	x += "</table></form></td></tr>";
 
 
-	x += header("Change Your Password");
+	x += settings_header("Change Your Password");
 	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
 	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
-	x += prompt("Current Password");
+	x += settings_prompt("Current Password");
 	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
-	x += prompt("New Password");
+	x += settings_prompt("New Password");
 	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Your new password" type=password id='new_password'></td></tr>`;
-	x += prompt("Confirm Password");
+	x += settings_prompt("Confirm Password");
 	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm your new password" type=password id='confirm_password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
 	x += "</table></form></td></tr>";
 
 
-	x += header("Close This Account");
+	x += settings_header("Close This Account");
 	x += "<form name=editCloseAccount method=post action=# onSubmit='postCloseAccount(); return false;'>";
 	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += "<tr><td colspan=2>To close your account, please enter your current password</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
-	x += prompt("Current Password");
+	x += settings_prompt("Current Password");
 	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
 	x += "</table></form></td></tr>";
@@ -834,10 +840,179 @@ function myAccount()
 		});
 }
 
+function toggleNSPopup() { togglePopUp("AddNSPopup",30000); }
+function toggleDSPopup() { togglePopUp("AddDSPopup",30000); }
 
+function NSkeyDown(event,idx) { if (event.key=="Enter") doAddNS(idx); }
+function DSkeyDown(event,idx) { if (event.key=="Enter") doAddDS(idx); }
 
-function one_domain_html(dom)
+function doAddNS(idx)
 {
+	let e = document.getElementById("inputNS");
+	if (!fqdnCheck.test(e.value)) {
+		errMsg("Invalid host name",document.getElementById("AddNSPopup"));
+		e.focus(); return; }
+
+	hidePopUp();
+
+	let dom = ctx.domains[idx];
+
+	let ns = dom.name_servers.split(",");
+	if (!ns.find(data => { return (data == e.value); })) {
+		if (dom.name_servers=="") dom.name_servers = e.value;
+		else dom.name_servers += ","+e.value;
+		dom.unsaved = true;
+		domain_settings(idx);
+		}
+	else {
+		errMsg("Name server already present",document.getElementById("AddNSPopup"));
+		e.focus(); return; }
+}
+
+
+function validate_ds_rec(ds_rec)
+{
+	return true;
+}
+
+function doAddDS(idx)
+{
+	let e = document.getElementById("inputDS");
+	if (!validate_ds_rec(e.value)) {
+		errMsg("Invalid DS Record",document.getElementById("AddDSPopup"));
+		e.focus(); return; }
+
+	hidePopUp();
+
+	let dom = ctx.domains[idx];
+	let ds = dom.ds_recs.split(",");
+	if (!ds.find(data => { return (data == e.value); })) {
+		if (dom.ds_recs=="") dom.ds_recs = e.value;
+		else dom.ds_recs += ","+e.value;
+		dom.unsaved = true;
+		domain_settings(idx);
+		}
+	else {
+		errMsg("DS already present",document.getElementById("AddDSPopup"));
+		e.focus(); return; }
+}
+
+
+
+function add_rec_type_btn(rec_type,idx)
+{
+	let x = `<div class="popup">`;
+	x += `<span style='width: 75px;' tabindex=0 title="Add a ${rec_type} record" class=myBtn onClick="toggle${rec_type}Popup();">Add ${rec_type}</span>`;
+	x += `<span class="popuptext" id="Add${rec_type}Popup">`;
+	x += "<table>" + settings_prompt(`Enter ${rec_type}`);
+	x += `<input id=input${rec_type} onkeydown="${rec_type}keyDown(event,${idx});" size=40></td>`;
+	x += `<td><input type=button style='width: 110px;' onClick="doAdd${rec_type}(${idx});" class=myBtn value="Add"></td>`;
+	return x + `</tr></table></span></div>`;
+}
+
+
+
+function saveDomDetails(idx)
+{
+	let dom = ctx.domains[idx];
+	callApi("domain/update",(ret,reply) => {
+		if (ret) {
+			delete dom.unsaved;
+			myDomains(idx);
+			}
+		else console.log(reply);
+		}, { json: dom });
+}
+
+
+function removeNS(idx,ns_name)
+{
+	let dom = ctx.domains[idx];
+	let ns = dom.name_servers.split(",");
+
+	function find_ns() {
+		for(let i in ns) {
+			if (ns[i]==ns_name) return i;
+			}
+		return null;
+		}
+	let pos = find_ns()
+	if (!pos) {
+		errMsg("Name server not found",document.getElementById("AddNSPopup"));
+		return; }
+	ns.splice(pos,1);
+	dom.name_servers = ns.join(",");
+	dom.unsaved = true;
+	domain_settings(idx);
+}
+
+
+
+function removeDS(idx,ds_data)
+{
+	let dom = ctx.domains[idx];
+	let ns = dom.ds_recs.split(",");
+
+	function find_ds() {
+		for(let i in ds) {
+			if (ds[i]==ds_data) return i;
+			}
+		return null;
+		}
+	let pos = find_ds()
+	if (!pos) {
+		errMsg("DS Record not found",document.getElementById("AddDSPopup"));
+		return; }
+	ds.splice(pos,1);
+	dom.ds_recs = ds.join(",");
+	dom.unsaved = true;
+	domain_settings(idx);
+}
+
+
+
+function domain_settings(idx)
+{
+	let dom = ctx.domains[idx];
+
+	let x="<table width=50% align=center border=0>";
+	x += settings_header(`Change Domain Records - ${dom.display_name}`,true);
+	x += "<table width=100%><colgroup><col width=30%/><col/></colgroup>";
+
+	x += "<tr><td class=promptCell>Name Servers : </td><td>";
+	if (dom.name_servers != "") {
+		ns = dom.name_servers.split(",").sort();
+		for(let i in ns)
+			x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ns[i]}<br>`;
+		}
+	x += "</td></tr>";
+	x += "<tr><td class=promptCell>DS Records : </td><td>";
+	if (dom.ds_recs != "") {
+		ds = dom.ds_recs.split(",").sort();
+		for(let i in ds)
+			x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ds[i]}<br>`;
+		}
+	x += "</td></tr>";
+	x += "<tr><td colspan=2 align=right>"
+	x += add_rec_type_btn("NS",idx);
+	x += add_rec_type_btn("DS",idx);
+
+	if ("unsaved" in dom)
+		x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' type=button class=myBtn value='Save'>`;
+
+	x += "</td></tr>";
+	x += "</table></td></tr>";
+
+	x += settings_header(`Get AuthCode - ${dom.display_name}`);
+
+	elm.userSpace.innerHTML = x+"</table>";
+}
+
+
+
+function one_domain_html(idx)
+{
+	let dom = ctx.domains[idx];
 	let auto_renew = gbl.cross;
 	if (ctx.user.auto_renew_all) auto_renew = gbl.tick + " by account";
 	else if (dom.auto_renew) auto_renew = gbl.tick;
@@ -845,20 +1020,19 @@ function one_domain_html(dom)
 	let x = "<table align=center width=50% border=0>";
 
 	x += "<tr><td colspan=4 class=btmBtnBar>"
-		+btn(`buy_one_name('${dom.name}','renew')`,`Renew ${dom.display_name}`,"Renew this domain",100)
-		+btn(`domain_settings('${dom.name}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+		+btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
+		+btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 
 	x += "</td></tr>";
-
 	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
 	let puny = "";
-	let ns = item.name_servers.toLowerCase().split(",").sort().join("<br>")
-	let ds = item.ds_recs.toLowerCase().split(",").sort().join("<br>")
+	let ns = dom.name_servers.toLowerCase().split(",").sort().join("<br>")
+	let ds = dom.ds_recs.toLowerCase().split(",").sort().join("<br>")
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
-	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${item.expiry_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
 	x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
 	x += `<tr><td class=promptCell>Auto Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
@@ -870,7 +1044,7 @@ function one_domain_html(dom)
 function show_one_domain(idx)
 {
 	show_one_space("userSpace");
-	elm.userSpace.innerHTML = one_domain_html(ctx.domains[idx]);
+	elm.userSpace.innerHTML = one_domain_html(idx);
 }
 
 
@@ -969,7 +1143,7 @@ function errMsg(txt,elem,min_width)
 </span>
 
 <span style="display:none;" id="isLoggedIn">
-	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="myDomains(); return false;">Domains</span>
+	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains();">Domains</span>
 	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="myAccount(); return false;">Account</span>
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
 </span>
@@ -1002,7 +1176,7 @@ function errMsg(txt,elem,min_width)
 </tr></table>
 </div>
 
-<div id="allBottom" onClick="hidePopUp();">
+<div id="allBottom">
 	<div style='height: 30px;'></div>
 	<div id="search">
 		<div style='height: 30px;'></div>

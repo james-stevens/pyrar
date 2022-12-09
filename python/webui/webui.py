@@ -17,6 +17,9 @@ import domains
 
 from inspect import currentframe as czz, getframeinfo as gzz
 
+HTML_CODE_ERR = 499
+HTML_CODE_OK = 200
+
 SESSION_TAG = "X-Session-Code"
 SESSION_TAG_LOWER = SESSION_TAG.lower()
 
@@ -63,11 +66,11 @@ class WebuiReq:
             "who_did_it": "webui"
         }
 
-    def abort(self, data, err_no=499):
-        return self.response({"error": data}, err_no)
+    def abort(self, data):
+        return self.response({"error": data}, HTML_CODE_ERR)
 
-    def response(self, data, code=200):
-        resp = flask.make_response(data, code)
+    def response(self, data, code=HTML_CODE_OK):
+        resp = flask.make_response(flask.jsonify(data), code)
         resp.charset= 'utf-8'
         if self.sess_code is not None:
             resp.headers[SESSION_TAG] = self.sess_code
@@ -255,16 +258,37 @@ def users_register():
     return req.response(val)
 
 
+@application.route('/api/v1.0/domain/update', methods=['POST'])
+def domain_update():
+    req = WebuiReq()
+    if flask.request.json is None or not sql.has_data(flask.request.json,"name"):
+        return req.abort("No JSON posted or domain is missing")
+
+    if req.user_id is None or req.sess_code is None:
+        return req.abort("Not logged in")
+
+    ret, reply = domains.webui_update_domain(req.user_id,flask.request.json)
+
+    if not ret:
+        return req.abort(reply)
+
+    return req.response(reply)
+
+
 @application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
     req = WebuiReq()
     num_yrs = 1
+    qry_type = ["create","renew"]
+
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
         if not isinstance(dom, str) and not isinstance(dom, list):
             return req.abort("Unsupported data type for domain")
         if "num_years" in flask.request.json:
             num_yrs = int(flask.request.json["num_years"])
+        if "qry_type" in flask.request.json:
+            qry_type = flask.request.json["qry_type"].split(",")
     else:
         data = None
         if flask.request.method == "POST":
@@ -277,6 +301,8 @@ def rest_domain_price():
             return req.abort("No domain sent")
         if (yrs := data.get("num_years")) is not None:
             num_yrs = int(yrs)
+        if (qry := data.get("qry_type")) is not None:
+            qry_type = qry.split(",")
 
     dom_obj = domains.DomainName(dom)
 
@@ -286,7 +312,7 @@ def rest_domain_price():
         return req.abort("Invalid domain name")
 
     try:
-        ret = domains.check_and_parse(dom_obj, num_yrs)
+        ret = domains.check_and_parse(dom_obj, num_yrs, qry_type, req.user_id)
         return req.response(ret)
     except Exception as exc:
         debug(str(exc), gzz(czz()))

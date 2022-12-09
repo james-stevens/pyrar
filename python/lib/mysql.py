@@ -111,7 +111,7 @@ def run_sql(sql, func):
             except Exception as exc:
                 this_exc = exc
                 pass
-        log("ERROR:" + str(this_exc), gzz(czz()))
+        log("SQL-ERROR:" + str(this_exc), gzz(czz()))
         return None, None
 
 
@@ -208,15 +208,19 @@ def connect(login):
             host = svr[0]
             port = int(svr[1])
 
-    cnx = _mysql.connect(user=login,
-                         password=mysql_json[login],
-                         unix_socket=sock,
-                         host=host,
-                         port=port,
-                         database=mysql_json["database"],
-                         conv=my_conv,
-                         charset='utf8mb4',
-                         init_command='set names utf8mb4')
+    try:
+        cnx = _mysql.connect(user=login,
+                             password=mysql_json[login],
+                             unix_socket=sock,
+                             host=host,
+                             port=port,
+                             database=mysql_json["database"],
+                             conv=my_conv,
+                             charset='utf8mb4',
+                             init_command='set names utf8mb4')
+    except Exception as exc:
+        log("Failed to connet to MySQL: "+str(exc),gzz(czz()))
+        cnx = None
 
 
 if __name__ == "__main__":
