@@ -142,10 +142,10 @@ def users_close():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ret, __ = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()",
+    ok = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()",
                                  {"user_id": req.user_id})
 
-    if ret != 1:
+    if not ok:
         return req.abort("Close account failed")
 
     sql.sql_delete_one("session_keys", {"user_id": req.user_id})
@@ -166,9 +166,9 @@ def users_password():
 
     new_pass = bcrypt.hashpw(flask.request.json["new_password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    ret, __ = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
+    ok = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
 
-    if ret is not None:
+    if not ok:
         return req.response("OK")
 
     return req.abort("Failed")
@@ -262,9 +262,9 @@ def run_user_domain_task(domain_function, func_name, context):
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, reply = domain_function(req, flask.request.json)
+    ok, reply = domain_function(req, flask.request.json)
 
-    if not ret:
+    if not ok:
         return req.abort(reply)
 
     notes = context.function

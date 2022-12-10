@@ -18,6 +18,7 @@ import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
+AUTO_CREATED_AMENDED_DT = ["domains", "epp_jobs", "order_items", "orders", "sales_items", "session_keys", "users"]
 
 cnx = None
 my_login = None
@@ -45,21 +46,21 @@ my_conv[FIELD_TYPE.BLOB] = convert_string
 my_conv[FIELD_TYPE.TINY] = int
 
 
-def format_data(item, data):
-    """ convert {data} to SQL string """
+def format_col(item, column_val):
+    """ convert {column_val} to SQL string """
     if item in DATE_FIELDS:
         return "now()"
 
-    if data is None:
+    if column_val is None:
         return "NULL"
 
-    if isinstance(data, int):
-        return str(int(data))
+    if isinstance(column_val, int):
+        return str(int(column_val))
 
-    if not isinstance(data, str):
-        data = str(data)
+    if not isinstance(column_val, str):
+        column_val = str(column_val)
 
-    return "unhex('" + misc.ashex(data.encode("utf8")) + "')"
+    return "unhex('" + misc.ashex(column_val.encode("utf8")) + "')"
 
 
 def has_data(row, col):
@@ -81,7 +82,7 @@ def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
     if isinstance(data, str):
         return data
-    return joiner.join([item + "=" + format_data(item, data[item]) for item in data])
+    return joiner.join([item + "=" + format_col(item, data[item]) for item in data])
 
 
 def reconnect():
@@ -94,8 +95,8 @@ def reconnect():
 
 def return_select():
     res = cnx.store_result()
-    data = res.fetch_row(maxrows=0, how=1)
-    return True, data
+    db_rows = res.fetch_row(maxrows=0, how=1)
+    return True, db_rows
 
 
 def run_sql(sql, func):
@@ -135,12 +136,16 @@ def sql_exec(sql):
     return run_sql(sql, return_exec)
 
 
-def sql_delete_one(table, data):
-    return sql_exec(f"delete from {table} where " + data_set(data, " and ") + " limit 1")
+def sql_delete_one(table, where):
+    ok, __ = sql_exec(f"delete from {table} where {data_set(where, ' and ')} limit 1")
+    return ok is not None
 
 
-def sql_insert(table, data):
-    return sql_exec(f"insert into {table} set " + data_set(data, ","))
+def sql_insert(table, column_vals):
+    if table in AUTO_CREATED_AMENDED_DT:
+        column_vals["amended_dt"] = None
+        column_vals["created_dt"] = None
+    return sql_exec(f"insert into {table} set " + data_set(column_vals, ","))
 
 
 def sql_exists(table, where):
@@ -150,17 +155,19 @@ def sql_exists(table, where):
 
 
 def sql_update_one(table, column_vals, where):
-    ret, val = sql_update(table, column_vals, where, 1)
-    return (ret in [0, 1]), val
+    if table in AUTO_CREATED_AMENDED_DT:
+        column_vals["amended_dt"] = None
+    return sql_update(table, column_vals, where, 1)
 
 
 def sql_update(table, column_vals, where, limit=None):
-    updt_data = column_vals if isinstance(column_vals, str) else data_set(column_vals, ",")
-    ipdt_where = where if isinstance(where, str) else data_set(where, " and ")
-    sql = f"update {table} set {updt_data} where {ipdt_where}"
+    update_cols = column_vals if isinstance(column_vals, str) else data_set(column_vals, ",")
+    where_clause = data_set(where, " and ")
+    sql = f"update {table} set {update_cols} where {where_clause}"
     if limit is not None:
         sql += f" limit {limit}"
-    return sql_exec(sql)
+    ok, __ = sql_exec(sql)
+    return ok is not None
 
 
 def sql_select(table, where, columns="*", limit=None, order_by=None):
@@ -170,18 +177,18 @@ def sql_select(table, where, columns="*", limit=None, order_by=None):
     if limit is not None:
         sql += f" limit {limit}"
 
-    ret, data = run_select(sql)
+    ret, db_rows = run_select(sql)
 
     if not ret:
         return None, None
 
     num_rows = cnx.affected_rows()
-    return num_rows, data
+    return num_rows, db_rows
 
 
 def sql_select_one(table, where, columns="*"):
-    num, data = sql_select(table, where, columns, 1)
-    return num, data[0] if num == 1 else None
+    num, db_rows = sql_select(table, where, columns, 1)
+    return num, db_rows[0] if num == 1 else None
 
 
 def connect(login):
@@ -229,14 +236,14 @@ if __name__ == "__main__":
     log_init(debug=True)
     connect("webui")
 
-    ret, data = run_select("select * from events limit 3")
+    ret, db_rows = run_select("select * from events limit 3")
     if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
-        print(">>>>", json.dumps(data, indent=4))
+        print(">>>>", json.dumps(db_rows, indent=4))
 
-    ret, data = run_select("select * from domains")
-    print(">>>> DOMAINS", ret, json.dumps(data, indent=4))
+    ret, db_rows = run_select("select * from domains")
+    print(">>>> DOMAINS", ret, json.dumps(db_rows, indent=4))
 
     print(f">>>> sql exists -> 10452 ->", sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
@@ -244,13 +251,13 @@ if __name__ == "__main__":
 
     cnx.close()
 
-    ret, data = sql_select_one("Xevents", {"event_id": 10452})
-    print(">>SELECT>>>", ret, json.dumps(data, indent=4))
+    ret, db_rows = sql_select_one("Xevents", {"event_id": 10452})
+    print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
 
-    ret, data = sql_select_one("events", {"event_id": 10471})
-    print(">>SELECT>>>", ret, json.dumps(data, indent=4))
+    ret, db_rows = sql_select_one("events", {"event_id": 10471})
+    print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
 
-    ret, data = sql_update_one("session_keys", {"amended_dt": None}, {"user_id": 10465})
-    print(">>UPDATE>>>", ret, data)
+    ret = sql_update_one("session_keys", {"amended_dt": None}, {"user_id": 10465})
+    print(">>UPDATE>>>", ret )
 
     cnx.close()

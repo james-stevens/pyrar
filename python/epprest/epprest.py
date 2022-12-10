@@ -22,10 +22,8 @@ import lib.policy as policy
 from lib.log import log, init as log_init
 from lib.policy import this_policy as policy
 
-
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 LOGINS_FILE = os.environ["BASE"] + "/etc/logins.json"
-
 
 application = flask.Flask("EPP/REST/API")
 conn = None
@@ -61,6 +59,7 @@ if not os.path.isfile(client_pem):
 log_init(policy.policy("facility_epp_api"), False, policy.policy("log_epp_api"))
 
 jobInterval = 120
+
 
 def keepAlive():
     jsonRequest({"hello": None}, "keepAlive")
@@ -231,7 +230,7 @@ def jsonRequest(in_js, addr):
     ret, js = xmlRequest(in_js)
 
     if ret is None or js is None:
-        log(f"Reconnecting to EPP",gzz(czz()))
+        log(f"Reconnecting to EPP", gzz(czz()))
         conn.close()
         conn = None
         connectToEPP()

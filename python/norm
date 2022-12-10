@@ -1,7 +1,14 @@
 #! /bin/sh
 
+if test "$*"
+	then
+		files="$*"
+	else
+		files="$(grep -lr ' /usr/bin/python3$')"
+	fi
+
 f=$(mktemp)
-for file in $(find -type f -name '*.py')
+for file in ${files}
 do
 	python3 -m yapf ${file} > ${f}
 	if test -s ${f} && ! cmp ${file} ${f}

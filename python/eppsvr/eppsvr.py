@@ -28,7 +28,7 @@ JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
 
 def event_log(notes, epp_job, where):
-    data = {
+    event_row = {
         "program": where.filename.split("/")[-1].split(".")[0],
         "function": where.function,
         "line_num": where.lineno,
@@ -40,7 +40,7 @@ def event_log(notes, epp_job, where):
         "from_where": "localhost",
         "notes": notes
     }
-    sql.sql_insert("events", data)
+    sql.sql_insert("events", event_row)
 
 
 def request_json(this_reg, in_json, url=None):
@@ -144,11 +144,8 @@ def domain_renew(epp_job):
     if not xml_check_code(job_id, "renew", xml):
         return False
 
-    data = parse_dom_resp.parse_domain_info_xml(xml, "ren")
-    sql.sql_update_one("domains", {
-        "amended_dt": None,
-        "expiry_dt": data["expiry_dt"]
-    }, {"domain_id": dom_db["domain_id"]})
+    xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "ren")
+    sql.sql_update_one("domains", {"expiry_dt": xml_dom["expiry_dt"]}, {"domain_id": dom_db["domain_id"]})
 
     return True
 
@@ -173,21 +170,23 @@ def domain_request_transfer(epp_job):
         return None
 
     this_reg, url = tld_lib.http_req(name)
-    xml = request_json(this_reg, dom_req_xml.domain_request_transfer(name, base64.b64decode(epp_job["authcode"]).decode("utf-8"),
-                                                                     years), url)
+    xml = request_json(
+        this_reg,
+        dom_req_xml.domain_request_transfer(name,
+                                            base64.b64decode(epp_job["authcode"]).decode("utf-8"), years), url)
 
     if not xml_check_code(job_id, "transfer", xml):
         if (epp_job["failures"] + 1) >= policy.policy("epp_retry_attempts", 3):
             return transfer_failed(dom_db["domain_id"])
         return False
 
-    updt = {"amended_dt": None}
+    update_cols = {}
     if xml_code == 1000:
-        data = parse_dom_resp.parse_domain_info_xml(xml, "trn")
-        updt["expiry_dt"] = data["expiry_dt"]
-        updt["status_id"] = misc.STATUS_LIVE
+        xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "trn")
+        update_cols["expiry_dt"] = xml_dom["expiry_dt"]
+        update_cols["status_id"] = misc.STATUS_LIVE
+        sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
 
-    sql.sql_update_one("domains", updt, {"domain_id": dom_db["domain_id"]})
     return True
 
 
@@ -210,15 +209,13 @@ def domain_create(epp_job):
     if not xml_check_code(job_id, "create", xml):
         return False
 
-    data = parse_dom_resp.parse_domain_info_xml(xml, "cre")
+    xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "cre")
 
-    sql.sql_update_one(
-        "domains", {
-            "amended_dt": None,
-            "status_id": misc.STATUS_LIVE,
-            "reg_create_dt": data["created_dt"],
-            "expiry_dt": data["expiry_dt"]
-        }, {"domain_id": dom_db["domain_id"]})
+    sql.sql_update_one("domains", {
+        "status_id": misc.STATUS_LIVE,
+        "reg_create_dt": xml_dom["created_dt"],
+        "expiry_dt": xml_dom["expiry_dt"]
+    }, {"domain_id": dom_db["domain_id"]})
 
     return True
 
@@ -281,7 +278,10 @@ def set_authcode(epp_job):
         log(f"Odd: this_reg or url returned None for '{name}", gzz(czz()))
         return None
 
-    req = dom_req_xml.domain_set_authcode(name, base64.b64decode(epp_job["authcode"]).decode("utf-8"),)
+    req = dom_req_xml.domain_set_authcode(
+        name,
+        base64.b64decode(epp_job["authcode"]).decode("utf-8"),
+    )
 
     return xml_check_code(job_id, "info", request_json(this_reg, req, url))
 
@@ -300,10 +300,13 @@ def domain_update_from_db(epp_job):
 
 
 def get_domain_lists(dom_db):
-    ns_list = dom_db["name_servers"].split(",") if sql.has_data(dom_db, "name_servers") else []
+    ds_list = []
+    ns_list = []
+    if sql.has_data(dom_db, "name_servers"):
+        ns_list = dom_db["name_servers"].lower().split(",")
 
-    ds_list = [validate.frag_ds(item)
-               for item in dom_db["ds_recs"].split(",")] if sql.has_data(dom_db, "ds_recs") else []
+    if sql.has_data(dom_db, "ds_recs"):
+        ds_list = [validate.frag_ds(item) for item in dom_db["ds_recs"].upper().split(",")]
 
     return ns_list, ds_list
 
@@ -348,16 +351,14 @@ def job_worked(epp_job):
 
 
 def job_abort(epp_job):
-    sql.sql_update_one("epp_jobs", {"amended_dt": None, "failures": 9999}, {"epp_job_id": epp_job["epp_job_id"]})
+    sql.sql_update_one("epp_jobs", {"failures": 9999}, {"epp_job_id": epp_job["epp_job_id"]})
 
 
 def job_failed(epp_job):
-    sql.sql_update_one(
-        "epp_jobs", {
-            "amended_dt": None,
-            "failures": epp_job["failures"] + 1,
-            "execute_dt": sql.now(policy.policy("epp_retry_timeout", 300))
-        }, {"epp_job_id": epp_job["epp_job_id"]})
+    sql.sql_update_one("epp_jobs", {
+        "failures": epp_job["failures"] + 1,
+        "execute_dt": sql.now(policy.policy("epp_retry_timeout", 300))
+    }, {"epp_job_id": epp_job["epp_job_id"]})
 
 
 EEP_JOB_FUNC = {
@@ -396,9 +397,9 @@ def run_server():
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
                  f" and failures < {policy.policy('epp_retry_attempts', 3)} limit 1")
-        ret, data = sql.run_select(query)
-        if ret and len(data) > 0:
-            run_epp_item(data[0])
+        ret, epp_job = sql.run_select(query)
+        if ret and len(epp_job) > 0:
+            run_epp_item(epp_job[0])
         else:
             time.sleep(5)
 
@@ -426,7 +427,12 @@ def main():
     log_init(policy.policy("facility_eppsvr", 170), debug=True, with_logging=True)
 
     if args.password is not None:
-        print(">>>> SET_AUTH", set_authcode({"epp_job_id": "TEST", "domain_id": args.password,"authcode":"eFNaYTlXZ2FVcW8xcmcy"}))
+        print(">>>> SET_AUTH",
+              set_authcode({
+                  "epp_job_id": "TEST",
+                  "domain_id": args.password,
+                  "authcode": "eFNaYTlXZ2FVcW8xcmcy"
+              }))
         return
 
     if args.update is not None:

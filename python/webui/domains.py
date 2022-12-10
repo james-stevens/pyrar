@@ -177,7 +177,7 @@ def webui_update_domain(req, post_dom):
     if not ok:
         return False, msg
 
-    update_cols = {"amended_dt": None}
+    update_cols = {}
 
     if sql.has_data(post_dom, "name_servers"):
         new_ns = post_dom["name_servers"].lower().split(",")
@@ -195,7 +195,7 @@ def webui_update_domain(req, post_dom):
                 return False, "Invalid DS record"
         update_cols["ds_recs"] = ",".join(new_ds)
 
-    ok, reply = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"]})
+    ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"]})
 
     if not ok:
         return False, "Domain update failed"
@@ -204,12 +204,11 @@ def webui_update_domain(req, post_dom):
         "domain_id": post_dom["domain_id"],
         "job_type": "dom/update",
         "execute_dt": sql.now(),
-        "created_dt": None,
-        "amended_dt": None
+        "created_dt": None
     }
     sql.sql_insert("epp_jobs", epp_job)
 
-    return True, reply
+    return True, update_cols
 
 
 def webui_set_auth_code(req, post_dom):
@@ -225,8 +224,7 @@ def webui_set_auth_code(req, post_dom):
         "job_type": "dom/authcode",
         "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
         "execute_dt": sql.now(),
-        "created_dt": None,
-        "amended_dt": None
+        "created_dt": None
     }
     sql.sql_insert("epp_jobs", epp_job)
     return True, {"auth_code": auth_code}
@@ -245,7 +243,10 @@ def webui_gift_domain(req, post_dom):
         return False, "Recipient email invalid"
 
     where = {col: post_dom[col] for col in ["domain_id", "name", "user_id"]}
-    ok, __ = sql.sql_update_one("domains", {"amended_dt":None,"user_id": user_db["user_id"]}, where)
+    ok = sql.sql_update_one("domains", {"user_id": user_db["user_id"]}, where)
+
+    if not ok:
+        return False, "Gifting domain failed"
 
     return ok, {"new_user_id": user_db["user_id"]}
 
