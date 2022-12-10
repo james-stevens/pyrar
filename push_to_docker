@@ -1,0 +1,11 @@
+#! /bin/sh
+
+id=$(docker image ls | awk '{ if($1=="pyrar") print $3 }')
+ver="$(date +%Y-%m-%d)"
+if test "$1"; then ver="$1"; fi
+
+docker tag ${id} jamesstevens/pyrar
+docker push jamesstevens/pyrar
+
+docker tag ${id} jamesstevens/pyrar:${ver}
+docker push jamesstevens/pyrar:${ver}
