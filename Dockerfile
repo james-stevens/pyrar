@@ -14,6 +14,8 @@ RUN pip install apscheduler httpx
 RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 
+RUN apk add pdns pdns-backend-mysql
+
 RUN rm -rf /tmp
 RUN rmdir /var/lib/nginx/tmp /var/log/nginx 
 RUN ln -s /dev/shm /tmp
@@ -23,6 +25,7 @@ RUN ln -s /dev/shm /run/nginx
 RUN ln -fns /run/nginx.conf /etc/nginx/nginx.conf
 RUN ln -fns /run/server.pem /etc/nginx/server.pem
 RUN ln -fns /run/inittab /etc/inittab
+RUN ln -fns /run/pdns.conf /etc/pdns/pdns.conf
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
 COPY pems /opt/pyrar/pems/

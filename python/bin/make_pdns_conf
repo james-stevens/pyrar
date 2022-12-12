@@ -1,0 +1,55 @@
+#! /usr/bin/python3
+
+import os
+
+from lib.policy import this_policy as policy
+from lib import fileloader
+
+
+LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
+logins = fileloader.FileLoader(LOGINS_JSON)
+
+with open("/run/pdns_api_key","r") as fd:
+	api_key = fd.readline().strip()
+
+
+with open(f"/run/pdns.conf","w") as fd:
+    fd.write(f"master=yes\n")
+
+    fd.write(f"security-poll-suffix=\n")
+
+    fd.write(f"loglevel={policy.policy('pdns_log_level',7)}\n")
+    fd.write(f"logging-facility={policy.policy('pdns_log_facility',3)}\n")
+
+    fd.write(f"local-address=0.0.0.0:53, 0.0.0.0:5353\n")
+    # fd.write(f"query-local-address=0.0.0.0:53\n")
+
+    fd.write(f"default-soa-edit=INCEPTION-EPOCH\n")
+    fd.write(f"default-soa-edit-signed=INCEPTION-EPOCH\n")
+
+    fd.write(f"dnsupdate=yes\n")
+    fd.write(f"allow-dnsupdate-from=127.0.0.0/8\n")
+
+    fd.write(f"cache-ttl=5\n")
+    fd.write(f"slave-cycle-interval=10\n")
+
+    fd.write(f"also-notify=127.0.0.1\n")
+    fd.write(f"only-notify=127.0.0.1\n")
+
+    fd.write(f"dnsupdate=yes\n")
+
+    fd.write(f"allow-axfr-ips=127.0.0.0/8\n")
+
+    fd.write(f"webserver=yes\n")
+    fd.write(f"webserver-address=127.0.0.1\n")
+    fd.write(f"webserver-password={api_key}\n")
+    fd.write(f"api=yes\n")
+    fd.write(f"api-key={api_key}\n")
+
+    fd.write(f"launch=gmysql\n")
+    fd.write(f"gmysql-host={logins.json['pdns']['server']}\n")
+    fd.write(f"gmysql-port=3306\n")
+    fd.write(f"gmysql-user={logins.json['pdns']['username']}\n")
+    fd.write(f"gmysql-password={logins.json['pdns']['password']}\n")
+    fd.write(f"gmysql-dbname={logins.json['pdns']['database']}\n")
+    fd.write(f"gmysql-dnssec=yes\n")

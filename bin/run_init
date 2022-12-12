@@ -26,6 +26,10 @@ flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 			}
 		}' > /run/regs_ports
 
+dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./' > /run/pdns_api_key
+chmod 400 /run/pdns_api_key
+
+${BASE}/python/bin/make_pdns_conf
 
 /usr/local/bin/make_inittab
 
