@@ -7,24 +7,34 @@
 
 sqlsh "drop table if exists users"
 sqlsh "CREATE TABLE users (
-	user_id			${auto},
+	user_id					${auto},
 
-	email			${email},
-	password		${password},
-	name			varchar(100),
+	email					${email},
+	password				${password},
+	name					varchar(100),
 
-	email_verified	boolean not null default false,
-	auto_renew_all	boolean not null default false,
-	account_closed	boolean not null default false,
+	email_verified			boolean not null default false,
+	auto_renew_all			boolean not null default false,
+	account_closed			boolean not null default false,
 
-	two_fa			varchar(100),
-	password_reset  varchar(100),
+	two_fa					varchar(100),
+	password_reset			varchar(100),
 
-	payment_data	varchar(1000) default null,
+	payment_data			varchar(1000) default null,
 
-	last_login_dt	datetime,
-	created_dt		datetime,
-	amended_dt		datetime,
+	acct_sequence_id		${row_id},
+	acct_on_hold			${flag} not null default 0,
+	acct_current_balance	${money} not null default 0,
+	acct_previous_balance	${money} not null default 0,
+
+	acct_overdraw_limit		${money} not null default 0,
+	acct_warn_low_balance	${money} not null default 0,
+	acct_next_warning_dt	datetime,
+
+	last_login_dt			datetime,
+
+	created_dt				datetime,
+	amended_dt				datetime,
 
 	primary key by_id (user_id),
 	unique key by_login(email)

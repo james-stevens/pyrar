@@ -27,4 +27,4 @@ sqlsh "CREATE TABLE deleted_users (
 
 sqlsh "ALTER TABLE deleted_users AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select on deleted_users to raradm'
+sqlsh 'grant select,insert on deleted_users to raradm'

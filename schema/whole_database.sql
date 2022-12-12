@@ -330,6 +330,39 @@ LOCK TABLES `session_keys` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `transactions`
+--
+
+DROP TABLE IF EXISTS `transactions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `transactions` (
+  `transaction_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `is_credit` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `amount` decimal(10,0) NOT NULL DEFAULT 0,
+  `currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pre_balance` decimal(10,0) NOT NULL DEFAULT 0,
+  `post_balance` decimal(10,0) NOT NULL DEFAULT 0,
+  `sales_item_id` int(10) unsigned DEFAULT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`user_id`,`acct_sequence_id`),
+  UNIQUE KEY `by_id` (`transaction_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `transactions`
+--
+
+LOCK TABLES `transactions` WRITE;
+/*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
@@ -347,6 +380,13 @@ CREATE TABLE `users` (
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_data` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `acct_on_hold` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `acct_current_balance` decimal(10,0) NOT NULL DEFAULT 0,
+  `acct_previous_balance` decimal(10,0) NOT NULL DEFAULT 0,
+  `acct_overdraw_limit` decimal(10,0) NOT NULL DEFAULT 0,
+  `acct_warn_low_balance` decimal(10,0) NOT NULL DEFAULT 0,
+  `acct_next_warning_dt` datetime DEFAULT NULL,
   `last_login_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
@@ -373,7 +413,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-09 12:03:53
+-- Dump completed on 2022-12-12 13:06:08
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
@@ -382,6 +422,7 @@ GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales_items` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`orders` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`order_items` TO `webui`@`%`;
 GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
@@ -389,19 +430,22 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
-GRANT SELECT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`deleted_domains` TO `epprun`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `epprun`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
