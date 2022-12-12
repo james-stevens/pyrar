@@ -9,7 +9,7 @@ import re
 import base64
 from inspect import currentframe as czz, getframeinfo as gzz
 
-from lib.registry import tld_lib
+from lib import registry
 from lib import validate
 from lib.policy import this_policy as policy
 from lib.log import log, debug, init as log_init
@@ -18,8 +18,14 @@ from lib import misc
 import parsexml
 import users
 
-clients = {p: httpx.Client() for p in tld_lib.ports}
-xmlns = tld_lib.make_xmlns()
+clients = None
+xmlns = None
+
+def start_up():
+    global clients
+    global xmlns
+    clients = {p: httpx.Client() for p in registry.tld_lib.ports}
+    xmlns = registry.tld_lib.make_xmlns()
 
 
 class DomainName:
@@ -43,7 +49,7 @@ class DomainName:
             self.err = "TLD not supported"
             self.names = None
         else:
-            regs_file = tld_lib.regs_file.data()
+            regs_file = registry.tld_lib.regs_file.data()
             if "currency" in regs_file[self.registry]:
                 self.currency = regs_file[self.registry]["currency"]
 
@@ -54,7 +60,7 @@ class DomainName:
         else:
             self.err = err
             self.names = None
-        self.registry, self.url = tld_lib.http_req(name)
+        self.registry, self.url = registry.tld_lib.http_req(name)
 
     def process_list(self, domain):
         self.names = []
@@ -63,9 +69,9 @@ class DomainName:
             if (err := validate.check_domain_name(name)) is None:
                 self.names.append(name)
                 if self.registry is None:
-                    self.registry, self.url = tld_lib.http_req(name)
+                    self.registry, self.url = registry.tld_lib.http_req(name)
                 else:
-                    regs, __ = tld_lib.http_req(name)
+                    regs, __ = registry.tld_lib.http_req(name)
                     if regs != self.registry:
                         self.err = "ERROR: Split registry request"
                         self.names = None
@@ -101,25 +107,25 @@ def http_price_domains(domobj, years, which):
 def check_and_parse(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
     ok, out_js = http_price_domains(domobj, num_years, qry_type)
     if ok != 200:
-        return abort(ok, out_js)
+        return False, out_js
 
     xml_p = parsexml.XmlParser(out_js)
     code, ret_js = xml_p.parse_check_message()
 
     if not code == 1000:
-        return abort(400, ret_js)
+        return False, ret_js
 
     for item in ret_js:
         if "avail" in item and not item["avail"]:
             ok, reply = sql.sql_select_one("domains", {"name": item["name"]})
-            if (ok == 1 and sql.has_data(reply, "for_sale_msg") and (user_id is None or user_id != reply["user_id"])):
+            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg") and (user_id is None or user_id != reply["user_id"])):
                 for i in ["user_id", "for_sale_msg"]:
                     item[i] = reply[i]
 
-    tld_lib.multiply_values(ret_js)
-    tld_lib.sort_data_list(ret_js, is_tld=False)
+    registry.tld_lib.multiply_values(ret_js)
+    registry.tld_lib.sort_data_list(ret_js, is_tld=False)
 
-    return ret_js
+    return True, ret_js
 
 
 def close_epp_sess():

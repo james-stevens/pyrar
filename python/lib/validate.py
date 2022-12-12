@@ -7,8 +7,7 @@ import base64
 import sys
 import re
 
-from lib.registry import tld_lib
-
+from lib import registry
 from lib import misc
 
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
@@ -21,7 +20,7 @@ VALID_DS_LEN = {1: 40, 2: 64, 3: 64, 4: 96}
 
 
 def check_domain_name(name):
-    if not tld_lib.supported_tld(name):
+    if not registry.tld_lib.supported_tld(name):
         return "Unsupported TLD"
     if not is_valid_fqdn(name):
         return "Domain failed validation"

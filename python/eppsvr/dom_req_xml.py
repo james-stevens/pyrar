@@ -10,6 +10,25 @@ def pad_ds(ds_dt):
     return {"secDNS:" + tag: val for tag, val in ds_dt.items()}
 
 
+def host_add(hostname, ip_addrs=None):
+    host_xml = {
+        "create": {
+            "host:create": {
+                "@xmlns:host": "urn:ietf:params:xml:ns:host-1.0",
+                "host:name": hostname,
+            }
+        }
+    }
+    if ip_addrs is not None:
+        ip_list = ip_addrs if isinstance(ip_addrs, list) else ip_addrs.split(",")
+        host_xml["create"]["host:create"]["host:addr"] = []
+        host_addr = host_xml["create"]["host:create"]["host:addr"]
+        for ip in ip_list:
+            ip_ver = "v6" if ip.find(":") >= 0 else "v4"
+            host_addr.append({"@ip": ip_ver, "#text": ip})
+    return host_xml
+
+
 def domain_info(name):
     return {
         "info": {
@@ -141,4 +160,4 @@ def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
 
 
 if __name__ == "__main__":
-    print(json.dumps(domain_request_transfer("domain.zone", "pass", 1), indent=3))
+    print(json.dumps(host_add("ns1.dns.com", ["1.2.3.4", "5.6.7.8", "2001:678::1"]), indent=3))

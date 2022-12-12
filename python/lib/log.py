@@ -29,10 +29,10 @@ def log(line, where=None):
             syslog.syslog(txt + " " + line)
 
 
-def init(facility=syslog.LOG_LOCAL6, debug=False, with_logging=True):
+def init(facility=syslog.LOG_LOCAL6, with_debug=False, with_logging=True):
     global hold_debug
     global hold_with_logging
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
     hold_with_logging = with_logging
-    hold_debug = debug
+    hold_debug = with_debug
     done_init = True

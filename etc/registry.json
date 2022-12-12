@@ -4,29 +4,7 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"currency": "USD",
-		"prices" : { "default": "x2" },
-		"domains" : {
-			"and.mom": null,
-			"for.men": { "create": 88.88 },
-			"for.mom": null,
-			"for.one": null,
-			"for.sale": null,
-			"from.marketing": null,
-			"from.work": null,
-			"in.london": {
-				"default": "x10",
-				"new": "x7",
-				"renew": "x5",
-				"renew:2": "x6"
-				},
-			"of.fashion": null,
-			"of.london": null,
-			"pony.club": null,
-			"that.win": null,
-			"to.work": null,
-			"under.one": null,
-			"with.marketing": null
-			}
+		"prices" : { "default": "x2" }
 		},
 
 	"extra": {
@@ -34,13 +12,6 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"currency": "USD",
-		"prices" : { "default": "x2" },
-		"domains" : {
-			"frog": null,
-			"chug": { "default": "x1.5" },
-			"xp": { "default": "x1.5" },
-			"xn--dp8h": null,
-			"xn--k3hw410f": null
-			}
+		"prices" : { "default": "x2" }
 		}
 }

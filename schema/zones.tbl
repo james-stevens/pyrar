@@ -1,0 +1,29 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+. ./database
+
+sqlsh "drop table if exists zones"
+sqlsh "CREATE TABLE zones (
+	zone			${domain_name} not null,
+	registry		varchar(50) not null,
+	price_info		varchar(3500),
+	enabled			${flag} not null default 1,
+	allow_sales		${flag} not null default 1,
+	renew_limit		int not null default 0,
+
+	owner_user_id		${row_id_null},
+	owner_royalty_rate	int,
+
+	created_dt		datetime,
+	amended_dt		datetime,
+
+	primary key by_zone (zone)
+	)"
+
+sqlsh "grant select on zones to epprun"
+sqlsh "grant select,insert,update on zones to webui"
+sqlsh "grant select,insert,update,delete on zones to raradm"

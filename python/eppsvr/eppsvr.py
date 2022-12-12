@@ -11,7 +11,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 import httpx
 
 from lib import mysql as sql
-from lib.registry import tld_lib
+from lib import registry
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 from lib import misc
@@ -43,9 +43,9 @@ def event_log(notes, epp_job, where):
     sql.sql_insert("events", event_row)
 
 
-def request_json(this_reg, in_json, url=None):
+def run_epp_request(this_reg, in_json, url=None):
     if url is None:
-        url = tld_lib.url(this_reg)
+        url = registry.tld_lib.url(this_reg)
 
     try:
         resp = clients[this_reg].post(url, json=in_json, headers=misc.HEADER)
@@ -62,13 +62,13 @@ def request_json(this_reg, in_json, url=None):
 
 def start_up_check():
     for this_reg in clients:
-        if request_json(this_reg, {"hello": None}) is None:
+        if run_epp_request(this_reg, {"hello": None}) is None:
             print(f"ERROR: Regisry '{this_reg}' is not working")
             log(f"ERROR: Regisry '{this_reg}' is not working", gzz(czz()))
             sys.exit(0)
 
     for this_reg in clients:
-        if not whois_priv.check_privacy_exists(clients[this_reg], tld_lib.url(this_reg)):
+        if not whois_priv.check_privacy_exists(clients[this_reg], registry.tld_lib.url(this_reg)):
             msg = (f"ERROR: Registry '{this_reg}' " + "privacy record failed to create")
             print(msg)
             log(msg, gzz(czz()))
@@ -138,8 +138,8 @@ def domain_renew(epp_job):
     if (years := check_num_years(epp_job)) is None:
         return None
 
-    this_reg, url = tld_lib.http_req(name)
-    xml = request_json(this_reg, dom_req_xml.domain_renew(name, years, dom_db["expiry_dt"].split()[0]), url)
+    this_reg, url = registry.tld_lib.http_req(name)
+    xml = run_epp_request(this_reg, dom_req_xml.domain_renew(name, years, dom_db["expiry_dt"].split()[0]), url)
 
     if not xml_check_code(job_id, "renew", xml):
         return False
@@ -169,8 +169,8 @@ def domain_request_transfer(epp_job):
         transfer_failed(dom_db["domain_id"])
         return None
 
-    this_reg, url = tld_lib.http_req(name)
-    xml = request_json(
+    this_reg, url = registry.tld_lib.http_req(name)
+    xml = run_epp_request(
         this_reg,
         dom_req_xml.domain_request_transfer(name,
                                             base64.b64decode(epp_job["authcode"]).decode("utf-8"), years), url)
@@ -204,8 +204,11 @@ def domain_create(epp_job):
     if (years := check_num_years(epp_job)) is None:
         return None
 
-    this_reg, url = tld_lib.http_req(name)
-    xml = request_json(this_reg, dom_req_xml.domain_create(name, ns_list, ds_list, years), url)
+    if len(ns_list) > 0:
+        run_host_create(job_id, this_reg, url, ns_list)
+
+    this_reg, url = registry.tld_lib.http_req(name)
+    xml = run_epp_request(this_reg, dom_req_xml.domain_create(name, ns_list, ds_list, years), url)
     if not xml_check_code(job_id, "create", xml):
         return False
 
@@ -220,13 +223,13 @@ def domain_create(epp_job):
     return True
 
 
-def test_domain_info(domain):
+def debug_domain_info(domain):
     if (ret := validate.check_domain_name(domain)) is not None:
         print(">>>> ERROR", ret)
         sys.exit(1)
     xml = dom_req_xml.domain_info(domain)
-    this_reg, url = tld_lib.http_req(domain)
-    ret = request_json(this_reg, xml, url)
+    this_reg, url = registry.tld_lib.http_req(domain)
+    ret = run_epp_request(this_reg, xml, url)
     print(f"\n\n---------- {domain} -----------\n\n")
     print(json.dumps(ret, indent=2))
     if xmlapi.xmlcode(ret) == 1000:
@@ -235,12 +238,12 @@ def test_domain_info(domain):
 
 
 def epp_get_domain_info(job_id, domain_name):
-    this_reg, url = tld_lib.http_req(domain_name)
+    this_reg, url = registry.tld_lib.http_req(domain_name)
     if this_reg is None or url is None:
         log(f"EPP-{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
         return None
 
-    xml = request_json(this_reg, dom_req_xml.domain_info(domain_name), url)
+    xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name), url)
 
     if not xml_check_code(job_id, "info", xml):
         return None
@@ -255,13 +258,14 @@ def get_dom_from_db(epp_job):
         return None
 
     domain_id = epp_job["domain_id"]
-    ret, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
-    if not ret:
+    ok, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
+    if not ok:
         log(f"Domain id {domain_id} could not be found", gzz(czz()))
         return None
 
-    if not sql.has_data(dom_db, "name") or validate.check_domain_name(dom_db["name"]) is not None:
-        log(f"EPP-{job_id} For '{domain_id}' domain name missing or invalid", gzz(czz()))
+    name_ok = validate.check_domain_name(dom_db["name"])
+    if (not sql.has_data(dom_db, "name")) or (name_ok is not None):
+        log(f"EPP-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})", gzz(czz()))
         return None
 
     return dom_db
@@ -273,7 +277,7 @@ def set_authcode(epp_job):
         return None
     name = dom_db["name"]
 
-    this_reg, url = tld_lib.http_req(name)
+    this_reg, url = registry.tld_lib.http_req(name)
     if this_reg is None or url is None:
         log(f"Odd: this_reg or url returned None for '{name}", gzz(czz()))
         return None
@@ -283,7 +287,7 @@ def set_authcode(epp_job):
         base64.b64decode(epp_job["authcode"]).decode("utf-8"),
     )
 
-    return xml_check_code(job_id, "info", request_json(this_reg, req, url))
+    return xml_check_code(job_id, "info", run_epp_request(this_reg, req, url))
 
 
 def domain_update_from_db(epp_job):
@@ -311,8 +315,13 @@ def get_domain_lists(dom_db):
     return ns_list, ds_list
 
 
+def run_host_create(job_id, this_reg, url, host_list):
+    for host in host_list:
+        run_epp_request(this_reg, dom_req_xml.host_add(host), url)
+
+
 def do_domain_update(job_id, name, dom_db, epp_info):
-    this_reg, url = tld_lib.http_req(name)
+    this_reg, url = registry.tld_lib.http_req(name)
     ns_list, ds_list = get_domain_lists(dom_db)
     if not check_dom_data(job_id, name, ns_list, ds_list):
         return None
@@ -321,18 +330,20 @@ def do_domain_update(job_id, name, dom_db, epp_info):
     del_ns = [item for item in epp_info["ns"] if item not in ns_list]
 
     add_ds = [ds_data for ds_data in ds_list if not ds_in_list(ds_data, epp_info["ds"])]
-
     del_ds = [ds_data for ds_data in epp_info["ds"] if not ds_in_list(ds_data, ds_list)]
 
     if (len(add_ns + del_ns + add_ds + del_ds)) <= 0:
         return True
+
+    if len(add_ns) > 0:
+        run_host_create(job_id, this_reg, url, add_ns)
 
     if not sql.has_data(dom_db, "reg_create_dt") or dom_db["reg_create_dt"] != epp_info["created_dt"]:
         sql.sql_update_one("domains", {"reg_create_dt": epp_info["created_dt"]}, {"domain_id": dom_db["domain_id"]})
 
     update_xml = dom_req_xml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
 
-    return xml_check_code(job_id, "update", request_json(this_reg, update_xml, url))
+    return xml_check_code(job_id, "update", run_epp_request(this_reg, update_xml, url))
 
 
 def xml_check_code(job_id, desc, xml):
@@ -403,10 +414,20 @@ def run_server():
         else:
             time.sleep(5)
 
+def start_up(is_live):
+	global clients
+
+	if is_live:
+		log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
+	else:
+		log_init(with_debug=True)
+
+	sql.connect("epprun")
+	registry.start_up()
+	clients = {p: httpx.Client() for p in registry.tld_lib.ports}
+
 
 def main():
-    global clients
-
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')
     parser.add_argument("-l", '--live', action="store_true")
     parser.add_argument("-i", '--info', help="Info a domain")
@@ -417,14 +438,11 @@ def main():
     parser.add_argument("-t", '--transfer', help="Transfer a domain", type=int)
     args = parser.parse_args()
 
-    clients = {p: httpx.Client() for p in tld_lib.ports}
-    sql.connect("epprun")
+
+    start_up(args.live)
 
     if args.live:
-        log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
         return run_server()
-
-    log_init(policy.policy("facility_eppsvr", 170), debug=True, with_logging=True)
 
     if args.password is not None:
         print(">>>> SET_AUTH",
@@ -452,7 +470,7 @@ def main():
         return
 
     if args.info is not None:
-        return test_domain_info(args.info)
+        return debug_domain_info(args.info)
 
     print("No args given")
 

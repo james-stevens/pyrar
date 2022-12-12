@@ -8,7 +8,7 @@ import httpx
 import flask
 import bcrypt
 
-from lib.registry import tld_lib
+from lib import registry
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 import users
@@ -26,15 +26,16 @@ SESSION_TAG = "X-Session-Code"
 SESSION_TAG_LOWER = SESSION_TAG.lower()
 
 log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
-
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
+registry.start_up()
+domains.start_up()
 
 
 class WebuiReq:
     """ data unique to each request to keep different users data separate """
     def __init__(self):
-        tld_lib.check_for_new_files()
+        registry.tld_lib.check_for_new_files()
         self.sess_code = None
         self.user_id = None
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
@@ -85,14 +86,14 @@ class WebuiReq:
 @application.route('/api/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    ret = {"registry": tld_lib.zone_send, "zones": tld_lib.return_zone_list(), "policy": policy.data()}
+    ret = {"registry": registry.tld_lib.zone_send, "zones": registry.tld_lib.return_zone_list(), "policy": policy.data()}
     return req.response(ret)
 
 
 @application.route('/api/v1.0/zones', methods=['GET'])
 def get_supported_zones():
     req = WebuiReq()
-    return req.response(tld_lib.return_zone_list())
+    return req.response(registry.tld_lib.return_zone_list())
 
 
 @application.route('/api/v1.0/hello', methods=['GET'])
@@ -320,15 +321,15 @@ def rest_domain_price():
             return req.abort(dom_obj.err)
         return req.abort("Invalid domain name")
 
-    try:
-        ret = domains.check_and_parse(dom_obj, num_yrs, qry_type, req.user_id)
-        return req.response(ret)
-    except Exception as exc:
-        debug(str(exc), gzz(czz()))
-        return req.abort("Domain check failed")
+    ok, reply = domains.check_and_parse(dom_obj, num_yrs, qry_type, req.user_id)
+    if ok:
+        return req.response(reply)
+
+    log("FAILED:"+str(ok)+":"+str(reply),gzz(czz()))
+    return req.abort("Domain check failed")
 
 
 if __name__ == "__main__":
-    log_init(policy.policy("facility_python_code"), debug=True, with_logging=policy.policy("log_python_code"))
+    log_init(with_debug=True)
     application.run()
     domains.close_epp_sess()

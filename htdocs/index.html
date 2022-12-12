@@ -27,11 +27,13 @@ gbl = {
 	clip: "&#x1F4CE;",
 	cart: "&#128722;",
 	email: "&#128231;",
+	copy: "&#x2398",
 
 	cur: "$",
 	cur_iso: "USD",
 
 	gap: "<div style='height: 7px;'></div>",
+	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
 
 	def_max_checks: 2
 	};
@@ -82,8 +84,8 @@ function changeFavicon(src) {
 
 function clr_lazy_hide()
 {
-	if (!("popup" in ctx)) return;
-	if ("timer" in ctx.popup) clearTimeout(ctx.popup.timer);
+	if (!ctx.popup) return;
+	if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
 	delete ctx.popup;
 }
 
@@ -483,13 +485,18 @@ function buy_one_name(domain,action)
 					found_it = true;
 					}
 				}
-			if (!found_it) gbl.basket.push(new_item);
+
+			if (!found_it) {
+				if (gbl.basket.length >= policy("max_basket_size",10)) {
+					errMsg("Basket full, please checkout",elm.basketPopup);
+					}
+				else gbl.basket.push(new_item);
+				}
 			}
 
 		user_info();
 		clr_lazy_hide();
-		let popup = document.getElementById("basketPopup")
-		popup.classList.add("show");
+		elm.basketPopup.classList.add("show");
 		ctx.popup = { "timer": setTimeout(hidePopUp,2500), "name": "basketPopup" };
 
 		}, { json: qry });
@@ -562,7 +569,7 @@ function doSearch()
 		}
 	
 	if (!hostnameCheck.test(srch))
-		errMsg("Invald domain name",document.searchForm.search);
+		errMsg("Invalid domain name",document.searchForm.search);
 	else
 		multiSearch(srch,null);
 
@@ -714,7 +721,7 @@ function enable_two_fa()
 function settings_header(title,spacer)
 {
 	let x = "";
-	if (!spacer) x = "<tr><td><div style='height: 70px;'></div></td></tr>";
+	if (!spacer) x = gbl.settings_spacer;
 	x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
 	return x;
 }
@@ -1092,12 +1099,42 @@ function removeDS(idx,ds_data)
 
 
 
+function domain_transfer_options(idx)
+{
+	let dom = ctx.domains[idx];
+
+	let x="<table width=75% align=center border=0>";
+	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Transfer Options For - ${dom.display_name}</td></tr>`;
+	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
+
+	x += settings_header(`Get AuthCode`,true);
+	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
+	x += "<tr><td>Click to get the transfer AuthCode for this domain</td></tr>";
+	x += "<tr><Td><div id='showAuthCode'></div></td>";
+	x += "<td align=right>"+btn(`getAuthCode(${idx})`,"Get AuthCode","Get the transfer AuthCode for this domain",110)+"</td>";
+	x += "</tr></table>";
+	x += "</td></tr>";
+
+	x += settings_header("Push / Gift Domain");
+	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
+	x += "<tr><td>Push or Gift this domain to another user at this registrar.<p>"
+	x += "To transfer the domain to a user in a different registrar,<br>you need to give them the AuthCode "
+	x += "and they need<br>to request the transfer from their registrar.</td></tr>";
+	x += "<tr><td>Destination E-Mail : <input id='giftDomainDest' style='width: 300px;'></td>";
+	x += "<td align=right>"+btn(`giftDomain(${idx})`,"Send Domain","Send this domain to another user",110)+"</td>";
+	x += "</tr></table>";
+	x += "</td></tr>";
+	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
+}
+
+
+
 function domain_settings(idx)
 {
 	let dom = ctx.domains[idx];
 
 	let x="<table width=75% align=center border=0>";
-	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings for - ${dom.display_name}</td></tr>`;
+	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings For - ${dom.display_name}</td></tr>`;
 	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
 	x += settings_header(`Change Domain Records`,true);
 	x += "<table width=100%><colgroup><col width=30%/><col/></colgroup>";
@@ -1128,24 +1165,7 @@ function domain_settings(idx)
 	x += "</td></tr>";
 	x += "</table></td></tr>";
 
-	x += settings_header(`Get AuthCode`);
-	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
-	x += "<tr><td>Click to get the transfer AuthCode for this domain</td></tr>";
-	x += "<tr><Td><div id='showAuthCode'></div></td>";
-	x += "<td align=right>"+btn(`getAuthCode(${idx})`,"Get AuthCode","Get the transfer AuthCode for this domain",110)+"</td>";
-	x += "</tr></table>";
-	x += "</td></tr>";
-
-	x += settings_header("Push / Gift Domain");
-	x += "<table width=100% border=0><colgroup><col width=100%/><col/></colgroup>";
-	x += "<tr><td>Push or Gift this domain to another user at this registrar.<p>"
-	x += "To transfer the domain to a user in a different registrar,<br>you need to give them the AuthCode "
-	x += "and they need<br>to request the transfer from their registrar.</td></tr>";
-	x += "<tr><td>Destination E-Mail : <input id='giftDomainDest' style='width: 300px;'></td>";
-	x += "<td align=right>"+btn(`giftDomain(${idx})`,"Send Domain","Send this domain to another user",110)+"</td>";
-	x += "</tr></table>";
-	x += "</td></tr>";
-	elm.userSpace.innerHTML = x+"</table>";
+	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
 }
 
 
@@ -1209,7 +1229,7 @@ function getAuthCode(idx)
 	function show_auth_code(code) {
 		dom.authcode = code;
 		let x = `<input id="editAuthCode" style="width: 250px;" value="${code}">`;
-		x += `<a href=# onClick="copyToClip('${code}');">&nbsp;${gbl.page}</a>`;
+		x += `<a href=# onClick="copyToClip('${code}');">&nbsp;${gbl.copy}</a>`;
 
 		e.innerHTML = x;
 		setTimeout(hideAuthCode,10000);
@@ -1245,6 +1265,7 @@ function one_domain_html(idx)
 
 	x += "<tr><td colspan=4 class=btmBtnBar>"
 		+btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
+		+btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
 		+btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 
 	x += "</td></tr>";

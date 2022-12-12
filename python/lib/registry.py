@@ -5,7 +5,11 @@
 import os
 import json
 import random
-import lib.fileloader as fileloader
+from inspect import currentframe as czz, getframeinfo as gzz
+
+from lib import fileloader
+from lib import mysql as sql
+from lib.log import log, debug, init as log_init
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
@@ -14,6 +18,7 @@ EPP_PORTS_LIST = "/run/regs_ports"
 
 DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
 
+tld_lib = None
 
 def have_newer(mtime, file_name):
     if not os.path.isfile(file_name) or not os.access(file_name, os.R_OK):
@@ -45,6 +50,8 @@ class ZoneLib:
         self.zone_data = {}
         self.zone_priority = {}
 
+        self.last_zone_table = None
+        self.check_zone_table();
         self.logins_file = fileloader.FileLoader(EPP_LOGINS)
         self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
@@ -54,30 +61,46 @@ class ZoneLib:
             port_lines = [line.split() for line in fd.readlines()]
         self.ports = {p[0]: int(p[1]) for p in port_lines}
 
-    def check_for_new_files(self):
-        z_is_new = self.regs_file.check()
-        p_is_new = self.priority_file.check()
+    def check_zone_table(self):
+        ok, last_change = sql.sql_select_one("zones",None,"max(amended_dt) 'last_change'")
+        if not ok:
+            return None
 
-        if z_is_new or p_is_new:
+        if self.last_zone_table is not None and self.last_zone_table >= last_change["last_change"]:
+            return False
+
+        self.last_zone_table = last_change["last_change"]
+        ok, zone_from_db = sql.sql_select("zones",None,"zone,registry,price_info")
+        if not ok:
+            return None
+
+        self.zone_data = {}
+        for row in zone_from_db:
+            self.zone_data[row["zone"]] = {"registry":row["registry"]}
+            if sql.has_data(row,"price_info"):
+                try:
+                    self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
+                except ValueError as e:
+                    continue
+        return True
+
+    def check_for_new_files(self):
+        zones_db_is_new = self.check_zone_table()
+        regs_file_is_new = self.regs_file.check()
+        priority_file_is_new = self.priority_file.check()
+
+        if regs_file_is_new or priority_file_is_new or zones_db_is_new:
             self.process_json()
 
     def process_json(self):
         self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
         new_send = {}
-        new_data = {}
         for registry, regs in self.regs_file.json.items():
             new_send[registry] = {}
             for item, val in DEFAULT_CONFIG.items():
                 new_send[registry][item] = regs[item] if item in regs else val
-            if "domains" in regs:
-                doms = regs["domains"]
-                for dom in doms:
-                    if doms[dom] is None:
-                        doms[dom] = {}
-                new_data.update({dom: (doms[dom] | {"registry": registry}) for dom in doms})
 
         self.zone_send = new_send
-        self.zone_data = new_data
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
         self.sort_data_list(new_list, is_tld=True)
         self.zone_list = [dom["name"] for dom in new_list]
@@ -222,14 +245,22 @@ class ZoneLib:
         return ret_xmlns
 
 
-tld_lib = ZoneLib()
+def start_up():
+    global tld_lib
+    tld_lib = ZoneLib()
+
+
 
 if __name__ == "__main__":
+    log_init(with_debug=True)
+    sql.connect("webui")
+    start_up()
+
     # print(tld_lib.regs_file.json)
     print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
     print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
     print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
-    print("PORTS", json.dumps(tld_lib.ports, indent=3))
+    #print("PORTS", json.dumps(tld_lib.ports, indent=3))
     # print(json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.make_xmlns(), indent=3))

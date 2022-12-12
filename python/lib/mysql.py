@@ -80,6 +80,8 @@ def now(offset=0):
 
 def data_set(data, joiner):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
+    if data is None:
+        return None
     if isinstance(data, str):
         return data
     return joiner.join([item + "=" + format_col(item, data[item]) for item in data])
@@ -102,6 +104,11 @@ def return_select():
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
     debug(" SQL " + sql, gzz(czz()))
+    if cnx is None:
+        print(f"Database is not connexted",gzz(czz()))
+        log(f"Database is not connexted",gzz(czz()))
+        return None, None
+
     try:
         cnx.query(sql)
         return func()
@@ -117,6 +124,7 @@ def run_sql(sql, func):
                 this_exc = exc
                 pass
         log("SQL-ERROR:" + str(this_exc), gzz(czz()))
+        print("SQL-ERROR:" + str(this_exc), gzz(czz()))
         return None, None
 
 
@@ -171,24 +179,32 @@ def sql_update(table, column_vals, where, limit=None):
 
 
 def sql_select(table, where, columns="*", limit=None, order_by=None):
-    sql = f"select {columns} from {table} where " + data_set(where, " and ")
+    sql = f"select {columns} from {table} "
+    where_clause = data_set(where, " and ")
+    if where_clause is not None:
+        sql += "where " + where_clause
+
     if order_by is not None:
         sql += f" order by {order_by}"
     if limit is not None:
         sql += f" limit {limit}"
 
-    ret, db_rows = run_select(sql)
+    ok, db_rows = run_select(sql)
 
-    if not ret:
-        return None, None
+    if not ok:
+        return False, None
 
-    num_rows = cnx.affected_rows()
-    return num_rows, db_rows
+    return True, db_rows
 
 
 def sql_select_one(table, where, columns="*"):
-    num, db_rows = sql_select(table, where, columns, 1)
-    return num, db_rows[0] if num == 1 else None
+    ok, db_rows = sql_select(table, where, columns, 1)
+    if ok:
+        if len(db_rows) > 0:
+            return True, db_rows[0]
+        else:
+            return True, {}
+    return False, None
 
 
 def connect(login):
@@ -233,7 +249,7 @@ def connect(login):
 
 
 if __name__ == "__main__":
-    log_init(debug=True)
+    log_init(with_debug=True)
     connect("webui")
 
     ret, db_rows = run_select("select * from events limit 3")
@@ -254,7 +270,9 @@ if __name__ == "__main__":
     ret, db_rows = sql_select_one("Xevents", {"event_id": 10452})
     print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
 
-    ret, db_rows = sql_select_one("events", {"event_id": 10471})
+    ret, db_rows = sql_select_one("zones", {"zone": "chug"})
+    print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
+    ret, db_rows = sql_select_one("zones", {"zone": "chug-XXX"})
     print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
 
     ret = sql_update_one("session_keys", {"amended_dt": None}, {"user_id": 10465})
