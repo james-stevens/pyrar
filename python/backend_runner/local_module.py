@@ -11,3 +11,6 @@ BACKEND_JOB_FUNC = {
     "dom/transfer": domain_request_transfer,
     "dom/authcode": set_authcode
 }
+
+def domain_create(epp_job):
+    return True

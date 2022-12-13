@@ -49,13 +49,13 @@ my_conv[FIELD_TYPE.TINY] = int
 def format_col(item, column_val):
     """ convert {column_val} to SQL string """
     if item in DATE_FIELDS:
-        return "now()"
+        return f"{item}=now()"
 
     if column_val is None:
-        return "NULL"
+        return f"{item}=NULL"
 
     if isinstance(column_val, int):
-        return str(int(column_val))
+        return item+"="+str(int(column_val))
 
     if isinstance(column_val, list):
         return item + " in (" + ",".join(format_col(None, this_val) for this_val in column_val) + ")"

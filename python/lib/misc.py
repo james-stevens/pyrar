@@ -5,6 +5,8 @@
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
+DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
+
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
 
 STATUS_LIVE = 1
