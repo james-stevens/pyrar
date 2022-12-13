@@ -33,7 +33,6 @@ class DomainName:
         self.names = None
         self.err = None
         self.registry = None
-        self.url = None
         self.currency = policy.policy("currency_iso", "USD")
 
         if isinstance(domain, str):
@@ -50,8 +49,8 @@ class DomainName:
             self.names = None
         else:
             regs_file = registry.tld_lib.regs_file.data()
-            if "currency" in regs_file[self.registry]:
-                self.currency = regs_file[self.registry]["currency"]
+            if "currency" in self.registry:
+                self.currency = self.registry["currency"]
 
     def process_string(self, domain):
         name = domain.lower()
@@ -60,7 +59,7 @@ class DomainName:
         else:
             self.err = err
             self.names = None
-        self.registry, self.url = registry.tld_lib.http_req(name)
+        self.registry = registry.tld_lib.http_req(name)
 
     def process_list(self, domain):
         self.names = []
@@ -69,9 +68,9 @@ class DomainName:
             if (err := validate.check_domain_name(name)) is None:
                 self.names.append(name)
                 if self.registry is None:
-                    self.registry, self.url = registry.tld_lib.http_req(name)
+                    self.registry = registry.tld_lib.http_req(name)
                 else:
-                    regs, __ = registry.tld_lib.http_req(name)
+                    regs = registry.tld_lib.http_req(name)
                     if regs != self.registry:
                         self.err = "ERROR: Split registry request"
                         self.names = None
@@ -84,10 +83,10 @@ class DomainName:
 
 def http_price_domains(domobj, years, which):
 
-    if domobj.registry is None or domobj.url is None:
+    if domobj.registry is None or "url" not in domobj.registry:
         return 400, "Unsupported TLD"
 
-    resp = clients[domobj.registry].post(domobj.url,
+    resp = clients[domobj.registry["name"]].post(domobj.registry["url"],
                                          json=xml_check_with_fees(domobj, years, which),
                                          headers=misc.HEADER)
 
@@ -148,13 +147,13 @@ def xml_check_with_fees(domobj, years, which):
     return {
         "check": {
             "domain:check": {
-                "@xmlns:domain": xmlns[domobj.registry]["domain"],
+                "@xmlns:domain": xmlns[domobj.registry["name"]]["domain"],
                 "domain:name": domobj.names
             }
         },
         "extension": {
             "fee:check": {
-                "@xmlns:fee": xmlns[domobj.registry]["fee"],
+                "@xmlns:fee": xmlns[domobj.registry["name"]]["fee"],
                 "fee:currency": domobj.currency,
                 "fee:command": fees_extra
             }

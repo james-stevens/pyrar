@@ -11,7 +11,7 @@ SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR="/run/policy_subst/"
 
 LOGINS_JSON=f"{os.environ['BASE']}/etc/logins.json"
-logins = fileloader.FileLoader(LOGINS_JSON)
+logins = fileloader.load_file_json(LOGINS_JSON)
 
 with open("/run/pdns_api_key","r") as fd:
     policy.add_policy(f"api_key",fd.readline().strip())
@@ -19,7 +19,7 @@ with open("/run/pdns_api_key","r") as fd:
 policy_re = re.compile(r'{[a-zA-Z0-9_\.]+(,.+)?}')
 
 
-for registry,this_login in logins.json.items():
+for registry,this_login in logins.items():
     for login_prop in this_login:
         policy.add_policy(f"logins.{registry}.{login_prop}",this_login[login_prop])
 
@@ -42,6 +42,9 @@ def subst_file(filename):
                             line=""
                 out_fd.write(line)
 
+
+if not os.path.isdir(DEST_DIR):
+    os.mkdir(DEST_DIR, mode = 0o755)
 
 for filename in os.listdir(f"{os.environ['BASE']}/policy_subst"):
     subst_file(filename)

@@ -4,7 +4,8 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"currency": "USD",
-		"prices" : { "default": "x2" }
+		"prices" : { "default": "x2" },
+		"type": "epp"
 		},
 
 	"extra": {
@@ -12,6 +13,12 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"currency": "USD",
-		"prices" : { "default": "x2" }
+		"prices" : { "default": "x2" },
+		"type": "epp"
+		},
+
+	"local": {
+		"type": "local",
+		"prices": { "new": 10.00, "renew": 10.00 }
 		}
 }

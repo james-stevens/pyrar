@@ -56,6 +56,6 @@ class FileLoader:
 
 
 if __name__ == "__main__":
-    log_init(debug=True)
-    file = FileLoader("/opt/github/pyrar/etc/logins.json")
+    log_init(with_debug=True)
+    file = FileLoader(f"{os.environ['BASE']}/etc/logins.json")
     print(json.dumps(file.json, indent=4))

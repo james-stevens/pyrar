@@ -215,7 +215,7 @@ def connect(login):
 
     logins.check_for_new()
     my_login = login
-    mysql_json = logins.data()["pyrar"]
+    mysql_json = logins.data()["mysql"]
 
     conn = mysql_json["connect"]
 

@@ -1,0 +1,19 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+. ./database
+
+sqlsh "drop table if exists sysadmins"
+sqlsh "CREATE TABLE sysadmins (
+	login			varchar(50) not null,
+	htpasswd		varchar(100) not null,
+	created_dt		datetime,
+	amended_dt		datetime,
+
+	primary key by_dom (login)
+	)"
+
+sqlsh "grant select,insert,update,delete on sysadmins to raradm"

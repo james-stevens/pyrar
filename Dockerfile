@@ -25,11 +25,11 @@ RUN ln -s /dev/shm /run/nginx
 RUN ln -fns /run/nginx.conf /etc/nginx/nginx.conf
 RUN ln -fns /run/server.pem /etc/nginx/server.pem
 RUN ln -fns /run/inittab /etc/inittab
-RUN ln -fns /run/pdns.conf /etc/pdns/pdns.conf
+RUN ln -fns /run/policy_subst/pdns.conf /etc/pdns/pdns.conf
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
-COPY pems /opt/pyrar/pems/
 
+COPY pems /opt/pyrar/pems/
 RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
@@ -38,6 +38,9 @@ RUN python3 -m compileall /opt/pyrar/python/
 
 RUN ln -fns /opt/pyrar/python/bin/sqlsh.py /usr/bin/sqlsh
 RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
+
+COPY policy_subst /opt/pyrar/policy_subst/
+COPY admin_docs /opt/pyrar/admin_docs/
 
 COPY bin /usr/local/bin/
 COPY htdocs /opt/pyrar/htdocs/

@@ -27,8 +27,16 @@ flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 			}
 		}' > /run/regs_ports
 
-dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./' > /run/pdns_api_key
-chmod 400 /run/pdns_api_key
+
+if test "${PDNS_API_KEY}"
+	then
+		echo "${PDNS_API_KEY}" > /run/pdns_api_key
+	else
+		export PDNS_API_KEY="$(dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./')"
+		echo "${PDNS_API_KEY}" > /run/pdns_api_key
+		chmod 400 /run/pdns_api_key
+	fi
+
 
 ${BASE}/python/bin/policy_subst.py
 

@@ -49,17 +49,19 @@ class ZoneLib:
         self.zone_list = []
         self.zone_data = {}
         self.zone_priority = {}
+        self.registry = None
 
         self.last_zone_table = None
         self.check_zone_table();
         self.logins_file = fileloader.FileLoader(EPP_LOGINS)
         self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
-        self.process_json()
 
         with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
             port_lines = [line.split() for line in fd.readlines()]
         self.ports = {p[0]: int(p[1]) for p in port_lines}
+
+        self.process_json()
 
     def check_zone_table(self):
         ok, last_change = sql.sql_select_one("zones",None,"max(amended_dt) 'last_change'")
@@ -95,10 +97,15 @@ class ZoneLib:
     def process_json(self):
         self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
         new_send = {}
-        for registry, regs in self.regs_file.json.items():
+        self.registry = self.regs_file.json;
+        for registry, reg_data in self.registry.items():
             new_send[registry] = {}
             for item, val in DEFAULT_CONFIG.items():
-                new_send[registry][item] = regs[item] if item in regs else val
+                new_send[registry][item] = reg_data[item] if item in reg_data else val
+            reg_data["name"] = registry
+            if reg_data["type"] == "epp":
+                port = self.ports[registry]
+                reg_data["url"] = f"http://127.0.0.1:{port}/epp/api/v1.0/request"
 
         self.zone_send = new_send
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
@@ -126,19 +133,15 @@ class ZoneLib:
         return random.randint(1000, 9999999)
 
     def url(self, registry):
-        port = self.ports[registry]
-        return f"http://127.0.0.1:{port}/epp/api/v1.0/request"
+        return self.registry[registry]["url"]
 
     def http_req(self, domain):
         tld = tld_of_name(domain)
         if tld not in self.zone_data:
             return None, None
-        registry = self.zone_data[tld]["registry"]
+        this_reg = self.zone_data[tld]["registry"]
 
-        if registry not in self.ports:
-            return None, None
-
-        return registry, self.url(registry)
+        return self.registry[this_reg] if this_reg in self.registry else None
 
     def extract_items(self, dom):
         return {
@@ -185,12 +188,11 @@ class ZoneLib:
         cls_both = cls + "." + action
         default_both = "default." + action
 
-        regs_file = self.regs_file.data()
         regs = tld_data["registry"]
-        if regs not in regs_file:
+        if regs not in self.registry:
             return None
 
-        json_regs = regs_file[regs]
+        json_regs = self.registry[regs]
         if "prices" not in json_regs:
             return None
 
@@ -237,7 +239,7 @@ class ZoneLib:
             "secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
         }
         ret_xmlns = {}
-        for registry, data in self.regs_file.json.items():
+        for registry, data in self.registry.items():
             ret_xmlns[registry] = default_xmlns
             if "xmlns" in data:
                 for xml_name, xml_data in data["xmlns"].items():
@@ -256,7 +258,8 @@ if __name__ == "__main__":
     sql.connect("webui")
     start_up()
 
-    # print(tld_lib.regs_file.json)
+    # print(tld_lib.registry)
+    print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
     print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
