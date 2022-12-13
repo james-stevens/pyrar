@@ -39,7 +39,6 @@ if test "${PDNS_API_KEY}"
 		chmod 400 /run/pdns_api_key
 	fi
 
-
 ${BASE}/python/bin/policy_subst.py
 
 /usr/local/bin/make_inittab
