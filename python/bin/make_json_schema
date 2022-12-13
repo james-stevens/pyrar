@@ -118,8 +118,9 @@ for t in schema:
         schema[t]["indexes"][r["Key_name"]]["unique"] = r["Non_unique"] == 0
 
 
-with open("schema.json","w") as fd:
+FILE=f"{os.environ['BASE']}/python/etc/schema.json"
+with open(FILE,"w") as fd:
     fd.write(json.dumps(schema,indent=4))
-os.chmod("schema.json",0o644)
+os.chmod(FILE,0o644)
 
 cnx.close()

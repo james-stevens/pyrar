@@ -83,12 +83,6 @@
                 ],
                 "unique": true
             },
-            "by_expdt": {
-                "columns": [
-                    "expiry_dt"
-                ],
-                "unique": false
-            },
             "by_user": {
                 "columns": [
                     "user_id"
