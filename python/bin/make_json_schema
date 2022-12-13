@@ -1,0 +1,125 @@
+#! /usr/bin/python3
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+
+import json
+import os
+from MySQLdb import _mysql
+from MySQLdb.constants import FIELD_TYPE
+import MySQLdb.converters
+
+numbers = { "tinyint","int","decimal" }
+
+def convStr(x):
+    if type(x) is bytes:
+        return x.decode("utf8")
+    return x
+
+def convDT(x):
+    if x is None:
+        return None
+    return x
+
+my_conv = MySQLdb.converters.conversions.copy()
+my_conv[FIELD_TYPE.VARCHAR] = convStr
+my_conv[FIELD_TYPE.CHAR] = convStr
+my_conv[FIELD_TYPE.STRING] = convStr
+my_conv[FIELD_TYPE.VAR_STRING] = convStr
+my_conv[FIELD_TYPE.DATETIME] = convDT
+my_conv[FIELD_TYPE.TIMESTAMP] = convDT
+
+
+def myConnect():
+    sock="/tmp/mysql.sock"
+    host = None
+    port = None
+    if "MYSQL_CONNECT" in os.environ:
+        conn = os.environ["MYSQL_CONNECT"]
+        if conn.find("/") >= 0:
+            sock = conn
+        else:
+            host = conn
+            port = 3306
+            if conn.find(":") >= 0:
+                svr = conn.split(":")
+                host = svr[0]
+                port = int(svr[1])
+
+
+    return _mysql.connect(
+        user=os.environ["MYSQL_USERNAME"],
+        password=os.environ["MYSQL_PASSWORD"],
+        unix_socket=sock,
+        host = host, port = port,
+        database=os.environ["MYSQL_DATABASE"],
+        conv=my_conv,
+        charset='utf8mb4', init_command='SET NAMES UTF8',
+        )
+
+def sortElm(i): return i["Field"]
+
+
+cnx = myConnect()
+
+cnx.query("show tables")
+res = cnx.store_result()
+ret = res.fetch_row(maxrows=0, how=1)
+
+schema = {}
+
+n="Tables_in_" + os.environ["MYSQL_DATABASE"]
+
+schema = { t[n]:{} for t in ret }
+
+for t in schema:
+    cnx.query("describe " + t)
+    res = cnx.store_result()
+    ret = res.fetch_row(maxrows=0, how=1)
+    schema[t]["columns"] = {}
+    cols = [ r for r in ret ]
+    cols.sort(key=sortElm)
+    for r in cols:
+        
+        schema[t]["columns"][r["Field"]] = {}
+        tp = r["Type"].decode("utf8")
+        if tp.find(" unsigned") >= 0:
+            tp = tp.split()[0]
+            schema[t]["columns"][r["Field"]]["unsigned"] = True
+
+        pos = tp.find("(")
+        if pos >= 0:
+            sz = tp[pos+1:-1]
+            if sz[-2:] == ",0": sz = sz[:-2]
+            schema[t]["columns"][r["Field"]]["size"] = int(sz)
+            tp = tp[:pos]
+
+        schema[t]["columns"][r["Field"]]["type"] = tp
+        if  r["Extra"] == "auto_increment":
+            schema[t]["columns"][r["Field"]]["serial"] = True
+
+        schema[t]["columns"][r["Field"]]["null"] = r["Null"] == "YES"
+        if r["Default"] is not None:
+            if tp in numbers:
+                schema[t]["columns"][r["Field"]]["default"] = int(r["Default"])
+            else:
+                schema[t]["columns"][r["Field"]]["default"] = r["Default"].decode("utf8")
+
+    cnx.query("show index from " + t)
+    res = cnx.store_result()
+    ret = res.fetch_row(maxrows=0, how=1)
+    schema[t]["indexes"] = {}
+    for r in ret:
+        if r["Key_name"] not in schema[t]["indexes"]:
+            schema[t]["indexes"][r["Key_name"]] = {}
+            schema[t]["indexes"][r["Key_name"]]["columns"] = []
+        schema[t]["indexes"][r["Key_name"]]["columns"].append(r["Column_name"])
+        schema[t]["indexes"][r["Key_name"]]["unique"] = r["Non_unique"] == 0
+
+
+with open("schema.json","w") as fd:
+    fd.write(json.dumps(schema,indent=4))
+os.chmod("schema.json",0o644)
+
+cnx.close()
