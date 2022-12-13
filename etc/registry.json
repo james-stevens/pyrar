@@ -19,6 +19,6 @@
 
 	"local": {
 		"type": "local",
-		"prices": { "new": 10.00, "renew": 10.00 }
+		"prices": { "new": 20.00, "renew": 20.00 }
 		}
 }

@@ -57,8 +57,14 @@ def format_col(item, column_val):
     if isinstance(column_val, int):
         return str(int(column_val))
 
+    if isinstance(column_val, list):
+        return item + " in (" + ",".join(format_col(None, this_val) for this_val in column_val) + ")"
+
     if not isinstance(column_val, str):
         column_val = str(column_val)
+
+    if item is not None:
+        return item + " = unhex('" + misc.ashex(column_val.encode("utf8")) + "')"
 
     return "unhex('" + misc.ashex(column_val.encode("utf8")) + "')"
 
@@ -84,7 +90,7 @@ def data_set(data, joiner):
         return None
     if isinstance(data, str):
         return data
-    return joiner.join([item + "=" + format_col(item, data[item]) for item in data])
+    return joiner.join([format_col(item, data[item]) for item in data])
 
 
 def reconnect():
@@ -105,8 +111,8 @@ def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
     debug(" SQL " + sql, gzz(czz()))
     if cnx is None:
-        print(f"Database is not connexted",gzz(czz()))
-        log(f"Database is not connexted",gzz(czz()))
+        print(f"Database is not connexted", gzz(czz()))
+        log(f"Database is not connexted", gzz(czz()))
         return None, None
 
     try:
@@ -250,13 +256,17 @@ def connect(login):
 
 if __name__ == "__main__":
     log_init(with_debug=True)
+
+    print(format_col("name", ["one", "two", "three"]))
+    sys.exit(0)
+
     connect("webui")
 
     ret, db_rows = run_select("select * from events limit 3")
     if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
-        print(">>>>", json.dumps(db_rows, indent=4))
+        print(">>>> DEBUG", json.dumps(db_rows, indent=4))
 
     ret, db_rows = run_select("select * from domains")
     print(">>>> DOMAINS", ret, json.dumps(db_rows, indent=4))
@@ -276,6 +286,6 @@ if __name__ == "__main__":
     print(">>SELECT>>>", ret, json.dumps(db_rows, indent=4))
 
     ret = sql_update_one("session_keys", {"amended_dt": None}, {"user_id": 10465})
-    print(">>UPDATE>>>", ret )
+    print(">>UPDATE>>>", ret)
 
     cnx.close()

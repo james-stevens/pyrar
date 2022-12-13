@@ -105,7 +105,7 @@ def check_session(ses_code, user_agent):
     key = make_session_key(ses_code, user_agent)
     tout = policy.policy('session_timeout', 60)
     ok, data = sql.sql_select_one("session_keys", {"session_key": key},
-                                   f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
+                                  f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
 
     if not ok:
         return False, None
@@ -125,7 +125,7 @@ def logout(ses_code, user_id, user_agent):
         "user_id": user_id
     })
     if not ok:
-    	return False, "Logout failed"
+        return False, "Logout failed"
 
     return True
 

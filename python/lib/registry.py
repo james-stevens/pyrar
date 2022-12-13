@@ -10,6 +10,7 @@ from inspect import currentframe as czz, getframeinfo as gzz
 from lib import fileloader
 from lib import mysql as sql
 from lib.log import log, debug, init as log_init
+from lib.policy import this_policy as policy
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
@@ -19,6 +20,7 @@ EPP_PORTS_LIST = "/run/regs_ports"
 DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
 
 tld_lib = None
+
 
 def have_newer(mtime, file_name):
     if not os.path.isfile(file_name) or not os.access(file_name, os.R_OK):
@@ -43,6 +45,15 @@ def tld_of_name(name):
     return name
 
 
+def get_price_from_json(price_json, cls, action):
+    if cls in price_json and action in price_json[cls]:
+        return price_json[cls][action]
+    for item in [f"{cls}.{action}", action, "default"]:
+        if item in price_json:
+            return price_json[item]
+    return None
+
+
 class ZoneLib:
     def __init__(self):
         self.zone_send = {}
@@ -52,7 +63,7 @@ class ZoneLib:
         self.registry = None
 
         self.last_zone_table = None
-        self.check_zone_table();
+        self.check_zone_table()
         self.logins_file = fileloader.FileLoader(EPP_LOGINS)
         self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
@@ -64,7 +75,7 @@ class ZoneLib:
         self.process_json()
 
     def check_zone_table(self):
-        ok, last_change = sql.sql_select_one("zones",None,"max(amended_dt) 'last_change'")
+        ok, last_change = sql.sql_select_one("zones", None, "max(amended_dt) 'last_change'")
         if not ok:
             return None
 
@@ -72,14 +83,14 @@ class ZoneLib:
             return False
 
         self.last_zone_table = last_change["last_change"]
-        ok, zone_from_db = sql.sql_select("zones",None,"zone,registry,price_info")
+        ok, zone_from_db = sql.sql_select("zones", None, "zone,registry,price_info")
         if not ok:
             return None
 
         self.zone_data = {}
         for row in zone_from_db:
-            self.zone_data[row["zone"]] = {"registry":row["registry"]}
-            if sql.has_data(row,"price_info"):
+            self.zone_data[row["zone"]] = {"registry": row["registry"]}
+            if sql.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
                 except ValueError as e:
@@ -97,7 +108,7 @@ class ZoneLib:
     def process_json(self):
         self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
         new_send = {}
-        self.registry = self.regs_file.json;
+        self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
             new_send[registry] = {}
             for item, val in DEFAULT_CONFIG.items():
@@ -160,69 +171,50 @@ class ZoneLib:
             return False
         return tld_of_name(name) in self.zone_data
 
-    def get_mulitple(self, tld, cls, action):
-        tld_data = self.zone_data[tld]
-        cls_both = cls + "." + action
-        default_both = "default." + action
-
-        if cls_both in tld_data:
-            return tld_data[cls_both]
-
-        if cls in tld_data:
-            return tld_data[cls]
-
-        if default_both in tld_data:
-            return tld_data[default_both]
-
-        if "default" in tld_data:
-            return tld_data["default"]
-
-        if "registry" in tld_data:
-            if (ret := self.get_regs_mulitple(tld, cls, action)) is not None:
+    def get_mulitple(self, this_reg, tld, cls, action):
+        if "prices" in self.zone_data[tld]:
+            if (ret := get_price_from_json(self.zone_data[tld]["prices"], cls, action)) is not None:
                 return ret
+        if "prices" in this_reg:
+            if (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
+                return ret
+        if (price_policy := policy.policy("prices", None)) is not None:
+            if (ret := get_price_from_json(price_policy, cls, action)) is not None:
+                return ret
+        return None
 
-        return 2
-
-    def get_regs_mulitple(self, tld, cls, action):
-        tld_data = self.zone_data[tld]
-        cls_both = cls + "." + action
-        default_both = "default." + action
-
-        regs = tld_data["registry"]
-        if regs not in self.registry:
-            return None
-
-        json_regs = self.registry[regs]
-        if "prices" not in json_regs:
-            return None
-
-        if cls_both in json_regs["prices"]:
-            return json_regs["prices"][cls_both]
-
-        if cls in json_regs["prices"]:
-            return json_regs["prices"][cls]
-
-        if default_both in json_regs["prices"]:
-            return json_regs["prices"][default_both]
-
-        return json_regs["prices"]["default"] if "default" in json_regs["prices"] else None
-
-    def multiply_values(self, data):
-
-        for dom in data:
+    def multiply_values(self, check_dom_data, num_years):
+        for dom in check_dom_data:
             tld = tld_of_name(dom["name"])
+            reg_name = self.zone_data[tld]["registry"]
+            this_reg = self.registry[reg_name] if reg_name in self.registry else None
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for itm in ["create", "renew", "transfer", "restore"]:
-                if itm in dom:
-                    mul = self.get_mulitple(tld, cls, itm)
+            for action in ["create", "renew", "transfer", "restore"]:
+                if action not in dom:
+                    continue
+
+                if action in ["transfer","restore"] and this_reg["type"] == "local":
+                    action = "renew"
+
+                if (mul := self.get_mulitple(this_reg, tld, cls, action)) is None:
+                    del dom[action]
+                    continue
+
+                if isinstance(mul, str):
                     if mul[:1] == "x":
-                        val = float(dom[itm]) * float(mul[1:])
-                    else:
-                        val = float(mul)
-                    val = round(float(val), 2)
-                    dom[itm] = f'{val:.2f}'
+                        val = float(dom[action]) * float(mul[1:])
+                    elif mul[:1] == "+":
+                        val = float(dom[action]) + float(mul[1:])
+                else:
+                    val = float(mul)
+
+                if this_reg["type"] == "local":
+                    val *= float(num_years)
+
+                val = round(float(val), 2)
+                dom[action] = f'{val:.2f}'
 
     def make_xmlns(self):
         default_xmlns = {
@@ -252,7 +244,6 @@ def start_up():
     tld_lib = ZoneLib()
 
 
-
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
@@ -264,6 +255,6 @@ if __name__ == "__main__":
     print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
     print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
-    #print("PORTS", json.dumps(tld_lib.ports, indent=3))
+    # print("PORTS", json.dumps(tld_lib.ports, indent=3))
     # print(json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.make_xmlns(), indent=3))

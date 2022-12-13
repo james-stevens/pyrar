@@ -19,7 +19,7 @@ class Policy:
             return our_policy[name]
         return def_val
 
-    def add_policy(self,key,value):
+    def add_policy(self, key, value):
         self.file.json[key] = value
 
     def data(self):
@@ -29,7 +29,7 @@ class Policy:
 this_policy = Policy()
 
 if __name__ == "__main__":
-    this_policy.add_policy("some_value","THIS")
+    this_policy.add_policy("some_value", "THIS")
     print(">>>TEST>>>", this_policy.policy("business_name", "Unk"))
     print(">>>TEST>>>", this_policy.policy("log_python_code", "Unk"))
     print(">>>TEST>>>", this_policy.policy("some_value", "some_def"))

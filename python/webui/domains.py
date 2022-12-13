@@ -18,14 +18,15 @@ from lib import misc
 import parsexml
 import users
 
-clients = None
 xmlns = None
 
+
 def start_up():
-    global clients
     global xmlns
-    clients = {p: httpx.Client() for p in registry.tld_lib.ports}
     xmlns = registry.tld_lib.make_xmlns()
+    for name, reg in registry.tld_lib.registry.items():
+        if reg["type"] == "epp":
+            reg["client"] = httpx.Client()
 
 
 class DomainName:
@@ -86,9 +87,9 @@ def http_price_domains(domobj, years, which):
     if domobj.registry is None or "url" not in domobj.registry:
         return 400, "Unsupported TLD"
 
-    resp = clients[domobj.registry["name"]].post(domobj.registry["url"],
-                                         json=xml_check_with_fees(domobj, years, which),
-                                         headers=misc.HEADER)
+    resp = domobj.registry["client"].post(domobj.registry["url"],
+                                          json=xml_check_with_fees(domobj, years, which),
+                                          headers=misc.HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"
@@ -103,7 +104,43 @@ def http_price_domains(domobj, years, which):
     return 400, "Unexpected Error"
 
 
-def check_and_parse(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
+def get_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
+    if domobj.registry["type"] == "epp":
+        return epp_domain_prices(domobj, num_years, qry_type, user_id)
+
+    if domobj.registry["type"] == "local":
+        return local_domain_prices(domobj, num_years, qry_type, user_id)
+
+    return False, f"We should not be here '{domobj.registry['type']}'"
+
+
+def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
+    ok, reply = sql.sql_select("domains", {"name": domobj.names})
+    if not ok:
+        return False, "Unexpected database error"
+
+    dom_as_dict = {dom["name"]: dom for dom in reply}
+    ret_js = []
+    for dom in domobj.names if isinstance(domobj.names, list) else [domobj.names]:
+        add_dom = {"num_years": num_years, "name": dom, "avail": False}
+        if dom not in dom_as_dict:
+            add_dom["avail"] = True
+            for qt in qry_type:
+                add_dom[qt] = num_years
+        else:
+            if sql.has_data(dom_as_dict[dom], "for_sale_msg"):
+                add_dom["avail"] = True
+                add_dom["for_sale_msg"] = dom_as_dict[dom]["for_sale_msg"]
+
+        ret_js.append(add_dom)
+
+    registry.tld_lib.multiply_values(ret_js, num_years)
+    registry.tld_lib.sort_data_list(ret_js, is_tld=False)
+
+    return True, ret_js
+
+
+def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
     ok, out_js = http_price_domains(domobj, num_years, qry_type)
     if ok != 200:
         return False, out_js
@@ -117,19 +154,21 @@ def check_and_parse(domobj, num_years=1, qry_type=["create", "renew"], user_id=N
     for item in ret_js:
         if "avail" in item and not item["avail"]:
             ok, reply = sql.sql_select_one("domains", {"name": item["name"]})
-            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg") and (user_id is None or user_id != reply["user_id"])):
+            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg")
+                    and (user_id is None or user_id != reply["user_id"])):
                 for i in ["user_id", "for_sale_msg"]:
                     item[i] = reply[i]
 
-    registry.tld_lib.multiply_values(ret_js)
+    registry.tld_lib.multiply_values(ret_js, num_years)
     registry.tld_lib.sort_data_list(ret_js, is_tld=False)
 
     return True, ret_js
 
 
 def close_epp_sess():
-    for client in clients:
-        clients[client].close()
+    for name, reg in registry.tld_lib.registry.items():
+        if reg["type"] == "epp":
+            reg["client"].close()
 
 
 def fees_one(action, years):

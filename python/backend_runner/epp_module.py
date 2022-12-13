@@ -34,7 +34,6 @@ def run_epp_request(this_reg, post_json):
         ret = json.loads(resp.content)
         return ret
     except Exception as exc:
-        print(">>>>>",this_reg["url"],this_reg["client"])
         log(f"ERROR: XML Request registry '{this_reg['name']}': {exc}", gzz(czz()))
         return None
     return None
@@ -87,7 +86,6 @@ def ds_in_list(ds_data, ds_list):
                 and ds_item["digestType"] == ds_data["digestType"] and ds_item["digest"] == ds_data["digest"]):
             return True
     return False
-
 
 
 def domain_renew(epp_job):
@@ -301,5 +299,4 @@ BACKEND_JOB_FUNC = {
     "dom/renew": domain_renew,
     "dom/transfer": domain_request_transfer,
     "dom/authcode": set_authcode
-    }
-
+}

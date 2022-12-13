@@ -27,9 +27,7 @@ clients = None
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
-BACKEND_FUNCS = {
-	"epp" : epp_module.BACKEND_JOB_FUNC
-	}
+BACKEND_FUNCS = {"epp": epp_module.BACKEND_JOB_FUNC}
 
 
 def debug_domain_info(domain):
@@ -83,8 +81,8 @@ def run_epp_item(epp_job):
 
 def run_server():
     for proto, funcs in BACKEND_FUNCS.items():
-    	if "start_up" in funcs:
-    		funcs["start_up"]()
+        if "start_up" in funcs:
+            funcs["start_up"]()
 
     log("EPP-SERVER RUNNING", gzz(czz()))
     while True:
@@ -98,16 +96,16 @@ def run_server():
 
 
 def start_up(is_live):
-	global clients
+    global clients
 
-	if is_live:
-		log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
-	else:
-		log_init(with_debug=True)
+    if is_live:
+        log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
+    else:
+        log_init(with_debug=True)
 
-	sql.connect("epprun")
-	registry.start_up()
-	clients = {p: httpx.Client() for p in registry.tld_lib.ports}
+    sql.connect("epprun")
+    registry.start_up()
+    clients = {p: httpx.Client() for p in registry.tld_lib.ports}
 
 
 def main():
@@ -121,23 +119,23 @@ def main():
     parser.add_argument("-t", '--transfer', help="Transfer a domain", type=int)
     args = parser.parse_args()
 
-
     start_up(args.live)
 
     if args.live:
         return run_server()
 
     for proto, funcs in BACKEND_FUNCS.items():
-    	if "start_up" in funcs:
-    		funcs["start_up"]()
+        if "start_up" in funcs:
+            funcs["start_up"]()
 
     if args.password is not None:
-        print(">>>> SET_AUTH",
-              epp_module.set_authcode({
-                  "epp_job_id": "TEST",
-                  "domain_id": args.password,
-                  "authcode": "eFNaYTlXZ2FVcW8xcmcy"
-              }))
+        print(
+            ">>>> SET_AUTH",
+            epp_module.set_authcode({
+                "epp_job_id": "TEST",
+                "domain_id": args.password,
+                "authcode": "eFNaYTlXZ2FVcW8xcmcy"
+            }))
         return
 
     if args.update is not None:

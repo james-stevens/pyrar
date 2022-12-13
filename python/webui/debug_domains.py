@@ -29,7 +29,7 @@ def debug_one_domain(domain):
         xml_p = parsexml.XmlParser(out_js)
         code, ret_js = xml_p.parse_check_message()
         if code == 1000:
-            tld_lib.multiply_values(ret_js)
+            tld_lib.multiply_values(ret_js, 1)
         print(">>>TEST>>>", code, json.dumps(ret_js, indent=3))
 
 

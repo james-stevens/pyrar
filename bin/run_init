@@ -20,8 +20,10 @@ mkdir /run/nginx; chown nginx: /run/nginx
 flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 	{ if (have[$1]=="") have[$1]=n++; }
 	/\.sessions=/ { ses[$1]=substr($0,index($0,"=")+1) } 
+	/\.type=/ { typ[$1]=substr($0,index($0,"=")+1) } 
 	END {
 		for(x in have) {
+			if (typ[x]!="epp") continue;
 			if (ses[x]=="") n=3; else n=ses[x];
 			print x,have[x],n 
 			}

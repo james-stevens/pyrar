@@ -17,8 +17,7 @@ parser.add_argument("-o", '--output-long', action="store_true")
 parser.add_argument("sql", nargs='+')
 args = parser.parse_args()
 
-
-LOGINS_JSON=f"{os.environ['BASE']}/etc/logins.json"
+LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
 logins = fileloader.load_file_json(LOGINS_JSON)
 
 
@@ -67,14 +66,14 @@ def mysql_connect(login):
             port = int(svr[1])
 
         return _mysql.connect(user=login,
-                             password=mysql_json[login],
-                             unix_socket=sock,
-                             host=host,
-                             port=port,
-                             database=mysql_json["database"],
-                             conv=my_conv,
-                             charset='utf8mb4',
-                             init_command='set names utf8mb4')
+                              password=mysql_json[login],
+                              unix_socket=sock,
+                              host=host,
+                              port=port,
+                              database=mysql_json["database"],
+                              conv=my_conv,
+                              charset='utf8mb4',
+                              init_command='set names utf8mb4')
 
 
 def max_width(this_row):

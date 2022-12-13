@@ -4,6 +4,7 @@
 	"business_name": "NameShake Registrar",
 	"currency_iso": "USD",
 	"currency_symbol": "$",
+	"currency_decimal_places": 2,
 	"session_timeout": 60,
 
 	"log_epp_api" : true,

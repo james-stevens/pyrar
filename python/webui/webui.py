@@ -86,7 +86,11 @@ class WebuiReq:
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    ret = {"registry": registry.tld_lib.zone_send, "zones": registry.tld_lib.return_zone_list(), "policy": policy.data()}
+    ret = {
+        "registry": registry.tld_lib.zone_send,
+        "zones": registry.tld_lib.return_zone_list(),
+        "policy": policy.data()
+    }
     return req.response(ret)
 
 
@@ -143,8 +147,7 @@ def users_close():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ok = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()",
-                                 {"user_id": req.user_id})
+    ok = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()", {"user_id": req.user_id})
 
     if not ok:
         return req.abort("Close account failed")
@@ -321,12 +324,12 @@ def rest_domain_price():
             return req.abort(dom_obj.err)
         return req.abort("Invalid domain name")
 
-    ok, reply = domains.check_and_parse(dom_obj, num_yrs, qry_type, req.user_id)
+    ok, reply = domains.get_domain_prices(dom_obj, num_yrs, qry_type, req.user_id)
     if ok:
         return req.response(reply)
 
-    log("FAILED:"+str(ok)+":"+str(reply),gzz(czz()))
-    return req.abort("Domain check failed")
+    log("FAILED:" + str(ok) + ":" + str(reply) + ":" + str(dom_obj.names), gzz(czz()))
+    return req.abort(reply)
 
 
 if __name__ == "__main__":

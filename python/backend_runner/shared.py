@@ -74,6 +74,7 @@ def check_num_years(epp_job):
         return None
     return years
 
+
 def get_domain_lists(dom_db):
     ds_list = []
     ns_list = []
@@ -104,5 +105,3 @@ def get_dom_from_db(epp_job):
         return None
 
     return dom_db
-
-
