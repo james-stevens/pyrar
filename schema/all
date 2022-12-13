@@ -34,3 +34,5 @@ ${cmd} "flush logs"
 ${cmd} 'purge binary logs before now()'
 
 ./dump
+
+${BASE}/python/bin/make_json_schema
