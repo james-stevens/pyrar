@@ -3,5 +3,5 @@
 # Alternative license arrangements possible, contact me for more information
 
 sleep 3 # wait for EPP rest/api to get started
-cd ${BASE}/python/eppsvr
-exec ./eppsvr.py -l
+cd ${BASE}/python/backend_runner
+exec ./backend_runner.py -l

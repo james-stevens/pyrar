@@ -83,26 +83,26 @@ class WebuiReq:
         sql.sql_insert("events", data)
 
 
-@application.route('/api/v1.0/config', methods=['GET'])
+@application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
     ret = {"registry": registry.tld_lib.zone_send, "zones": registry.tld_lib.return_zone_list(), "policy": policy.data()}
     return req.response(ret)
 
 
-@application.route('/api/v1.0/zones', methods=['GET'])
+@application.route('/pyrar/v1.0/zones', methods=['GET'])
 def get_supported_zones():
     req = WebuiReq()
     return req.response(registry.tld_lib.return_zone_list())
 
 
-@application.route('/api/v1.0/hello', methods=['GET'])
+@application.route('/pyrar/v1.0/hello', methods=['GET'])
 def hello():
     req = WebuiReq()
     return req.response("Hello World\n")
 
 
-@application.route('/api/v1.0/users/domains', methods=['GET'])
+@application.route('/pyrar/v1.0/users/domains', methods=['GET'])
 def users_domains():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -116,7 +116,7 @@ def users_domains():
     return req.response(req.user_data)
 
 
-@application.route('/api/v1.0/users/update', methods=['POST'])
+@application.route('/pyrar/v1.0/users/update', methods=['POST'])
 def users_update():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -134,7 +134,7 @@ def users_update():
     return req.response(req.user_data)
 
 
-@application.route('/api/v1.0/users/close', methods=['POST'])
+@application.route('/pyrar/v1.0/users/close', methods=['POST'])
 def users_close():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -156,7 +156,7 @@ def users_close():
     return req.response("OK")
 
 
-@application.route('/api/v1.0/users/password', methods=['POST'])
+@application.route('/pyrar/v1.0/users/password', methods=['POST'])
 def users_password():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -175,7 +175,7 @@ def users_password():
     return req.abort("Failed")
 
 
-@application.route('/api/v1.0/users/details', methods=['GET'])
+@application.route('/pyrar/v1.0/users/details', methods=['GET'])
 def users_details():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -191,7 +191,7 @@ def users_details():
     return req.response(req.user_data)
 
 
-@application.route('/api/v1.0/users/login', methods=['POST'])
+@application.route('/pyrar/v1.0/users/login', methods=['POST'])
 def users_login():
     req = WebuiReq()
     if flask.request.json is None:
@@ -205,7 +205,7 @@ def users_login():
     return req.response(data)
 
 
-@application.route('/api/v1.0/users/logout', methods=['GET'])
+@application.route('/pyrar/v1.0/users/logout', methods=['GET'])
 def users_logout():
     req = WebuiReq()
     if req.user_id is None or req.sess_code is None:
@@ -219,7 +219,7 @@ def users_logout():
     return req.response("logged-out")
 
 
-@application.route('/api/v1.0/users/register', methods=['POST'])
+@application.route('/pyrar/v1.0/users/register', methods=['POST'])
 def users_register():
     req = WebuiReq()
     if flask.request.json is None:
@@ -240,17 +240,17 @@ def users_register():
     return req.response(val)
 
 
-@application.route('/api/v1.0/domain/gift', methods=['POST'])
+@application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
     return run_user_domain_task(domains.webui_gift_domain, "Gift", gzz(czz()))
 
 
-@application.route('/api/v1.0/domain/update', methods=['POST'])
+@application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
     return run_user_domain_task(domains.webui_update_domain, "Update", gzz(czz()))
 
 
-@application.route('/api/v1.0/domain/authcode', methods=['POST'])
+@application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
     return run_user_domain_task(domains.webui_set_auth_code, "setAuth", gzz(czz()))
 
@@ -285,7 +285,7 @@ def run_user_domain_task(domain_function, func_name, context):
     return req.response(reply)
 
 
-@application.route('/api/v1.0/domain/check', methods=['POST', 'GET'])
+@application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
     req = WebuiReq()
     num_yrs = 1

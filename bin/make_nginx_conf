@@ -58,8 +58,8 @@ if test -f ${BASE}/pems/server.pem
 	fi
 
 echo "
-		location /api {
-			proxy_pass http://wsgi_checker/api;
+		location /pyrar {
+			proxy_pass http://wsgi_checker/pyrar;
 			}
 		root ${BASE}/htdocs;
 		}"

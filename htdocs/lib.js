@@ -46,7 +46,7 @@ function callApi(sfx,callback,inData)
 
 	if (debugAPI) { console.log("API>>>",sfx); console.log("API>>>",inData); }
 
-	let url = `${window.location.origin}/api/v1.0/${sfx}`;
+	let url = `${window.location.origin}/pyrar/v1.0/${sfx}`;
 
 	let okResp = 200;
 	let httpCmd = { headers: { }, method: 'GET' };
