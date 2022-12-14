@@ -111,8 +111,8 @@ def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
     debug(" SQL " + sql, gzz(czz()))
     if cnx is None:
-        print(f"Database is not connexted", gzz(czz()))
-        log(f"Database is not connexted", gzz(czz()))
+        print(f"Database is not connected", gzz(czz()))
+        log(f"Database is not connected", gzz(czz()))
         return None, None
 
     try:

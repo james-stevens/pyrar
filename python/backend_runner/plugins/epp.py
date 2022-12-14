@@ -22,6 +22,9 @@ import dom_req_xml
 import xmlapi
 import shared
 
+import handler
+
+
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
 
@@ -187,18 +190,16 @@ def domain_create(epp_job):
     return True
 
 
-def debug_domain_info(domain):
-    if (ret := validate.check_domain_name(domain)) is not None:
-        print(">>>> ERROR", ret)
-        sys.exit(1)
-    xml = dom_req_xml.domain_info(domain)
-    this_reg = registry.tld_lib.http_req(name)
-    ret = run_epp_request(this_reg, xml)
-    print(f"\n\n---------- {domain} -----------\n\n")
-    print(json.dumps(ret, indent=2))
+def domain_info(epp_job):
+    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
+        return None
+
+    this_reg = registry.tld_lib.http_req(dom_db["name"])
+    ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
+
     if xmlapi.xmlcode(ret) == 1000:
-        print(">>>>> PARSER", json.dumps(parse_dom_resp.parse_domain_info_xml(ret, "inf"), indent=4))
-    sys.exit(0)
+        return parse_dom_resp.parse_domain_info_xml(ret, "inf")
+    return False
 
 
 def epp_get_domain_info(job_id, domain_name):
@@ -292,11 +293,17 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
-BACKEND_JOB_FUNC = {
+def my_hello(__):
+    return "EPP: Hello"
+
+
+handler.add_plugin("epp",{
+    "hello": my_hello,
     "start_up": start_up_check,
     "dom/update": domain_update_from_db,
     "dom/create": domain_create,
     "dom/renew": domain_renew,
     "dom/transfer": domain_request_transfer,
-    "dom/authcode": set_authcode
-}
+    "dom/authcode": set_authcode,
+    "dom/info": domain_info
+    })

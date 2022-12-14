@@ -21,13 +21,13 @@ import whois_priv
 import dom_req_xml
 import xmlapi
 
-import epp_module
+import handler
+from plugins import *
+
 
 clients = None
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
-
-BACKEND_FUNCS = {"epp": epp_module.BACKEND_JOB_FUNC}
 
 
 def debug_domain_info(domain):
@@ -80,10 +80,6 @@ def run_epp_item(epp_job):
 
 
 def run_server():
-    for proto, funcs in BACKEND_FUNCS.items():
-        if "start_up" in funcs:
-            funcs["start_up"]()
-
     log("EPP-SERVER RUNNING", gzz(czz()))
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
@@ -106,58 +102,43 @@ def start_up(is_live):
     sql.connect("epprun")
     registry.start_up()
     clients = {p: httpx.Client() for p in registry.tld_lib.ports}
+    handler.start_up()
+
+    for plugin, funcs in handler.plugins.items():
+        if "start_up" in funcs:
+            funcs["start_up"]()
+
 
 
 def main():
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')
     parser.add_argument("-l", '--live', action="store_true")
     parser.add_argument("-i", '--info', help="Info a domain")
-    parser.add_argument("-c", '--create', help="Create a new domain", type=int)
-    parser.add_argument("-p", '--password', help="set authcode", type=int)
-    parser.add_argument("-u", '--update', help="Update a domain", type=int)
-    parser.add_argument("-r", '--renew', help="Renew a domain", type=int)
-    parser.add_argument("-t", '--transfer', help="Transfer a domain", type=int)
+    parser.add_argument("-a", '--action', help="Plugin action")
+    parser.add_argument("-p", '--plugin', help="Plugin name")
+    parser.add_argument("-d", '--domain-id', help="Plugin name",type=int)
     args = parser.parse_args()
-
-    start_up(args.live)
 
     if args.live:
         return run_server()
 
-    for proto, funcs in BACKEND_FUNCS.items():
-        if "start_up" in funcs:
-            funcs["start_up"]()
+    if not args.plugin or not args.action or not args.domain_id:
+        print("Plugin or action or domain_id not specified")
+        sys.exit(1)
 
-    if args.password is not None:
-        print(
-            ">>>> SET_AUTH",
-            epp_module.set_authcode({
-                "epp_job_id": "TEST",
-                "domain_id": args.password,
-                "authcode": "eFNaYTlXZ2FVcW8xcmcy"
-            }))
-        return
+    if args.plugin not in handler.plugins:
+        print(f"Plugin '{args.plugin}' not supported")
+        sys.exit(1)
 
-    if args.update is not None:
-        print(">>>> UPDATE", epp_module.domain_update_from_db({"epp_job_id": "TEST", "domain_id": args.update}))
-        return
+    if args.action not in handler.plugins[args.plugin]:
+        print(f"Action '{args.action}' not supported by Plugin '{args.plugin}'")
+        sys.exit(1)
 
-    if args.create is not None:
-        print(">>> CREATE", epp_module.domain_create({"epp_job_id": "TEST", "num_years": 1, "domain_id": args.create}))
-        return
+    start_up(args.live)
 
-    if args.renew is not None:
-        print(">>> RENEW", epp_module.domain_renew({"epp_job_id": "TEST", "num_years": 1, "domain_id": args.renew}))
-        return
-
-    if args.transfer is not None:
-        print(">>> TRANSFER", epp_module.domain_request_transfer({"epp_job_id": "TEST", "domain_id": args.transfer}))
-        return
-
-    if args.info is not None:
-        return epp_module.debug_domain_info(args.info)
-
-    print("No args given")
+    this_fn = handler.plugins[args.plugin][args.action]
+    out_js = this_fn({"epp_job_id": "TEST", "authcode": "eFNaYTlXZ2FVcW8xcmcy", "num_years": 1, "domain_id": args.domain_id})
+    print(json.dumps(out_js,indent=3))
 
 
 if __name__ == "__main__":

@@ -241,7 +241,10 @@ class ZoneLib:
 
 def start_up():
     global tld_lib
-    tld_lib = ZoneLib()
+    if tld_lib is None:
+        tld_lib = ZoneLib()
+    else:
+        tld_lib.check_for_new_files()
 
 
 if __name__ == "__main__":
