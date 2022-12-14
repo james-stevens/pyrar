@@ -7,18 +7,35 @@ import httpx
 import json
 import time
 import secrets
+import hashlib
+import dns.name
 
 from lib import misc
 from lib.policy import this_policy as policy
 
-headers = {"X-API-Key": os.environ["PDNS_API_KEY"]}
-client = httpx.Client(headers=headers)
+client = None
+zones_list = None
+headers = misc.HEADER
+headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
 PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 
-dnssec_algorithm = policy.policy("dnssec_algorithm", "ecdsa256")
-dnssec_ksk_bits = policy.policy("dnssec_ksk_bits", 256)
-dnssec_zsk_bits = policy.policy("dnssec_zsk_bits", 256)
+
+def start_up():
+    global client
+    client = httpx.Client(headers=headers)
+
+    get_zones_list()
+    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
+    if catalog_zone not in zones_list:
+        create_zone(catalog_zone,False)
+
+
+def hash_zone_name(name):
+    """ return {name} FQDN as a catalog hash in text """
+    if name[-1] != ".":
+        name += "."
+    return hashlib.sha1(dns.name.from_text(name).to_wire()).hexdigest().lower()
 
 
 def load_zone(name):
@@ -40,6 +57,10 @@ def load_zone_keys(name):
 
 
 def dnssec_zone_cmds(name):
+    """ rest/api calls to sign zone called {name}, name must have trailing "." """
+    dnssec_algorithm = policy.policy("dnssec_algorithm", "ecdsa256")
+    dnssec_ksk_bits = policy.policy("dnssec_ksk_bits", 256)
+    dnssec_zsk_bits = policy.policy("dnssec_zsk_bits", 256)
     nsec3param = misc.ashex(secrets.token_bytes(6))
     return [{
         "cmd": "POST",
@@ -71,9 +92,7 @@ def dnssec_zone_cmds(name):
     }]
 
 
-def check_zone(name, with_dnssec=False):
-    if (ret := load_zone(name)) is not None:
-        return ret
+def create_zone(name, with_dnssec=False):
     if name[-1] != ".":
         name += "."
 
@@ -97,9 +116,10 @@ def check_zone(name, with_dnssec=False):
     if with_dnssec:
         post_json += dnssec_zone_cmds(name)
 
-    zone_hashed = "NOT-RIGHT"
-    catalog_zone = "pyrar.localhost"
+    zone_hashed = hash_zone_name(name)
     now = str(int(time.time()))
+    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
+
     post_json += [{
         "cmd": "PATCH",
         "url": f"{PDNS_BASE_URL}/zones/{name}",
@@ -148,9 +168,113 @@ def check_zone(name, with_dnssec=False):
         request = client.build_request(req["cmd"],req["url"],json=json_data)
         response = client.send(request)
 
-    return load_zone(name)
+    ret_js = load_zone(name)
+    if "name" in ret_js:
+        zones_list[ret_js["name"].rstrip(".")] = True
+
+    return ret_js
+
+
+def sign_zone(name):
+    if name[-1] != ".":
+        name += "."
+    post_json = dnssec_zone_cmds(name)
+
+    for req in post_json:
+        json_data = req["data"] if "data" in req else None
+        request = client.build_request(req["cmd"],req["url"],json=json_data)
+        response = client.send(request)
+
+    return load_zone_keys(name)
+
+
+def get_zones_list():
+    global zones_list
+
+    if zones_list is not None:
+        return
+
+    resp = client.get(f"{PDNS_BASE_URL}/zones")
+    if resp.status_code < 200 or resp.status_code > 299:
+        return None
+    zones_list = { zone["name"].rstrip("."):True for zone in json.loads(resp.content) if "name" in zone }
+
+
+def delete_zone(name):
+    if name[-1] != ".":
+        name += "."
+
+    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
+    zone_hashed = hash_zone_name(name)
+
+    post_json = [ {
+        "cmd": "PATCH",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "data": { "rrsets": [ 
+            {
+            "name": f"{zone_hashed}.zones.{catalog_zone}.",
+            "ttl": 3600,
+            "type":"PTR",
+            "changetype":"REPLACE",
+            "records": []
+            } ] }
+    }, {
+        "cmd": "DELETE",
+        "url": f"{PDNS_BASE_URL}/zones/{name}"
+    }, {
+        "cmd": "PUT",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
+    } ]
+
+    ret = True
+    for req in post_json:
+        json_data = req["data"] if "data" in req else None
+        request = client.build_request(req["cmd"],req["url"],json=json_data)
+        resp = client.send(request)
+        print(resp)
+        ret = ret and resp.status_code >= 200 and resp.status_code <= 299
+
+    return ret
+
+
+def update_rrs(zone,rrs):
+    if zone[-1] != ".":
+        zone += "."
+
+    if "ttl" not in rrs:
+        rrs["ttl"] = 86400
+
+    rr_data = { "changetype": "REPLACE", "records": {} }
+    for item in ["name","ttl","type"]:
+        if item not in rrs:
+            return False, f"Missing data item '{item}'"
+        rr_data[item] = rrs[item]
+    if rr_data["name"][-1] != ".":
+        rr_data["name"] += "."
+
+    if "data" in rrs:
+        rr_data["records"] = [ { "content":val,"disabled":False} for val in rrs["data"] ]
+
+    resp = client.patch(f"{PDNS_BASE_URL}/zones/{zone}",json={ "rrsets": [ rr_data ] },headers=headers)
+
+    ret = resp.status_code >= 200 and resp.status_code <= 299
+    if not ret:
+        print(">>>>>",resp.status_code,":",resp.content)
+
+    return ret
+
+
+
 
 
 if __name__ == "__main__":
-    print(json.dumps(load_zone_keys("mine"),indent=3))
-    #print(json.dumps(check_zone("mine", True),indent=3))
+    start_up()
+    name="zz"
+    print("UPDATE>>>",update_rrs(name,{"name":"www.zz","ttl":86400,"type":"A","data":["1.2.3.4","5.6.5.19"]}))
+    # print(json.dumps(create_zone(name, True),indent=3))
+    # print(json.dumps(delete_zone(name),indent=3))
+    # print(json.dumps(zones_list,indent=3))
+    # print(json.dumps(load_zone(name),indent=3))
+    # print(json.dumps(sign_zone("mine"),indent=3))
+    # print(json.dumps(load_zone_keys("mine"),indent=3))
+    # print(json.dumps(create_zone("mine", True),indent=3))

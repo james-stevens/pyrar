@@ -223,21 +223,27 @@ def webui_update_domain(req, post_dom):
 
     update_cols = {}
 
-    if sql.has_data(post_dom, "name_servers"):
-        new_ns = post_dom["name_servers"].lower().split(",")
-        new_ns.sort()
-        for ns in new_ns:
-            if not validate.is_valid_fqdn(ns):
-                return False, "Invalid name server record"
-        update_cols["name_servers"] = ",".join(new_ns)
+    if "name_servers" in post_dom:
+        if not has_data(post_dom,"name_servers"):
+            update_cols["name_servers"] = None
+        else
+            new_ns = post_dom["name_servers"].lower().split(",")
+            new_ns.sort()
+            for ns in new_ns:
+                if not validate.is_valid_fqdn(ns):
+                    return False, "Invalid name server record"
+            update_cols["name_servers"] = ",".join(new_ns)
 
-    if sql.has_data(post_dom, "ds_recs"):
-        new_ds = post_dom["ds_recs"].upper().split(",")
-        new_ds.sort()
-        for ds in new_ds:
-            if not validate.is_valid_ds(validate.frag_ds(ds)):
-                return False, "Invalid DS record"
-        update_cols["ds_recs"] = ",".join(new_ds)
+    if "ds_recs" in post_dom:
+        if not sql.has_data(post_dom, "ds_recs"):
+            update_cols["ds_recs"] = None
+        else:
+            new_ds = post_dom["ds_recs"].upper().split(",")
+            new_ds.sort()
+            for ds in new_ds:
+                if not validate.is_valid_ds(validate.frag_ds(ds)):
+                    return False, "Invalid DS record"
+            update_cols["ds_recs"] = ",".join(new_ds)
 
     ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"]})
 

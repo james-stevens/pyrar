@@ -24,7 +24,6 @@ import shared
 
 import handler
 
-
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
 
@@ -91,9 +90,7 @@ def ds_in_list(ds_data, ds_list):
     return False
 
 
-def domain_renew(epp_job):
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
+def domain_renew(epp_job,dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -122,10 +119,7 @@ def transfer_failed(domain_id):
     return False
 
 
-def domain_request_transfer(epp_job):
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
-
+def domain_request_transfer(epp_job,dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -157,9 +151,7 @@ def domain_request_transfer(epp_job):
     return True
 
 
-def domain_create(epp_job):
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
+def domain_create(epp_job,dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -190,9 +182,7 @@ def domain_create(epp_job):
     return True
 
 
-def domain_info(epp_job):
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
+def domain_info(epp_job,dom_db):
 
     this_reg = registry.tld_lib.http_req(dom_db["name"])
     ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
@@ -216,10 +206,8 @@ def epp_get_domain_info(job_id, domain_name):
     return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
-def set_authcode(epp_job):
+def set_authcode(epp_job,dom_db):
     job_id = epp_job["epp_job_id"]
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
     name = dom_db["name"]
 
     this_reg = registry.tld_lib.http_req(name)
@@ -235,12 +223,8 @@ def set_authcode(epp_job):
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
-def domain_update_from_db(epp_job):
+def domain_update_from_db(epp_job,dom_db):
     job_id = epp_job["epp_job_id"]
-
-    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
-        return None
-
     name = dom_db["name"]
     if (epp_info := epp_get_domain_info(job_id, name)) is None:
         return False
@@ -297,13 +281,14 @@ def my_hello(__):
     return "EPP: Hello"
 
 
-handler.add_plugin("epp",{
-    "hello": my_hello,
-    "start_up": start_up_check,
-    "dom/update": domain_update_from_db,
-    "dom/create": domain_create,
-    "dom/renew": domain_renew,
-    "dom/transfer": domain_request_transfer,
-    "dom/authcode": set_authcode,
-    "dom/info": domain_info
+handler.add_plugin(
+    "epp", {
+        "hello": my_hello,
+        "start_up": start_up_check,
+        "dom/update": domain_update_from_db,
+        "dom/create": domain_create,
+        "dom/renew": domain_renew,
+        "dom/transfer": domain_request_transfer,
+        "dom/authcode": set_authcode,
+        "dom/info": domain_info
     })

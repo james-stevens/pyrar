@@ -18,6 +18,7 @@ sqlsh "create table domains (
 	client_locks		varchar(100),
 
 	for_sale_msg		varchar(100),
+	for_sale_amount		${money},
 
 	auth_code			${password},
 

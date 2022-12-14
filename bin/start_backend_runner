@@ -4,4 +4,4 @@
 
 sleep 3 # wait for EPP rest/api to get started
 cd ${BASE}/python/backend_runner
-exec ./backend_runner.py -l
+exec ./backend_runner.py -l >/tmp/backend.log 2>&1

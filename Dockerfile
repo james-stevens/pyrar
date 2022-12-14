@@ -8,7 +8,7 @@ RUN ln -s /dev/shm /run
 RUN apk add nginx curl
 
 RUN apk add python3 jq py-pip
-RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient py3-dnspython
 RUN pip install apscheduler httpx
 
 RUN apk add sysklogd

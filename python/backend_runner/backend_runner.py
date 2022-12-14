@@ -20,10 +20,10 @@ from lib import parse_dom_resp
 import whois_priv
 import dom_req_xml
 import xmlapi
+import shared
 
 import handler
 from plugins import *
-
 
 clients = None
 
@@ -35,7 +35,7 @@ def debug_domain_info(domain):
         print(">>>> ERROR", ret)
         sys.exit(1)
     xml = dom_req_xml.domain_info(domain)
-    this_reg, url = registry.tld_lib.http_req(domain)
+    this_reg = registry.tld_lib.http_req(domain)
     ret = run_epp_request(this_reg, xml, url)
     print(f"\n\n---------- {domain} -----------\n\n")
     print(json.dumps(ret, indent=2))
@@ -61,11 +61,18 @@ def job_failed(epp_job):
 
 def run_epp_item(epp_job):
     job_id = epp_job["epp_job_id"]
-    if (not sql.has_data(epp_job, "job_type") or epp_job["job_type"] not in EEP_JOB_FUNC):
-        log(f"EPP-{job_id} Missing or invalid job_type", gzz(czz()))
+    if (dom_db := shared.get_dom_from_db(epp_job)) is None:
         return job_abort(epp_job)
 
-    job_run = EEP_JOB_FUNC[epp_job["job_type"]](epp_job)
+    reg = registry.tld_lib.http_req(dom_db["name"])
+    if reg["type"] not in handler.plugins:
+        return job_abort(epp_job)
+
+    if (not sql.has_data(epp_job, "job_type") or epp_job["job_type"] not in handler.plugins[reg["type"]]):
+        log(f"EPP-{job_id} Missing or invalid job_type for '{reg['type']}'", gzz(czz()))
+        return job_abort(epp_job)
+
+    job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job,dom_db)
     notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{epp_job['job_type']}' " + f"on DOM-{epp_job['domain_id']} " +
              f"retries {epp_job['failures']}/" + f"{policy.policy('epp_retry_attempts', 3)}")
 
@@ -109,17 +116,21 @@ def start_up(is_live):
             funcs["start_up"]()
 
 
-
 def main():
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')
     parser.add_argument("-l", '--live', action="store_true")
-    parser.add_argument("-i", '--info', help="Info a domain")
+    parser.add_argument("-D", '--debug', action="store_true")
     parser.add_argument("-a", '--action', help="Plugin action")
     parser.add_argument("-p", '--plugin', help="Plugin name")
-    parser.add_argument("-d", '--domain-id', help="Plugin name",type=int)
+    parser.add_argument("-d", '--domain-id', help="Plugin name", type=int)
     args = parser.parse_args()
 
+    if args.debug:
+        start_up(False)
+        return run_server()
+
     if args.live:
+        start_up(True)
         return run_server()
 
     if not args.plugin or not args.action or not args.domain_id:
@@ -137,8 +148,13 @@ def main():
     start_up(args.live)
 
     this_fn = handler.plugins[args.plugin][args.action]
-    out_js = this_fn({"epp_job_id": "TEST", "authcode": "eFNaYTlXZ2FVcW8xcmcy", "num_years": 1, "domain_id": args.domain_id})
-    print(json.dumps(out_js,indent=3))
+    out_js = this_fn({
+        "epp_job_id": "TEST",
+        "authcode": "eFNaYTlXZ2FVcW8xcmcy",
+        "num_years": 1,
+        "domain_id": args.domain_id
+    })
+    print(json.dumps(out_js, indent=3))
 
 
 if __name__ == "__main__":

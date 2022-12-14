@@ -110,7 +110,7 @@ def check_session(ses_code, user_agent):
     if not ok:
         return False, None
 
-    if not data["ok"]:
+    if "ok" not in data or not data["ok"]:
         sql.sql_delete_one("session_keys", {"session_key": key})
         return False, None
 

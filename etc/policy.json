@@ -23,10 +23,12 @@
 	"webui_sessions": 10,
 	"syslog_server" : null,
 
-	"default_dns_servers": "ns1.dns.com,ns2.dns.com",
+	"dns_servers": "ns1.dns.com,ns2.dns.com",
 	"max_renew_years": 10,
 	"max_basket_size": 5,
 
 	"epp_retry_attempts": 3,
-	"epp_retry_timeout": 300
+	"epp_retry_timeout": 300,
+
+	"pdns_log_level": 5
 }

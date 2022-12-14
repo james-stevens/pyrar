@@ -37,7 +37,6 @@ CREATE TABLE `deleted_domains` (
   `deleted_dt` datetime NOT NULL,
   PRIMARY KEY (`zone`,`name`),
   UNIQUE KEY `by_id` (`deleted_domain_id`),
-  KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -125,6 +124,8 @@ CREATE TABLE `domains` (
   `ds_recs` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `for_sale_msg` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `for_sale_amount` decimal(10,0) NOT NULL DEFAULT 0,
+  `auth_code` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reg_create_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
@@ -330,6 +331,31 @@ LOCK TABLES `session_keys` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `sysadmins`
+--
+
+DROP TABLE IF EXISTS `sysadmins`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `sysadmins` (
+  `login` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `htpasswd` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_dt` datetime DEFAULT NULL,
+  `amended_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`login`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sysadmins`
+--
+
+LOCK TABLES `sysadmins` WRITE;
+/*!40000 ALTER TABLE `sysadmins` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sysadmins` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `transactions`
 --
 
@@ -403,6 +429,37 @@ LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `zones`
+--
+
+DROP TABLE IF EXISTS `zones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `zones` (
+  `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `registry` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `price_info` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `enabled` tinyint(3) unsigned NOT NULL DEFAULT 1,
+  `allow_sales` tinyint(3) unsigned NOT NULL DEFAULT 1,
+  `renew_limit` int(11) NOT NULL DEFAULT 0,
+  `owner_user_id` int(10) unsigned DEFAULT NULL,
+  `owner_royalty_rate` int(11) DEFAULT NULL,
+  `created_dt` datetime DEFAULT NULL,
+  `amended_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`zone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `zones`
+--
+
+LOCK TABLES `zones` WRITE;
+/*!40000 ALTER TABLE `zones` DISABLE KEYS */;
+/*!40000 ALTER TABLE `zones` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -413,7 +470,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-12 13:06:08
+-- Dump completed on 2022-12-14 16:08:38
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
@@ -421,15 +478,18 @@ GRANT SELECT, INSERT ON `pyrar`.`epp_jobs` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales_items` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`zones` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`orders` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`order_items` TO `webui`@`%`;
 GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`zones` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sysadmins` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
@@ -440,12 +500,13 @@ GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT ON `pyrar`.`deleted_domains` TO `epprun`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `epprun`@`%`;
+GRANT SELECT ON `pyrar`.`zones` TO `epprun`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;

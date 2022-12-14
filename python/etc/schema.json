@@ -201,6 +201,11 @@
                 "type": "datetime",
                 "null": true
             },
+            "auth_code": {
+                "size": 100,
+                "type": "varchar",
+                "null": true
+            },
             "auto_renew": {
                 "size": 1,
                 "type": "tinyint",
@@ -232,6 +237,12 @@
             "expiry_dt": {
                 "type": "datetime",
                 "null": false
+            },
+            "for_sale_amount": {
+                "size": 10,
+                "type": "decimal",
+                "null": false,
+                "default": 0
             },
             "for_sale_msg": {
                 "size": 100,

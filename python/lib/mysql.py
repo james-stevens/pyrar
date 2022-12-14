@@ -44,6 +44,8 @@ my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
 my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
 my_conv[FIELD_TYPE.BLOB] = convert_string
 my_conv[FIELD_TYPE.TINY] = int
+my_conv[FIELD_TYPE.DECIMAL] = int
+my_conv[FIELD_TYPE.NEWDECIMAL] = int
 
 
 def format_col(item, column_val):
@@ -111,8 +113,8 @@ def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
     debug(" SQL " + sql, gzz(czz()))
     if cnx is None:
-        print(f"Database is not connected", gzz(czz()))
-        log(f"Database is not connected", gzz(czz()))
+        print(f"Database is not connected '{sql}'", gzz(czz()))
+        log(f"Database is not connected '{sql}'", gzz(czz()))
         return None, None
 
     try:

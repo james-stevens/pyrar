@@ -39,12 +39,6 @@ def key_priority(item):
     return 1000
 
 
-def tld_of_name(name):
-    if (idx := name.find(".")) >= 0:
-        return name[idx + 1:]
-    return name
-
-
 def get_price_from_json(price_json, cls, action):
     if cls in price_json and action in price_json[cls]:
         return price_json[cls][action]
@@ -135,11 +129,18 @@ class ZoneLib:
             if "priority" in dom:
                 del dom["priority"]
 
+    def tld_of_name(self,name):
+        if (idx := name.find(".")) >= 0:
+            return name[idx + 1:]
+        if name not in self.zone_data:
+            return None
+        return name
+
     def tld_priority(self, name, is_tld=False):
         tld = name
         if not is_tld:
-            tld = tld_of_name(name)
-        if tld in self.zone_priority:
+            tld = self.tld_of_name(name)
+        if tld is not None and tld in self.zone_priority:
             return self.zone_priority[tld] + 10
         return random.randint(1000, 9999999)
 
@@ -147,8 +148,7 @@ class ZoneLib:
         return self.registry[registry]["url"]
 
     def http_req(self, domain):
-        tld = tld_of_name(domain)
-        if tld not in self.zone_data:
+        if (tld := self.tld_of_name(domain)) is None:
             return None, None
         this_reg = self.zone_data[tld]["registry"]
 
@@ -169,7 +169,7 @@ class ZoneLib:
     def supported_tld(self, name):
         if (name is None) or (not isinstance(name, str)) or (name == ""):
             return False
-        return tld_of_name(name) in self.zone_data
+        return self.tld_of_name(name) in self.zone_data
 
     def get_mulitple(self, this_reg, tld, cls, action):
         if "prices" in self.zone_data[tld]:
@@ -185,7 +185,8 @@ class ZoneLib:
 
     def multiply_values(self, check_dom_data, num_years):
         for dom in check_dom_data:
-            tld = tld_of_name(dom["name"])
+            if (tld := self.tld_of_name(dom["name"])) is None:
+                return False
             reg_name = self.zone_data[tld]["registry"]
             this_reg = self.registry[reg_name] if reg_name in self.registry else None
 

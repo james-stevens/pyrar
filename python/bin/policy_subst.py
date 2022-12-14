@@ -30,15 +30,15 @@ def subst_file(filename):
                 while (res := policy_re.search(line)) is not None:
                     match_chars = res.span()
                     match_str = res.group()[1:-1]
+                    pol_val = None
+                    split_comma = [match_str,None]
                     if match_str.find(",") >= 0:
                         split_comma = match_str.split(",")
-                        pol_val = policy.policy(split_comma[0], split_comma[1])
-                        line = line[:match_chars[0]] + pol_val + line[match_chars[1]:]
+                    if (pol_val := policy.policy(split_comma[0], split_comma[1])) is not None:
+                        line = line[:match_chars[0]] + str(pol_val) + line[match_chars[1]:]
                     else:
-                        if (pol_val := policy.policy(match_str, None)) is not None:
-                            line = line[:match_chars[0]] + pol_val + line[match_chars[1]:]
-                        else:
-                            line = ""
+                        line=""
+
                 out_fd.write(line)
 
 
