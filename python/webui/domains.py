@@ -224,9 +224,9 @@ def webui_update_domain(req, post_dom):
     update_cols = {}
 
     if "name_servers" in post_dom:
-        if not has_data(post_dom,"name_servers"):
-            update_cols["name_servers"] = None
-        else
+        if not sql.has_data(post_dom,"name_servers"):
+            update_cols["name_servers"] = ""
+        else:
             new_ns = post_dom["name_servers"].lower().split(",")
             new_ns.sort()
             for ns in new_ns:
@@ -236,7 +236,7 @@ def webui_update_domain(req, post_dom):
 
     if "ds_recs" in post_dom:
         if not sql.has_data(post_dom, "ds_recs"):
-            update_cols["ds_recs"] = None
+            update_cols["ds_recs"] = ""
         else:
             new_ds = post_dom["ds_recs"].upper().split(",")
             new_ds.sort()

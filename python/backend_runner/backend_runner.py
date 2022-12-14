@@ -72,9 +72,10 @@ def run_epp_item(epp_job):
         log(f"EPP-{job_id} Missing or invalid job_type for '{reg['type']}'", gzz(czz()))
         return job_abort(epp_job)
 
-    job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job,dom_db)
-    notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{epp_job['job_type']}' " + f"on DOM-{epp_job['domain_id']} " +
-             f"retries {epp_job['failures']}/" + f"{policy.policy('epp_retry_attempts', 3)}")
+    job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job, dom_db)
+    notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']:epp_job['job_type']}' " +
+             f"on DOM-{epp_job['domain_id']} retries {epp_job['failures']}/" +
+             f"{policy.policy('epp_retry_attempts', 3)}")
 
     log(notes, gzz(czz()))
     shared.event_log(notes, epp_job, gzz(czz()))
@@ -109,7 +110,6 @@ def start_up(is_live):
     sql.connect("epprun")
     registry.start_up()
     clients = {p: httpx.Client() for p in registry.tld_lib.ports}
-    handler.start_up()
 
     for plugin, funcs in handler.plugins.items():
         if "start_up" in funcs:

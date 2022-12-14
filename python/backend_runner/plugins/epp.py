@@ -4,15 +4,13 @@
 
 import sys
 import json
-import argparse
-import time
 import base64
 from inspect import currentframe as czz, getframeinfo as gzz
 import httpx
 
 from lib import mysql as sql
 from lib import registry
-from lib.log import log, debug, init as log_init
+from lib.log import log
 from lib.policy import this_policy as policy
 from lib import misc
 from lib import validate
@@ -31,7 +29,7 @@ def run_epp_request(this_reg, post_json):
     try:
         resp = this_reg["client"].post(this_reg["url"], json=post_json, headers=misc.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
-            log(f"ERROR: {resp.status_code} {url} {resp.content}", gzz(czz()))
+            log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}", gzz(czz()))
             return None
         ret = json.loads(resp.content)
         return ret

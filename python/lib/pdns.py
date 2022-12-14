@@ -14,7 +14,7 @@ from lib import misc
 from lib.policy import this_policy as policy
 
 client = None
-zones_list = None
+all_pdns_zones = None
 headers = misc.HEADER
 headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
@@ -25,9 +25,9 @@ def start_up():
     global client
     client = httpx.Client(headers=headers)
 
-    get_zones_list()
+    get_all_pdns_zones()
     catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
-    if catalog_zone not in zones_list:
+    if catalog_zone not in all_pdns_zones:
         create_zone(catalog_zone,False)
 
 
@@ -126,7 +126,7 @@ def create_zone(name, with_dnssec=False):
         "data": {
             "rrsets": [{
                 "name": f"{name}",
-                "ttl": 86400,
+                "ttl": policy.policy("default_ttl",86400),
                 "type": "SOA",
                 "changetype": "REPLACE",
                 "records": [{
@@ -169,8 +169,8 @@ def create_zone(name, with_dnssec=False):
         response = client.send(request)
 
     ret_js = load_zone(name)
-    if "name" in ret_js:
-        zones_list[ret_js["name"].rstrip(".")] = True
+    if "name" not in ret_js:
+        all_pdns_zones[ret_js["name"].rstrip(".")] = True
 
     return ret_js
 
@@ -188,16 +188,16 @@ def sign_zone(name):
     return load_zone_keys(name)
 
 
-def get_zones_list():
-    global zones_list
+def get_all_pdns_zones():
+    global all_pdns_zones
 
-    if zones_list is not None:
+    if all_pdns_zones is not None:
         return
 
-    resp = client.get(f"{PDNS_BASE_URL}/zones")
+    resp = client.get(f"{PDNS_BASE_URL}/zones?dnssec=false")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
-    zones_list = { zone["name"].rstrip("."):True for zone in json.loads(resp.content) if "name" in zone }
+    all_pdns_zones = { zone["name"].rstrip("."):True for zone in json.loads(resp.content) if "name" in zone }
 
 
 def delete_zone(name):
@@ -242,7 +242,7 @@ def update_rrs(zone,rrs):
         zone += "."
 
     if "ttl" not in rrs:
-        rrs["ttl"] = 86400
+        rrs["ttl"] = policy.policy("default_ttl",86400)
 
     rr_data = { "changetype": "REPLACE", "records": {} }
     for item in ["name","ttl","type"]:
@@ -270,10 +270,10 @@ def update_rrs(zone,rrs):
 if __name__ == "__main__":
     start_up()
     name="zz"
-    print("UPDATE>>>",update_rrs(name,{"name":"www.zz","ttl":86400,"type":"A","data":["1.2.3.4","5.6.5.19"]}))
+    print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print(json.dumps(create_zone(name, True),indent=3))
     # print(json.dumps(delete_zone(name),indent=3))
-    # print(json.dumps(zones_list,indent=3))
+    # print(json.dumps(all_pdns_zones,indent=3))
     # print(json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))

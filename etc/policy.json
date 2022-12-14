@@ -30,5 +30,6 @@
 	"epp_retry_attempts": 3,
 	"epp_retry_timeout": 300,
 
-	"pdns_log_level": 5
+	"pdns_log_level": 5,
+	"default_ttl": 86400
 }

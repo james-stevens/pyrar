@@ -7,21 +7,22 @@ import json
 import collections
 
 
-def flatten(pfx, inp_js):
-    """ recursive function to display {inp_js} JSON in a flat format """
+def flatten(in_js):
+	do_flatten([],in_js)
+
+def do_flatten(pfx,inp_js):
     if isinstance(inp_js, (dict, collections.OrderedDict)):
         for itm in inp_js:
-            flatten(pfx + [itm], inp_js[itm])
+            do_flatten(pfx + [itm], inp_js[itm])
     elif isinstance(inp_js, list):
         i = 0
         for itm in inp_js:
-            flatten(pfx + [f"[{(i := i + 1):02x}]"], itm)
+            do_flatten(pfx + [f"[{(i := i + 1):02x}]"], itm)
     else:
         print(f"{'.'.join(pfx)}={inp_js}")
 
 
-del sys.argv[0]
-for file in sys.argv:
+for file in sys.argv[1:]:
     with open(file, "r", encoding='UTF-8') as fd:
         read_js = json.load(fd)
-        flatten([], read_js)
+        flatten(read_js)
