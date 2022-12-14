@@ -20,7 +20,7 @@ sqlsh "create table domains (
 	for_sale_msg		varchar(100),
 	for_sale_amount		${money},
 
-	auth_code			${password},
+	authcode			${password},
 
 	reg_create_dt		datetime null,
 	created_dt			datetime null,

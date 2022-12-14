@@ -26,3 +26,5 @@ card_type="varchar(20)"
 utf8="CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
 
 tbl=$(basename -- "$0" .tbl)
+
+./save

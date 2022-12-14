@@ -29,7 +29,7 @@ def do_domain_update(job_id, name, dom_db, epp_info):
 def epp_get_domain_info(job_id, domain_name):
     this_reg, url = registry.tld_lib.http_req(domain_name)
     if this_reg is None or url is None:
-        log(f"EPP-{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
+        log(f"BackEnd:{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
         return None
 
     xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name), url)
@@ -46,9 +46,9 @@ def event_log(notes, epp_job, where):
         "function": where.function,
         "line_num": where.lineno,
         "when_dt": None,
-        "event_type": "EPP-" + epp_job["job_type"],
+        "event_type": "BackEnd:" + epp_job["job_type"],
         "domain_id": epp_job["domain_id"],
-        "user_id": 0,
+        "user_id": epp_job["user_id"],
         "who_did_it": "eppsvr",
         "from_where": "localhost",
         "notes": notes

@@ -2,6 +2,8 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import bcrypt
+import base64
 
 from inspect import currentframe as czz, getframeinfo as gzz
 from lib.log import log, debug, init as log_init
@@ -30,6 +32,14 @@ def domain_create(epp_job, dom_db):
 
 def start_up_check():
     pdns.start_up()
+    for zone, zone_rec in registry.tld_lib.zone_data.items():
+        if "registry" not in zone_rec or zone_rec["registry"] not in registry.tld_lib.registry:
+            continue
+
+        this_reg = registry.tld_lib.registry[zone_rec["registry"]]
+        if this_reg["type"] == "local" and zone not in pdns.all_pdns_zones:
+            pdns.create_zone(zone,True)
+
     return True
 
 
@@ -38,7 +48,7 @@ def domain_update_from_db(epp_job, dom_db):
     name = dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
-        log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'",gzz(czz()))
+        log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'", gzz(czz()))
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
@@ -58,15 +68,37 @@ def domain_update_from_db(epp_job, dom_db):
 
 
 def domain_request_transfer(epp_job, dom_db):
-    return True
+    if not sql.has_data(epp_job, "authcode") or not sql.has_data(dom_db, "authcode"):
+        debug(f"Missing field", gzz(czz()))
+        return None
+
+    if dom_db["user_id"] == epp_job["user_id"]:
+        return True
+
+    dom_authcode = dom_db["authcode"].encode("utf-8")
+    enc_pass = bcrypt.hashpw(base64.b64decode(epp_job["authcode"]), dom_authcode)
+    if dom_authcode != enc_pass:
+        debug(f"passwords do not match {dom_db['authcode']} {enc_pass}", gzz(czz()))
+        return None
+
+    return sql.sql_update_one("domains", {
+        "authcode": None,
+        "user_id": epp_job["user_id"]
+    }, {"domain_id": dom_db["domain_id"]})
 
 
 def domain_renew(epp_job, dom_db):
-    return True
+    return sql.sql_update_one("domains",
+                              f"expiry_dt=date_add(expiry_dt,interval {epp_job['num_years']} year),amended_dt=now()",
+                              {"domain_id": dom_db["domain_id"]})
 
 
 def set_authcode(epp_job, dom_db):
-    return True
+    if sql.has_data(epp_job, "authcode"):
+        password = bcrypt.hashpw(base64.b64decode(epp_job["authcode"]), bcrypt.gensalt()).decode("utf-8")
+    else:
+        password = None
+    return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 
 def my_hello(__):
@@ -84,6 +116,6 @@ handler.add_plugin(
         "dom/authcode": set_authcode
     })
 
-
 if __name__ == "__main__":
     log_init(with_debug=True)
+    start_up()

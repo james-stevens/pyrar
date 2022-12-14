@@ -64,16 +64,21 @@ def run_epp_item(epp_job):
     if (dom_db := shared.get_dom_from_db(epp_job)) is None:
         return job_abort(epp_job)
 
+    if sql.has_data(epp_job, "user_id") and epp_job["job_type"] != "dom/transfer":
+        if epp_job["user_id"] != dom_db["user_id"]:
+            log(f"EPP-{job_id}: Domain '{dom_db['name']}' is not owned by '{epp_job['user_id']}'", gzz(czz()))
+            return job_abort(epp_job)
+
     reg = registry.tld_lib.http_req(dom_db["name"])
     if reg["type"] not in handler.plugins:
         return job_abort(epp_job)
 
     if (not sql.has_data(epp_job, "job_type") or epp_job["job_type"] not in handler.plugins[reg["type"]]):
-        log(f"EPP-{job_id} Missing or invalid job_type for '{reg['type']}'", gzz(czz()))
+        log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'", gzz(czz()))
         return job_abort(epp_job)
 
     job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job, dom_db)
-    notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']:epp_job['job_type']}' " +
+    notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']}:{epp_job['job_type']}' " +
              f"on DOM-{epp_job['domain_id']} retries {epp_job['failures']}/" +
              f"{policy.policy('epp_retry_attempts', 3)}")
 
@@ -120,6 +125,7 @@ def main():
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')
     parser.add_argument("-l", '--live', action="store_true")
     parser.add_argument("-D", '--debug', action="store_true")
+    parser.add_argument("-s", '--start-up', action="store_true")
     parser.add_argument("-a", '--action', help="Plugin action")
     parser.add_argument("-p", '--plugin', help="Plugin name")
     parser.add_argument("-d", '--domain-id', help="Plugin name", type=int)
@@ -132,6 +138,10 @@ def main():
     if args.live:
         start_up(True)
         return run_server()
+
+    if args.plugin and args.start_up:
+        start_up(args.live)
+        sys.exit(1)
 
     if not args.plugin or not args.action or not args.domain_id:
         print("Plugin or action or domain_id not specified")

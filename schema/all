@@ -3,8 +3,6 @@
 #    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
 #################################################################
 
-./save
-
 . ./database
 
 ${cmd} "drop database ${MYSQL_DATABASE}"

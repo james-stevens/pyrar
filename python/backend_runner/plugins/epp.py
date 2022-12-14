@@ -88,7 +88,7 @@ def ds_in_list(ds_data, ds_list):
     return False
 
 
-def domain_renew(epp_job,dom_db):
+def domain_renew(epp_job, dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -117,7 +117,7 @@ def transfer_failed(domain_id):
     return False
 
 
-def domain_request_transfer(epp_job,dom_db):
+def domain_request_transfer(epp_job, dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -149,7 +149,7 @@ def domain_request_transfer(epp_job,dom_db):
     return True
 
 
-def domain_create(epp_job,dom_db):
+def domain_create(epp_job, dom_db):
     name = dom_db["name"]
     job_id = epp_job["epp_job_id"]
 
@@ -180,7 +180,7 @@ def domain_create(epp_job,dom_db):
     return True
 
 
-def domain_info(epp_job,dom_db):
+def domain_info(epp_job, dom_db):
 
     this_reg = registry.tld_lib.http_req(dom_db["name"])
     ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
@@ -204,7 +204,7 @@ def epp_get_domain_info(job_id, domain_name):
     return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
-def set_authcode(epp_job,dom_db):
+def set_authcode(epp_job, dom_db):
     job_id = epp_job["epp_job_id"]
     name = dom_db["name"]
 
@@ -221,7 +221,7 @@ def set_authcode(epp_job,dom_db):
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
-def domain_update_from_db(epp_job,dom_db):
+def domain_update_from_db(epp_job, dom_db):
     job_id = epp_job["epp_job_id"]
     name = dom_db["name"]
     if (epp_info := epp_get_domain_info(job_id, name)) is None:

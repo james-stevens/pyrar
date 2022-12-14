@@ -17,7 +17,7 @@ from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
-DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
+NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
 AUTO_CREATED_AMENDED_DT = ["domains", "epp_jobs", "order_items", "orders", "sales_items", "session_keys", "users"]
 
 cnx = None
@@ -50,14 +50,14 @@ my_conv[FIELD_TYPE.NEWDECIMAL] = int
 
 def format_col(item, column_val):
     """ convert {column_val} to SQL string """
-    if item in DATE_FIELDS:
+    if item in NOW_DATE_FIELDS:
         return f"{item}=now()"
 
     if column_val is None:
         return f"{item}=NULL"
 
     if isinstance(column_val, int):
-        return item+"="+str(int(column_val))
+        return item + "=" + str(int(column_val))
 
     if isinstance(column_val, list):
         return item + " in (" + ",".join(format_col(None, this_val) for this_val in column_val) + ")"
@@ -171,13 +171,13 @@ def sql_exists(table, where):
 
 
 def sql_update_one(table, column_vals, where):
-    if table in AUTO_CREATED_AMENDED_DT:
+    if table in AUTO_CREATED_AMENDED_DT and isinstance(column_vals, dict):
         column_vals["amended_dt"] = None
     return sql_update(table, column_vals, where, 1)
 
 
 def sql_update(table, column_vals, where, limit=None):
-    update_cols = column_vals if isinstance(column_vals, str) else data_set(column_vals, ",")
+    update_cols = data_set(column_vals, ",")
     where_clause = data_set(where, " and ")
     sql = f"update {table} set {update_cols} where {where_clause}"
     if limit is not None:

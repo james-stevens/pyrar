@@ -252,6 +252,7 @@ def webui_update_domain(req, post_dom):
 
     epp_job = {
         "domain_id": post_dom["domain_id"],
+        "user_id": req.user_id,
         "job_type": "dom/update",
         "execute_dt": sql.now(),
         "created_dt": None
@@ -271,6 +272,7 @@ def webui_set_auth_code(req, post_dom):
 
     epp_job = {
         "domain_id": post_dom["domain_id"],
+        "user_id": req.user_id,
         "job_type": "dom/authcode",
         "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
         "execute_dt": sql.now(),

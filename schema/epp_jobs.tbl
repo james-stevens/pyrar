@@ -8,6 +8,7 @@ sqlsh "drop table if exists epp_jobs"
 sqlsh "create table epp_jobs (
 	epp_job_id			${auto},
 	domain_id			${row_id},
+	user_id				${row_id},
 	job_type			varchar(20) not null default 'none',
 	failures			int not null default 0,
 

@@ -8,7 +8,7 @@ import collections
 
 
 def flatten(in_js):
-	do_flatten([],in_js)
+    do_flatten([],in_js)
 
 def do_flatten(pfx,inp_js):
     if isinstance(inp_js, (dict, collections.OrderedDict)):

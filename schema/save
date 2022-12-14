@@ -1,6 +1,10 @@
 #! /bin/sh
 
+file="/tmp/pyrar-data/my_data.sql-$(date +%s)"
+
 sqlsh 'show tables' | while read table
 do
 	sqlsh -z ${table} "select * from ${table}"
-done > /tmp/my_data.sql
+done > ${file}
+
+gzip -9v ${file}
