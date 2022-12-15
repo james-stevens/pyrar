@@ -4,10 +4,9 @@
 
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
-
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
-
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
+DEFAULT_CURRENCY = { "iso": "USD", "separator": [",","."], "symbol": "$", "decimal": 2, "pow10" : 100 }
 
 STATUS_LIVE = 1
 STATUE_WAITING_PAYMENT = 10

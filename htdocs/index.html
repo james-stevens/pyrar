@@ -29,9 +29,6 @@ gbl = {
 	email: "&#128231;",
 	copy: "&#x2398",
 
-	cur: "$",
-	cur_iso: "USD",
-
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
 
@@ -205,7 +202,7 @@ function start_basket_table()
 		let item = gbl.basket[i];
 		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
 		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
-		x += `<td align=center>${item.num_years}</td><td align=right>${gbl.cur}${item.cost}</td></tr>`;
+		x += `<td align=center>${item.num_years}</td><td align=right>${format_amount(item.cost)}</td></tr>`;
 		}
 	return x;
 }
@@ -363,6 +360,7 @@ function bodyLoaded()
 
 		gbl.config = reply;
 		gbl.config.ok_tlds = {};
+		gbl.currency = policy("currency",gbl.config.default_currency);
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
 		let my_icon = policy("icon",null);
@@ -373,9 +371,6 @@ function bodyLoaded()
 			elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
 			}
 		else elm.businessName.innerHTML = site_name;
-
-		gbl.cur = policy("currency_symbol","$");
-		gbl.cur_iso = policy("currency_iso","USD");
 
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 
@@ -401,7 +396,7 @@ function one_search_line(item,block_not_avail)
 	let x = "<tr class=searchDomain>";
 	x += `<td><span title="${item.name}">${fromPuny(item.name)}</span>`;
 	if ("renew" in item)
-		x += `<br><span class=searchRenew>renew ${gbl.cur}${item.renew}</span>`;
+		x += `<br><span class=searchRenew>renew ${format_amount(item.renew)}</span>`;
 	x += "</td>";
 
 	if ("for_sale_msg" in item) x += `<td colspan=2>${item.for_sale_msg}</td>`;
@@ -409,7 +404,8 @@ function one_search_line(item,block_not_avail)
 	else {
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
-			x += btn(`buy_one_name('${item.name}','create')`,`<b>BUY ${gbl.cur}${item.create}</b>`,`Buy '${item.name}' for ${gbl.cur}${item.create}`,120);
+			amt = format_amount(item.create);
+			x += btn(`buy_one_name('${item.name}','create')`,`<b>BUY ${amt}</b>`,`Buy '${item.name}' for ${amt}`,120);
 			x += "</td>";
 			}
 		}
@@ -815,6 +811,11 @@ function userDetails()
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${ctx.user.amended_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${ctx.user.created_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Auto Renew All :</td><td class=dataCell>${auto_renew}</td></tr>`;
+
+	let show_bal = format_amount(ctx.user.acct_current_balance);
+	if (ctx.user.acct_on_hold) show_bal = "Account on hold";
+	x += `<tr><td class=promptCell>Account Balance :</td><td class=dataCell>${show_bal}</td></tr>`;
+
 	return x + "</table>";
 }
 
@@ -835,7 +836,7 @@ function basketCheckout()
 		total += parseFloat(item.cost);
 		}
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${gbl.cur}${total.toFixed(2)}</td></tr>`;
+	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${format_amount(total)}</td></tr>`;
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 	x += "<tr><td colspan=4 align=right>"+btn("place_order()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
 	elm.basketSpace.innerHTML = x+"</table>"
@@ -858,6 +859,7 @@ function myAccount()
 		elm.userSpace.innerHTML = userDetails();
 		});
 }
+
 
 function NSkeyDown(event,idx) {
 	if (event.key=="Escape") return hidePopUp();

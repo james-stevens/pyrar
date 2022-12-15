@@ -151,3 +151,15 @@ function supported_tld(fqdn)
 	return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
 }
 
+function format_amount(num)
+{
+    let pfx = gbl.currency.symbol;
+    if (num < 0) { pfx += "-"; num *= -1; }
+
+    let dec = String(num % gbl.currency.pow10)
+    while(dec.length < gbl.currency.decimal) dec = "0"+dec;
+    let big = String(Math.trunc(num/gbl.currency.pow10));
+    big = big.replace(/(\d)(?=(\d{3})+(?!\d))/g, `$1${gbl.currency.separator[0]}`);
+    return pfx+big+gbl.currency.separator[1]+dec;
+}
+

@@ -35,7 +35,10 @@ class DomainName:
         self.names = None
         self.err = None
         self.registry = None
-        self.currency = policy.policy("currency_iso", "USD")
+        self.currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
+        if not validate.valid_currency(self.currency):
+            log(f"ERROR: Main policy currency is not set up correctly, using default values",gzz(czz()))
+            self.currency = misc.DEFAULT_CURRENCY
 
         if isinstance(domain, str):
             if domain.find(",") >= 0:
@@ -52,7 +55,10 @@ class DomainName:
         else:
             regs_file = registry.tld_lib.regs_file.data()
             if "currency" in self.registry:
-                self.currency = self.registry["currency"]
+                if validate.valid_currency(self.currency):
+                    self.currency = self.registry["currency"]
+                else:
+                    log(f"ERROR: Registry currency for '{self.registry['name']}' is not set up correctly, using system default",gzz(czz()))
 
     def process_string(self, domain):
         name = domain.lower()
@@ -194,7 +200,7 @@ def xml_check_with_fees(domobj, years, which):
         "extension": {
             "fee:check": {
                 "@xmlns:fee": xmlns[domobj.registry["name"]]["fee"],
-                "fee:currency": domobj.currency,
+                "fee:currency": domobj.currency["iso"],
                 "fee:command": fees_extra
             }
         }

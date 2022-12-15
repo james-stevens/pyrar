@@ -9,6 +9,7 @@ import flask
 import bcrypt
 
 from lib import registry
+from lib import misc
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 import users
@@ -87,6 +88,7 @@ class WebuiReq:
 def get_config():
     req = WebuiReq()
     ret = {
+        "default_currency": misc.DEFAULT_CURRENCY,
         "registry": registry.tld_lib.zone_send,
         "zones": registry.tld_lib.return_zone_list(),
         "policy": policy.data()

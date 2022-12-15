@@ -111,6 +111,20 @@ def validate_binary(val):
     return val in [0, 1]
 
 
+def valid_currency(currency):
+    for item in ["iso","symbol","separator","decimal","pow10"]:
+        if item not in currency:
+            return False
+
+    if len(currency["iso"]) != 3:
+        return False
+
+    if not isinstance(currency["decimal"],int) or not isinstance(currency["pow10"],int):
+        return False
+
+    return True
+
+
 if __name__ == "__main__":
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))

@@ -3,7 +3,6 @@
 		"desc": "Names.of.London",
 		"sessions": 3,
 		"max_checks": 10,
-		"currency": "USD",
 		"prices" : { "default": "x2" },
 		"type": "epp"
 		},
@@ -12,7 +11,6 @@
 		"desc": "Somebody Else",
 		"sessions": 3,
 		"max_checks": 10,
-		"currency": "USD",
 		"prices" : { "default": "x2" },
 		"type": "epp"
 		},

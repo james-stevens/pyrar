@@ -7,6 +7,7 @@ import json
 import random
 from inspect import currentframe as czz, getframeinfo as gzz
 
+from lib import misc
 from lib import fileloader
 from lib import mysql as sql
 from lib.log import log, debug, init as log_init
@@ -183,7 +184,7 @@ class ZoneLib:
                 return ret
         return None
 
-    def multiply_values(self, check_dom_data, num_years):
+    def multiply_values(self, check_dom_data, num_years, retain_reg_price=False):
         for dom in check_dom_data:
             if (tld := self.tld_of_name(dom["name"])) is None:
                 return False
@@ -214,8 +215,14 @@ class ZoneLib:
                 if this_reg["type"] == "local":
                     val *= float(num_years)
 
-                val = round(float(val), 2)
-                dom[action] = f'{val:.2f}'
+                site_currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
+                val *= site_currency["pow10"]
+                val = round(float(val), 0)
+
+                if retain_reg_price:
+                    dom["reg_"+action] = dom[action]
+
+                dom[action] = f'{val:.0f}'
 
     def make_xmlns(self):
         default_xmlns = {
