@@ -17,6 +17,7 @@ from lib.policy import this_policy as policy
 from lib import misc
 from lib import validate
 from lib import parse_dom_resp
+from lib import sigprocs
 import whois_priv
 import dom_req_xml
 import xmlapi
@@ -94,6 +95,7 @@ def run_epp_item(epp_job):
 
 def run_server():
     log("EPP-SERVER RUNNING", gzz(czz()))
+    signal_mtime = sigprocs.signal_wait("backend")
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
                  f" and failures < {policy.policy('epp_retry_attempts', 3)} limit 1")
@@ -101,7 +103,7 @@ def run_server():
         if ret and len(epp_job) > 0:
             run_epp_item(epp_job[0])
         else:
-            time.sleep(5)
+            signal_mtime = sigprocs.signal_wait("backend",signal_mtime)
 
 
 def start_up(is_live):

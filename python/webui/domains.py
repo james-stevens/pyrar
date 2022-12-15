@@ -15,6 +15,7 @@ from lib.policy import this_policy as policy
 from lib.log import log, debug, init as log_init
 from lib import mysql as sql
 from lib import misc
+from lib import sigprocs
 import parsexml
 import users
 
@@ -258,6 +259,7 @@ def webui_update_domain(req, post_dom):
         "created_dt": None
     }
     sql.sql_insert("epp_jobs", epp_job)
+    sigprocs.signal_service("backend")
 
     return True, update_cols
 
@@ -278,7 +280,10 @@ def webui_set_auth_code(req, post_dom):
         "execute_dt": sql.now(),
         "created_dt": None
     }
+
     sql.sql_insert("epp_jobs", epp_job)
+    sigprocs.signal_service("backend")
+
     return True, {"auth_code": auth_code}
 
 
