@@ -8,9 +8,10 @@ import httpx
 from inspect import currentframe as czz, getframeinfo as gzz
 
 import domains
-import parsexml
+from lib import parsexml
 from lib import mysql as sql
 from lib.log import log, debug, init as log_init
+from lib import misc
 
 
 def debug_one_domain(domain):
@@ -19,7 +20,7 @@ def debug_one_domain(domain):
         print(">>>>>", domobj.err)
         sys.exit(1)
 
-    ok, out_js = http_price_domains(domobj, 1, ["create", "renew", "transfer", "restore"])
+    ok, out_js = http_price_domains(domobj, 1, misc.EPP_ACTIONS)
 
     print(">>>> REPLY", ok, out_js)
 

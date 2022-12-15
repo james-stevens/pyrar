@@ -33,12 +33,8 @@ def domain_create(epp_job, dom_db):
 def start_up_check():
     pdns.start_up()
     for zone, zone_rec in registry.tld_lib.zone_data.items():
-        if "registry" not in zone_rec or zone_rec["registry"] not in registry.tld_lib.registry:
-            continue
-
-        this_reg = registry.tld_lib.registry[zone_rec["registry"]]
-        if this_reg["type"] == "local" and zone not in pdns.all_pdns_zones:
-            pdns.create_zone(zone,True)
+        if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and zone not in pdns.all_pdns_zones):
+            pdns.create_zone(zone, True)
 
     return True
 

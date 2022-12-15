@@ -27,7 +27,8 @@ DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
 def run_epp_request(this_reg, post_json):
     try:
-        resp = this_reg["client"].post(this_reg["url"], json=post_json, headers=misc.HEADER)
+        client = registry.tld_lib.clients[this_reg["name"]]
+        resp = client.post(this_reg["url"], json=post_json, headers=misc.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
             log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}", gzz(czz()))
             return None
@@ -44,16 +45,13 @@ def start_up_check():
         if reg["type"] != "epp":
             continue
 
-        reg["client"] = httpx.Client()
-
         if run_epp_request(reg, {"hello": None}) is None:
-            print(f"ERROR: EPP Gateway for '{name}' is not working")
             log(f"ERROR: EPP Gateway for '{name}' is not working", gzz(czz()))
             sys.exit(0)
 
-        if not whois_priv.check_privacy_exists(reg["client"], reg["url"]):
+        client = registry.tld_lib.clients[name]
+        if not whois_priv.check_privacy_exists(client, reg["url"]):
             msg = (f"ERROR: Registry '{name}' " + "privacy record failed to create")
-            print(msg)
             log(msg, gzz(czz()))
             sys.exit(1)
 
@@ -100,7 +98,7 @@ def domain_renew(epp_job, dom_db):
     if (years := shared.check_num_years(epp_job)) is None:
         return None
 
-    this_reg = registry.tld_lib.http_req(name)
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
     xml = run_epp_request(this_reg, dom_req_xml.domain_renew(name, years, dom_db["expiry_dt"].split()[0]))
 
     if not xml_check_code(job_id, "renew", xml):
@@ -128,7 +126,7 @@ def domain_request_transfer(epp_job, dom_db):
         transfer_failed(dom_db["domain_id"])
         return None
 
-    this_reg = registry.tld_lib.http_req(name)
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
     xml = run_epp_request(
         this_reg,
         dom_req_xml.domain_request_transfer(name,
@@ -161,7 +159,7 @@ def domain_create(epp_job, dom_db):
     if (years := shared.check_num_years(epp_job)) is None:
         return None
 
-    this_reg = registry.tld_lib.http_req(name)
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if len(ns_list) > 0:
         run_host_create(job_id, this_reg, ns_list)
 
@@ -182,7 +180,7 @@ def domain_create(epp_job, dom_db):
 
 def domain_info(epp_job, dom_db):
 
-    this_reg = registry.tld_lib.http_req(dom_db["name"])
+    this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
 
     if xmlapi.xmlcode(ret) == 1000:
@@ -191,7 +189,7 @@ def domain_info(epp_job, dom_db):
 
 
 def epp_get_domain_info(job_id, domain_name):
-    this_reg = registry.tld_lib.http_req(domain_name)
+    this_reg = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or "url" not in this_reg:
         log(f"EPP-{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
         return None
@@ -208,7 +206,7 @@ def set_authcode(epp_job, dom_db):
     job_id = epp_job["epp_job_id"]
     name = dom_db["name"]
 
-    this_reg = registry.tld_lib.http_req(name)
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if this_reg is None or "url" not in this_reg:
         log(f"Odd: this_reg or url returned None for '{name}", gzz(czz()))
         return None
@@ -236,7 +234,7 @@ def run_host_create(job_id, this_reg, host_list):
 
 
 def do_domain_update(job_id, name, dom_db, epp_info):
-    this_reg = registry.tld_lib.http_req(name)
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if this_reg is None or "url" not in this_reg:
         return None
 

@@ -168,28 +168,28 @@
                 "null": false,
                 "default": 0
             },
+            "execute_dt": {
+                "type": "datetime",
+                "null": false,
+                "default": "0000-00-00 00:00:00"
+            },
             "new_status_id": {
                 "size": 11,
                 "type": "int",
                 "null": true
-            },
-            "when_dt": {
-                "type": "datetime",
-                "null": false,
-                "default": "0000-00-00 00:00:00"
             }
         },
         "indexes": {
             "PRIMARY": {
                 "columns": [
                     "domain_id",
-                    "when_dt"
+                    "execute_dt"
                 ],
                 "unique": true
             },
             "by_date": {
                 "columns": [
-                    "when_dt"
+                    "execute_dt"
                 ],
                 "unique": false
             }
@@ -201,7 +201,7 @@
                 "type": "datetime",
                 "null": true
             },
-            "auth_code": {
+            "authcode": {
                 "size": 100,
                 "type": "varchar",
                 "null": true
@@ -355,6 +355,13 @@
                 "size": 11,
                 "type": "int",
                 "null": true
+            },
+            "user_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
             }
         },
         "indexes": {
@@ -985,8 +992,7 @@
             "renew_limit": {
                 "size": 11,
                 "type": "int",
-                "null": false,
-                "default": 0
+                "null": true
             },
             "zone": {
                 "size": 260,

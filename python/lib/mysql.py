@@ -50,7 +50,7 @@ my_conv[FIELD_TYPE.NEWDECIMAL] = int
 
 def format_col(item, column_val):
     """ convert {column_val} to SQL string """
-    if item in NOW_DATE_FIELDS:
+    if item in NOW_DATE_FIELDS and column_val is None:
         return f"{item}=now()"
 
     if column_val is None:
@@ -159,8 +159,9 @@ def sql_delete_one(table, where):
 
 def sql_insert(table, column_vals):
     if table in AUTO_CREATED_AMENDED_DT:
-        column_vals["amended_dt"] = None
-        column_vals["created_dt"] = None
+        for col in ["amended_dt","created_dt"]:
+            if col not in column_vals:
+                column_vals[col] = None
     return sql_exec(f"insert into {table} set " + data_set(column_vals, ","))
 
 

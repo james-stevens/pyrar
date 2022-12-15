@@ -8,6 +8,8 @@ DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
 DEFAULT_CURRENCY = { "iso": "USD", "separator": [",","."], "symbol": "$", "decimal": 2, "pow10" : 100 }
 
+EPP_ACTIONS = ["create", "renew", "transfer", "restore"]
+
 STATUS_LIVE = 1
 STATUE_WAITING_PAYMENT = 10
 STATUE_TRANS_QUEUED = 100

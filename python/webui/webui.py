@@ -7,6 +7,7 @@ import json
 import httpx
 import flask
 import bcrypt
+from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib import registry
 from lib import misc
@@ -16,7 +17,6 @@ import users
 from lib import mysql as sql
 import domains
 
-from inspect import currentframe as czz, getframeinfo as gzz
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -30,7 +30,6 @@ log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 registry.start_up()
-domains.start_up()
 
 
 class WebuiReq:
@@ -89,7 +88,7 @@ def get_config():
     req = WebuiReq()
     ret = {
         "default_currency": misc.DEFAULT_CURRENCY,
-        "registry": registry.tld_lib.zone_send,
+        "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
         "policy": policy.data()
     }

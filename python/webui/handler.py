@@ -2,7 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-import json
+from lib import registry
 
 plugins = {}
 

@@ -8,7 +8,7 @@ from lib import validate
 
 
 def do_domain_update(job_id, name, dom_db, epp_info):
-    this_reg, url = registry.tld_lib.http_req(name)
+    this_reg, url = registry.tld_lib.reg_record_for_domain(name)
     ns_list, ds_list = get_domain_lists(dom_db)
     if not check_dom_data(job_id, name, ns_list, ds_list):
         return None
@@ -27,7 +27,7 @@ def do_domain_update(job_id, name, dom_db, epp_info):
 
 
 def epp_get_domain_info(job_id, domain_name):
-    this_reg, url = registry.tld_lib.http_req(domain_name)
+    this_reg, url = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or url is None:
         log(f"BackEnd:{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
         return None

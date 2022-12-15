@@ -5,6 +5,7 @@
 import os
 import json
 import random
+import httpx
 from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib import misc
@@ -18,9 +19,31 @@ EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
 EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
 EPP_PORTS_LIST = "/run/regs_ports"
 
-DEFAULT_CONFIG = {"max_checks": 5, "desc": "Unknown"}
+SEND_REGS_ITEMS = ["max_checks","desc","type"]
+
+DEFAULT_XMLNS = {
+    "contact": "urn:ietf:params:xml:ns:contact-1.0",
+    "domain": "urn:ietf:params:xml:ns:domain-1.0",
+    "epp": "urn:ietf:params:xml:ns:epp-1.0",
+    "eppcom": "urn:ietf:params:xml:ns:eppcom-1.0",
+    "fee": "urn:ietf:params:xml:ns:epp:fee-1.0",
+    "host": "urn:ietf:params:xml:ns:host-1.0",
+    "loginSec": "urn:ietf:params:xml:ns:epp:loginSec-1.0",
+    "org": "urn:ietf:params:xml:ns:epp:org-1.0",
+    "orgext": "urn:ietf:params:xml:ns:epp:orgext-1.0",
+    "rgp": "urn:ietf:params:xml:ns:rgp-1.0",
+    "secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
+}
 
 tld_lib = None
+
+
+def make_xmlns(registry_data):
+    ret_xmlns = DEFAULT_XMLNS
+    if "xmlns" in registry_data:
+        for xml_name, xml_data in registry_data["xmlns"].items():
+            ret_xmlns[xml_name] = xml_data
+    return ret_xmlns
 
 
 def have_newer(mtime, file_name):
@@ -51,11 +74,11 @@ def get_price_from_json(price_json, cls, action):
 
 class ZoneLib:
     def __init__(self):
-        self.zone_send = {}
         self.zone_list = []
         self.zone_data = {}
         self.zone_priority = {}
         self.registry = None
+        self.clients = {}
 
         self.last_zone_table = None
         self.check_zone_table()
@@ -63,14 +86,10 @@ class ZoneLib:
         self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
         self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
 
-        with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
-            port_lines = [line.split() for line in fd.readlines()]
-        self.ports = {p[0]: int(p[1]) for p in port_lines}
-
         self.process_json()
 
     def check_zone_table(self):
-        ok, last_change = sql.sql_select_one("zones", None, "max(amended_dt) 'last_change'")
+        ok, last_change = sql.sql_select_one("zones", "enabled and allow_sales", "max(amended_dt) 'last_change'")
         if not ok:
             return None
 
@@ -78,13 +97,13 @@ class ZoneLib:
             return False
 
         self.last_zone_table = last_change["last_change"]
-        ok, zone_from_db = sql.sql_select("zones", None, "zone,registry,price_info")
+        ok, zone_from_db = sql.sql_select("zones", "enabled and allow_sales", "zone,registry,price_info,renew_limit")
         if not ok:
             return None
 
         self.zone_data = {}
         for row in zone_from_db:
-            self.zone_data[row["zone"]] = {"registry": row["registry"]}
+            self.zone_data[row["zone"]] = { col:row[col] for col in ["registry","renew_limit"] if row[col]}
             if sql.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
@@ -101,22 +120,41 @@ class ZoneLib:
             self.process_json()
 
     def process_json(self):
+        with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
+            port_lines = [line.split() for line in fd.readlines()]
+        ports = {p[0]: int(p[1]) for p in port_lines}
+
         self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
-        new_send = {}
+
         self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
-            new_send[registry] = {}
-            for item, val in DEFAULT_CONFIG.items():
-                new_send[registry][item] = reg_data[item] if item in reg_data else val
             reg_data["name"] = registry
-            if reg_data["type"] == "epp":
-                port = self.ports[registry]
-                reg_data["url"] = f"http://127.0.0.1:{port}/epp/api/v1.0/request"
+            if reg_data["type"] == "epp" and registry in ports:
+                reg_data["url"] = f"http://127.0.0.1:{ports[registry]}/epp/api/v1.0/request"
 
-        self.zone_send = new_send
+        for zone, zone_rec in self.zone_data.items():
+            zone_rec["reg_data"] = self.registry[zone_rec["registry"]]
+
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
         self.sort_data_list(new_list, is_tld=True)
         self.zone_list = [dom["name"] for dom in new_list]
+
+        is_epp = {}
+        for name, reg_data in self.registry.items():
+            if reg_data["type"] == "epp":
+                is_epp[name] = True
+                if name not in self.clients:
+                    self.clients[name] = httpx.Client()
+        for reg in list(self.clients):
+            if reg not in is_epp:
+                self.clients[reg].close()
+                del self.clients[reg]
+
+    def regs_send(self):
+        regs_to_send = {}
+        for registry, reg_data in self.registry.items():
+            regs_to_send[registry] = { item:reg_data[item] for item in SEND_REGS_ITEMS if item in reg_data }
+        return regs_to_send
 
     def sort_data_list(self, the_list, is_tld=False):
         for dom in the_list:
@@ -148,12 +186,10 @@ class ZoneLib:
     def url(self, registry):
         return self.registry[registry]["url"]
 
-    def http_req(self, domain):
+    def reg_record_for_domain(self, domain):
         if (tld := self.tld_of_name(domain)) is None:
             return None, None
-        this_reg = self.zone_data[tld]["registry"]
-
-        return self.registry[this_reg] if this_reg in self.registry else None
+        return self.zone_data[tld]["reg_data"] if "reg_data" in self.zone_data[tld] else None
 
     def extract_items(self, dom):
         return {
@@ -165,6 +201,9 @@ class ZoneLib:
     def return_zone_list(self):
         new_list = [self.extract_items(dom) for dom in self.zone_list if dom in self.zone_data]
         new_list.sort(key=key_priority)
+        for record in new_list:
+            if "priority" in record:
+                del record["priority"]
         return new_list
 
     def supported_tld(self, name):
@@ -188,63 +227,47 @@ class ZoneLib:
         for dom in check_dom_data:
             if (tld := self.tld_of_name(dom["name"])) is None:
                 return False
-            reg_name = self.zone_data[tld]["registry"]
-            this_reg = self.registry[reg_name] if reg_name in self.registry else None
+            this_reg = self.zone_data[tld]["reg_data"]
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for action in ["create", "renew", "transfer", "restore"]:
+            for action in misc.EPP_ACTIONS:
                 if action not in dom:
                     continue
 
-                if action in ["transfer","restore"] and this_reg["type"] == "local":
-                    action = "renew"
+                if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
+                    if action in ["transfer","restore"] and this_reg["type"] == "local":
+                        factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
-                if (mul := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    del dom[action]
-                    continue
+                    if factor is None:
+                        del dom[action]
+                        continue
 
-                if isinstance(mul, str):
-                    if mul[:1] == "x":
-                        val = float(dom[action]) * float(mul[1:])
-                    elif mul[:1] == "+":
-                        val = float(dom[action]) + float(mul[1:])
+                regs_price = float(dom[action])
+
+                if isinstance(factor, str):
+                    if factor[:1] == "x":
+                        our_price = regs_price * float(factor[1:])
+                    elif factor[:1] == "+":
+                        our_price = regs_price + float(factor[1:])
                 else:
-                    val = float(mul)
+                    our_price = float(factor)
+                    regs_price = float(factor)
 
                 if this_reg["type"] == "local":
-                    val *= float(num_years)
+                    our_price *= float(num_years)
+                    regs_price *= float(num_years)
 
                 site_currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
-                val *= site_currency["pow10"]
-                val = round(float(val), 0)
+                our_price *= site_currency["pow10"]
+                our_price = round(float(our_price), 0)
 
                 if retain_reg_price:
-                    dom["reg_"+action] = dom[action]
+                    regs_price *= site_currency["pow10"]
+                    regs_price = round(float(regs_price), 0)
+                    dom["reg_"+action] = int(regs_price)
 
-                dom[action] = f'{val:.0f}'
-
-    def make_xmlns(self):
-        default_xmlns = {
-            "contact": "urn:ietf:params:xml:ns:contact-1.0",
-            "domain": "urn:ietf:params:xml:ns:domain-1.0",
-            "epp": "urn:ietf:params:xml:ns:epp-1.0",
-            "eppcom": "urn:ietf:params:xml:ns:eppcom-1.0",
-            "fee": "urn:ietf:params:xml:ns:epp:fee-1.0",
-            "host": "urn:ietf:params:xml:ns:host-1.0",
-            "loginSec": "urn:ietf:params:xml:ns:epp:loginSec-1.0",
-            "org": "urn:ietf:params:xml:ns:epp:org-1.0",
-            "orgext": "urn:ietf:params:xml:ns:epp:orgext-1.0",
-            "rgp": "urn:ietf:params:xml:ns:rgp-1.0",
-            "secDNS": "urn:ietf:params:xml:ns:secDNS-1.1"
-        }
-        ret_xmlns = {}
-        for registry, data in self.registry.items():
-            ret_xmlns[registry] = default_xmlns
-            if "xmlns" in data:
-                for xml_name, xml_data in data["xmlns"].items():
-                    ret_xmlns[registry][xml_name] = xml_data
-        return ret_xmlns
+                dom[action] = int(our_price)
 
 
 def start_up():
@@ -261,11 +284,11 @@ if __name__ == "__main__":
     start_up()
 
     # print(tld_lib.registry)
-    print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
-    print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
-    print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
-    print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
-    print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
-    # print("PORTS", json.dumps(tld_lib.ports, indent=3))
+    # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
+    # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
+    # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
+    print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
+    # print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
+    # print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.make_xmlns(), indent=3))

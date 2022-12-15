@@ -16,18 +16,11 @@ from lib.log import log, debug, init as log_init
 from lib import mysql as sql
 from lib import misc
 from lib import sigprocs
-import parsexml
+from lib import parsexml
 import users
 
-xmlns = None
-
-
-def start_up():
-    global xmlns
-    xmlns = registry.tld_lib.make_xmlns()
-    for name, reg in registry.tld_lib.registry.items():
-        if reg["type"] == "epp":
-            reg["client"] = httpx.Client()
+import handler
+from plugins import *
 
 
 class DomainName:
@@ -35,6 +28,7 @@ class DomainName:
         self.names = None
         self.err = None
         self.registry = None
+        self.client = None
         self.currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
         if not validate.valid_currency(self.currency):
             log(f"ERROR: Main policy currency is not set up correctly, using default values",gzz(czz()))
@@ -67,7 +61,12 @@ class DomainName:
         else:
             self.err = err
             self.names = None
-        self.registry = registry.tld_lib.http_req(name)
+        self.registry = registry.tld_lib.reg_record_for_domain(name)
+        if self.registry["type"] == "epp":
+            self.client = registry.tld_lib.clients[self.registry["name"]]
+        else:
+            self.client = None
+        self.xmlns = registry.make_xmlns(self.registry)
 
     def process_list(self, domain):
         self.names = []
@@ -76,9 +75,14 @@ class DomainName:
             if (err := validate.check_domain_name(name)) is None:
                 self.names.append(name)
                 if self.registry is None:
-                    self.registry = registry.tld_lib.http_req(name)
+                    self.registry = registry.tld_lib.reg_record_for_domain(name)
+                    if self.registry["type"] == "epp":
+                        self.client = registry.tld_lib.clients[self.registry["name"]]
+                    else:
+                        self.client = None
+                    self.xmlns = registry.make_xmlns(self.registry)
                 else:
-                    regs = registry.tld_lib.http_req(name)
+                    regs = registry.tld_lib.reg_record_for_domain(name)
                     if regs != self.registry:
                         self.err = "ERROR: Split registry request"
                         self.names = None
@@ -89,82 +93,18 @@ class DomainName:
                 return
 
 
-def http_price_domains(domobj, years, which):
-
-    if domobj.registry is None or "url" not in domobj.registry:
-        return 400, "Unsupported TLD"
-
-    resp = domobj.registry["client"].post(domobj.registry["url"],
-                                          json=xml_check_with_fees(domobj, years, which),
-                                          headers=misc.HEADER)
-
-    if resp.status_code < 200 or resp.status_code > 299:
-        return 400, "Invalid HTTP Response from parent"
-
-    try:
-        return 200, json.loads(resp.content)
-    except ValueError as err:
-        log(f"{resp.status_code} === {resp.content.decode('utf8')}", gzz(czz()))
-        log(f"**** JSON FAILED TO PARSE ***** {err}", gzz(czz()))
-        return 400, "Returned JSON Parse Error"
-
-    return 400, "Unexpected Error"
-
-
 def get_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
-    if domobj.registry["type"] == "epp":
-        return epp_domain_prices(domobj, num_years, qry_type, user_id)
+    if not domobj.registry or "type" not in domobj.registry:
+        return False, "Registrar not supported"
 
-    if domobj.registry["type"] == "local":
-        return local_domain_prices(domobj, num_years, qry_type, user_id)
+    reg_type = domobj.registry["type"]
+    if reg_type not in handler.plugins or "dom/price" not in handler.plugins[reg_type]:
+        return False, "No plugin fro this Registrar"
 
-    return False, f"We should not be here '{domobj.registry['type']}'"
-
-
-def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
-    ok, reply = sql.sql_select("domains", {"name": domobj.names})
-    if not ok:
-        return False, "Unexpected database error"
-
-    dom_as_dict = {dom["name"]: dom for dom in reply}
-    ret_js = []
-    for dom in domobj.names if isinstance(domobj.names, list) else [domobj.names]:
-        add_dom = {"num_years": num_years, "name": dom, "avail": False}
-        if dom not in dom_as_dict:
-            add_dom["avail"] = True
-            for qt in qry_type:
-                add_dom[qt] = num_years
-        else:
-            if sql.has_data(dom_as_dict[dom], "for_sale_msg"):
-                add_dom["avail"] = True
-                add_dom["for_sale_msg"] = dom_as_dict[dom]["for_sale_msg"]
-
-        ret_js.append(add_dom)
-
-    registry.tld_lib.multiply_values(ret_js, num_years)
-    registry.tld_lib.sort_data_list(ret_js, is_tld=False)
-
-    return True, ret_js
-
-
-def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
-    ok, out_js = http_price_domains(domobj, num_years, qry_type)
-    if ok != 200:
-        return False, out_js
-
-    xml_p = parsexml.XmlParser(out_js)
-    code, ret_js = xml_p.parse_check_message()
-
-    if not code == 1000:
-        return False, ret_js
-
-    for item in ret_js:
-        if "avail" in item and not item["avail"]:
-            ok, reply = sql.sql_select_one("domains", {"name": item["name"]})
-            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg")
-                    and (user_id is None or user_id != reply["user_id"])):
-                for i in ["user_id", "for_sale_msg"]:
-                    item[i] = reply[i]
+    handler.plugins[domobj.registry["type"]]["dom/price"]
+    ok, ret_js = handler.plugins[reg_type]["dom/price"](domobj, num_years, qry_type, user_id)
+    if not ok or ret_js is None:
+        return False, "Price check failed"
 
     registry.tld_lib.multiply_values(ret_js, num_years)
     registry.tld_lib.sort_data_list(ret_js, is_tld=False)
@@ -173,38 +113,7 @@ def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id
 
 
 def close_epp_sess():
-    for name, reg in registry.tld_lib.registry.items():
-        if reg["type"] == "epp":
-            reg["client"].close()
-
-
-def fees_one(action, years):
-    return {
-        "@name": action,
-        "fee:period": {
-            "@unit": "y",
-            "#text": str(years),
-        }
-    }
-
-
-def xml_check_with_fees(domobj, years, which):
-    fees_extra = [fees_one(name, years) for name in which]
-    return {
-        "check": {
-            "domain:check": {
-                "@xmlns:domain": xmlns[domobj.registry["name"]]["domain"],
-                "domain:name": domobj.names
-            }
-        },
-        "extension": {
-            "fee:check": {
-                "@xmlns:fee": xmlns[domobj.registry["name"]]["fee"],
-                "fee:currency": domobj.currency["iso"],
-                "fee:command": fees_extra
-            }
-        }
-    }
+    return
 
 
 def check_domain_is_mine(user_id, domain):

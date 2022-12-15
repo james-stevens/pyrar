@@ -13,7 +13,7 @@ sqlsh "CREATE TABLE zones (
 	price_info		varchar(3500),
 	enabled			${flag} not null default 1,
 	allow_sales		${flag} not null default 1,
-	renew_limit		int not null default 0,
+	renew_limit		int,
 
 	owner_user_id		${row_id_null},
 	owner_royalty_rate	int,

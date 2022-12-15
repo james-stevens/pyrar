@@ -26,8 +26,6 @@ import shared
 import handler
 from plugins import *
 
-clients = None
-
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
 
@@ -36,7 +34,7 @@ def debug_domain_info(domain):
         print(">>>> ERROR", ret)
         sys.exit(1)
     xml = dom_req_xml.domain_info(domain)
-    this_reg = registry.tld_lib.http_req(domain)
+    this_reg = registry.tld_lib.reg_record_for_domain(domain)
     ret = run_epp_request(this_reg, xml, url)
     print(f"\n\n---------- {domain} -----------\n\n")
     print(json.dumps(ret, indent=2))
@@ -70,7 +68,7 @@ def run_epp_item(epp_job):
             log(f"EPP-{job_id}: Domain '{dom_db['name']}' is not owned by '{epp_job['user_id']}'", gzz(czz()))
             return job_abort(epp_job)
 
-    reg = registry.tld_lib.http_req(dom_db["name"])
+    reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     if reg["type"] not in handler.plugins:
         return job_abort(epp_job)
 
@@ -107,8 +105,6 @@ def run_server():
 
 
 def start_up(is_live):
-    global clients
-
     if is_live:
         log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
     else:
@@ -116,7 +112,6 @@ def start_up(is_live):
 
     sql.connect("epprun")
     registry.start_up()
-    clients = {p: httpx.Client() for p in registry.tld_lib.ports}
 
     for plugin, funcs in handler.plugins.items():
         if "start_up" in funcs:

@@ -7,7 +7,8 @@
 sqlsh "drop table if exists order_items"
 sqlsh "create table order_items (
 	order_item_id		${auto},
-	order_id			${row_id},
+
+	user_id				${row_id},
 
 	price_charged		${money},
 	currency_charged	${currency},
@@ -17,6 +18,8 @@ sqlsh "create table order_items (
 	order_type			varchar(20) not null default 'none',
 	num_years			int not null,
 	auth_code			varchar(50),
+
+	processing			boolean not null default false,
 
 	created_dt			datetime null,
 	amended_dt			datetime null,
