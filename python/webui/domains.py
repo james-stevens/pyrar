@@ -11,6 +11,7 @@ from lib.policy import this_policy as policy
 from lib.log import log
 from lib import mysql as sql
 from lib import sigprocs
+from lib import misc
 import users
 
 import handler
@@ -108,7 +109,7 @@ def close_epp_sess():
     return
 
 
-def check_domain_is_mine(user_id, domain):
+def check_domain_is_mine(user_id, domain, require_live):
     if not sql.has_data(domain, ["domain_id", "name"]):
         return False, "Domain data missing"
 
@@ -121,17 +122,20 @@ def check_domain_is_mine(user_id, domain):
     if not ok:
         return False, "Domain not found or not yours"
 
+    if require_live and dom_db["status_id"] not in misc.LIVE_STATUS:
+        return False, "Not live yet"
+
     return True, dom_db
 
 
 def webui_update_domain(req, post_dom):
-    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    ok, dom_db = check_domain_is_mine(req.user_id, post_dom, False)
     if not ok:
-        return False, msg
+        return False, dom_db
 
     update_cols = {}
 
-    if "name_servers" in post_dom:
+    if "name_servers" in post_dom and post_dom["name_servers"] != dom_db["name_servers"]:
         if not sql.has_data(post_dom, "name_servers"):
             update_cols["name_servers"] = ""
         else:
@@ -142,7 +146,7 @@ def webui_update_domain(req, post_dom):
                     return False, "Invalid name server record"
             update_cols["name_servers"] = ",".join(new_ns)
 
-    if "ds_recs" in post_dom:
+    if "ds_recs" in post_dom and post_dom["ds_recs"] != dom_db["ds_recs"]:
         if not sql.has_data(post_dom, "ds_recs"):
             update_cols["ds_recs"] = ""
         else:
@@ -158,6 +162,9 @@ def webui_update_domain(req, post_dom):
     if not ok:
         return False, "Domain update failed"
 
+    if dom_db["status_id"] not in misc.LIVE_STATUS:
+        return True, update_cols
+
     epp_job = {
         "domain_id": post_dom["domain_id"],
         "user_id": req.user_id,
@@ -165,6 +172,7 @@ def webui_update_domain(req, post_dom):
         "execute_dt": sql.now(),
         "created_dt": None
     }
+
     sql.sql_insert("epp_jobs", epp_job)
     sigprocs.signal_service("backend")
 
@@ -172,7 +180,7 @@ def webui_update_domain(req, post_dom):
 
 
 def webui_set_auth_code(req, post_dom):
-    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    ok, msg = check_domain_is_mine(req.user_id, post_dom, True)
     if not ok:
         return False, msg
 
@@ -195,7 +203,7 @@ def webui_set_auth_code(req, post_dom):
 
 
 def webui_gift_domain(req, post_dom):
-    ok, msg = check_domain_is_mine(req.user_id, post_dom)
+    ok, msg = check_domain_is_mine(req.user_id, post_dom, True)
     if not ok:
         return False, msg
 

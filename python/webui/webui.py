@@ -1,22 +1,20 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-import os
-import sys
-import json
-import httpx
+
+import inspect
 import flask
-import bcrypt
 
 from lib import registry
 from lib import misc
 from lib import validate
+from lib import passwd
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
-import users
 from lib import mysql as sql
+import users
 import domains
-
+import basket
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -42,6 +40,7 @@ class WebuiReq:
         registry.tld_lib.check_for_new_files()
         self.sess_code = None
         self.user_id = None
+        self.user_data = None
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
         self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
 
@@ -70,33 +69,38 @@ class WebuiReq:
         return self.response({"error": data}, HTML_CODE_ERR)
 
     def response(self, data, code=HTML_CODE_OK):
+        if self.user_data and "user" in self.user_data:
+            users.secure_user_db_rec(self.user_data["user"])
+        if self.user_data and "orders" in self.user_data:
+            basket.secure_orders_db_recs(self.user_data["orders"])
+
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
         if self.sess_code is not None:
             resp.headers[SESSION_TAG] = self.sess_code
         return resp
 
-    def event(self, data, frameinfo):
-        data["program"] = frameinfo.filename.split("/")[-1]
-        data["function"] = frameinfo.function
-        data["line_num"] = frameinfo.lineno
+    def event(self, data):
+        context = inspect.stack()[1]
+        data["program"] = context.filename.split("/")[-1]
+        data["function"] = context.function
+        data["line_num"] = context.lineno
         data["when_dt"] = None
-        for item in self.base_event:
+        for item, evt_data in self.base_event.items():
             if item not in data:
-                data[item] = self.base_event[item]
+                data[item] = evt_data
         sql.sql_insert("events", data)
 
 
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    ret = {
+    return req.response ({
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
         "policy": policy.data()
-    }
-    return req.response(ret)
+    })
 
 
 @application.route('/pyrar/v1.0/zones', methods=['GET'])
@@ -108,7 +112,33 @@ def get_supported_zones():
 @application.route('/pyrar/v1.0/hello', methods=['GET'])
 def hello():
     req = WebuiReq()
-    return req.response("Hello World\n")
+    return req.response({"hello":"world"})
+
+
+@application.route('/pyrar/v1.0/orders/details', methods=['GET'])
+def orders_details():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort(NOT_LOGGED_IN)
+
+    return load_orders_and_reply(req)
+
+
+@application.route('/pyrar/v1.0/basket/submit', methods=['POST'])
+def basket_submit():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort(NOT_LOGGED_IN)
+
+    if flask.request.json is None:
+        return req.abort("No JSON posted")
+
+    ok, reply = basket.webui_basket(flask.request.json,req.user_id)
+    if not ok:
+        return req.abort(reply)
+
+    req.user_data["orders"] = [ item["order_db"] for item in reply if "order_db" in item ]
+    return req.response(req.user_data)
 
 
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
@@ -117,10 +147,15 @@ def users_domains():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, doms = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
+    ret, doms_db = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
     if ret is None:
         return req.abort("Failed to load domains")
-    req.user_data["domains"] = doms
+    for dom_db in doms_db:
+        if dom_db["status_id"] in misc.DOMAIN_STATUS:
+            dom_db["status_desc"] = misc.DOMAIN_STATUS[dom_db["status_id"]]
+        dom_db["is_live"] = dom_db["status_id"] in misc.LIVE_STATUS
+
+    req.user_data["domains"] = doms_db
 
     return req.response(req.user_data)
 
@@ -173,8 +208,7 @@ def users_password():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    new_pass = bcrypt.hashpw(flask.request.json["new_password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
+    new_pass = passwd.crypt(flask.request.json["new_password"])
     ok = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
 
     if not ok:
@@ -189,13 +223,21 @@ def users_details():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, user = sql.sql_select_one("users", {"user_id": req.user_id})
-    if ret is None:
+    ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
+    if not ok:
         return req.abort("Failed to load user account")
 
-    users.secure_user_db_rec(user)
-    req.user_data["user"] = user
+    req.user_data["user"] = user_db
 
+    return load_orders_and_reply(req)
+
+
+def load_orders_and_reply(req):
+    ok, orders_db = sql.sql_select("orders",{"user_id": req.user_id})
+    if not ok:
+        return req.abort(orders_db)
+
+    req.user_data["orders"] = orders_db
     return req.response(req.user_data)
 
 
@@ -263,7 +305,7 @@ def domain_authcode():
     return run_user_domain_task(domains.webui_set_auth_code, "setAuth")
 
 
-def run_user_domain_task(domain_function, func_name, context):
+def run_user_domain_task(domain_function, func_name):
     req = WebuiReq()
     if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -276,11 +318,12 @@ def run_user_domain_task(domain_function, func_name, context):
     if not ok:
         return req.abort(reply)
 
+    context = inspect.stack()[1]
     notes = context.function
     if "dest_email" in flask.request.json:
         notes = f"Domain gifted from {req.user_id} to {flask.request.json['dest_email']}"
 
-    req.event({"domain_id": flask.request.json["domain_id"], "notes": notes, "event_type": context.function}, context)
+    req.event({"domain_id": flask.request.json["domain_id"], "notes": notes, "event_type": context.function})
     if func_name == "Gift":
         req.event(
             {
@@ -288,7 +331,7 @@ def run_user_domain_task(domain_function, func_name, context):
                 "domain_id": flask.request.json["domain_id"],
                 "notes": notes,
                 "event_type": context.function
-            }, context)
+            })
 
     return req.response(reply)
 
@@ -315,6 +358,7 @@ def rest_domain_price():
             data = flask.request.args
         if data is None or len(data) <= 0:
             return req.abort("No data sent")
+
         if (dom := data.get("domain")) is None:
             return req.abort("No domain sent")
         if (yrs := data.get("num_years")) is not None:

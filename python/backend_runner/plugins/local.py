@@ -2,7 +2,6 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-import bcrypt
 import base64
 
 from lib.log import log, debug, init as log_init
@@ -10,6 +9,7 @@ from lib.log import log, debug, init as log_init
 from lib import mysql as sql
 from lib import registry
 from lib import pdns
+from lib import passwd
 
 import handler
 import shared
@@ -70,9 +70,7 @@ def domain_request_transfer(epp_job, dom_db):
     if dom_db["user_id"] == epp_job["user_id"]:
         return True
 
-    dom_authcode = dom_db["authcode"].encode("utf-8")
-    enc_pass = bcrypt.hashpw(base64.b64decode(epp_job["authcode"]), dom_authcode)
-    if dom_authcode != enc_pass:
+    if not passwd.compare(dom_db["authcode"],epp_job["authcode"]):
         debug(f"passwords do not match {dom_db['authcode']} {enc_pass}")
         return None
 
@@ -89,10 +87,7 @@ def domain_renew(epp_job, dom_db):
 
 
 def set_authcode(epp_job, dom_db):
-    if sql.has_data(epp_job, "authcode"):
-        password = bcrypt.hashpw(base64.b64decode(epp_job["authcode"]), bcrypt.gensalt()).decode("utf-8")
-    else:
-        password = None
+    password = passwd.crypt(epp_job["authcode"]) if sql.has_data(epp_job, "authcode") else None
     return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 

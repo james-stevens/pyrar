@@ -231,8 +231,7 @@
             "ds_recs": {
                 "size": 3500,
                 "type": "varchar",
-                "null": false,
-                "default": ""
+                "null": true
             },
             "expiry_dt": {
                 "type": "datetime",
@@ -241,8 +240,7 @@
             "for_sale_amount": {
                 "size": 10,
                 "type": "decimal",
-                "null": false,
-                "default": 0
+                "null": true
             },
             "for_sale_msg": {
                 "size": 100,
@@ -258,8 +256,7 @@
             "name_servers": {
                 "size": 3500,
                 "type": "varchar",
-                "null": false,
-                "default": ""
+                "null": false
             },
             "reg_create_dt": {
                 "type": "datetime",
@@ -475,7 +472,7 @@
                 "type": "datetime",
                 "null": true
             },
-            "auth_code": {
+            "authcode": {
                 "size": 50,
                 "type": "varchar",
                 "null": true
@@ -970,6 +967,14 @@
                     "zone"
                 ],
                 "unique": true
+            },
+            "by_last_change": {
+                "columns": [
+                    "amended_dt",
+                    "enabled",
+                    "allow_sales"
+                ],
+                "unique": false
             }
         }
     }

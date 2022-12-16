@@ -90,11 +90,11 @@ DROP TABLE IF EXISTS `domain_actions`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `domain_actions` (
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `when_dt` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `execute_dt` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `new_status_id` int(11) DEFAULT NULL,
   `action` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`domain_id`,`when_dt`),
-  KEY `by_date` (`when_dt`)
+  PRIMARY KEY (`domain_id`,`execute_dt`),
+  KEY `by_date` (`execute_dt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -120,12 +120,12 @@ CREATE TABLE `domains` (
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(11) NOT NULL DEFAULT 0,
   `auto_renew` tinyint(1) NOT NULL DEFAULT 0,
-  `name_servers` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `ds_recs` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `name_servers` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ds_recs` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `for_sale_msg` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `for_sale_amount` decimal(10,0) NOT NULL DEFAULT 0,
-  `auth_code` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `for_sale_amount` decimal(10,0) DEFAULT NULL,
+  `authcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `reg_create_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
@@ -134,17 +134,8 @@ CREATE TABLE `domains` (
   UNIQUE KEY `by_id` (`domain_id`),
   KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10470 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `domains`
---
-
-LOCK TABLES `domains` WRITE;
-/*!40000 ALTER TABLE `domains` DISABLE KEYS */;
-/*!40000 ALTER TABLE `domains` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `epp_jobs`
@@ -156,6 +147,7 @@ DROP TABLE IF EXISTS `epp_jobs`;
 CREATE TABLE `epp_jobs` (
   `epp_job_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `job_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
   `failures` int(11) NOT NULL DEFAULT 0,
   `num_years` int(11) DEFAULT NULL,
@@ -165,7 +157,7 @@ CREATE TABLE `epp_jobs` (
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`epp_job_id`),
   KEY `by_user` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10465 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -200,50 +192,8 @@ CREATE TABLE `events` (
   PRIMARY KEY (`event_id`),
   KEY `by_domain` (`domain_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10469 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `events`
---
-
-LOCK TABLES `events` WRITE;
-/*!40000 ALTER TABLE `events` DISABLE KEYS */;
-/*!40000 ALTER TABLE `events` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `order_items`
---
-
-DROP TABLE IF EXISTS `order_items`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `order_items` (
-  `order_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `order_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `order_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
-  `num_years` int(11) NOT NULL,
-  `auth_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_dt` datetime DEFAULT NULL,
-  `amended_dt` datetime DEFAULT NULL,
-  PRIMARY KEY (`order_item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `order_items`
---
-
-LOCK TABLES `order_items` WRITE;
-/*!40000 ALTER TABLE `order_items` DISABLE KEYS */;
-/*!40000 ALTER TABLE `order_items` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `orders`
@@ -253,14 +203,19 @@ DROP TABLE IF EXISTS `orders`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `orders` (
-  `order_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `order_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `price` decimal(10,0) NOT NULL DEFAULT 0,
-  `pay_ref` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
+  `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
+  `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `order_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `num_years` int(11) NOT NULL,
+  `authcode` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
-  PRIMARY KEY (`order_id`),
-  UNIQUE KEY `by_user` (`user_id`)
+  PRIMARY KEY (`order_item_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -274,19 +229,21 @@ LOCK TABLES `orders` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `sales_items`
+-- Table structure for table `sales`
 --
 
-DROP TABLE IF EXISTS `sales_items`;
+DROP TABLE IF EXISTS `sales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `sales_items` (
+CREATE TABLE `sales` (
   `sales_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
   `currrency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
   `currrency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `domain_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `zones_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `sales_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
   `num_years` int(11) NOT NULL,
   `created_dt` datetime DEFAULT NULL,
@@ -296,12 +253,12 @@ CREATE TABLE `sales_items` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `sales_items`
+-- Dumping data for table `sales`
 --
 
-LOCK TABLES `sales_items` WRITE;
-/*!40000 ALTER TABLE `sales_items` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sales_items` ENABLE KEYS */;
+LOCK TABLES `sales` WRITE;
+/*!40000 ALTER TABLE `sales` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sales` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -322,15 +279,6 @@ CREATE TABLE `session_keys` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `session_keys`
---
-
-LOCK TABLES `session_keys` WRITE;
-/*!40000 ALTER TABLE `session_keys` DISABLE KEYS */;
-/*!40000 ALTER TABLE `session_keys` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `sysadmins`
 --
 
@@ -345,15 +293,6 @@ CREATE TABLE `sysadmins` (
   PRIMARY KEY (`login`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sysadmins`
---
-
-LOCK TABLES `sysadmins` WRITE;
-/*!40000 ALTER TABLE `sysadmins` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sysadmins` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `transactions`
@@ -406,6 +345,7 @@ CREATE TABLE `users` (
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_data` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `discount_percent` int(11) DEFAULT NULL,
   `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
   `acct_on_hold` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `acct_current_balance` decimal(10,0) NOT NULL DEFAULT 0,
@@ -418,17 +358,8 @@ CREATE TABLE `users` (
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `by_login` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10453 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `users`
---
-
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `zones`
@@ -443,23 +374,16 @@ CREATE TABLE `zones` (
   `price_info` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `enabled` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `allow_sales` tinyint(3) unsigned NOT NULL DEFAULT 1,
-  `renew_limit` int(11) NOT NULL DEFAULT 0,
+  `renew_limit` int(11) DEFAULT NULL,
   `owner_user_id` int(10) unsigned DEFAULT NULL,
   `owner_royalty_rate` int(11) DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
-  PRIMARY KEY (`zone`)
+  PRIMARY KEY (`zone`),
+  KEY `by_last_change` (`amended_dt`,`enabled`,`allow_sales`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `zones`
---
-
-LOCK TABLES `zones` WRITE;
-/*!40000 ALTER TABLE `zones` DISABLE KEYS */;
-/*!40000 ALTER TABLE `zones` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -470,7 +394,7 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-14 16:08:38
+-- Dump completed on 2022-12-16 15:57:51
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
@@ -483,6 +407,7 @@ GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`orders` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`order_items` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales` TO `webui`@`%`;
 GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`zones` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `raradm`@`%`;
@@ -492,6 +417,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sysadmins` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `raradm`@`%`;
@@ -499,6 +425,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
 GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales` TO `epprun`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`deleted_domains` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;

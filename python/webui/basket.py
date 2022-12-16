@@ -18,11 +18,54 @@ import handler
 from plugins import *
 
 
+def secure_orders_db_recs(orders):
+    for order in orders:
+        for block in ["price_charged","currency_charged"]:
+            del order[block]
+
+
+
+def make_blank_domain(name, user_id, can_process):
+    dom_db = {
+        "name": name,
+        "user_id": user_id,
+        "name_servers": policy.policy("dns_servers"),
+        "auto_renew": 0,
+        "status_id": misc.STATUS_WAITING_PROCESSING if can_process else misc.STATUS_WAITING_PAYMENT,
+        "created_dt": None,
+        "amended_dt": None,
+        "expiry_dt": None
+        }
+    return sql.sql_insert("domains",dom_db)
+
+
+def webui_basket(basket, user_id):
+    ok, reply = capture_basket(basket, user_id)
+    if not ok:
+        return False, reply
+    return save_basket(basket, user_id)
+
+
+def save_basket(basket, user_id):
+    for order in basket:
+        order_db = order["order_db"]
+        if order_db["domain_id"] == -1:
+            ok, reply = make_blank_domain(order["domain"],user_id,order["processing"])
+            if not ok:
+                return False, f"Failed to reserve domain {order['domain']}"
+            order_db["domain_id"] = reply
+        ok, reply = sql.sql_insert("orders",order_db)
+        if not ok:
+            return False, reply
+
+    return True, basket
+
+
 def capture_basket(basket, user_id):
     if len(basket) > policy.policy("max_basket_size"):
         return False, "Basket too full"
 
-    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_charged) 'sum_orders'")
+    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
     if not ok:
         return False, sum_orders
 
@@ -45,8 +88,7 @@ def capture_basket(basket, user_id):
     total = 0
     for order in reply:
         total += order["order_db"]["price_paid"]
-        if total < availble_balance:
-            order["order_db"]["processing"] = True
+        order["processing"] = (total < availble_balance)
 
     need_to_pay = 0
     fully_paid = (total <= availble_balance)
@@ -173,7 +215,6 @@ def make_order_record(site_currency, order, user_db):
         "order_type": f"dom/{order['action']}",
         "num_years": order["num_years"],
         "authcode": order["authcode"] if "autocode" in order else None,
-        "processing": False,
         "created_dt": now,
         "amended_dt": now
     }
@@ -181,7 +222,7 @@ def make_order_record(site_currency, order, user_db):
 
 def run_test(which):
     if which != 1:
-        ok, reply = capture_basket([{
+        ok, reply = webui_basket([{
             "domain": "xn--dp8h.xn--dp8h",
             "num_years": 1,
             "cost": "1100",
@@ -203,7 +244,7 @@ def run_test(which):
             "action": "create"
         }], 10450)
     else:
-        ok, reply = capture_basket([{"domain": "teams.zz", "num_years": 1, "cost": 1100, "action": "create"}], 10450)
+        ok, reply = webui_basket([{"domain": "teams.zz", "num_years": 1, "cost": 1100, "action": "create"}], 10450)
 
     print(ok, json.dumps(reply, indent=3))
     sys.exit(0)
@@ -213,4 +254,7 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
     registry.start_up()
-    run_test(1)
+    # run_test(1)
+    user_id = 10452
+    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
+    print(ok,sum_orders)

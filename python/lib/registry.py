@@ -18,7 +18,7 @@ EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
 EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
 EPP_PORTS_LIST = "/run/regs_ports"
 
-SEND_REGS_ITEMS = ["max_checks","desc","type"]
+SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
 
 DEFAULT_XMLNS = {
     "contact": "urn:ietf:params:xml:ns:contact-1.0",
@@ -103,7 +103,7 @@ class ZoneLib:
 
         self.zone_data = {}
         for row in self.zones_from_db:
-            self.zone_data[row["zone"]] = { col:row[col] for col in ["registry","renew_limit"] if row[col]}
+            self.zone_data[row["zone"]] = {col: row[col] for col in ["registry", "renew_limit"] if row[col]}
             if sql.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
@@ -153,7 +153,7 @@ class ZoneLib:
     def regs_send(self):
         regs_to_send = {}
         for registry, reg_data in self.registry.items():
-            regs_to_send[registry] = { item:reg_data[item] for item in SEND_REGS_ITEMS if item in reg_data }
+            regs_to_send[registry] = {item: reg_data[item] for item in SEND_REGS_ITEMS if item in reg_data}
         return regs_to_send
 
     def sort_data_list(self, the_list, is_tld=False):
@@ -168,7 +168,7 @@ class ZoneLib:
             if "priority" in dom:
                 del dom["priority"]
 
-    def tld_of_name(self,name):
+    def tld_of_name(self, name):
         if (idx := name.find(".")) >= 0:
             return name[idx + 1:]
         if name not in self.zone_data:
@@ -236,17 +236,18 @@ class ZoneLib:
                     continue
 
                 if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    if action in ["transfer","restore"] and this_reg["type"] == "local":
+                    if action in ["transfer", "restore"] and dom[action] is None:
                         factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
-                    if factor is None:
-                        del dom[action]
-                    else:
-                        apply_price_factor(action, dom,factor,num_years, retain_reg_price)
+                if factor is None:
+                    del dom[action]
+                else:
+                    apply_price_factor(action, dom, factor, num_years, retain_reg_price)
+
         return True
 
 
-def apply_price_factor(action, dom,factor, num_years, retain_reg_price):
+def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     regs_price = float(dom[action]) if dom[action] is not None else 0
     if isinstance(factor, str):
         if factor[:1] == "x":
@@ -266,7 +267,7 @@ def apply_price_factor(action, dom,factor, num_years, retain_reg_price):
     if retain_reg_price:
         regs_price *= site_currency["pow10"]
         regs_price = round(float(regs_price), 0)
-        dom["reg_"+action] = int(regs_price)
+        dom["reg_" + action] = int(regs_price)
 
     dom[action] = int(our_price)
 

@@ -157,8 +157,8 @@ th {
 	color: #${cols[0]};
 	font-family: inherit;
 	font-size: 18px;
-	background-color: #${cols[9]};
-	font-weight: bold;
+	font-weight: normal;
+	background-color: #${cols[6]};
 	padding-left: 6px;
 	padding-right: 6px;
 	}

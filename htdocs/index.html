@@ -52,7 +52,8 @@ function keyEsc(e) {
     if (e.key == "Escape") {
     	hideAllPopUp();
     	unerrMsg();
-		if (elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none")
+			document.searchForm.searchEdit.focus();
     	}
 }
 
@@ -130,7 +131,7 @@ function do_theme_change(value)
 	if (value in theme_colours) changeTheme(value);
 	let popup = document.getElementById("themePopup");
 	popup.classList.remove("show")
-	if (elm.search.style.display != "none") document.searchForm.search.focus();
+	if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
 }
 
 
@@ -153,7 +154,7 @@ function show_one_space(name)
 function goSearch()
 {
 	show_one_space("search");
-	document.searchForm.search.focus();
+	document.searchForm.searchEdit.focus();
 }
 
 
@@ -171,7 +172,7 @@ function emptyCart()
 {
 	delete gbl.basket;
 	user_info();
-	errMsg(`${gbl.bin} basket emptied`,elm.errorSpan);
+	errMsg(`${gbl.bin} basket emptied`,"errorSpan");
 	if (elm.basketSpace.style.display == "block") goSearch();
 }
 
@@ -234,19 +235,17 @@ function user_info()
 
 function doRegister()
 {
-	let p = document.getElementById("registerPopup");
-
-	function regErr(err,item)
+	function regErr(err)
 	{
-		errMsg(err,p);
+		errMsg(err,"registerPopup");
 		clr_lazy_hide();
 		item.focus();
 	}
 
 	let f = document.formRegister;
 
-	if (f.password.value != f.confirm.value) return regErr("Passwords do not match",p);
-	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",p);
+	if (f.password.value != f.confirm.value) return regErr("Passwords do not match");
+	if (!valid_email.test(f.email.value)) return regErr("Invalid email address");
 
 	data = {
 		"name":f.name.value,
@@ -261,13 +260,10 @@ function doRegister()
 			return regErr(msg,f.email);
 			}
 		hidePopUp();
-
-		if ("user" in reply) ctx.user = reply.user;
-		if ("domains" in reply) ctx.domains = reply.domains;
-
+		catch_user_data(reply);
 		loggedIn();
 
-		if (elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
 
 		f.email.value = "";
 		f.password.value = "";
@@ -282,7 +278,7 @@ function doLogin()
 {
 	function regErr(err,item)
 	{
-		errMsg(err,document.getElementById("loginPopup"));
+		errMsg(err,"loginPopup");
 		clr_lazy_hide();
 		item.focus();
 		return false;
@@ -300,13 +296,10 @@ function doLogin()
 			return regErr(msg,f.email);
 			}
 		hidePopUp();
-
-		if ("user" in reply) ctx.user = reply.user;
-		if ("domains" in reply) ctx.domains = reply.domains;
-
+		catch_user_data(reply);
 		loggedIn();
 
-		if (elm.search.style.display != "none") document.searchForm.search.focus();
+		if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
 
 		f.email.value = "";
 		f.password.value = "";
@@ -323,7 +316,7 @@ function doLogOut()
 	ctx = {};
 	callApi("users/logout",(ret,reply) => {});
 	show_one_space("search");
-	document.searchForm.search.focus();
+	document.searchForm.searchEdit.focus();
 	loggedOut();
 }
 
@@ -356,7 +349,7 @@ function bodyLoaded()
 		if (!ret) {
 			let msg = "Error contacting servers";
 			if ("error" in reply) msg = reply["error"];
-			return errMsg(msg,document.searchForm.search);
+			return errMsg(msg,"searchEdit");
 			}
 
 		gbl.config = reply;
@@ -378,8 +371,7 @@ function bodyLoaded()
 		if ("session" in ctx) {
 			callApi("users/details",(ret,reply) => {
 				if (ret) {
-					if ("user" in reply) ctx.user = reply.user;
-					if ("domains" in reply) ctx.domains = reply.domains;
+					catch_user_data(reply);
 					loggedIn();
 					}
 				});
@@ -387,6 +379,10 @@ function bodyLoaded()
 		});
 }
 
+function catch_user_data(reply)
+{
+	["user","domains","orders"].forEach((item) => { if (item in reply) ctx[item] = reply[item]; })
+}
 
 function one_search_line(item,block_not_avail)
 {
@@ -420,7 +416,7 @@ function showSearch(ret,data)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
 
-	if ((!ret)&&("error" in data)) { errMsg(data.error,document.searchForm.search); return; }
+	if ((!ret)&&("error" in data)) { errMsg(data.error,search); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
@@ -451,7 +447,7 @@ function buy_one_name(domain,action)
 
 	callApi("domain/check",(ret,data) => {
 		if (!ret) {
-			errMsg("Unexpected price error",elm.userInfo);
+			errMsg("Unexpected price error","userInfo");
 			console.log("PRICE ERROR:",data);
 			return;
 			}
@@ -462,7 +458,7 @@ function buy_one_name(domain,action)
 		if (!(action in dom)) {
 			let msg = "an error occured";
 			if ((action+":err") in dom) msg = dom[action+":err"];
-			errMsg(msg,elm.basketIcon);
+			errMsg(msg,"basketIcon");
 			return;
 			}
 
@@ -485,7 +481,7 @@ function buy_one_name(domain,action)
 
 			if (!found_it) {
 				if (gbl.basket.length >= policy("max_basket_size",10)) {
-					errMsg("Basket full, please checkout",elm.basketPopup);
+					errMsg("Basket full, please checkout","basketPopup");
 					}
 				else gbl.basket.push(new_item);
 				}
@@ -537,8 +533,8 @@ function multiSearch(srch,not_me_tld)
 function doSearch()
 {
 	function do_end() {
-		f.search.focus();
-		f.search.select();
+		f.searchEdit.focus();
+		f.searchEdit.select();
 		return false;
 		}
 
@@ -550,15 +546,15 @@ function doSearch()
 	ctx.search.result = "<tr><Td>" + gbl.gap + "</td></tr>";
 
 	let f = document.searchForm;
-	let srch = toASCII(f.search.value);
+	let srch = toASCII(f.searchEdit.value);
 
 	if (srch.indexOf(".") >= 0) {
 		if (!fqdnCheck.test(srch)) {
-			errMsg("Invalid domain name",document.searchForm.search);
+			errMsg("Invalid domain name","searchEdit");
 			return do_end(); }
 
 		if (!supported_tld(srch)) {
-			errMsg("Not a supported TLD",document.searchForm.search);
+			errMsg("Not a supported TLD","searchEdit");
 			return do_end(); }
 
 		callApi("domain/check",showSearch, { "callErr" : true, json: {"domain" : srch }} );
@@ -566,7 +562,7 @@ function doSearch()
 		}
 	
 	if (!hostnameCheck.test(srch))
-		errMsg("Invalid domain name",document.searchForm.search);
+		errMsg("Invalid domain name","searchEdit");
 	else
 		multiSearch(srch,null);
 
@@ -584,7 +580,12 @@ function userDomainList()
 	for(let i in ctx.domains) {
 		let item = ctx.domains[i];
 		x += `<tr onClick="show_one_domain(${i});" class=${cls}><td title="${item.name}">${item.display_name}</td>`;
-		x += `<td align=center>${item.expiry_dt.split(" ")[0]}</td>`
+
+		if (item.status_id == 1)
+			x += `<td align=center>${item.expiry_dt.split(" ")[0]}</td>`;
+		else
+			x += `<td align=center>${item.status_desc}</td>`;
+
 		x += `<td>${item.name_servers.substr(0,40)}</td>`;
 		x += "</tr>";
 		}
@@ -592,27 +593,31 @@ function userDomainList()
 }
 
 
-function myDomains()
-{
-	show_one_space("userSpace");
-	elm.userSpace.innerHTML = "";
 
+function load_domains_list(success_fn)
+{
 	callApi("users/domains",(ret,reply) => {
-		if (!ret) {
-			let msg="Error getting your domain data";
-			if ("error" in reply) msg = reply["error"];
-			goSearch();
-			return errMsg(msg,document.searchForm.search);
-			}
-		if ("domains" in reply) {
+		if ((ret)&&(reply.domains)) {
 			ctx.domains = reply.domains;
 			for(let dom of ctx.domains) {
 				dom.display_name = fromPuny(dom.name);
 				}
+			success_fn();
 			}
 		else delete ctx.domains;
-		elm.userSpace.innerHTML = userDomainList()
 		});
+}
+
+function show_domains_list()
+{
+	elm.userSpace.innerHTML = userDomainList()
+}
+
+function myDomains()
+{
+	show_one_space("userSpace");
+	elm.userSpace.innerHTML = "";
+	load_domains_list(show_domains_list)
 	return false;
 }
 
@@ -621,7 +626,7 @@ function myDomains()
 function postUserDetails()
 {
 	let f = document.editUserDetails;
-	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+	function regErr(err,item) { errMsg(err,"editUserDetails"); item.focus(); return false; }
 
 	data = {
 		"name": f.user_name.value,
@@ -641,7 +646,7 @@ function postUserDetails()
 			}
 		else {
 			if ("error" in reply) msg=reply["error"]; else msg="Failed";
-			errMsg(msg,f);
+			errMsg(msg,"editUserDetails");
 			}
 		}, { json: data });
 
@@ -652,7 +657,7 @@ function postUserDetails()
 function postUserPassword()
 {
 	let f = document.editUserPassword;
-	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+	function regErr(err,item) { errMsg(err,"editUserPassword"); item.focus(); return false; }
 
 	if (f.password.value=="") return regErr("Password missing",f.password);
 	if (f.new_password.value=="") return regErr("New password missing",f.new_password);
@@ -668,13 +673,13 @@ function postUserPassword()
 
 	callApi("users/password",(ret,reply) => {
 		if (ret) {
-			errMsg("Password changed",elm.userInfo);
+			errMsg("Password changed","userInfo");
 			user_info();
 			elm.userSpace.innerHTML = userDetails();
 			}
 		else {
 			if ("error" in reply) msg=reply["error"]; else msg="Failed";
-			errMsg(msg,f);
+			return regErr(msg);
 			}
 		}, { json: data });
 
@@ -685,7 +690,7 @@ function postUserPassword()
 function postCloseAccount()
 {
 	let f = document.editCloseAccount;
-	function regErr(err,item) { errMsg(err,f); item.focus(); return false; }
+	function regErr(err,item) { errMsg(err,"editCloseAccount"); item.focus(); return false; }
 
 	if (f.password.value=="") return regErr("Password missing",f.password);
 
@@ -693,7 +698,7 @@ function postCloseAccount()
 		if (ret) goSearch();
 		else {
 			if ("error" in reply) msg=reply["error"]; else msg="Failed";
-			errMsg(msg,f);
+			errMsg(msg,"editCloseAccount");
 			}
 		}, { json: { "password": f.password.value }});
 
@@ -704,14 +709,14 @@ function postCloseAccount()
 
 function goMarketPlace()
 {
-	errMsg("Not yet implemented",document.getElementById("marketPlaceBtn"));
+	errMsg("Not yet implemented","marketPlaceBtn");
 }
 
 
 
 function enable_two_fa()
 {
-	errMsg("Not yet implemented",document.getElementById("edit2FA"));
+	errMsg("Not yet implemented","edit2FA");
 }
 
 
@@ -731,7 +736,7 @@ function user_settings()
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
-	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += "<table id=editUserDetails width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += settings_prompt("E-Mail")+`<input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
 	x += settings_prompt("Name")+`<input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
     x += settings_prompt("Auto Renew All")+`<select id='user_auto_renew_all'>`;
@@ -758,7 +763,7 @@ function user_settings()
 
 	x += settings_header("Change Your Password");
 	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
-	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += "<table id=editUserPassword width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += settings_prompt("Current Password");
 	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
 	x += settings_prompt("New Password");
@@ -771,7 +776,7 @@ function user_settings()
 
 	x += settings_header("Close This Account");
 	x += "<form name=editCloseAccount method=post action=# onSubmit='postCloseAccount(); return false;'>";
-	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += "<table id=editCloseAccount width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += "<tr><td colspan=2>To close your account, please enter your current password</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += settings_prompt("Current Password");
@@ -795,8 +800,8 @@ function userDetails()
 	if (ctx.user.email_verified) verified = gbl.tick;
 	if (ctx.user.two_fa) has_twofa = gbl.tick;
 
-	let x = "<table align=center width=50% border=0>";
-	x += "<tr><td colspan=2 class=btmBtnBar>";
+	let x = "<table align=center width=75% border=0>";
+	x += "<tr><td class=btmBtnBar>";
 
 	if (!ctx.user.email_verified) 
 		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
@@ -804,7 +809,7 @@ function userDetails()
 	x += btn("user_settings()","Settings","Change this accounts settings",100)
 	x += "</td></tr>";
 
-	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "<tr><td>"+gbl.gap+"</td></tr><tr><td><table width=100%>";
 	x += `<tr><td class=promptCell>E-Mail :</td><td class=dataCell>${ctx.user.email}</td></tr>`;
 	x += `<tr><td class=promptCell>E-Mail Verified :</td><td class=dataCell>${verified}</td></tr>`;
 	x += `<tr><td class=promptCell>Name :</td><td class=dataCell>${ctx.user.name}</td></tr>`;
@@ -816,15 +821,77 @@ function userDetails()
 	let show_bal = format_amount(ctx.user.acct_current_balance);
 	if (ctx.user.acct_on_hold) show_bal = "Account on hold";
 	x += `<tr><td class=promptCell>Account Balance :</td><td class=dataCell>${show_bal}</td></tr>`;
+	x += "</td></tr></table>";
 
-	return x + "</table>";
+	if ((ctx.orders)&&(ctx.orders.length > 0)) x += order_details(false);
+	x += "</td></tr>";
+
+	return x + "</table>"
+}
+
+
+
+function order_details(as_first)
+{
+	let x = settings_header("Pending Orders",as_first);
+	x += "<table width=100%>";
+	x += "<tr><th>When</th><th>Type</th><th>Domain</th><th>Yrs</th><th>Amount</th></tr>";
+	for(let order of ctx.orders) {
+		dom = domain_of(order.domain_id);
+		x += "<tr title='Click to cancel this order' class=dataRow>";
+		x += `<td align=center>${order.created_dt}</td>`
+		x += `<td align=center>${order.order_type}</td>`
+		x += `<td align=center>${dom.name}</td>`
+		x += `<td align=center>${order.num_years}</td>`
+		x += `<td align=right>${format_amount(order.price_paid)}</td>`
+		x += "</tr>";
+		}
+	return x;
+}
+
+
+function domain_of(domain_id)
+{
+	if (!ctx.domains) return {"name":"Unk1"};
+	for(let dom of ctx.domains)
+		if (dom.domain_id == domain_id) return dom;
+	return {"name":"Unk2"};
 }
 
 
 function place_order()
 {
-	errMsg("Not yet implemented",document.getElementById("placeOrderBtn"));
+	if (!gbl.basket) return errMsg("Basket is empty","placeOrderBtn");
+
+	callApi("basket/submit",(ok,reply) => {
+		if (!ok) {
+			msg = "Error submitting basket";
+			if (reply.error) msg = reply.error;
+			errMsg(msg,"placeOrderBtn")
+			}
+		else {
+			console.log(reply);
+
+			catch_user_data(reply);
+			show_one_space("userSpace");
+
+			delete gbl.basket;
+			user_info();
+			load_domains_list(show_new_orders);
+			}
+		}, { json:gbl.basket });
 }
+
+
+
+function show_new_orders()
+{
+	let x = "<table align=center width=50% border=0>";
+	x += order_details(true);
+	x += "</td></tr></table>";
+	elm.userSpace.innerHTML = x;
+}
+
 
 
 function basketCheckout()
@@ -854,9 +921,9 @@ function myAccount()
 			let msg="Error in etting your data";
 			if ("error" in reply) msg = reply["error"];
 			goSearch();
-			return errMsg(msg,document.searchForm.search);
+			return errMsg(msg,"searchEdit");
 			}
-		if ("user" in reply) ctx.user = reply.user; else delete ctx.user;
+		catch_user_data(reply);
 		elm.userSpace.innerHTML = userDetails();
 		});
 }
@@ -875,14 +942,15 @@ function doAddNS(idx)
 {
 	let e = document.getElementById("inputNS");
 	if (!fqdnCheck.test(e.value)) {
-		errMsg("Invalid host name",document.getElementById("AddNSPopup"));
+		errMsg("Invalid host name","AddNSPopup");
 		e.focus(); return; }
 
 	hidePopUp();
 
 	let dom = ctx.domains[idx];
 
-	let ns = dom.name_servers.split(",");
+	let ns = "";
+	if (dom.name_servers) ns = dom.name_servers.split(",");
 	if (!ns.find(data => { return (data == e.value); })) {
 		if (dom.name_servers=="") dom.name_servers = e.value;
 		else dom.name_servers += ","+e.value;
@@ -890,7 +958,7 @@ function doAddNS(idx)
 		domain_settings(idx);
 		}
 	else {
-		errMsg("Name server already present",document.getElementById("AddNSPopup"));
+		errMsg("Name server already present","AddNSPopup");
 		e.focus(); return; }
 }
 
@@ -900,17 +968,20 @@ function validate_ds_rec(ds_rec)
 	return true;
 }
 
+
+
 function doAddDS(idx)
 {
 	let e = document.getElementById("inputDS");
 	if (!validate_ds_rec(e.value)) {
-		errMsg("Invalid DS Record",document.getElementById("AddDSPopup"));
+		errMsg("Invalid DS Record","AddDSPopup");
 		e.focus(); return; }
 
 	hidePopUp();
 
 	let dom = ctx.domains[idx];
-	let ds = dom.ds_recs.split(",");
+	let ds = []
+	if (dom.ds_recs) ds = dom.ds_recs.split(",");
 	if (!ds.find(data => { return (data == e.value); })) {
 		if (dom.ds_recs=="") dom.ds_recs = e.value;
 		else dom.ds_recs += ","+e.value;
@@ -918,7 +989,7 @@ function doAddDS(idx)
 		domain_settings(idx);
 		}
 	else {
-		errMsg("DS already present",document.getElementById("AddDSPopup"));
+		errMsg("DS already present","AddDSPopup");
 		e.focus(); return; }
 }
 
@@ -1044,12 +1115,9 @@ function saveDomDetails(idx)
 			myDomains(idx);
 			}
 		else {
-			let e = document.getElementById("saveButton");
-			if (e) {
-				let msg = "Domain save failed";
-				if ("error" in reply) msg = reply["error"];
-				errMsg(msg,e);
-				}
+			let msg = "Domain save failed";
+			if ("error" in reply) msg = reply["error"];
+			errMsg(msg,"saveButton");
 			}
 		}, { json: dom });
 }
@@ -1069,7 +1137,7 @@ function removeNS(idx,ns_name)
 		}
 	let pos = find_ns()
 	if (!pos) {
-		errMsg("Name server not found",document.getElementById("AddNSPopup"));
+		errMsg("Name server not found","AddNSPopup");
 		return; }
 	ns.splice(pos,1);
 	dom.name_servers = ns.join(",");
@@ -1092,7 +1160,7 @@ function removeDS(idx,ds_data)
 		}
 	let pos = find_ds()
 	if (!pos) {
-		errMsg("DS Record not found",document.getElementById("AddDSPopup"));
+		errMsg("DS Record not found","AddDSPopup");
 		return; }
 	ds.splice(pos,1);
 	dom.ds_recs = ds.join(",");
@@ -1140,32 +1208,34 @@ function domain_settings(idx)
 	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings For - ${dom.display_name}</td></tr>`;
 	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
 	x += settings_header(`Change Domain Records`,true);
-	x += "<table width=100%><colgroup><col width=30%/><col/></colgroup>";
+	x += "<table border=0 width=100%><colgroup><col width=30%/><col width=70%/></colgroup>";
 
-	x += "<tr><td class=promptCell>Name Servers : </td><td>";
-	if (dom.name_servers != "") {
+	if (dom.name_servers) {
+		x += "<tr><td class=promptCell>Name Servers : </td><td>";
 		ns = dom.name_servers.split(",").sort();
 		for(let i in ns)
 			x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ns[i]}<br>`;
+		x += "</td></tr>";
 		}
-	x += "</td></tr>";
-	x += "<tr><td class=promptCell>DS Records : </td><td>";
-	if (dom.ds_recs != "") {
+	if (dom.ds_recs) {
+		x += "<tr><td class=promptCell>DS Records : </td><td>";
 		ds = dom.ds_recs.split(",").sort();
 		for(let i in ds)
 			x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ds[i]}<br>`;
+		x += "</td></tr>";
 		}
-	x += "</td></tr>";
-	x += "<tr><td align=left>"
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "<tr><td colspan=2><table width=100%>";
+	x += "<tr><td align=left>";
 	x += add_copy_btn(idx);
-	x += "</td><td align=right>"
 	x += add_rec_type_btn("NS",idx,inside_ns);
 	x += add_rec_type_btn("DS",idx,inside_ds);
+	x += "</td><td align=right>"
 
 	if ("unsaved" in dom)
 		x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' id="saveButton" type=button class=myBtn value='Save'>`;
 
-	x += "</td></tr>";
+	x += "</td></tr></table></td></tr>";
 	x += "</table></td></tr>";
 
 	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
@@ -1179,7 +1249,7 @@ function giftDomain(idx)
 	let dom = ctx.domains[idx];
 
 	if (!valid_email.test(e.value)) {
-		errMsg("Invalid email address",e);
+		errMsg("Invalid email address","giftDomainDest");
 		e.focus();
 		return;
 		}
@@ -1187,13 +1257,13 @@ function giftDomain(idx)
 	dom["dest_email"] = e.value;
 	callApi("domain/gift",(ok, reply) => {
 		if (ok) {
-			errMsg(gbl.tick+" Domain gifted",elm.userInfo);
+			errMsg(gbl.tick+" Domain gifted","userInfo");
 			myDomains();
 			}
 		else {
 			let msg = "Domain gifting failed";
 			if ("error" in reply) msg = reply["error"];
-			errMsg(msg,e);
+			errMsg(msg,"giftDomainDest");
 			e.focus();
 			}
 		}, { json: dom });
@@ -1213,11 +1283,11 @@ function copyToClip(data)
 	let ac = document.getElementById("editAuthCode");
 	navigator.clipboard.writeText(data).then(
 		() => {
-			errMsg("AuthCode copied to clipboard",ac)
+			errMsg("AuthCode copied to clipboard","editAuthCode")
 			let e = document.getElementById("showAuthCode");
 			if (e) e.innerHTML = "";
 			},
-		() => errMsg("Copy to clipboard failed",ac)
+		() => errMsg("Copy to clipboard failed","editAuthCode")
 		);
 
 	return false;
@@ -1250,11 +1320,16 @@ function getAuthCode(idx)
 		else {
 			msg = "Get AuthCode failed";
 			if ("error" in reply) msg=reply["error"];
-			errMsg(msg,e);
+			errMsg(msg,"showAuthCode");
 			}
 		}, { json: dom });
 }
 
+
+function tick_cross(value)
+{
+	return (value)?gbl.tick:gbl.cross;
+}
 
 
 function one_domain_html(idx)
@@ -1267,22 +1342,33 @@ function one_domain_html(idx)
 	let x = "<table align=center width=50% border=0>";
 
 	x += "<tr><td colspan=4 class=btmBtnBar>"
-		+btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
-		+btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
-		+btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+
+	if (dom.is_live) {
+		x += btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
+		x += btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
+		}
+
+	x += btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 
 	x += "</td></tr>";
 	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
 	let puny = "";
-	let ns = dom.name_servers.toLowerCase().split(",").sort().join("<br>")
-	let ds = dom.ds_recs.toLowerCase().split(",").sort().join("<br>")
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
+	x += `<tr><td class=promptCell>Is Live :</td><td class=dataCell>${tick_cross(dom.is_live)}</td></tr>`;
+	if (!dom.is_live)
+		x += `<tr><td class=promptCell>Status :</td><td class=dataCell>${dom.status_desc}</td></tr>`;
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
-	x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
+	if (dom.name_servers) {
+		let ns = dom.name_servers.toLowerCase().split(",").sort().join("<br>")
+		x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
+		}
+	if (dom.ds_recs) {
+		let ds = dom.ds_recs.toLowerCase().split(",").sort().join("<br>")
+		x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
+		}
 	x += `<tr><td class=promptCell>Auto Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
 	return x + "</table>";
 }
@@ -1310,16 +1396,19 @@ function unerrMsg()
 
 
 
-function errMsg(txt,elem)
+function errMsg(txt,tagged_elm)
 {
-	if (!elem) elem = elm.userInfo;
+	let hang_elm = null;
+	if (tagged_elm in elm) hang_elm = elm[tagged_elm];
+	else hang_elm = document.getElementById(tagged_elm);
+	if (!hang_elm) hang_elm = elm.userInfo;
 
 	let m = elm.myMsgPop;
 	m.style.width = "auto";
 	if (txt.substr(0,1)!="&") txt = gbl.warn + " " + txt;
 	m.innerHTML = "&nbsp;"+txt+"&nbsp;";
 
-	let p_box = elem.getBoundingClientRect();
+	let p_box = hang_elm.getBoundingClientRect();
 	let m_box = m.getBoundingClientRect();
 	let m_width = m_box.width;
 
@@ -1393,7 +1482,7 @@ function errMsg(txt,elem)
 
 <span style="display:none;" id="isLoggedIn">
 	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains();">Domains</span>
-	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="myAccount(); return false;">Account</span>
+	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="load_domains_list(myAccount); return false;">Account</span>
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
 </span>
 </td></tr>
@@ -1433,7 +1522,7 @@ function errMsg(txt,elem)
 		<div style='height: 30px;'></div>
 		<table align=center width=40% border=0>
 		<form action="#" name=searchForm onSubmit="return doSearch();">
-			<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox name=search></td></tr>
+			<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox id=searchEdit></td></tr>
 		</form>
 			<tr><td><div id="output"></div></td></tr>
 		</table>

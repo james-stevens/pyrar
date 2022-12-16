@@ -47,27 +47,29 @@ my_conv[FIELD_TYPE.DECIMAL] = int
 my_conv[FIELD_TYPE.NEWDECIMAL] = int
 
 
-def format_col(item, column_val):
-    """ convert {column_val} to SQL string """
-    if item in NOW_DATE_FIELDS and column_val is None:
-        return f"{item}=now()"
+def format_col(column, value):
+    """ convert {value} to SQL string """
+    if column is not None and value is None and (column in NOW_DATE_FIELDS or column[-3:] == "_dt"):
+        return f"{column}=now()"
 
-    if column_val is None:
-        return f"{item}=NULL"
+    if value is None:
+        return f"{column}=NULL"
 
-    if isinstance(column_val, int):
-        return item + "=" + str(int(column_val))
+    if isinstance(value, int):
+        return column + "=" + str(int(value))
 
-    if isinstance(column_val, list):
-        return item + " in (" + ",".join(format_col(None, this_val) for this_val in column_val) + ")"
+    if isinstance(value, list):
+        return column + " in (" + ",".join(format_col(None, this_val) for this_val in value) + ")"
 
-    if not isinstance(column_val, str):
-        column_val = str(column_val)
+    if not isinstance(value, str):
+        value = str(value)
 
-    if item is not None:
-        return item + " = unhex('" + misc.ashex(column_val.encode("utf8")) + "')"
+    ret = "unhex('" + misc.ashex(value.encode("utf8")) + "')"
 
-    return "unhex('" + misc.ashex(column_val.encode("utf8")) + "')"
+    if column is not None:
+        ret = column + " = " + ret
+
+    return ret
 
 
 def has_data(row, col):
@@ -259,7 +261,7 @@ def connect(login):
 if __name__ == "__main__":
     log_init(with_debug=True)
 
-    print(format_col("name", ["one", "two", "three"]))
+    print(format_col("name_dt", None))
     sys.exit(0)
 
     connect("webui")

@@ -6,10 +6,10 @@ import base64
 import hashlib
 import time
 import os
-import bcrypt
 
 from lib import mysql as sql
 from lib import validate
+from lib import passwd
 from lib.policy import this_policy as policy
 from lib.log import log, debug, init as log_init
 
@@ -33,7 +33,7 @@ def make_session_key(session_code, user_agent):
 
 
 def secure_user_db_rec(data):
-    for block in ["password", "payment_data", "two_fa"]:
+    for block in ["password", "payment_data", "two_fa", "password_reset"]:
         del data[block]
 
 
@@ -48,8 +48,13 @@ def start_session(user_db_rec, user_agent):
     if not ok:
         return False, "Failed to start session"
 
-    secure_user_db_rec(user_db_rec)
-    return True, {"user_id": user_id, "user": user_db_rec, "session": ses_code}
+    ret = {"user_id": user_id, "user": user_db_rec, "session": ses_code}
+
+    ok, orders_db = sql.sql_select("orders",{"user_id": user_id})
+    if ok and len(orders_db) >= 1:
+        ret["orders"] = orders_db
+
+    return True, ret
 
 
 def start_user_check(data):
@@ -83,8 +88,7 @@ def register(data, user_agent):
     all_cols = USER_REQUIRED + ["name", "created_dt"]
     data.update({col: None for col in all_cols if col not in data})
 
-    data["password"] = bcrypt.hashpw(data["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
+    data["password"] = passwd.crypt(data["password"])
     ok, user_id = sql.sql_insert("users", {item: data[item] for item in all_cols})
     if not ok:
         return False, "Registration insert failed"
@@ -139,18 +143,10 @@ def login(data, user_agent):
         return False, None
 
     ok, user_db_rec = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
-    if not ok:
+    if not ok or user_db_rec == {}:
         return False, None
 
-    if not sql.has_data(user_db_rec, "password"):
-        return False, None
-
-    if user_db_rec["password"][:7] == "CLOSED:":
-        return False, None
-
-    encoded_pass = user_db_rec["password"].encode("utf8")
-    enc_pass = bcrypt.hashpw(data["password"].encode("utf8"), encoded_pass)
-    if encoded_pass != enc_pass:
+    if not check_password(user_db_rec["user_id"],data,user_db_rec):
         return False, None
 
     update_user_login_dt(user_db_rec['user_id'])
@@ -188,18 +184,16 @@ def update_user(user_id, post_json):
     return ok, user_db_rec
 
 
-def check_password(user_id, data):
+def check_password(user_id, data, user_db_rec = None):
     if not sql.has_data(data, "password"):
         return False
 
-    ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
-    if not ok:
-        return False
+    if user_db_rec is None:
+        ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+        if not ok:
+            return False
 
-    encoded_pass = user_db_rec["password"].encode("utf8")
-    enc_pass = bcrypt.hashpw(data["password"].encode("utf-8"), encoded_pass)
-
-    return encoded_pass == enc_pass
+    return passwd.compare(data["password"],user_db_rec["password"])
 
 
 if __name__ == "__main__":
@@ -211,8 +205,7 @@ if __name__ == "__main__":
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     # print(make_session_code(100))
     # print(make_session_key("fred", "Windows"))
-    debug(
-        ">>>>SELECT " +
-        str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")))
+    debug(">>>>SELECT " +
+          str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")))
     debug(">>>> " + str(login_data["session"]))
     debug(">>>>CHECK-SESSION " + str(check_session(login_data["session"], "curl/7.83.1")))

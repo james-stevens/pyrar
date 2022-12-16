@@ -8,17 +8,17 @@ sqlsh "drop table if exists domains"
 sqlsh "create table domains (
 	domain_id			${auto},
 	name				${domain_name} not null default '',
-	user_id				${row_id},
+	user_id				${row_id} not null,
 
 	status_id			int not null default 0,
-	auto_renew			boolean not null default 0,
+	auto_renew			boolean,
 
-	name_servers		varchar(3500) not null default '',
-	ds_recs				varchar(3500) not null default '',
+	name_servers		varchar(3500) not null,
+	ds_recs				varchar(3500),
 	client_locks		varchar(100),
 
 	for_sale_msg		varchar(100),
-	for_sale_amount		${money},
+	for_sale_amount		${money_null},
 
 	authcode			${password},
 

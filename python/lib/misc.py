@@ -9,14 +9,18 @@ CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited",
 EPP_ACTIONS = ["create", "renew", "transfer", "restore"]
 
 STATUS_LIVE = 1
-STATUE_WAITING_PAYMENT = 10
-STATUE_TRANS_QUEUED = 100
-STATUE_TRANS_REQ = 101
-STATUE_TRANS_FAIL = 120
+STATUS_WAITING_PAYMENT = 10
+STATUS_WAITING_PROCESSING = 11
+STATUS_TRANS_QUEUED = 100
+STATUS_TRANS_REQ = 101
+STATUS_TRANS_FAIL = 120
+
+LIVE_STATUS = { 1: True }
 
 DOMAIN_STATUS = {
     1: "Live",
     10: "Awating Payment",
+    11: "Awating Processing",
     20: "Expired",
     100: "Transfer Queued",
     101: "Transfer Requested",

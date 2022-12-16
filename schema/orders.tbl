@@ -17,12 +17,13 @@ sqlsh "create table orders (
 	domain_id			${row_id},
 	order_type			varchar(20) not null default 'none',
 	num_years			int not null,
-	auth_code			varchar(50),
+	authcode			varchar(50),
 
 	created_dt			datetime null,
 	amended_dt			datetime null,
 
-	primary key (order_item_id)
+	primary key (order_item_id),
+	key by_user(user_id)
 )"
 
 sqlsh "ALTER TABLE orders AUTO_INCREMENT = 10450"
