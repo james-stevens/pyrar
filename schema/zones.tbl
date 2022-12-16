@@ -21,7 +21,8 @@ sqlsh "CREATE TABLE zones (
 	created_dt		datetime,
 	amended_dt		datetime,
 
-	primary key by_zone (zone)
+	primary key by_zone (zone),
+	key by_last_change(amended_dt,enabled,allow_sales)
 	)"
 
 sqlsh "grant select on zones to epprun"

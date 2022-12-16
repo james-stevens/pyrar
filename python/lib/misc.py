@@ -17,6 +17,7 @@ STATUE_TRANS_FAIL = 120
 DOMAIN_STATUS = {
     1: "Live",
     10: "Awating Payment",
+    20: "Expired",
     100: "Transfer Queued",
     101: "Transfer Requested",
     120: "Transfer Failed"

@@ -1,6 +1,7 @@
 [BASIC]
-good-names=ok
+good-names=ok, e, fd
 
 [FORMAT]
 max-line-length=119
 max-returns=12
+max-attributes=20

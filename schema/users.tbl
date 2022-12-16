@@ -22,6 +22,8 @@ sqlsh "CREATE TABLE users (
 
 	payment_data			varchar(1000) default null,
 
+	discount_percent		int,
+
 	acct_sequence_id		${row_id},
 	acct_on_hold			${flag} not null default 0,
 	acct_current_balance	${money} not null default 0,

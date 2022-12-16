@@ -469,7 +469,7 @@
             }
         }
     },
-    "order_items": {
+    "orders": {
         "columns": {
             "amended_dt": {
                 "type": "datetime",
@@ -506,13 +506,6 @@
                 "type": "int",
                 "null": false
             },
-            "order_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
             "order_item_id": {
                 "unsigned": true,
                 "size": 10,
@@ -537,44 +530,6 @@
                 "type": "decimal",
                 "null": false,
                 "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "order_item_id"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "orders": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "order_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "pay_ref": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "price": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
             },
             "user_id": {
                 "unsigned": true,
@@ -587,19 +542,13 @@
         "indexes": {
             "PRIMARY": {
                 "columns": [
-                    "order_id"
-                ],
-                "unique": true
-            },
-            "by_user": {
-                "columns": [
-                    "user_id"
+                    "order_item_id"
                 ],
                 "unique": true
             }
         }
     },
-    "sales_items": {
+    "sales": {
         "columns": {
             "amended_dt": {
                 "type": "datetime",
@@ -653,6 +602,16 @@
                 "type": "varchar",
                 "null": false,
                 "default": "none"
+            },
+            "user_email": {
+                "size": 100,
+                "type": "varchar",
+                "null": true
+            },
+            "zones_name": {
+                "size": 260,
+                "type": "varchar",
+                "null": true
             }
         },
         "indexes": {
@@ -879,6 +838,11 @@
             },
             "created_dt": {
                 "type": "datetime",
+                "null": true
+            },
+            "discount_percent": {
+                "size": 11,
+                "type": "int",
                 "null": true
             },
             "email": {

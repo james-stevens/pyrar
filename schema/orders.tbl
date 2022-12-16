@@ -4,8 +4,8 @@
 #################################################################
 . ./database
 
-sqlsh "drop table if exists order_items"
-sqlsh "create table order_items (
+sqlsh "drop table if exists orders"
+sqlsh "create table orders (
 	order_item_id		${auto},
 
 	user_id				${row_id},
@@ -19,15 +19,13 @@ sqlsh "create table order_items (
 	num_years			int not null,
 	auth_code			varchar(50),
 
-	processing			boolean not null default false,
-
 	created_dt			datetime null,
 	amended_dt			datetime null,
 
 	primary key (order_item_id)
 )"
 
-sqlsh "ALTER TABLE order_items AUTO_INCREMENT = 10450"
+sqlsh "ALTER TABLE orders AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert,update,select on order_items to webui"
-sqlsh "grant select,insert,update,delete on order_items to raradm,epprun"
+sqlsh "grant insert,update,select on orders to webui"
+sqlsh "grant select,insert,update,delete on orders to raradm,epprun"

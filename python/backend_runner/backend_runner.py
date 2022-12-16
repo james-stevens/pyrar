@@ -23,6 +23,7 @@ import xmlapi
 import shared
 
 import handler
+# pylint: disable=unused-wildcard-import, wildcard-import
 from plugins import *
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}

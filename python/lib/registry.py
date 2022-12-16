@@ -76,6 +76,7 @@ class ZoneLib:
         self.zone_list = []
         self.zone_data = {}
         self.zone_priority = {}
+        self.zones_from_db = []
         self.registry = None
         self.clients = {}
 
@@ -96,18 +97,18 @@ class ZoneLib:
             return False
 
         self.last_zone_table = last_change["last_change"]
-        ok, zone_from_db = sql.sql_select("zones", "enabled and allow_sales", "zone,registry,price_info,renew_limit")
+        ok, self.zones_from_db = sql.sql_select("zones", "enabled and allow_sales")
         if not ok:
             return None
 
         self.zone_data = {}
-        for row in zone_from_db:
+        for row in self.zones_from_db:
             self.zone_data[row["zone"]] = { col:row[col] for col in ["registry","renew_limit"] if row[col]}
             if sql.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
-                except ValueError as e:
-                    continue
+                except ValueError:
+                    pass
         return True
 
     def check_for_new_files(self):
@@ -131,7 +132,7 @@ class ZoneLib:
             if reg_data["type"] == "epp" and registry in ports:
                 reg_data["url"] = f"http://127.0.0.1:{ports[registry]}/epp/api/v1.0/request"
 
-        for zone, zone_rec in self.zone_data.items():
+        for __, zone_rec in self.zone_data.items():
             zone_rec["reg_data"] = self.registry[zone_rec["registry"]]
 
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
@@ -240,31 +241,34 @@ class ZoneLib:
 
                     if factor is None:
                         del dom[action]
-                        continue
+                    else:
+                        apply_price_factor(action, dom,factor,num_years, retain_reg_price)
+        return True
 
-                regs_price = float(dom[action]) if dom[action] is not None else 0
 
-                if isinstance(factor, str):
-                    if factor[:1] == "x":
-                        our_price = regs_price * float(factor[1:])
-                    elif factor[:1] == "+":
-                        our_price = regs_price + float(factor[1:])
-                else:
-                    our_price = float(factor)
+def apply_price_factor(action, dom,factor, num_years, retain_reg_price):
+    regs_price = float(dom[action]) if dom[action] is not None else 0
+    if isinstance(factor, str):
+        if factor[:1] == "x":
+            our_price = regs_price * float(factor[1:])
+        elif factor[:1] == "+":
+            our_price = regs_price + float(factor[1:])
+    else:
+        our_price = float(factor)
 
-                if dom[action] is None:
-                    our_price *= float(num_years)
+    if dom[action] is None:
+        our_price *= float(num_years)
 
-                site_currency = policy.policy("currency")
-                our_price *= site_currency["pow10"]
-                our_price = round(float(our_price), 0)
+    site_currency = policy.policy("currency")
+    our_price *= site_currency["pow10"]
+    our_price = round(float(our_price), 0)
 
-                if retain_reg_price:
-                    regs_price *= site_currency["pow10"]
-                    regs_price = round(float(regs_price), 0)
-                    dom["reg_"+action] = int(regs_price)
+    if retain_reg_price:
+        regs_price *= site_currency["pow10"]
+        regs_price = round(float(regs_price), 0)
+        dom["reg_"+action] = int(regs_price)
 
-                dom[action] = int(our_price)
+    dom[action] = int(our_price)
 
 
 def start_up():
@@ -284,7 +288,8 @@ if __name__ == "__main__":
     # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
     # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
-    print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
+    # print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
+    print("ZONE_FROM_DB", json.dumps(tld_lib.zones_from_db, indent=3))
     # print("ZONE_PRIORITY", json.dumps(tld_lib.zone_priority, indent=3))
     # print("return_zone_list", json.dumps(tld_lib.return_zone_list(), indent=3))
     # print(json.dumps(tld_lib.return_zone_list(), indent=3))

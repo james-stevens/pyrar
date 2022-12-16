@@ -14,11 +14,15 @@ from lib.policy import this_policy as policy
 
 import domains
 import handler
+# pylint: disable=unused-wildcard-import, wildcard-import
 from plugins import *
 
 
 def capture_basket(basket, user_id):
-    ok, sum_orders = sql.sql_select_one("order_items", {"user_id": user_id}, "sum(price_charged) 'sum_orders'")
+    if len(basket) > policy.policy("max_basket_size"):
+        return False, "Basket too full"
+
+    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_charged) 'sum_orders'")
     if not ok:
         return False, sum_orders
 
@@ -55,15 +59,14 @@ def capture_basket(basket, user_id):
 def check_basket_item(basket_item):
     for prop in ["domain", "num_years", "action", "cost"]:
         if prop not in basket_item:
-            return False, "Basket seems to be corrupt"
+            return False, "A:Basket seems to be corrupt"
     if (err := validate.check_domain_name(basket_item["domain"])) is not None:
         return False, err
     if not isinstance(basket_item["num_years"], int):
-        return False, "Basket seems to be corrupt"
+        return False, "B:Basket seems to be corrupt"
     if basket_item["action"] not in misc.EPP_ACTIONS:
-        return False, "Basket seems to be corrupt"
+        return False, "C:Basket seems to be corrupt"
 
-    debug("HERE")
     return True, None
 
 
@@ -88,13 +91,16 @@ def process_basket(basket, user_db):
 
     for order in basket:
         if order["cost"] != order["order_db"]["price_paid"]:
-            return False, "Basket seems to be corrupt"
+            debug(f'{order["cost"]} is not {order["order_db"]["price_paid"]}')
+            return False, "D:Basket seems to be corrupt"
 
     return True, basket
 
 
 def price_order_item(order, user_db):
     domobj = domains.DomainName(order["domain"])
+    if domobj.names is None:
+        return False, domobj.err if domobj.err is not None else "Invalid domain name"
 
     if not domobj.registry or "type" not in domobj.registry or "name" not in domobj.registry:
         return False, "Registrar not supported"
@@ -197,7 +203,7 @@ def run_test(which):
             "action": "create"
         }], 10450)
     else:
-        ok, reply = capture_basket([{"domain": "teams.zz", "num_years": 1, "cost": 1101, "action": "create"}], 10450)
+        ok, reply = capture_basket([{"domain": "teams.zz", "num_years": 1, "cost": 1100, "action": "create"}], 10450)
 
     print(ok, json.dumps(reply, indent=3))
     sys.exit(0)

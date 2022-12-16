@@ -10,6 +10,7 @@ import bcrypt
 
 from lib import registry
 from lib import misc
+from lib import validate
 from lib.log import log, debug, init as log_init
 from lib.policy import this_policy as policy
 import users
@@ -29,6 +30,10 @@ log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 registry.start_up()
+
+site_currency = policy.policy("currency")
+if not validate.valid_currency(site_currency):
+    raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
 
 class WebuiReq:
@@ -86,7 +91,7 @@ class WebuiReq:
 def get_config():
     req = WebuiReq()
     ret = {
-        "default_currency": misc.DEFAULT_CURRENCY,
+        "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
         "policy": policy.data()
@@ -320,9 +325,7 @@ def rest_domain_price():
     dom_obj = domains.DomainName(dom)
 
     if dom_obj.names is None:
-        if dom_obj.err is not None:
-            return req.abort(dom_obj.err)
-        return req.abort("Invalid domain name")
+        return req.abort(dom_obj.err if dom_obj.err is not None else "Invalid domain name")
 
     ok, reply = domains.get_domain_prices(dom_obj, num_yrs, qry_type, req.user_id)
     if ok:

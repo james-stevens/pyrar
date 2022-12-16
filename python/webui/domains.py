@@ -8,14 +8,13 @@ import base64
 from lib import registry
 from lib import validate
 from lib.policy import this_policy as policy
-from lib.log import log, debug, init as log_init
+from lib.log import log
 from lib import mysql as sql
-from lib import misc
 from lib import sigprocs
-from lib import parsexml
 import users
 
 import handler
+# pylint: disable=unused-wildcard-import, wildcard-import
 from plugins import *
 
 
@@ -26,9 +25,6 @@ class DomainName:
         self.registry = None
         self.client = None
         self.currency = policy.policy("currency")
-        if not validate.valid_currency(self.currency):
-            log("ERROR: Main policy currency is not set up correctly, using default values")
-            self.currency = misc.DEFAULT_CURRENCY
 
         if isinstance(domain, str):
             if domain.find(",") >= 0:
@@ -43,7 +39,6 @@ class DomainName:
             self.err = "TLD not supported"
             self.names = None
         else:
-            regs_file = registry.tld_lib.regs_file.data()
             if "currency" in self.registry:
                 if validate.valid_currency(self.currency):
                     self.currency = self.registry["currency"]
@@ -57,6 +52,8 @@ class DomainName:
         else:
             self.err = err
             self.names = None
+            return
+
         self.registry = registry.tld_lib.reg_record_for_domain(name)
         if self.registry["type"] == "epp":
             self.client = registry.tld_lib.clients[self.registry["name"]]
@@ -68,28 +65,29 @@ class DomainName:
         self.names = []
         for dom in domain:
             name = dom.lower()
-            if (err := validate.check_domain_name(name)) is None:
-                self.names.append(name)
-                if self.registry is None:
-                    self.registry = registry.tld_lib.reg_record_for_domain(name)
-                    if self.registry["type"] == "epp":
-                        self.client = registry.tld_lib.clients[self.registry["name"]]
-                    else:
-                        self.client = None
-                    self.xmlns = registry.make_xmlns(self.registry)
-                else:
-                    regs = registry.tld_lib.reg_record_for_domain(name)
-                    if regs != self.registry:
-                        self.err = "ERROR: Split registry request"
-                        self.names = None
-                        return
-            else:
+            if (err := validate.check_domain_name(name)) is not None:
                 self.err = err
                 self.names = None
                 return
 
+            self.names.append(name)
+            regs = registry.tld_lib.reg_record_for_domain(name)
+            if self.registry is None:
+                self.registry = regs
+                if self.registry["name"] in registry.tld_lib.clients:
+                    self.client = registry.tld_lib.clients[self.registry["name"]]
+                    self.xmlns = registry.make_xmlns(self.registry)
+            else:
+                if regs != self.registry:
+                    self.err = "ERROR: Split registry request"
+                    self.names = None
+                    return
 
-def get_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
+
+def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
+    if qry_type is None:
+        qry_type=["create", "renew"]
+
     if not domobj.registry or "type" not in domobj.registry:
         return False, "Registrar not supported"
 
@@ -139,8 +137,8 @@ def webui_update_domain(req, post_dom):
         else:
             new_ns = post_dom["name_servers"].lower().split(",")
             new_ns.sort()
-            for ns in new_ns:
-                if not validate.is_valid_fqdn(ns):
+            for each_ns in new_ns:
+                if not validate.is_valid_fqdn(each_ns):
                     return False, "Invalid name server record"
             update_cols["name_servers"] = ",".join(new_ns)
 
@@ -150,8 +148,8 @@ def webui_update_domain(req, post_dom):
         else:
             new_ds = post_dom["ds_recs"].upper().split(",")
             new_ds.sort()
-            for ds in new_ds:
-                if not validate.is_valid_ds(validate.frag_ds(ds)):
+            for each_ds in new_ds:
+                if not validate.is_valid_ds(validate.frag_ds(each_ds)):
                     return False, "Invalid DS record"
             update_cols["ds_recs"] = ",".join(new_ds)
 
@@ -215,23 +213,3 @@ def webui_gift_domain(req, post_dom):
         return False, "Gifting domain failed"
 
     return ok, {"new_user_id": user_db["user_id"]}
-
-
-class Empty:
-    pass
-
-
-if __name__ == "__main__":
-    log_init(with_debug=True)
-    sql.connect("webui")
-    # print(">>>>>", set_auth_code(10450, {"domain_id": 10458, "name": "zip1.chug"}))
-    user = Empty()
-    user.user_id = 10450
-    print(
-        ">>>>>",
-        webui_gift_domain(user, {
-            "user_id": user.user_id,
-            "dest_email": "fred@frod.com",
-            "domain_id": 10458,
-            "name": "zip1.chug"
-        }))
