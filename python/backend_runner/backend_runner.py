@@ -7,7 +7,6 @@ import json
 import argparse
 import time
 import base64
-from inspect import currentframe as czz, getframeinfo as gzz
 import httpx
 
 from lib import mysql as sql
@@ -54,7 +53,7 @@ def job_abort(epp_job):
 def job_failed(epp_job):
     sql.sql_update_one("epp_jobs", {
         "failures": epp_job["failures"] + 1,
-        "execute_dt": sql.now(policy.policy("epp_retry_timeout", 300))
+        "execute_dt": sql.now(policy.policy("epp_retry_timeout"))
     }, {"epp_job_id": epp_job["epp_job_id"]})
 
 
@@ -65,7 +64,7 @@ def run_epp_item(epp_job):
 
     if sql.has_data(epp_job, "user_id") and epp_job["job_type"] != "dom/transfer":
         if epp_job["user_id"] != dom_db["user_id"]:
-            log(f"EPP-{job_id}: Domain '{dom_db['name']}' is not owned by '{epp_job['user_id']}'", gzz(czz()))
+            log(f"EPP-{job_id}: Domain '{dom_db['name']}' is not owned by '{epp_job['user_id']}'")
             return job_abort(epp_job)
 
     reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
@@ -73,16 +72,16 @@ def run_epp_item(epp_job):
         return job_abort(epp_job)
 
     if (not sql.has_data(epp_job, "job_type") or epp_job["job_type"] not in handler.plugins[reg["type"]]):
-        log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'", gzz(czz()))
+        log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'")
         return job_abort(epp_job)
 
     job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job, dom_db)
     notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']}:{epp_job['job_type']}' " +
              f"on DOM-{epp_job['domain_id']} retries {epp_job['failures']}/" +
-             f"{policy.policy('epp_retry_attempts', 3)}")
+             f"{policy.policy('epp_retry_attempts')}")
 
-    log(notes, gzz(czz()))
-    shared.event_log(notes, epp_job, gzz(czz()))
+    log(notes)
+    shared.event_log(notes, epp_job)
 
     if job_run is None:
         return job_abort(epp_job)
@@ -92,11 +91,11 @@ def run_epp_item(epp_job):
 
 
 def run_server():
-    log("EPP-SERVER RUNNING", gzz(czz()))
+    log("EPP-SERVER RUNNING")
     signal_mtime = sigprocs.signal_wait("backend")
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
-                 f" and failures < {policy.policy('epp_retry_attempts', 3)} limit 1")
+                 f" and failures < {policy.policy('epp_retry_attempts')} limit 1")
         ret, epp_job = sql.run_select(query)
         if ret and len(epp_job) > 0:
             run_epp_item(epp_job[0])
@@ -106,7 +105,7 @@ def run_server():
 
 def start_up(is_live):
     if is_live:
-        log_init(policy.policy("facility_eppsvr", 170), with_logging=True)
+        log_init(policy.policy("facility_eppsvr"), with_logging=True)
     else:
         log_init(with_debug=True)
 

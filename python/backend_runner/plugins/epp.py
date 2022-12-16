@@ -5,7 +5,6 @@
 import sys
 import json
 import base64
-from inspect import currentframe as czz, getframeinfo as gzz
 import httpx
 
 from lib import mysql as sql
@@ -30,12 +29,12 @@ def run_epp_request(this_reg, post_json):
         client = registry.tld_lib.clients[this_reg["name"]]
         resp = client.post(this_reg["url"], json=post_json, headers=misc.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
-            log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}", gzz(czz()))
+            log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}")
             return None
         ret = json.loads(resp.content)
         return ret
     except Exception as exc:
-        log(f"ERROR: XML Request registry '{this_reg['name']}': {exc}", gzz(czz()))
+        log(f"ERROR: XML Request registry '{this_reg['name']}': {exc}")
         return None
     return None
 
@@ -46,13 +45,13 @@ def start_up_check():
             continue
 
         if run_epp_request(reg, {"hello": None}) is None:
-            log(f"ERROR: EPP Gateway for '{name}' is not working", gzz(czz()))
+            log(f"ERROR: EPP Gateway for '{name}' is not working")
             sys.exit(0)
 
         client = registry.tld_lib.clients[name]
         if not whois_priv.check_privacy_exists(client, reg["url"]):
             msg = (f"ERROR: Registry '{name}' " + "privacy record failed to create")
-            log(msg, gzz(czz()))
+            log(msg)
             sys.exit(1)
 
 
@@ -133,7 +132,7 @@ def domain_request_transfer(epp_job, dom_db):
                                             base64.b64decode(epp_job["authcode"]).decode("utf-8"), years))
 
     if not xml_check_code(job_id, "transfer", xml):
-        if (epp_job["failures"] + 1) >= policy.policy("epp_retry_attempts", 3):
+        if (epp_job["failures"] + 1) >= policy.policy("epp_retry_attempts"):
             return transfer_failed(dom_db["domain_id"])
         return False
 
@@ -153,7 +152,7 @@ def domain_create(epp_job, dom_db):
 
     ns_list, ds_list = shared.get_domain_lists(dom_db)
     if not check_dom_data(job_id, name, ns_list, ds_list):
-        log(f"EPP-{job_id} Domain data failed validation", gzz(czz()))
+        log(f"EPP-{job_id} Domain data failed validation")
         return None
 
     if (years := shared.check_num_years(epp_job)) is None:
@@ -191,7 +190,7 @@ def domain_info(epp_job, dom_db):
 def epp_get_domain_info(job_id, domain_name):
     this_reg = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or "url" not in this_reg:
-        log(f"EPP-{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
+        log(f"EPP-{job_id} '{domain_name}' this_reg or url not given")
         return None
 
     xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name))
@@ -208,7 +207,7 @@ def set_authcode(epp_job, dom_db):
 
     this_reg = registry.tld_lib.reg_record_for_domain(name)
     if this_reg is None or "url" not in this_reg:
-        log(f"Odd: this_reg or url returned None for '{name}", gzz(czz()))
+        log(f"Odd: this_reg or url returned None for '{name}")
         return None
 
     req = dom_req_xml.domain_set_authcode(
@@ -265,9 +264,9 @@ def do_domain_update(job_id, name, dom_db, epp_info):
 def xml_check_code(job_id, desc, xml):
     xml_code = xmlapi.xmlcode(xml)
     if xml_code > 1050:
-        log(f"EPP-{job_id} XML {desc} request gave {xml_code}", gzz(czz()))
+        log(f"EPP-{job_id} XML {desc} request gave {xml_code}")
         if xml_code != 9999:
-            log(f"EPP-{job_id} {json.dumps(xml)}", gzz(czz()))
+            log(f"EPP-{job_id} {json.dumps(xml)}")
         return False
 
     return True

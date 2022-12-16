@@ -1,0 +1,6 @@
+[BASIC]
+good-names=ok
+
+[FORMAT]
+max-line-length=119
+max-returns=12

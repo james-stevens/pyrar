@@ -6,7 +6,6 @@ import os
 import json
 import random
 import httpx
-from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib import misc
 from lib import fileloader
@@ -218,7 +217,7 @@ class ZoneLib:
         if "prices" in this_reg:
             if (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
                 return ret
-        if (price_policy := policy.policy("prices", None)) is not None:
+        if (price_policy := policy.policy("prices")) is not None:
             if (ret := get_price_from_json(price_policy, cls, action)) is not None:
                 return ret
         return None
@@ -243,7 +242,7 @@ class ZoneLib:
                         del dom[action]
                         continue
 
-                regs_price = float(dom[action])
+                regs_price = float(dom[action]) if dom[action] is not None else 0
 
                 if isinstance(factor, str):
                     if factor[:1] == "x":
@@ -252,13 +251,11 @@ class ZoneLib:
                         our_price = regs_price + float(factor[1:])
                 else:
                     our_price = float(factor)
-                    regs_price = float(factor)
 
-                if this_reg["type"] == "local":
+                if dom[action] is None:
                     our_price *= float(num_years)
-                    regs_price *= float(num_years)
 
-                site_currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
+                site_currency = policy.policy("currency")
                 our_price *= site_currency["pow10"]
                 our_price = round(float(our_price), 0)
 

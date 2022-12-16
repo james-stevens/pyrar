@@ -4,19 +4,18 @@
 
 import os
 import json
-from inspect import currentframe as czz, getframeinfo as gzz
 from lib.log import log, init as log_init
 
 
 def load_file_json(filename):
-    log(f"Reloading file '{filename}'", gzz(czz()))
+    log(f"Reloading file '{filename}'")
     try:
         with open(filename, "r", encoding='UTF-8') as file_fd:
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
     except Exception as err:
-        log(f"load_file_json: {filename} : {str(err)}", gzz(czz()))
+        log(f"load_file_json: {filename} : {str(err)}")
 
     return None
 

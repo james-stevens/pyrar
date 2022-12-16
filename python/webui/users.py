@@ -6,7 +6,6 @@ import base64
 import hashlib
 import time
 import os
-from inspect import currentframe as czz, getframeinfo as gzz
 import bcrypt
 
 from lib import mysql as sql
@@ -103,7 +102,7 @@ def check_session(ses_code, user_agent):
         return False, None
 
     key = make_session_key(ses_code, user_agent)
-    tout = policy.policy('session_timeout', 60)
+    tout = policy.policy('session_timeout')
     ok, data = sql.sql_select_one("session_keys", {"session_key": key},
                                   f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
 
@@ -155,7 +154,7 @@ def login(data, user_agent):
         return False, None
 
     update_user_login_dt(user_db_rec['user_id'])
-    log(f"USR-{user_db_rec['user_id']} logged in", gzz(czz()))
+    log(f"USR-{user_db_rec['user_id']} logged in")
     return start_session(user_db_rec, user_agent)
 
 
@@ -205,16 +204,15 @@ def check_password(user_id, data):
 
 if __name__ == "__main__":
     sql.connect("webui")
-    log_init(debug=True)
+    log_init(with_debug=True)
     login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
-    debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data), gzz(czz()))
+    debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     # print(make_session_code(100))
     # print(make_session_key("fred", "Windows"))
     debug(
         ">>>>SELECT " +
-        str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")),
-        gzz(czz()))
-    debug(">>>> " + str(login_data["session"]), gzz(czz()))
-    debug(">>>>CHECK-SESSION " + str(check_session(login_data["session"], "curl/7.83.1")), gzz(czz()))
+        str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")))
+    debug(">>>> " + str(login_data["session"]))
+    debug(">>>>CHECK-SESSION " + str(check_session(login_data["session"], "curl/7.83.1")))

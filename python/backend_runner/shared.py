@@ -29,7 +29,7 @@ def do_domain_update(job_id, name, dom_db, epp_info):
 def epp_get_domain_info(job_id, domain_name):
     this_reg, url = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or url is None:
-        log(f"BackEnd:{job_id} '{domain_name}' this_reg or url not given", gzz(czz()))
+        log(f"BackEnd:{job_id} '{domain_name}' this_reg or url not given")
         return None
 
     xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name), url)
@@ -59,7 +59,7 @@ def event_log(notes, epp_job, where):
 def check_have_data(job_id, dom_db, items):
     for item in items:
         if not sql.has_data(dom_db, item):
-            log(f"EPP-{job_id} '{item}' missing or blank", gzz(czz()))
+            log(f"EPP-{job_id} '{item}' missing or blank")
             return False
     return True
 
@@ -69,8 +69,8 @@ def check_num_years(epp_job):
     if not check_have_data(job_id, epp_job, ["num_years"]):
         return None
     years = int(epp_job["num_years"])
-    if years < 1 or years > policy.policy("max_renew_years", 10):
-        log(f"EPP-{job_id} num_years failed validation", gzz(czz()))
+    if years < 1 or years > policy.policy("max_renew_years"):
+        log(f"EPP-{job_id} num_years failed validation")
         return None
     return years
 
@@ -90,18 +90,18 @@ def get_domain_lists(dom_db):
 def get_dom_from_db(epp_job):
     job_id = epp_job["epp_job_id"]
     if not check_have_data(job_id, epp_job, ["domain_id"]):
-        log(f"EPP-{job_id} Domain '{domain_id}' missing or invalid", gzz(czz()))
+        log(f"EPP-{job_id} Domain '{domain_id}' missing or invalid")
         return None
 
     domain_id = epp_job["domain_id"]
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
     if not ok:
-        log(f"Domain id {domain_id} could not be found", gzz(czz()))
+        log(f"Domain id {domain_id} could not be found")
         return None
 
     name_ok = validate.check_domain_name(dom_db["name"])
     if (not sql.has_data(dom_db, "name")) or (name_ok is not None):
-        log(f"EPP-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})", gzz(czz()))
+        log(f"EPP-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})")
         return None
 
     return dom_db

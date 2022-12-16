@@ -2,12 +2,8 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-import sys
-import json
-import httpx
 import re
 import base64
-from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib import registry
 from lib import validate
@@ -29,9 +25,9 @@ class DomainName:
         self.err = None
         self.registry = None
         self.client = None
-        self.currency = policy.policy("currency",misc.DEFAULT_CURRENCY)
+        self.currency = policy.policy("currency")
         if not validate.valid_currency(self.currency):
-            log(f"ERROR: Main policy currency is not set up correctly, using default values",gzz(czz()))
+            log("ERROR: Main policy currency is not set up correctly, using default values")
             self.currency = misc.DEFAULT_CURRENCY
 
         if isinstance(domain, str):
@@ -52,7 +48,7 @@ class DomainName:
                 if validate.valid_currency(self.currency):
                     self.currency = self.registry["currency"]
                 else:
-                    log(f"ERROR: Registry currency for '{self.registry['name']}' is not set up correctly, using system default",gzz(czz()))
+                    log(f"ERROR: Registry currency for '{self.registry['name']}' is not set up correctly")
 
     def process_string(self, domain):
         name = domain.lower()
@@ -97,12 +93,10 @@ def get_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id
     if not domobj.registry or "type" not in domobj.registry:
         return False, "Registrar not supported"
 
-    reg_type = domobj.registry["type"]
-    if reg_type not in handler.plugins or "dom/price" not in handler.plugins[reg_type]:
+    if (plugin_func := handler.run(domobj.registry["type"], "dom/price")) is None:
         return False, "No plugin fro this Registrar"
 
-    handler.plugins[domobj.registry["type"]]["dom/price"]
-    ok, ret_js = handler.plugins[reg_type]["dom/price"](domobj, num_years, qry_type, user_id)
+    ok, ret_js = plugin_func(domobj, num_years, qry_type, user_id)
     if not ok or ret_js is None:
         return False, "Price check failed"
 
@@ -140,7 +134,7 @@ def webui_update_domain(req, post_dom):
     update_cols = {}
 
     if "name_servers" in post_dom:
-        if not sql.has_data(post_dom,"name_servers"):
+        if not sql.has_data(post_dom, "name_servers"):
             update_cols["name_servers"] = ""
         else:
             new_ns = post_dom["name_servers"].lower().split(",")
@@ -228,7 +222,7 @@ class Empty:
 
 
 if __name__ == "__main__":
-    log_init(debug=True)
+    log_init(with_debug=True)
     sql.connect("webui")
     # print(">>>>>", set_auth_code(10450, {"domain_id": 10458, "name": "zip1.chug"}))
     user = Empty()

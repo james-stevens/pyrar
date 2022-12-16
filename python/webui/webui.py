@@ -7,7 +7,6 @@ import json
 import httpx
 import flask
 import bcrypt
-from inspect import currentframe as czz, getframeinfo as gzz
 
 from lib import registry
 from lib import misc
@@ -54,7 +53,7 @@ class WebuiReq:
         self.user_data = check_sess_data
         self.sess_code = check_sess_data["session"]
         self.user_id = check_sess_data['user_id']
-        debug(f"Logged in as {self.user_id}", gzz(czz()))
+        debug(f"Logged in as {self.user_id}")
 
     def set_base_event(self):
         ip_addr = flask.request.remote_addr
@@ -233,30 +232,30 @@ def users_register():
     if not ret:
         return req.abort(val)
 
-    debug("REGISTER " + str(val), gzz(czz()))
+    debug("REGISTER " + str(val))
 
     user_id = val["user"]["user_id"]
     req.user_id = user_id
     req.sess_code = val["session"]
     req.base_event["user_id"] = user_id
-    req.event({"notes": "User registered", "event_type": "new_user"}, gzz(czz()))
+    req.event({"notes": "User registered", "event_type": "new_user"})
 
     return req.response(val)
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
-    return run_user_domain_task(domains.webui_gift_domain, "Gift", gzz(czz()))
+    return run_user_domain_task(domains.webui_gift_domain, "Gift")
 
 
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
-    return run_user_domain_task(domains.webui_update_domain, "Update", gzz(czz()))
+    return run_user_domain_task(domains.webui_update_domain, "Update")
 
 
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
-    return run_user_domain_task(domains.webui_set_auth_code, "setAuth", gzz(czz()))
+    return run_user_domain_task(domains.webui_set_auth_code, "setAuth")
 
 
 def run_user_domain_task(domain_function, func_name, context):
@@ -329,7 +328,7 @@ def rest_domain_price():
     if ok:
         return req.response(reply)
 
-    log("FAILED:" + str(ok) + ":" + str(reply) + ":" + str(dom_obj.names), gzz(czz()))
+    log("FAILED:" + str(ok) + ":" + str(reply) + ":" + str(dom_obj.names))
     return req.abort(reply)
 
 

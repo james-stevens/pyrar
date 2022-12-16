@@ -10,8 +10,6 @@ import lib.fileloader
 from lib import misc
 from lib.log import log, debug, init as log_init
 
-from inspect import currentframe as czz, getframeinfo as gzz
-
 from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
@@ -111,10 +109,10 @@ def return_select():
 
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
-    debug(" SQL " + sql, gzz(czz()))
+    debug(" SQL " + sql)
     if cnx is None:
-        print(f"Database is not connected '{sql}'", gzz(czz()))
-        log(f"Database is not connected '{sql}'", gzz(czz()))
+        print(f"Database is not connected '{sql}'")
+        log(f"Database is not connected '{sql}'")
         return None, None
 
     try:
@@ -131,8 +129,8 @@ def run_sql(sql, func):
             except Exception as exc:
                 this_exc = exc
                 pass
-        log("SQL-ERROR:" + str(this_exc), gzz(czz()))
-        print("SQL-ERROR:" + str(this_exc), gzz(czz()))
+        log("SQL-ERROR:" + str(this_exc))
+        print("SQL-ERROR:" + str(this_exc))
         return None, None
 
 
@@ -253,7 +251,7 @@ def connect(login):
                              charset='utf8mb4',
                              init_command='set names utf8mb4')
     except Exception as exc:
-        log("Failed to connet to MySQL: " + str(exc), gzz(czz()))
+        log("Failed to connet to MySQL: " + str(exc))
         cnx = None
 
 

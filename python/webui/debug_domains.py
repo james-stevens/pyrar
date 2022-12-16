@@ -5,7 +5,6 @@
 import sys
 import json
 import httpx
-from inspect import currentframe as czz, getframeinfo as gzz
 
 import domains
 from lib import parsexml
@@ -25,7 +24,7 @@ def debug_one_domain(domain):
     print(">>>> REPLY", ok, out_js)
 
     if ok != 200:
-        log(f"ERROR: {ok} {out_js}", gzz(czz()))
+        log(f"ERROR: {ok} {out_js}")
     else:
         xml_p = parsexml.XmlParser(out_js)
         code, ret_js = xml_p.parse_check_message()

@@ -3,6 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 import syslog
+import inspect
 
 done_init = False
 
@@ -10,12 +11,16 @@ hold_debug = False
 hold_with_logging = True
 
 
-def debug(line, where):
+def debug(line, where=None):
+    if where is None:
+        where = inspect.stack()[1]
     if hold_debug:
         log("[DEUBG] " + line, where)
 
 
-def log(line, where=None):
+def log(line,where=None):
+    if where is None:
+        where = inspect.stack()[1]
     txt = ""
     if where is not None:
         fname = where.filename.split("/")[-1].split(".")[0]

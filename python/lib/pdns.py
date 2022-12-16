@@ -26,7 +26,7 @@ def start_up():
     client = httpx.Client(headers=headers)
 
     get_all_pdns_zones()
-    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
+    catalog_zone = policy.policy("catalog_zone")
     if catalog_zone not in all_pdns_zones:
         create_zone(catalog_zone,False)
 
@@ -58,9 +58,9 @@ def load_zone_keys(name):
 
 def dnssec_zone_cmds(name):
     """ rest/api calls to sign zone called {name}, name must have trailing "." """
-    dnssec_algorithm = policy.policy("dnssec_algorithm", "ecdsa256")
-    dnssec_ksk_bits = policy.policy("dnssec_ksk_bits", 256)
-    dnssec_zsk_bits = policy.policy("dnssec_zsk_bits", 256)
+    dnssec_algorithm = policy.policy("dnssec_algorithm")
+    dnssec_ksk_bits = policy.policy("dnssec_ksk_bits")
+    dnssec_zsk_bits = policy.policy("dnssec_zsk_bits")
     nsec3param = misc.ashex(secrets.token_bytes(6))
     return [{
         "cmd": "POST",
@@ -96,7 +96,7 @@ def create_zone(name, with_dnssec=False):
     if name[-1] != ".":
         name += "."
 
-    dns_servers = policy.policy("dns_servers", misc.DEFAULT_NS).split(",")
+    dns_servers = policy.policy("dns_servers").split(",")
     for idx, ns in enumerate(dns_servers):
         if ns[-1] != ".":
             dns_servers[idx] += "."
@@ -204,7 +204,7 @@ def delete_zone(name):
     if name[-1] != ".":
         name += "."
 
-    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
+    catalog_zone = policy.policy("catalog_zone")
     zone_hashed = hash_zone_name(name)
 
     post_json = [ {
@@ -242,7 +242,7 @@ def update_rrs(zone,rrs):
         zone += "."
 
     if "ttl" not in rrs:
-        rrs["ttl"] = policy.policy("default_ttl",86400)
+        rrs["ttl"] = policy.policy("default_ttl")
 
     rr_data = { "changetype": "REPLACE", "records": {} }
     for item in ["name","ttl","type"]:

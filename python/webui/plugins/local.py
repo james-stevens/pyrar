@@ -12,19 +12,19 @@ def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_
     if not ok:
         return False, "Unexpected database error"
 
-    dom_as_dict = {dom["name"]: dom for dom in reply}
+    doms_db = {dom["name"]: dom for dom in reply}
     ret_js = []
     for dom in domobj.names if isinstance(domobj.names, list) else [domobj.names]:
         add_dom = {"num_years": num_years, "name": dom, "avail": False}
-        if dom not in dom_as_dict:
+        if dom not in doms_db:
             add_dom["avail"] = True
             for qt in qry_type:
-                add_dom[qt] = num_years
+                add_dom[qt] = None
         else:
             add_dom["reason"] = "Already registered"
-            if sql.has_data(dom_as_dict[dom], "for_sale_msg"):
+            if sql.has_data(doms_db[dom], "for_sale_msg"):
                 add_dom["avail"] = True
-                add_dom["for_sale_msg"] = dom_as_dict[dom]["for_sale_msg"]
+                add_dom["for_sale_msg"] = doms_db[dom]["for_sale_msg"]
 
         ret_js.append(add_dom)
 

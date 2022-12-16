@@ -26,8 +26,8 @@ def http_price_domains(domobj, years, qry_type):
         ret_js = json.loads(resp.content)
         return 200, ret_js
     except ValueError as err:
-        log(f"{resp.status_code} === {resp.content.decode('utf8')}", gzz(czz()))
-        log(f"**** JSON FAILED TO PARSE ***** {err}", gzz(czz()))
+        log(f"{resp.status_code} === {resp.content.decode('utf8')}")
+        log(f"**** JSON FAILED TO PARSE ***** {err}")
         return 400, "Returned JSON Parse Error"
 
     return 400, "Unexpected Error"

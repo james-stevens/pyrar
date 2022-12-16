@@ -5,7 +5,6 @@
 import bcrypt
 import base64
 
-from inspect import currentframe as czz, getframeinfo as gzz
 from lib.log import log, debug, init as log_init
 
 from lib import mysql as sql
@@ -44,7 +43,7 @@ def domain_update_from_db(epp_job, dom_db):
     name = dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
-        log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'", gzz(czz()))
+        log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'")
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
@@ -59,13 +58,13 @@ def domain_update_from_db(epp_job, dom_db):
 
     ok_ds = pdns.update_rrs(tld, rrs)
 
-    shared.event_log(f"Local/Update gave ok_ns={ok_ns}, ok_ds={ok_ds}", epp_job, gzz(czz()))
+    shared.event_log(f"Local/Update gave ok_ns={ok_ns}, ok_ds={ok_ds}", epp_job)
     return ok_ns and ok_ds
 
 
 def domain_request_transfer(epp_job, dom_db):
     if not sql.has_data(epp_job, "authcode") or not sql.has_data(dom_db, "authcode"):
-        debug(f"Missing field", gzz(czz()))
+        debug(f"Missing field")
         return None
 
     if dom_db["user_id"] == epp_job["user_id"]:
@@ -74,7 +73,7 @@ def domain_request_transfer(epp_job, dom_db):
     dom_authcode = dom_db["authcode"].encode("utf-8")
     enc_pass = bcrypt.hashpw(base64.b64decode(epp_job["authcode"]), dom_authcode)
     if dom_authcode != enc_pass:
-        debug(f"passwords do not match {dom_db['authcode']} {enc_pass}", gzz(czz()))
+        debug(f"passwords do not match {dom_db['authcode']} {enc_pass}")
         return None
 
     return sql.sql_update_one("domains", {
