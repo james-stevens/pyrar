@@ -4,7 +4,7 @@
 
 import os
 import json
-from lib.log import log, init as log_init
+from librar.log import log, init as log_init
 
 
 def load_file_json(filename):

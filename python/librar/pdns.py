@@ -10,8 +10,8 @@ import secrets
 import hashlib
 import dns.name
 
-from lib import misc
-from lib.policy import this_policy as policy
+from librar import misc
+from librar.policy import this_policy as policy
 
 client = None
 all_pdns_zones = None

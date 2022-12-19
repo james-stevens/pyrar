@@ -2,9 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-from lib.policy import this_policy as policy
-from lib import mysql as sql
-from lib import validate
+import inspect
+
+from librar.policy import this_policy as policy
+from librar import mysql as sql
+from librar import validate
 
 
 def do_domain_update(job_id, name, dom_db, epp_info):
@@ -40,7 +42,8 @@ def epp_get_domain_info(job_id, domain_name):
     return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
-def event_log(notes, epp_job, where):
+def event_log(notes, epp_job):
+    where = inspect.stack()[1]
     event_row = {
         "program": where.filename.split("/")[-1].split(".")[0],
         "function": where.function,
@@ -97,6 +100,9 @@ def get_dom_from_db(epp_job):
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
     if not ok:
         log(f"Domain id {domain_id} could not be found")
+        return None
+
+    if "name" not in dom_db:
         return None
 
     name_ok = validate.check_domain_name(dom_db["name"])

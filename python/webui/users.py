@@ -7,11 +7,11 @@ import hashlib
 import time
 import os
 
-from lib import mysql as sql
-from lib import validate
-from lib import passwd
-from lib.policy import this_policy as policy
-from lib.log import log, debug, init as log_init
+from librar import mysql as sql
+from librar import validate
+from librar import passwd
+from librar.policy import this_policy as policy
+from librar.log import log, debug, init as log_init
 
 USER_REQUIRED = ["email", "password"]
 
@@ -50,7 +50,7 @@ def start_session(user_db_rec, user_agent):
 
     ret = {"user_id": user_id, "user": user_db_rec, "session": ses_code}
 
-    ok, orders_db = sql.sql_select("orders",{"user_id": user_id})
+    ok, orders_db = sql.sql_select("orders", {"user_id": user_id})
     if ok and len(orders_db) >= 1:
         ret["orders"] = orders_db
 
@@ -146,7 +146,7 @@ def login(data, user_agent):
     if not ok or user_db_rec == {}:
         return False, None
 
-    if not check_password(user_db_rec["user_id"],data,user_db_rec):
+    if not check_password(user_db_rec["user_id"], data, user_db_rec):
         return False, None
 
     update_user_login_dt(user_db_rec['user_id'])
@@ -184,7 +184,7 @@ def update_user(user_id, post_json):
     return ok, user_db_rec
 
 
-def check_password(user_id, data, user_db_rec = None):
+def check_password(user_id, data, user_db_rec=None):
     if not sql.has_data(data, "password"):
         return False
 
@@ -193,7 +193,7 @@ def check_password(user_id, data, user_db_rec = None):
         if not ok:
             return False
 
-    return passwd.compare(data["password"],user_db_rec["password"])
+    return passwd.compare(data["password"], user_db_rec["password"])
 
 
 if __name__ == "__main__":

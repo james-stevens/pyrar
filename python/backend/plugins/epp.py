@@ -7,19 +7,19 @@ import json
 import base64
 import httpx
 
-from lib import mysql as sql
-from lib import registry
-from lib.log import log
-from lib.policy import this_policy as policy
-from lib import misc
-from lib import validate
-from lib import parse_dom_resp
+from librar import mysql as sql
+from librar import registry
+from librar.log import log
+from librar.policy import this_policy as policy
+from librar import misc
+from librar import validate
+from librar import parse_dom_resp
 import whois_priv
 import dom_req_xml
 import xmlapi
 import shared
 
-import handler
+from backend import handler
 
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 

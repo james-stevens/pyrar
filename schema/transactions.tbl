@@ -10,14 +10,13 @@
 sqlsh "drop table if exists transactions"
 sqlsh "create table transactions (
 	transaction_id		${auto},
+
 	user_id				${row_id},
 	acct_sequence_id	${row_id},
 
-	is_credit			${flag} not null default 0,
-	amount				${money} not null default 0,
-	currency            ${currency},
-	pre_balance			${money},
-	post_balance		${money},
+	amount				${money} not null,
+	pre_balance			${money} not null,
+	post_balance		${money} not null,
 
 	sales_item_id		${row_id_null},
 	description			varchar(255),
@@ -30,4 +29,4 @@ sqlsh "create table transactions (
 
 sqlsh "ALTER TABLE transactions AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert on transactions to webui,epprun,raradm'
+sqlsh 'grant select, update, insert on transactions to webui,epprun,raradm'

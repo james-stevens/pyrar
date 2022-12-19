@@ -7,7 +7,7 @@ import json
 
 import xmlapi
 
-from lib import misc
+from librar import misc
 
 WHOIS_PRIVACY_ID = "whoisPrivacy"
 

@@ -7,8 +7,8 @@ import base64
 import sys
 import re
 
-from lib import registry
-from lib import misc
+from librar import registry
+from librar import misc
 
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
@@ -112,14 +112,14 @@ def validate_binary(val):
 
 
 def valid_currency(currency):
-    for item in ["iso","symbol","separator","decimal","pow10"]:
+    for item in ["iso", "symbol", "separator", "decimal", "pow10"]:
         if item not in currency:
             return False
 
     if len(currency["iso"]) != 3:
         return False
 
-    if not isinstance(currency["decimal"],int) or not isinstance(currency["pow10"],int):
+    if not isinstance(currency["decimal"], int) or not isinstance(currency["pow10"], int):
         return False
 
     return True

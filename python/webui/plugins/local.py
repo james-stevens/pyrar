@@ -2,10 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-from lib import parsexml
-from lib import mysql as sql
+from librar import parsexml
+from librar import mysql as sql
 
-import handler
+from webui import handler
+
 
 def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
     ok, reply = sql.sql_select("domains", {"name": domobj.names})
@@ -30,4 +31,5 @@ def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_
 
     return True, ret_js
 
-handler.add_plugin("local", { "dom/price": local_domain_prices } )
+
+handler.add_plugin("local", {"dom/price": local_domain_prices})

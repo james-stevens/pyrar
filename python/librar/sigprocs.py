@@ -6,7 +6,7 @@ import os
 import sys
 import time
 
-from lib import fileloader
+from librar import fileloader
 
 
 def signal_filename(sig_name):

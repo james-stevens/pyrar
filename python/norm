@@ -4,12 +4,13 @@ if test "$*"
 	then
 		files="$*"
 	else
-		files="$(grep -lr ' /usr/bin/python3$' | grep -v pdns.py)"
+		files="$(grep -lr ' /usr/bin/python3$' | grep -v pdns.py | grep -v basket.py)"
 	fi
 
 f=$(mktemp)
 for file in ${files}
 do
+	echo "===> ${file}"
 	python3 -m yapf ${file} > ${f}
 	if test -s ${f} && ! cmp ${file} ${f}
 		then

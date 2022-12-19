@@ -7,10 +7,10 @@ import json
 import httpx
 
 import domains
-from lib import parsexml
-from lib import mysql as sql
-from lib.log import log, debug, init as log_init
-from lib import misc
+from librar import parsexml
+from librar import mysql as sql
+from librar.log import log, debug, init as log_init
+from librar import misc
 
 
 def debug_one_domain(domain):

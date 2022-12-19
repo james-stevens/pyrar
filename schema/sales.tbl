@@ -8,13 +8,15 @@ sqlsh "drop table if exists sales"
 sqlsh "create table sales (
 	sales_item_id		${auto},
 
+	transaction_id		${row_id},
+
 	price_charged		${money},
-	currrency_charged	${currency},
+	currency_charged	${currency},
 	price_paid			${money},
-	currrency_paid		${currency},
+	currency_paid		${currency},
 
 	domain_name			${domain_name},
-	zones_name			${domain_name},
+	zone_name			${domain_name},
 	user_email			${email},
 	sales_type			varchar(20) not null default 'none',
 	num_years			int not null,

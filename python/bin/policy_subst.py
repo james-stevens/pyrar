@@ -4,8 +4,8 @@ import os
 import re
 import sys
 
-from lib.policy import this_policy as policy
-from lib import fileloader
+from librar.policy import this_policy as policy
+from librar import fileloader
 
 SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"

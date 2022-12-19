@@ -7,9 +7,9 @@ import json
 import datetime
 import inspect
 
-import lib.fileloader
-from lib import misc
-from lib.log import log, debug, init as log_init
+from librar import fileloader
+from librar import misc
+from librar.log import log, debug, init as log_init
 
 from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
@@ -22,7 +22,7 @@ AUTO_CREATED_AMENDED_DT = ["domains", "epp_jobs", "order_items", "orders", "sale
 cnx = None
 my_login = None
 
-logins = lib.fileloader.FileLoader(LOGINS_JSON)
+logins = fileloader.FileLoader(LOGINS_JSON)
 
 
 def convert_string(data):
@@ -110,9 +110,20 @@ def return_select():
     return True, db_rows
 
 
+def first_not_mysql():
+    for context in inspect.stack():
+        if context.filename[-9:] != "/mysql.py":
+            return context
+    return inspect.stack()[1]
+
+
+def log_sql(sql):
+    debug(" SQL " + sql, first_not_mysql())
+
+
 def run_sql(sql, func):
     """ run the {sql}, reconnecting to MySQL, if necessary """
-    debug(" SQL " + sql)
+    log_sql(sql)
     if cnx is None:
         print(f"Database is not connected '{sql}'")
         log(f"Database is not connected '{sql}'")
@@ -160,7 +171,7 @@ def sql_delete_one(table, where):
 
 def sql_insert(table, column_vals):
     if table in AUTO_CREATED_AMENDED_DT:
-        for col in ["amended_dt","created_dt"]:
+        for col in ["amended_dt", "created_dt"]:
             if col not in column_vals:
                 column_vals[col] = None
     return sql_exec(f"insert into {table} set " + data_set(column_vals, ","))

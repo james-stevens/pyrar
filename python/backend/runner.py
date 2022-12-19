@@ -9,22 +9,22 @@ import time
 import base64
 import httpx
 
-from lib import mysql as sql
-from lib import registry
-from lib.log import log, debug, init as log_init
-from lib.policy import this_policy as policy
-from lib import misc
-from lib import validate
-from lib import parse_dom_resp
-from lib import sigprocs
-import whois_priv
-import dom_req_xml
-import xmlapi
-import shared
+from librar import mysql as sql
+from librar import registry
+from librar.log import log, debug, init as log_init
+from librar.policy import this_policy as policy
+from librar import misc
+from librar import validate
+from librar import parse_dom_resp
+from librar import sigprocs
+from backend import whois_priv
+from backend import dom_req_xml
+from backend import xmlapi
+from backend import shared
 
-import handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from plugins import *
+from backend import handler
+from backend.plugins import *
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
@@ -69,14 +69,14 @@ def run_epp_item(epp_job):
             return job_abort(epp_job)
 
     reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
-    if reg["type"] not in handler.plugins:
+    if reg["type"] not in handler.backend_plugins:
         return job_abort(epp_job)
 
-    if (not sql.has_data(epp_job, "job_type") or epp_job["job_type"] not in handler.plugins[reg["type"]]):
+    if (plugin_func := handler.run(reg["type"],epp_job["job_type"])) is None:
         log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'")
         return job_abort(epp_job)
 
-    job_run = handler.plugins[reg["type"]][epp_job["job_type"]](epp_job, dom_db)
+    job_run = plugin_func(epp_job, dom_db)
     notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']}:{epp_job['job_type']}' " +
              f"on DOM-{epp_job['domain_id']} retries {epp_job['failures']}/" +
              f"{policy.policy('epp_retry_attempts')}")
@@ -93,7 +93,7 @@ def run_epp_item(epp_job):
 
 def run_server():
     log("EPP-SERVER RUNNING")
-    signal_mtime = sigprocs.signal_wait("backend")
+    signal_mtime = None
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
                  f" and failures < {policy.policy('epp_retry_attempts')} limit 1")
@@ -113,7 +113,7 @@ def start_up(is_live):
     sql.connect("epprun")
     registry.start_up()
 
-    for plugin, funcs in handler.plugins.items():
+    for plugin, funcs in handler.backend_plugins.items():
         if "start_up" in funcs:
             funcs["start_up"]()
 
@@ -144,17 +144,17 @@ def main():
         print("Plugin or action or domain_id not specified")
         sys.exit(1)
 
-    if args.plugin not in handler.plugins:
+    if args.plugin not in handler.backend_plugins:
         print(f"Plugin '{args.plugin}' not supported")
         sys.exit(1)
 
-    if args.action not in handler.plugins[args.plugin]:
+    if args.action not in handler.backend_plugins[args.plugin]:
         print(f"Action '{args.action}' not supported by Plugin '{args.plugin}'")
         sys.exit(1)
 
     start_up(args.live)
 
-    this_fn = handler.plugins[args.plugin][args.action]
+    this_fn = handler.backend_plugins[args.plugin][args.action]
     out_js = this_fn({
         "epp_job_id": "TEST",
         "authcode": "eFNaYTlXZ2FVcW8xcmcy",

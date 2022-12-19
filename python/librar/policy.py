@@ -2,14 +2,13 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 import os
-import lib.fileloader as fileloader
-import lib.log as log
+from librar import fileloader
+import librar.log as log
 
 WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
 
-DEFAULT_CURRENCY = { "iso": "USD", "separator": [",","."], "symbol": "$", "decimal": 2, "pow10" : 100 }
+DEFAULT_CURRENCY = {"iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2, "pow10": 100}
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
-
 
 policy_defaults = {
     "facility_python_code": 170,
@@ -23,15 +22,14 @@ policy_defaults = {
     "dnssec_ksk_bits": 256,
     "dnssec_zsk_bits": 256,
     "dns_servers": DEFAULT_NS,
-    "catalog_zone":"pyrar.localhost",
-    "default_ttl":86400,
+    "catalog_zone": "pyrar.localhost",
+    "default_ttl": 86400,
     "epp_retry_timeout": 300,
     "epp_retry_attempts": 3,
     "facility_eppsvr": 170,
     "max_renew_years": 10,
     "max_basket_size": 10
-    }
-
+}
 
 
 class Policy:
@@ -57,8 +55,8 @@ class Policy:
 this_policy = Policy()
 
 if __name__ == "__main__":
-    print(">>>TEST>>>:" , this_policy.policy("business_name"))
-    print(">>>TEST>>>:" , this_policy.policy("log_python_code", "Unk"))
-    print(">>>TEST>>>:" , this_policy.policy("some_value", "some_def"))
+    print(">>>TEST>>>:", this_policy.policy("business_name"))
+    print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
+    print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
     this_policy.add_policy("some_value", "THIS")
-    print(">>>TEST>>>:" , this_policy.policy("some_value", "some_def"))
+    print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))

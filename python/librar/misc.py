@@ -15,12 +15,12 @@ STATUS_TRANS_QUEUED = 100
 STATUS_TRANS_REQ = 101
 STATUS_TRANS_FAIL = 120
 
-LIVE_STATUS = { 1: True }
+LIVE_STATUS = {1: True}
 
 DOMAIN_STATUS = {
     1: "Live",
     10: "Awating Payment",
-    11: "Awating Processing",
+    11: "Processing",
     20: "Expired",
     100: "Transfer Queued",
     101: "Transfer Requested",

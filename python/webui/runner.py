@@ -5,16 +5,16 @@
 import inspect
 import flask
 
-from lib import registry
-from lib import misc
-from lib import validate
-from lib import passwd
-from lib.log import log, debug, init as log_init
-from lib.policy import this_policy as policy
-from lib import mysql as sql
-import users
-import domains
-import basket
+from librar import registry
+from librar import misc
+from librar import validate
+from librar import passwd
+from librar.log import log, debug, init as log_init
+from librar.policy import this_policy as policy
+from librar import mysql as sql
+from webui import users
+from webui import domains
+from webui import basket
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -95,7 +95,7 @@ class WebuiReq:
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    return req.response ({
+    return req.response({
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
@@ -112,7 +112,7 @@ def get_supported_zones():
 @application.route('/pyrar/v1.0/hello', methods=['GET'])
 def hello():
     req = WebuiReq()
-    return req.response({"hello":"world"})
+    return req.response({"hello": "world"})
 
 
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
@@ -133,11 +133,11 @@ def basket_submit():
     if flask.request.json is None:
         return req.abort("No JSON posted")
 
-    ok, reply = basket.webui_basket(flask.request.json,req.user_id)
+    ok, reply = basket.webui_basket(flask.request.json, req.user_id)
     if not ok:
         return req.abort(reply)
 
-    req.user_data["orders"] = [ item["order_db"] for item in reply if "order_db" in item ]
+    req.user_data["orders"] = [item["order_db"] for item in reply if "order_db" in item]
     return req.response(req.user_data)
 
 
@@ -187,7 +187,9 @@ def users_close():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ok = sql.sql_update_one("users", "password=concat('CLOSED:',password),amended_dt=now()", {"user_id": req.user_id})
+    ok = sql.sql_update_one("users",
+                            "account_closed=1,email=concat(user_id,':',email),password=concat('CLOSED:',password),amended_dt=now()",
+                            {"user_id": req.user_id})
 
     if not ok:
         return req.abort("Close account failed")
@@ -233,7 +235,7 @@ def users_details():
 
 
 def load_orders_and_reply(req):
-    ok, orders_db = sql.sql_select("orders",{"user_id": req.user_id})
+    ok, orders_db = sql.sql_select("orders", {"user_id": req.user_id})
     if not ok:
         return req.abort(orders_db)
 
@@ -325,13 +327,12 @@ def run_user_domain_task(domain_function, func_name):
 
     req.event({"domain_id": flask.request.json["domain_id"], "notes": notes, "event_type": context.function})
     if func_name == "Gift":
-        req.event(
-            {
-                "user_id": reply["new_user_id"],
-                "domain_id": flask.request.json["domain_id"],
-                "notes": notes,
-                "event_type": context.function
-            })
+        req.event({
+            "user_id": reply["new_user_id"],
+            "domain_id": flask.request.json["domain_id"],
+            "notes": notes,
+            "event_type": context.function
+        })
 
     return req.response(reply)
 

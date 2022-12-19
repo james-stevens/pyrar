@@ -7,11 +7,11 @@ import json
 import random
 import httpx
 
-from lib import misc
-from lib import fileloader
-from lib import mysql as sql
-from lib.log import log, debug, init as log_init
-from lib.policy import this_policy as policy
+from librar import misc
+from librar import fileloader
+from librar import mysql as sql
+from librar.log import log, debug, init as log_init
+from librar.policy import this_policy as policy
 
 EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
 EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"

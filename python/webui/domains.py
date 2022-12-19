@@ -5,18 +5,19 @@
 import re
 import base64
 
-from lib import registry
-from lib import validate
-from lib.policy import this_policy as policy
-from lib.log import log
-from lib import mysql as sql
-from lib import sigprocs
-from lib import misc
-import users
+from librar import registry
+from librar import validate
+from librar.policy import this_policy as policy
+from librar.log import log
+from librar import mysql as sql
+from librar import sigprocs
+from librar import misc
 
-import handler
+from webui import users
+
+from webui import handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from plugins import *
+from webui.plugins import *
 
 
 class DomainName:
@@ -87,13 +88,13 @@ class DomainName:
 
 def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
     if qry_type is None:
-        qry_type=["create", "renew"]
+        qry_type = ["create", "renew"]
 
     if not domobj.registry or "type" not in domobj.registry:
         return False, "Registrar not supported"
 
     if (plugin_func := handler.run(domobj.registry["type"], "dom/price")) is None:
-        return False, "No plugin fro this Registrar"
+        return False, "No plugin for this Registrar"
 
     ok, ret_js = plugin_func(domobj, num_years, qry_type, user_id)
     if not ok or ret_js is None:

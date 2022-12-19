@@ -4,15 +4,15 @@
 
 import base64
 
-from lib.log import log, debug, init as log_init
+from librar.log import log, debug, init as log_init
 
-from lib import mysql as sql
-from lib import registry
-from lib import pdns
-from lib import passwd
+from librar import mysql as sql
+from librar import registry
+from librar import pdns
+from librar import passwd
 
-import handler
-import shared
+from backend import handler
+from backend import shared
 
 
 def tld_pdns_check(name):
@@ -58,7 +58,6 @@ def domain_update_from_db(epp_job, dom_db):
 
     ok_ds = pdns.update_rrs(tld, rrs)
 
-    shared.event_log(f"Local/Update gave ok_ns={ok_ns}, ok_ds={ok_ds}", epp_job)
     return ok_ns and ok_ds
 
 
@@ -70,7 +69,7 @@ def domain_request_transfer(epp_job, dom_db):
     if dom_db["user_id"] == epp_job["user_id"]:
         return True
 
-    if not passwd.compare(dom_db["authcode"],epp_job["authcode"]):
+    if not passwd.compare(dom_db["authcode"], epp_job["authcode"]):
         debug(f"passwords do not match {dom_db['authcode']} {enc_pass}")
         return None
 
@@ -87,7 +86,7 @@ def domain_renew(epp_job, dom_db):
 
 
 def set_authcode(epp_job, dom_db):
-    password = passwd.crypt(epp_job["authcode"]) if sql.has_data(epp_job, "authcode") else None
+    password = passwd.crypt(base64.b64decode(epp_job["authcode"])) if sql.has_data(epp_job, "authcode") else None
     return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 

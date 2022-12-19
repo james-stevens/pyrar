@@ -18,7 +18,7 @@ def debug(line, where=None):
         log("[DEUBG] " + line, where)
 
 
-def log(line,where=None):
+def log(line, where=None):
     if where is None:
         where = inspect.stack()[1]
     txt = ""
@@ -26,7 +26,7 @@ def log(line,where=None):
         fname = where.filename.split("/")[-1].split(".")[0]
         txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
     if hold_debug:
-        print(f">>>SYSLOG{txt} {line}")
+        print(f"SYSLOG{txt} {line}")
     else:
         if not done_init:
             init()

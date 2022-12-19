@@ -12,14 +12,12 @@ import socket
 import ssl
 import time
 import atexit
+import flask
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
-
-import flask
-import lib.policy as policy
-from lib.log import log, init as log_init
-from lib.policy import this_policy as policy
+from librar.log import log, init as log_init
+from librar.policy import this_policy as policy
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
 LOGINS_FILE = os.environ["BASE"] + "/etc/logins.json"
@@ -57,7 +55,7 @@ if not os.path.isfile(client_pem):
 
 log_init(policy.policy("facility_epp_api"), False, policy.policy("log_epp_api"))
 
-jobInterval = 120
+jobInterval = this_login["keep_alive"] if "keep_alive" in this_login else 20
 
 
 def keepAlive():

@@ -835,13 +835,13 @@ function order_details(as_first)
 {
 	let x = settings_header("Pending Orders",as_first);
 	x += "<table width=100%>";
-	x += "<tr><th>When</th><th>Type</th><th>Domain</th><th>Yrs</th><th>Amount</th></tr>";
+	x += "<tr><th>Domain</th><th>When</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
 	for(let order of ctx.orders) {
 		dom = domain_of(order.domain_id);
 		x += "<tr title='Click to cancel this order' class=dataRow>";
+		x += `<td align=center>${dom.name}</td>`
 		x += `<td align=center>${order.created_dt}</td>`
 		x += `<td align=center>${order.order_type}</td>`
-		x += `<td align=center>${dom.name}</td>`
 		x += `<td align=center>${order.num_years}</td>`
 		x += `<td align=right>${format_amount(order.price_paid)}</td>`
 		x += "</tr>";
