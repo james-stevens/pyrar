@@ -26,6 +26,12 @@ def tld_pdns_check(name):
 
 
 def domain_create(epp_job, dom_db):
+    values = [
+        f"status_id = {misc.STATUS_LIVE}",
+        f"expiry_dt = date_add(expiry_dt,interval {epp_job['num_years']} year)",
+        "amended_dt = now()"
+        ]
+    sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
     return domain_update_from_db(epp_job, dom_db)
 
 
