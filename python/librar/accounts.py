@@ -5,6 +5,7 @@
 from librar.log import log, debug, init as log_init
 from librar import mysql as sql
 from librar import misc
+from librar import sigprocs
 
 
 def apply_transaction(user_id, amount, desc, as_admin=False):
@@ -41,10 +42,13 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
     if not row_count or not row_id:
         return row_count
 
+    if amount > 0:
+        sigprocs.signal_service("payeng")
+
     return row_id
 
 
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
-    print(">>>>>>", apply_transaction(10450, 11200, "Here's money"))
+    print(">>>>>>", apply_transaction(10451, 20000, "Here's some fake money"))

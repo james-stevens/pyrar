@@ -1,0 +1,3 @@
+#! /bin/sh
+
+exec ${BASE}/python/cronjob/runner.py | logger -t pycronjob

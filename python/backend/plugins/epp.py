@@ -272,6 +272,10 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
+def domain_delete(epp_job, dom_db):
+    return True
+
+
 def my_hello(__):
     return "EPP: Hello"
 
@@ -285,5 +289,6 @@ handler.add_plugin(
         "dom/renew": domain_renew,
         "dom/transfer": domain_request_transfer,
         "dom/authcode": set_authcode,
-        "dom/info": domain_info
+        "dom/info": domain_info,
+        "dom/delete": domain_info
     })

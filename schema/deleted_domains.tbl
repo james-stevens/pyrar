@@ -6,24 +6,24 @@
 
 sqlsh "drop table if exists deleted_domains"
 sqlsh "create table deleted_domains (
-	deleted_domain_id	${auto},
 	domain_id			${row_id},
 	name				${domain_name} not null default '',
-	zone				${domain_name} not null default '',
-	user_id				${row_id},
+	user_id				${row_id} not null,
 
 	status_id			${row_id},
-	renew_id			${row_id},
+	auto_renew			boolean,
 
-	name_servers		text,
+	ns					varchar(3500),
+	ds					varchar(3500),
+	client_locks        varchar(100),
 
 	created_dt			datetime null,
 	amended_dt			datetime null,
 	expiry_dt			datetime not null,
 	deleted_dt			datetime not null,
 
-	CONSTRAINT by_name primary key (zone,name),
-	unique key by_id (deleted_domain_id),
+	unique key (domain_id),
+	key by_name (name),
 	key by_user (user_id)
 )"
 

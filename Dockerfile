@@ -13,6 +13,7 @@ RUN pip install apscheduler httpx
 
 RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
+RUN rm -f /etc/periodic/daily/sysklogd
 
 RUN apk add pdns pdns-backend-mysql
 
@@ -38,6 +39,8 @@ RUN python3 -m compileall /opt/pyrar/python/
 
 RUN ln -fns /opt/pyrar/python/bin/sqlsh.py /usr/bin/sqlsh
 RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
+RUN ln -fns /usr/local/bin/run_cron_jobs /etc/periodic/hourly/run_cron_jobs
+RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pem
 
 COPY policy_subst /opt/pyrar/policy_subst/
 COPY admin_docs /opt/pyrar/admin_docs/

@@ -155,12 +155,15 @@ def main():
     start_up(args.live)
 
     this_fn = handler.backend_plugins[args.plugin][args.action]
-    out_js = this_fn({
+    epp_job = {
         "epp_job_id": "TEST",
         "authcode": "eFNaYTlXZ2FVcW8xcmcy",
+        "job_type": args.action,
         "num_years": 1,
         "domain_id": args.domain_id
-    })
+        }
+    dom_db = shared.get_dom_from_db(epp_job)
+    out_js = this_fn(epp_job,dom_db)
     print(json.dumps(out_js, indent=3))
 
 

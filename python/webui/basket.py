@@ -33,7 +33,7 @@ def make_blank_domain(name, user_id, status_id):
     dom_db = {
         "name": name,
         "user_id": user_id,
-        "name_servers": policy.policy("dns_servers"),
+        "ns": policy.policy("dns_servers"),
         "auto_renew": 0,
         "status_id": status_id,
         "created_dt": None,
@@ -64,9 +64,10 @@ def save_basket(basket, user_id):
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
             order_db["domain_id"] = reply
-        ok, reply = sql.sql_insert("orders",order_db)
+        ok, order_item_id = sql.sql_insert("orders",order_db)
         if not ok:
-            return False, reply
+            return False, order_item_id
+        order_db["order_item_id"] = order_item_id
 
     return True, basket
 
@@ -140,7 +141,6 @@ def paid_for_basket_item(item, user_db):
             if not ok:
                 return False
             order_db["domain_id"] = domain_id
-            sql.sql_update_one("domains",f"expiry_dt=date_add(expiry_dt, interval {order_db['num_years']} year),amended_dt=now()",{"domain_id":domain_id})
 
     sales.make_epp_job(order_db)
     return True

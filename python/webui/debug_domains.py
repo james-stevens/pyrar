@@ -42,7 +42,7 @@ if __name__ == "__main__":
         domains.webui_update_domain(10450, {
             "domain_id": 10458,
             "name": "zip1.chug",
-            "name_servers": "ns239.dns.com,ns139.dns.com"
+            "ns": "ns239.dns.com,ns139.dns.com"
         }))
 
     sys.exit(0)

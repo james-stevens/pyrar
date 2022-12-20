@@ -56,7 +56,7 @@ def format_col(column, value):
         return f"{column}=NULL"
 
     if isinstance(value, int):
-        return column + "=" + str(int(value))
+        return (column + "=" + str(int(value))) if column else str(int(value))
 
     if isinstance(value, list):
         return column + " in (" + ",".join(format_col(None, this_val) for this_val in value) + ")"
@@ -162,6 +162,11 @@ def return_exec():
 
 def sql_exec(sql):
     return run_sql(sql, return_exec)
+
+
+def sql_delete(table, where):
+    ok, __ = sql_exec(f"delete from {table} where {data_set(where, ' and ')}")
+    return ok is not None
 
 
 def sql_delete_one(table, where):

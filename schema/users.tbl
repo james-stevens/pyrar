@@ -45,4 +45,5 @@ sqlsh "CREATE TABLE users (
 sqlsh "ALTER TABLE users AUTO_INCREMENT = 10450"
 
 sqlsh 'grant select, insert, update on users to webui'
-sqlsh 'grant select on users to epprun,raradm'
+sqlsh 'grant select, update on users to epprun'
+sqlsh 'grant select, update, delete on users to raradm'

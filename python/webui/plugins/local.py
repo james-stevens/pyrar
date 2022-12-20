@@ -17,15 +17,19 @@ def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_
     ret_js = []
     for dom in domobj.names if isinstance(domobj.names, list) else [domobj.names]:
         add_dom = {"num_years": num_years, "name": dom, "avail": False}
+        for qt in qry_type:
+            add_dom[qt] = None
+
         if dom not in doms_db:
             add_dom["avail"] = True
-            for qt in qry_type:
-                add_dom[qt] = None
         else:
+            this_dom = doms_db[dom]
+            if this_dom["user_id"] == user_id:
+                add_dom["yours"] = True
             add_dom["reason"] = "Already registered"
-            if sql.has_data(doms_db[dom], "for_sale_msg"):
+            if sql.has_data(this_dom, "for_sale_msg"):
                 add_dom["avail"] = True
-                add_dom["for_sale_msg"] = doms_db[dom]["for_sale_msg"]
+                add_dom["for_sale_msg"] = this_dom["for_sale_msg"]
 
         ret_js.append(add_dom)
 

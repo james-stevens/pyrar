@@ -19,7 +19,8 @@ gbl = {
 	tick: "&#x2611;",
 	cross: "&#x2612;",
 	timer: "&#x23f3;",
-	bin: "&#x2702;",
+	cut: "&#x2702;",
+	waste: "&#x1F5D1;",
 	warn: "&#x26a0;",
 	page: "&#x1F5CE;",
 	nsec: "&#x1F512;",
@@ -29,6 +30,7 @@ gbl = {
 	email: "&#128231;",
 	copy: "&#x2398",
 	credit: "&#x1F4B3;",
+	lock: "&#x1F512;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
@@ -100,7 +102,7 @@ function togglePopUp(name,tmout)
 	let popup = document.getElementById(name);
 	if (popup) popup.classList.toggle("show");
 
-	hide_now = setTimeout(hidePopUp,tmout);
+	let hide_now = setTimeout(hidePopUp,tmout);
 	ctx.popup = { "timer": hide_now, "name": name }
 
 	let e = null;
@@ -149,12 +151,25 @@ function show_one_space(name)
 	elm[name].style.display = "block";
 }
 
+function size_one_space() { setTimeout(do_size_one_space,250); }
+function do_size_one_space()
+{
+	let sz = 0;
+	for (let item of ["userSpace","marketPlace","search","basketSpace"])
+		if (elm[item].style.display != "none") {
+			sz = elm[item].clientHeight+400;
+			}
+
+    if (sz < window.innerHeight) sz = window.innerHeight;
+    document.body.style.height = sz;
+}
 
 
 function goSearch()
 {
 	show_one_space("search");
 	document.searchForm.searchEdit.focus();
+	size_one_space();
 }
 
 
@@ -172,7 +187,7 @@ function emptyCart()
 {
 	delete gbl.basket;
 	user_info();
-	errMsg(`${gbl.bin} basket emptied`,"errorSpan");
+	errMsg(`${gbl.cut} basket emptied`,"errorSpan");
 	if (elm.basketSpace.style.display == "block") goSearch();
 }
 
@@ -247,7 +262,7 @@ function doRegister()
 	if (f.password.value != f.confirm.value) return regErr("Passwords do not match");
 	if (!valid_email.test(f.email.value)) return regErr("Invalid email address");
 
-	data = {
+	let data = {
 		"name":f.name.value,
 		"email":f.email.value,
 		"password":f.password.value
@@ -287,7 +302,7 @@ function doLogin()
 	let f = document.formLogin;
 	if (!valid_email.test(f.email.value)) return regErr("Invalid email address",f.email);
 
-	data = { "email":f.email.value, "password":f.password.value };
+	let data = { "email":f.email.value, "password":f.password.value };
 
 	callApi("users/login",(ret,reply) => {
 		if (!ret) {
@@ -329,6 +344,7 @@ function loggedOut()
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "none";
 	elm.userInfo.innerHTML = "";
+	goSearch();
 }
 
 
@@ -367,6 +383,7 @@ function bodyLoaded()
 		else elm.businessName.innerHTML = site_name;
 
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
+		size_one_space();
 
 		if ("session" in ctx) {
 			callApi("users/details",(ret,reply) => {
@@ -379,10 +396,16 @@ function bodyLoaded()
 		});
 }
 
+
+
 function catch_user_data(reply)
 {
-	["user","domains","orders"].forEach((item) => { if (item in reply) ctx[item] = reply[item]; })
+	["transactions","user","domains","orders"].forEach((item) => {
+		if (item in reply) ctx[item] = reply[item];
+		})
 }
+
+
 
 function one_search_line(item,block_not_avail)
 {
@@ -401,7 +424,7 @@ function one_search_line(item,block_not_avail)
 	else {
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
-			amt = format_amount(item.create);
+			let amt = format_amount(item.create);
 			x += btn(`buy_one_name('${item.name}','create')`,`<b>BUY ${amt}</b>`,`Buy '${item.name}' for ${amt}`,120);
 			x += "</td>";
 			}
@@ -418,8 +441,11 @@ function showSearch(ret,data)
 
 	if ((!ret)&&("error" in data)) { errMsg(data.error,search); return; }
 
+	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(); return; }
+
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
+	size_one_space()
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
@@ -428,7 +454,7 @@ function showSearch(ret,data)
 		ctx.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
 		let name = data[0]["name"];
 		let pos = name.indexOf(".");
-		if (pos > 0) multiSearch(name.substr(0,pos),name.substr(pos+1));
+		if (pos > 0) multiSearch(name.slice(0,pos),name.slice(pos+1));
 		}
 }
 
@@ -448,7 +474,6 @@ function buy_one_name(domain,action)
 	callApi("domain/check",(ret,data) => {
 		if (!ret) {
 			errMsg("Unexpected price error","userInfo");
-			console.log("PRICE ERROR:",data);
 			return;
 			}
 
@@ -524,7 +549,6 @@ function multiSearch(srch,not_me_tld)
 	for(let x of gbl.config.zones) {
 		if ((not_me_tld==null)||(x.name!=not_me_tld)) ctx.search.todo.push(x);
 		}
-
 	searchNext();
 }
 
@@ -575,18 +599,20 @@ function userDomainList()
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
 
 	let x = "<table width=75% align=center border=0>";
-	x += "<tr><th>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
+	x += "<tr><th colspan=2>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 	for(let i in ctx.domains) {
-		let item = ctx.domains[i];
-		x += `<tr onClick="show_one_domain(${i});" class=${cls}><td title="${item.name}">${item.display_name}</td>`;
+		let dom = ctx.domains[i];
+		x += `<tr onClick="show_one_domain(${i});" class=${cls}>`;
+		if (dom.ds) x += "<td title='DNSSEC Secured'>"+gbl.lock+"</td>"; else x += "<td></td>";
+		x += `<td title="${dom.name}">${dom.display_name}</td>`;
 
-		if (item.status_id == 1)
-			x += `<td align=center>${item.expiry_dt.split(" ")[0]}</td>`;
+		if (dom.status_id == 1)
+			x += `<td align=center>${dom.expiry_dt.split(" ")[0]}</td>`;
 		else
-			x += `<td align=center>${item.status_desc}</td>`;
+			x += `<td align=center>${dom.status_desc}</td>`;
+		x += `<td>${dom.ns.slice(0,40)}</td>`;
 
-		x += `<td>${item.name_servers.substr(0,40)}</td>`;
 		x += "</tr>";
 		}
 	return x + "</table>";
@@ -611,7 +637,9 @@ function load_domains_list(success_fn)
 function show_domains_list()
 {
 	elm.userSpace.innerHTML = userDomainList()
+    size_one_space()
 }
+
 
 function myDomains()
 {
@@ -628,7 +656,7 @@ function postUserDetails()
 	let f = document.editUserDetails;
 	function regErr(err,item) { errMsg(err,"editUserDetails"); item.focus(); return false; }
 
-	data = {
+	let data = {
 		"name": f.user_name.value,
 		"email": f.user_email.value,
 		"auto_renew_all": parseInt(f.elements["user_auto_renew_all"].value)
@@ -642,6 +670,7 @@ function postUserDetails()
 				ctx.user = reply.user;
 				user_info();
 				elm.userSpace.innerHTML = userDetails();
+				size_one_space();
 				}
 			}
 		else {
@@ -666,7 +695,7 @@ function postUserPassword()
 	if (f.new_password.value != f.confirm_password.value)
 		return regErr("Passwords do not match",f.new_password);
 
-	data = {
+	let data = {
 		"password": f.password.value,
 		"new_password": f.new_password.value,
 		};
@@ -676,6 +705,7 @@ function postUserPassword()
 			errMsg("Password changed","userInfo");
 			user_info();
 			elm.userSpace.innerHTML = userDetails();
+			size_one_space();
 			}
 		else {
 			if ("error" in reply) msg=reply["error"]; else msg="Failed";
@@ -785,8 +815,68 @@ function user_settings()
 	x += "</table></form></td></tr>";
 
 	elm.userSpace.innerHTML = x+"</table>";
+	size_one_space();
 
 	document.editUserDetails.user_email.focus();
+}
+
+
+
+function user_statement(from_start)
+{
+	let num = policy("trans_per_page",25);
+	let limit = null;
+
+	if (from_start) delete ctx.transactions;
+	else {
+		if (ctx.transactions)
+			limit = { "limit":num,"skip":ctx.transactions.length };
+		}
+
+	callApi("users/transactions",(ok,reply) => {
+		if (!ok) {
+			msg = "Error submitting basket";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"userBtnBar")
+			}
+
+		if (!reply.transactions) return errMsg("No transactions found","userBtnBar")
+
+		if (!ctx.transactions) catch_user_data(reply);
+		else {
+			if (reply.transactions) ctx.transactions.push(...reply.transactions);
+			}
+
+		show_transactions(reply.transactions.length==num);
+		}, { json: limit});
+}
+
+
+
+function show_transactions(with_more)
+{
+	let x = "<table align=center width=100% border=0>";
+	x += "<tr>";
+	["When","Description","Credit","Debit","Balance"].forEach((item) => { x += `<th>${item}</th>`; })
+	x += "</tr>";
+	for(let trans of ctx.transactions) {
+		x += `<tr><Td align=center>${trans.created_dt.slice(0,16)}</td>`;
+		x += `<td>${trans.description}</td>`;
+		if (trans.amount > 0)
+			x += `<td align=right>${format_amount(trans.amount)}</td><td></td>`;
+		else
+			x += `<td></td><td align=right>${format_amount(-1*trans.amount)}</td>`;
+		x += `<td align=right>${format_amount(trans.post_balance)}</td>`;
+		}
+	if (with_more) {
+		x += "<tr><td>"+gbl.gap+"</td></tr>";
+		x += "<tr><td colspan=2><td id=moreTransBtn class=btmBtnBar align=right colspan=3>";
+		x += btn("user_statement(false)","More >>>","Load more transations");
+		x += "</td></tr>";
+		}
+	elm.userSpace.innerHTML = x+"</table>";
+
+    size_one_space()
 }
 
 
@@ -801,11 +891,12 @@ function userDetails()
 	if (ctx.user.two_fa) has_twofa = gbl.tick;
 
 	let x = "<table align=center width=75% border=0>";
-	x += "<tr><td class=btmBtnBar>";
+	x += "<tr><td id=userBtnBar class=btmBtnBar>";
 
 	if (!ctx.user.email_verified) 
 		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
 
+	x += btn("user_statement(true)","Statement","View a statement of all your transactions",100)
 	x += btn("user_settings()","Settings","Change this accounts settings",100)
 	x += "</td></tr>";
 
@@ -830,24 +921,49 @@ function userDetails()
 }
 
 
+function cancel_order(order_item_id)
+{
+	callApi("orders/cancel",(ok,reply) => {
+		if (!ok) {
+			msg = "Error cancelling order";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,`orderRow${order_item_id}`)
+			}
+		myAccount();
+		},{json:{"order_item_id":order_item_id}});
+}
+
+
 
 function order_details(as_first)
 {
 	let x = settings_header("Pending Orders",as_first);
 	x += "<table width=100%>";
-	x += "<tr><th>Domain</th><th>When</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
+	x += "<tr><th colspan=2>Domain</th><th>When</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
+	let total = 0;
 	for(let order of ctx.orders) {
-		dom = domain_of(order.domain_id);
-		x += "<tr title='Click to cancel this order' class=dataRow>";
-		x += `<td align=center>${dom.name}</td>`
+		total += order.price_paid;
+		let dom = domain_of(order.domain_id);
+		x += `<tr id=orderRow${order.order_item_id} onClick="cancel_order(${order.order_item_id});" title='Click to cancel this order' class=dataRow>`;
+		x += "<td align=center>"+gbl.cut+"</td>";
+		x += `<td align=center>${dom.display_name}</td>`
 		x += `<td align=center>${order.created_dt}</td>`
 		x += `<td align=center>${order.order_type}</td>`
 		x += `<td align=center>${order.num_years}</td>`
 		x += `<td align=right>${format_amount(order.price_paid)}</td>`
 		x += "</tr>";
 		}
+
+	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
+	x += `<tr><td colspan=5 class=promptCell>Order Total :</td><td align=right>${format_amount(total)}</td></tr>`;
+	x += `<tr><td colspan=5 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
+	if (total > ctx.user.acct_current_balance)
+		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
+	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
+
 	return x;
 }
+
 
 
 function domain_of(domain_id)
@@ -859,6 +975,7 @@ function domain_of(domain_id)
 }
 
 
+
 function place_order()
 {
 	if (!gbl.basket) return errMsg("Basket is empty","placeOrderBtn");
@@ -867,19 +984,29 @@ function place_order()
 		if (!ok) {
 			msg = "Error submitting basket";
 			if (reply.error) msg = reply.error;
-			errMsg(msg,"placeOrderBtn")
+			return errMsg(msg,"placeOrderBtn")
 			}
-		else {
-			console.log(reply);
-
-			catch_user_data(reply);
-			show_one_space("userSpace");
-
-			delete gbl.basket;
-			user_info();
-			load_domains_list(show_new_orders);
+		catch_user_data(reply);
+		show_one_space("userSpace");
+		delete gbl.basket;
+		user_info();
+		let fn = show_new_orders
+		if (ctx.orders.length==0) {
+			delete ctx.orders;
+			fn = show_all_orders_processed;
 			}
+		load_domains_list(fn);
 		}, { json:gbl.basket });
+}
+
+
+
+function show_all_orders_processed()
+{
+	let x = "<table align=center width=50% border=0><tr><td>"
+	x += "<h2>All orders processed</h2></td></tr></table>";
+	elm.userSpace.innerHTML = x;
+	size_one_space();
 }
 
 
@@ -890,6 +1017,7 @@ function show_new_orders()
 	x += order_details(true);
 	x += "</td></tr></table>";
 	elm.userSpace.innerHTML = x;
+	size_one_space();
 }
 
 
@@ -899,15 +1027,24 @@ function basketCheckout()
 	hidePopUp();
 	show_one_space("basketSpace");
 	let x = '<table id=placeOrderBtn align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
-	let total = 0.0
-	for(let item of gbl.basket) {
-		total += parseFloat(item.cost);
+	let total = 0;
+	for(let i of gbl.basket) total += i.cost;
+
+	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
+	x += `<tr><td colspan=3 class=promptCell>Order Total :</td><td align=right>${format_amount(total)}</td></tr>`;
+	x += `<tr><td colspan=3 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
+
+	let btn_txt = "Place Order >>>";
+	if (total > ctx.user.acct_current_balance) {
+		x += `<tr><td colspan=3 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
+		btn_txt = "Place Order & Pay >>>";
 		}
+
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-	x += `<tr><td colspan=3 class=promptCell>Total :</td><td align=right>${format_amount(total)}</td></tr>`;
-	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-	x += "<tr><td colspan=4 align=right>"+btn("place_order()","Place Order & Pay >>>","Please this order & pay")+"</td></tr>";
+
+	x += "<tr><td colspan=4 align=right>"+btn("place_order()",btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
 	elm.basketSpace.innerHTML = x+"</table>"
+	size_one_space();
 }
 
 
@@ -916,6 +1053,7 @@ function myAccount()
 {
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
+	size_one_space();
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
 			let msg="Error in etting your data";
@@ -925,6 +1063,7 @@ function myAccount()
 			}
 		catch_user_data(reply);
 		elm.userSpace.innerHTML = userDetails();
+		size_one_space();
 		});
 }
 
@@ -950,10 +1089,10 @@ function doAddNS(idx)
 	let dom = ctx.domains[idx];
 
 	let ns = "";
-	if (dom.name_servers) ns = dom.name_servers.split(",");
+	if (dom.ns) ns = dom.ns.split(",");
 	if (!ns.find(data => { return (data == e.value); })) {
-		if (dom.name_servers=="") dom.name_servers = e.value;
-		else dom.name_servers += ","+e.value;
+		if (dom.ns=="") dom.ns = e.value;
+		else dom.ns += ","+e.value;
 		dom.unsaved = true;
 		domain_settings(idx);
 		}
@@ -981,10 +1120,10 @@ function doAddDS(idx)
 
 	let dom = ctx.domains[idx];
 	let ds = []
-	if (dom.ds_recs) ds = dom.ds_recs.split(",");
+	if (dom.ds) ds = dom.ds.split(",");
 	if (!ds.find(data => { return (data == e.value); })) {
-		if (dom.ds_recs=="") dom.ds_recs = e.value;
-		else dom.ds_recs += ","+e.value;
+		if (!dom.ds) dom.ds = e.value;
+		else dom.ds += ","+e.value;
 		dom.unsaved = true;
 		domain_settings(idx);
 		}
@@ -1000,15 +1139,15 @@ function do_change_ns(dest_dom,src_dom)
 	let default_dns_servers = policy("default_dns_servers",null);
 	let dom = ctx.domains[dest_dom];
 	if ((src_dom >= 0)&&(src_dom < ctx.domains.length)
-		&&(dom.name_servers != ctx.domains[src_dom].name_servers))
+		&&(dom.ns != ctx.domains[src_dom].ns))
 		{
-		dom.name_servers = ctx.domains[src_dom].name_servers;
+		dom.ns = ctx.domains[src_dom].ns;
 		dom.unsaved = true;
 		}
 	else if ((src_dom==-1)&&(default_dns_servers)
-		&&(dom.name_servers!=default_dns_servers))
+		&&(dom.ns!=default_dns_servers))
 		{
-		dom.name_servers = default_dns_servers;
+		dom.ns = default_dns_servers;
 		dom.unsaved = true;
 		}
 
@@ -1040,16 +1179,16 @@ function copy_btn_internal(param)
 	let seen_ns = { };
 	if (default_dns_servers) seen_ns[default_dns_servers] = true;
 	let idx=param["idx"];
-	seen_ns[ctx.domains[idx].name_servers] = true;
+	seen_ns[ctx.domains[idx].ns] = true;
 
 	let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
 	x += `<tr class=dataRow onClick='do_change_ns(${idx},-1);'><td>Our NS</td></tr>`;
 
 	for(let dom_loop in ctx.domains) {
 		let dom = ctx.domains[dom_loop];
-		if (!seen_ns[dom.name_servers]) {
+		if (!seen_ns[dom.ns]) {
 			x += `<tr class=dataRow onClick='do_change_ns(${idx},${dom_loop});'><td>Copy ${dom.display_name}</td></tr>`;
-			seen_ns[dom.name_servers] = true;
+			seen_ns[dom.ns] = true;
 			}
 		}
 
@@ -1127,7 +1266,7 @@ function saveDomDetails(idx)
 function removeNS(idx,ns_name)
 {
 	let dom = ctx.domains[idx];
-	let ns = dom.name_servers.split(",");
+	let ns = dom.ns.split(",");
 
 	function find_ns() {
 		for(let i in ns) {
@@ -1140,7 +1279,7 @@ function removeNS(idx,ns_name)
 		errMsg("Name server not found","AddNSPopup");
 		return; }
 	ns.splice(pos,1);
-	dom.name_servers = ns.join(",");
+	dom.ns = ns.join(",");
 	dom.unsaved = true;
 	domain_settings(idx);
 }
@@ -1150,7 +1289,7 @@ function removeNS(idx,ns_name)
 function removeDS(idx,ds_data)
 {
 	let dom = ctx.domains[idx];
-	let ns = dom.ds_recs.split(",");
+	let ns = dom.ds.split(",");
 
 	function find_ds() {
 		for(let i in ds) {
@@ -1163,7 +1302,7 @@ function removeDS(idx,ds_data)
 		errMsg("DS Record not found","AddDSPopup");
 		return; }
 	ds.splice(pos,1);
-	dom.ds_recs = ds.join(",");
+	dom.ds = ds.join(",");
 	dom.unsaved = true;
 	domain_settings(idx);
 }
@@ -1196,6 +1335,7 @@ function domain_transfer_options(idx)
 	x += "</tr></table>";
 	x += "</td></tr>";
 	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
+	size_one_space();
 }
 
 
@@ -1210,18 +1350,18 @@ function domain_settings(idx)
 	x += settings_header(`Change Domain Records`,true);
 	x += "<table border=0 width=100%><colgroup><col width=30%/><col width=70%/></colgroup>";
 
-	if (dom.name_servers) {
+	if (dom.ns) {
 		x += "<tr><td class=promptCell>Name Servers : </td><td>";
-		ns = dom.name_servers.split(",").sort();
+		ns = dom.ns.split(",").sort();
 		for(let i in ns)
-			x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ns[i]}<br>`;
+			x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>${ns[i]}<br>`;
 		x += "</td></tr>";
 		}
-	if (dom.ds_recs) {
+	if (dom.ds) {
 		x += "<tr><td class=promptCell>DS Records : </td><td>";
-		ds = dom.ds_recs.split(",").sort();
+		ds = dom.ds.split(",").sort();
 		for(let i in ds)
-			x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.bin}&nbsp;</a>${ds[i]}<br>`;
+			x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>${ds[i]}<br>`;
 		x += "</td></tr>";
 		}
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
@@ -1239,6 +1379,7 @@ function domain_settings(idx)
 	x += "</table></td></tr>";
 
 	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
+	size_one_space();
 }
 
 
@@ -1343,12 +1484,14 @@ function one_domain_html(idx)
 
 	x += "<tr><td colspan=4 class=btmBtnBar>"
 
-	if (dom.is_live) {
+	if (dom.status_id in {1:true,20:true})
 		x += btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
-		x += btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
-		}
 
-	x += btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+	if (dom.is_live)
+		x += btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
+
+	if (dom.status_id != 20)
+		x += btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 
 	x += "</td></tr>";
 	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
@@ -1361,12 +1504,12 @@ function one_domain_html(idx)
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;
-	if (dom.name_servers) {
-		let ns = dom.name_servers.toLowerCase().split(",").sort().join("<br>")
+	if (dom.ns) {
+		let ns = dom.ns.toLowerCase().split(",").sort().join("<br>")
 		x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
 		}
-	if (dom.ds_recs) {
-		let ds = dom.ds_recs.toLowerCase().split(",").sort().join("<br>")
+	if (dom.ds) {
+		let ds = dom.ds.toLowerCase().split(",").sort().join("<br>")
 		x += `<tr><td class=promptCell>DS Records :</td><td class=dataCell>${ds}</td></tr>`;
 		}
 	x += `<tr><td class=promptCell>Auto Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
@@ -1379,6 +1522,7 @@ function show_one_domain(idx)
 {
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = one_domain_html(idx);
+	size_one_space();
 }
 
 
@@ -1405,7 +1549,7 @@ function errMsg(txt,tagged_elm)
 
 	let m = elm.myMsgPop;
 	m.style.width = "auto";
-	if (txt.substr(0,1)!="&") txt = gbl.warn + " " + txt;
+	if (txt.slice(0,1)!="&") txt = gbl.warn + " " + txt;
 	m.innerHTML = "&nbsp;"+txt+"&nbsp;";
 
 	let p_box = hang_elm.getBoundingClientRect();

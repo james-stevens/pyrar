@@ -1,0 +1,7 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+sleep 3 # wait for EPP other stuff to get started
+cd ${BASE}/python/pay_engine
+exec ./runner.py >/tmp/pay_engine.log 2>&1

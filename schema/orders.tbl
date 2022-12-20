@@ -28,5 +28,4 @@ sqlsh "create table orders (
 
 sqlsh "ALTER TABLE orders AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert,update,select on orders to webui"
-sqlsh "grant select,insert,update,delete on orders to raradm,epprun"
+sqlsh "grant select,insert,update,delete on orders to raradm,epprun,webui"

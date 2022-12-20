@@ -228,7 +228,7 @@
                 "serial": true,
                 "null": false
             },
-            "ds_recs": {
+            "ds": {
                 "size": 3500,
                 "type": "varchar",
                 "null": true
@@ -253,7 +253,7 @@
                 "null": false,
                 "default": ""
             },
-            "name_servers": {
+            "ns": {
                 "size": 3500,
                 "type": "varchar",
                 "null": false
@@ -542,6 +542,12 @@
                     "order_item_id"
                 ],
                 "unique": true
+            },
+            "by_user": {
+                "columns": [
+                    "user_id"
+                ],
+                "unique": false
             }
         }
     },
@@ -555,12 +561,12 @@
                 "type": "datetime",
                 "null": true
             },
-            "currrency_charged": {
+            "currency_charged": {
                 "size": 3,
                 "type": "char",
                 "null": true
             },
-            "currrency_paid": {
+            "currency_paid": {
                 "size": 3,
                 "type": "char",
                 "null": true
@@ -600,12 +606,19 @@
                 "null": false,
                 "default": "none"
             },
+            "transaction_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
+            },
             "user_email": {
                 "size": 100,
                 "type": "varchar",
                 "null": true
             },
-            "zones_name": {
+            "zone_name": {
                 "size": 260,
                 "type": "varchar",
                 "null": true
@@ -707,22 +720,10 @@
                 "type": "datetime",
                 "null": true
             },
-            "currency": {
-                "size": 3,
-                "type": "char",
-                "null": true
-            },
             "description": {
                 "size": 255,
                 "type": "varchar",
                 "null": true
-            },
-            "is_credit": {
-                "unsigned": true,
-                "size": 3,
-                "type": "tinyint",
-                "null": false,
-                "default": 0
             },
             "post_balance": {
                 "size": 10,

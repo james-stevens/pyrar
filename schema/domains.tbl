@@ -13,8 +13,8 @@ sqlsh "create table domains (
 	status_id			int not null default 0,
 	auto_renew			boolean,
 
-	name_servers		varchar(3500) not null,
-	ds_recs				varchar(3500),
+	ns					varchar(3500) not null,
+	ds					varchar(3500),
 	client_locks		varchar(100),
 
 	for_sale_msg		varchar(100),
@@ -35,5 +35,4 @@ sqlsh "create table domains (
 
 sqlsh "ALTER TABLE domains AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert,update,select on domains to webui"
-sqlsh "grant select,insert,update,delete on domains to raradm,epprun"
+sqlsh "grant select,insert,update,delete on domains to raradm,epprun,webui"

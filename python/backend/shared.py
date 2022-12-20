@@ -81,11 +81,11 @@ def check_num_years(epp_job):
 def get_domain_lists(dom_db):
     ds_list = []
     ns_list = []
-    if sql.has_data(dom_db, "name_servers"):
-        ns_list = dom_db["name_servers"].lower().split(",")
+    if sql.has_data(dom_db, "ns"):
+        ns_list = dom_db["ns"].lower().split(",")
 
-    if sql.has_data(dom_db, "ds_recs"):
-        ds_list = [validate.frag_ds(item) for item in dom_db["ds_recs"].upper().split(",")]
+    if sql.has_data(dom_db, "ds"):
+        ds_list = [validate.frag_ds(item) for item in dom_db["ds"].upper().split(",")]
 
     return ns_list, ds_list
 
@@ -97,9 +97,10 @@ def get_dom_from_db(epp_job):
         return None
 
     domain_id = epp_job["domain_id"]
-    ok, dom_db = sql.sql_select_one("domains", {"domain_id": int(domain_id)})
+    table = "deleted_domains" if epp_job["job_type"] == "dom/delete" else "domains"
+    ok, dom_db = sql.sql_select_one(table, {"domain_id": int(domain_id)})
     if not ok:
-        log(f"Domain id {domain_id} could not be found")
+        log(f"Domain id {domain_id} could not be found in '{table}'")
         return None
 
     if "name" not in dom_db:

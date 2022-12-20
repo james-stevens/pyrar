@@ -34,6 +34,11 @@ if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
 
+def secure_user_transactions(trans_db):
+    for trans in trans_db:
+        del trans["sales_item_id"]
+
+
 class WebuiReq:
     """ data unique to each request to keep different users data separate """
     def __init__(self):
@@ -73,6 +78,8 @@ class WebuiReq:
             users.secure_user_db_rec(self.user_data["user"])
         if self.user_data and "orders" in self.user_data:
             basket.secure_orders_db_recs(self.user_data["orders"])
+        if self.user_data and "transactions" in self.user_data:
+            secure_user_transactions(self.user_data["transactions"])
 
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
@@ -124,6 +131,36 @@ def orders_details():
     return load_orders_and_reply(req)
 
 
+@application.route('/pyrar/v1.0/orders/cancel', methods=['POST'])
+def orders_cancel():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort(NOT_LOGGED_IN)
+
+    if flask.request.json is None or "order_item_id" not in flask.request.json:
+        return req.abort("No/invalid JSON posted")
+
+    where = {"user_id": req.user_id, "order_item_id": flask.request.json["order_item_id"]}
+    ok, order_db = sql.sql_select_one("orders", where)
+    if not ok:
+        return req.abort(order_db)
+    if len(order_db) <= 0:
+        return req.abort("Order not found")
+
+    ok = sql.sql_delete_one("orders", where)
+    if not ok:
+        return req.abort("Order not found")
+
+    if order_db["order_type"] == "dom/create":
+        sql.sql_delete_one("domains", {
+            "domain_id": order_db["domain_id"],
+            "user_id": req.user_id,
+            "status_id": misc.STATUS_WAITING_PAYMENT
+        })
+
+    return load_orders_and_reply(req)
+
+
 @application.route('/pyrar/v1.0/basket/submit', methods=['POST'])
 def basket_submit():
     req = WebuiReq()
@@ -141,6 +178,29 @@ def basket_submit():
     return req.response(req.user_data)
 
 
+@application.route('/pyrar/v1.0/users/transactions', methods=['GET', 'POST'])
+def users_transactions():
+    req = WebuiReq()
+    if req.user_id is None or req.sess_code is None:
+        return req.abort(NOT_LOGGED_IN)
+
+    if flask.request.json is None:
+        limit = policy.policy("trans_per_page")
+    else:
+        if "limit" in flask.request.json:
+            limit = flask.request.json["limit"]
+            if "skip" in flask.request.json:
+                limit = f"{limit} OFFSET {flask.request.json['skip']}"
+
+    ok, trans_db = sql.sql_select("transactions", {"user_id": req.user_id},
+                                  limit=limit,
+                                  order_by="acct_sequence_id desc")
+    if not ok:
+        return req.abort("Unexpected error loading transactions")
+    req.user_data["transactions"] = trans_db
+    return req.response(req.user_data)
+
+
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
 def users_domains():
     req = WebuiReq()
@@ -150,9 +210,15 @@ def users_domains():
     ret, doms_db = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
     if ret is None:
         return req.abort("Failed to load domains")
+
+    now = sql.now()
     for dom_db in doms_db:
+        if dom_db["status_id"] ==misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
+            dom_db["status_id"] = misc.STATUS_EXPIRED
+
         if dom_db["status_id"] in misc.DOMAIN_STATUS:
             dom_db["status_desc"] = misc.DOMAIN_STATUS[dom_db["status_id"]]
+
         dom_db["is_live"] = dom_db["status_id"] in misc.LIVE_STATUS
 
     req.user_data["domains"] = doms_db
@@ -187,9 +253,10 @@ def users_close():
     if not users.check_password(req.user_id, flask.request.json):
         return req.abort("Password match failed")
 
-    ok = sql.sql_update_one("users",
-                            "account_closed=1,email=concat(user_id,':',email),password=concat('CLOSED:',password),amended_dt=now()",
-                            {"user_id": req.user_id})
+    ok = sql.sql_update_one(
+        "users",
+        "account_closed=1,email=concat(user_id,':',email),password=concat('CLOSED:',password),amended_dt=now()",
+        {"user_id": req.user_id})
 
     if not ok:
         return req.abort("Close account failed")

@@ -28,7 +28,10 @@ policy_defaults = {
     "epp_retry_attempts": 3,
     "facility_eppsvr": 170,
     "max_renew_years": 10,
-    "max_basket_size": 10
+    "max_basket_size": 10,
+    "trans_per_page": 25,
+    "orders_expire_hrs": (24*3),
+    "domain_expire_delete": 30
 }
 
 
@@ -55,6 +58,7 @@ class Policy:
 this_policy = Policy()
 
 if __name__ == "__main__":
+    print(">>>TEST>>>:", this_policy.policy("orders_expire_hrs"))
     print(">>>TEST>>>:", this_policy.policy("business_name"))
     print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
     print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))

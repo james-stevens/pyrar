@@ -83,6 +83,8 @@ def frag_ds(ds_data):
 
 
 def is_valid_ds(ds_rec):
+    if ds_rec is None:
+        return False
     ints = {}
     for item in ["keyTag", "alg", "digestType"]:
         if not ds_rec[item].isdigit() or len(ds_rec[item]) > MAX_DS_LEN[item]:

@@ -9,6 +9,7 @@ from librar.log import log, debug, init as log_init
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
+from librar import misc
 from librar import passwd
 
 from backend import handler
@@ -25,14 +26,26 @@ def tld_pdns_check(name):
     return tld
 
 
+def domain_delete(epp_job, dom_db):
+    job_id = epp_job["epp_job_id"]
+    name = dom_db["name"]
+
+    if (tld := tld_pdns_check(name)) is None:
+        log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'")
+        return False
+
+    rrs = {"name": name, "type": "NS", "data": []}
+    ok_ns = pdns.update_rrs(tld, rrs)
+
+    rrs = {"name": name, "type": "DS", "data": []}
+    ok_ns = pdns.update_rrs(tld, rrs)
+
+    return True
+
+
 def domain_create(epp_job, dom_db):
-    values = [
-        f"status_id = {misc.STATUS_LIVE}",
-        f"expiry_dt = date_add(expiry_dt,interval {epp_job['num_years']} year)",
-        "amended_dt = now()"
-        ]
-    sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
-    return domain_update_from_db(epp_job, dom_db)
+    domain_update_from_db(epp_job, dom_db)
+    return add_yrs(epp_job, dom_db)
 
 
 def start_up_check():
@@ -53,14 +66,14 @@ def domain_update_from_db(epp_job, dom_db):
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
-    if sql.has_data(dom_db, "name_servers"):
-        rrs["data"] = [d + "." for d in dom_db["name_servers"].split(",")]
+    if sql.has_data(dom_db, "ns"):
+        rrs["data"] = [d + "." for d in dom_db["ns"].split(",")]
 
     ok_ns = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
-    if sql.has_data(dom_db, "ds_recs"):
-        rrs["data"] = dom_db["ds_recs"].split(",")
+    if sql.has_data(dom_db, "ds"):
+        rrs["data"] = dom_db["ds"].split(",")
 
     ok_ds = pdns.update_rrs(tld, rrs)
 
@@ -85,10 +98,22 @@ def domain_request_transfer(epp_job, dom_db):
     }, {"domain_id": dom_db["domain_id"]})
 
 
+
+def add_yrs(epp_job, dom_db):
+    values = [
+        f"status_id = {misc.STATUS_LIVE}",
+        f"expiry_dt = date_add(expiry_dt,interval {epp_job['num_years']} year)",
+        "amended_dt = now()"
+        ]
+    return sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
+
+
 def domain_renew(epp_job, dom_db):
-    return sql.sql_update_one("domains",
-                              f"expiry_dt=date_add(expiry_dt,interval {epp_job['num_years']} year),amended_dt=now()",
-                              {"domain_id": dom_db["domain_id"]})
+    return add_yrs(epp_job, dom_db)
+
+
+def domain_info(epp_job, dom_db):
+    return dom_db
 
 
 def set_authcode(epp_job, dom_db):
@@ -108,7 +133,9 @@ handler.add_plugin(
         "dom/create": domain_create,
         "dom/renew": domain_renew,
         "dom/transfer": domain_request_transfer,
-        "dom/authcode": set_authcode
+        "dom/authcode": set_authcode,
+        "dom/delete": domain_delete,
+        "dom/info": domain_info
     })
 
 if __name__ == "__main__":

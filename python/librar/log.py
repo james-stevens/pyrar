@@ -4,6 +4,7 @@
 
 import syslog
 import inspect
+import datetime
 
 done_init = False
 
@@ -26,7 +27,9 @@ def log(line, where=None):
         fname = where.filename.split("/")[-1].split(".")[0]
         txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
     if hold_debug:
-        print(f"SYSLOG{txt} {line}")
+        now = datetime.datetime.now()
+        now_txt = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{now_txt} SYSLOG{txt} {line}")
     else:
         if not done_init:
             init()

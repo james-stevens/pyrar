@@ -1,0 +1,17 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+{
+
+src="${BASE}/pems/server.pem"
+dst="/run/server.pem"
+
+if test -f "${src}" -a -f "${dst}" -a "${src}" -nt "${dst}"
+	then
+		echo "New server.pem in ${src}"
+		cp -a "${src}" "${dst}"
+		killall -HUP nginx
+	fi
+
+} | logger -t check_server_pem
