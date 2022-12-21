@@ -997,7 +997,7 @@ function place_order()
 		show_one_space("userSpace");
 		delete gbl.basket;
 
-		if (ctx.failed_basket) {
+		if ((ctx.failed_basket)&&(ctx.failed_basket.length >= 1)) {
 			gbl.basket = ctx.failed_basket;
 			delete ctx.failed_basket
 			}
