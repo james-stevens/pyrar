@@ -32,11 +32,6 @@ def make_session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
-def secure_user_db_rec(data):
-    for block in ["password", "payment_data", "two_fa", "password_reset"]:
-        del data[block]
-
-
 def start_session(user_db_rec, user_agent):
     user_id = user_db_rec['user_id']
     sql.sql_delete_one("session_keys", {"user_id": user_id})

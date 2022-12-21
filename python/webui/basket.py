@@ -22,13 +22,6 @@ from webui.plugins import *
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
 
-def secure_orders_db_recs(orders):
-    for order in orders:
-        for block in ["price_charged","currency_charged"]:
-            del order[block]
-
-
-
 def make_blank_domain(name, user_db, status_id):
     dom_db = {
         "name": name,
@@ -62,6 +55,9 @@ def save_basket(basket, user_id):
         return False, user_db
 
     for order in basket:
+        if "failed" in order:
+            continue
+
         order_db = order["order_db"]
         if order_db["domain_id"] == -1:
             ok, reply = make_blank_domain(order["domain"],user_db,misc.STATUS_WAITING_PAYMENT)
@@ -76,17 +72,24 @@ def save_basket(basket, user_id):
     return True, basket
 
 
+def all_failed(basket):
+    for order in basket:
+        if "failed" not in basket:
+            return False
+    return True
+
+
 def capture_basket(basket, user_id):
     if len(basket) > policy.policy("max_basket_size"):
         return False, "Basket too full"
 
     ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
     if not ok:
-        return False, sum_orders
+        return False, "Failed to read database"
 
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
-        return False, user_db
+        return False, "Failed to read user account"
 
     availble_balance = user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]
 
@@ -100,48 +103,50 @@ def capture_basket(basket, user_id):
     if not ok:
         return False, reply
 
-    ok, reply = live_process_basket(basket, user_db)
-    if not ok:
-        return False, reply
-
+    live_process_basket(basket, user_db)
     return True, basket
 
 
 def live_process_basket(basket, user_db):
-    while len(basket) > 0 and paid_for_basket_item(basket[0],user_db):
-        b = basket[0]
-        debug(f"BASKET: {b['domain']}:{b['action']}:{b['num_years']} DONE")
-        del basket[0]
-        ok, user_db = sql.sql_select_one("users", {"user_id": user_db["user_id"]})
-        if not ok:
-            return False, user_db
+    for order in basket:
+        if "failed" in basket:
+            continue
 
-    return True, len(basket)
+        if (ok := paid_for_basket_item(order,user_db)) is None:
+            if ok is None:
+                order["failed"] = "Pay for failed"
+        else:
+            ok, user_db = sql.sql_select_one("users", {"user_id": user_db["user_id"]})
+            if not ok:
+                order["failed"] = "Database read failed"
 
 
-def paid_for_basket_item(item, user_db):
-    order_db = item["order_db"]
+def paid_for_basket_item(order, user_db):
+    if "failed" in order:
+        return False
+
+    order_db = order["order_db"]
     if (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]) < order_db["price_paid"]:
         return False
 
     trans_id = accounts.apply_transaction(user_db["user_id"],(-1*order_db["price_paid"]),
-        f"{order_db['order_type']} on {item['domain']} for {order_db['num_years']} yrs")
+        f"{order_db['order_type']} on {order['domain']} for {order_db['num_years']} yrs")
 
     if not trans_id:
         return False
 
-    ok, sold_id = sales.sold_item(trans_id,order_db,item['domain'],user_db["email"])
+    ok, sold_id = sales.sold_item(trans_id,order_db,order['domain'],user_db["email"])
     if ok and sold_id:
         sql.sql_update("transactions",{"sales_item_id":sold_id},{"transaction_id":trans_id})
 
     match order_db['order_type']:
         case "dom/transfer":
-            ok, domain_id = make_blank_domain(item['domain'],user_db,misc.STATUS_TRANS_QUEUED)
+            ok, domain_id = make_blank_domain(order['domain'],user_db,misc.STATUS_TRANS_QUEUED)
             if not ok:
                 return False
             order_db["domain_id"] = domain_id
         case "dom/create":
-            ok, domain_id = make_blank_domain(item['domain'],user_db,misc.STATUS_LIVE)
+            ok, domain_id = make_blank_domain(order['domain'],user_db,misc.STATUS_LIVE)
             if not ok:
                 return False
             order_db["domain_id"] = domain_id
@@ -170,25 +175,34 @@ def parse_basket(basket, user_db):
     for order in basket:
         ok, reply = check_basket_item(order)
         if not ok:
-            return False, reply
+            order["failed"] = reply
 
     for order in basket:
+        if "failed" in order:
+            continue
         ok, reply = price_order_item(order, user_db)
         if not ok:
-            return False, reply
-        order["prices"] = reply
+            order["failed"] = "Price failed"
+        else:
+            order["prices"] = reply
 
     site_currency = policy.policy("currency")
     for order in basket:
+        if "failed" in order:
+            continue
         ok, reply = make_order_record(site_currency, order, user_db)
         if not ok:
-            return False, reply
-        order["order_db"] = reply
+            order["failed"] = reply
+        else:
+            order["order_db"] = reply
 
     for order in basket:
+        if "failed" in order:
+            continue
+
         if order["cost"] != order["order_db"]["price_paid"]:
             debug(f'{order["cost"]} is not {order["order_db"]["price_paid"]}')
-            return False, "D:Basket seems to be corrupt"
+            order["failed"] = "Cost mismatch"
 
     return True, basket
 
@@ -251,10 +265,10 @@ def get_order_domain_id(order, user_db):
 def make_order_record(site_currency, order, user_db):
     ok, order_domain_id = get_order_domain_id(order, user_db)
     if not ok:
-        return False, order_domain_id
+        return False, "Failed to find/reserve domain"
 
     if "prices" not in order:
-        return False, "Missing prices"
+        return False, "Failed to verify price"
 
     now = sql.now()
     prices = order["prices"]

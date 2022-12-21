@@ -24,6 +24,13 @@ NOT_LOGGED_IN = "Not logged in or login timed-out"
 SESSION_TAG = "X-Session-Code"
 SESSION_TAG_LOWER = SESSION_TAG.lower()
 
+# remove these columns before transmitting to user
+REMOVE_TO_SECURE = {
+    "user": ["password", "two_fa", "password_reset"],
+    "orders": ["price_charged","currency_charged"],
+    "transactions": [ "sales_item_id"]
+    }
+
 log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
@@ -34,9 +41,14 @@ if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
 
-def secure_user_transactions(trans_db):
-    for trans in trans_db:
-        del trans["sales_item_id"]
+def secure_user_data(user_data):
+    if user_data is None:
+        return
+    for table in REMOVE_TO_SECURE:
+        if table in user_data and isinstance(user_data[table],dict):
+            for column in REMOVE_TO_SECURE[table]:
+                if column in user_data[table]:
+                    del user_data[table][column]
 
 
 class WebuiReq:
@@ -74,12 +86,7 @@ class WebuiReq:
         return self.response({"error": data}, HTML_CODE_ERR)
 
     def response(self, data, code=HTML_CODE_OK):
-        if self.user_data and "user" in self.user_data:
-            users.secure_user_db_rec(self.user_data["user"])
-        if self.user_data and "orders" in self.user_data:
-            basket.secure_orders_db_recs(self.user_data["orders"])
-        if self.user_data and "transactions" in self.user_data:
-            secure_user_transactions(self.user_data["transactions"])
+        secure_user_data(self.user_data)
 
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
@@ -173,6 +180,12 @@ def basket_submit():
     ok, reply = basket.webui_basket(flask.request.json, req.user_id)
     if not ok:
         return req.abort(reply)
+
+    req.user_data["failed_basket"] = [ item for item in reply if "failed" in item ]
+    for order in req.user_data["failed_basket"]:
+        for col in list(order):
+            if col in ["prices","order_db"]:
+                del order[col]
 
     req.user_data["orders"] = [item["order_db"] for item in reply if "order_db" in item]
     return req.response(req.user_data)
@@ -404,42 +417,54 @@ def run_user_domain_task(domain_function, func_name):
     return req.response(reply)
 
 
-@application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
-def rest_domain_price():
-    req = WebuiReq()
-    num_yrs = 1
+def get_dom_data_items():
+    num_years = 1
     qry_type = ["create", "renew"]
 
     if flask.request.json is not None:
         dom = flask.request.json["domain"]
         if not isinstance(dom, str) and not isinstance(dom, list):
-            return req.abort("Unsupported data type for domain")
+            return None, "Unsupported data type for domain", None
+
         if "num_years" in flask.request.json:
-            num_yrs = int(flask.request.json["num_years"])
+            num_years = int(flask.request.json["num_years"])
         if "qry_type" in flask.request.json:
             qry_type = flask.request.json["qry_type"].split(",")
-    else:
-        data = None
-        if flask.request.method == "POST":
-            data = flask.request.form
-        if flask.request.method == "GET":
-            data = flask.request.args
-        if data is None or len(data) <= 0:
-            return req.abort("No data sent")
+        return dom, num_years, qry_type
 
-        if (dom := data.get("domain")) is None:
-            return req.abort("No domain sent")
-        if (yrs := data.get("num_years")) is not None:
-            num_yrs = int(yrs)
-        if (qry := data.get("qry_type")) is not None:
-            qry_type = qry.split(",")
+    data = None
+    if flask.request.method == "POST":
+        data = flask.request.form
+    if flask.request.method == "GET":
+        data = flask.request.args
+    if data is None or len(data) <= 0:
+        return None, "No data sent", None
+
+    if (dom := data.get("domain")) is None:
+        return None, "No domain sent", None
+
+    if (yrs := data.get("num_years")) is not None:
+        num_years = int(yrs)
+    if (qry := data.get("qry_type")) is not None:
+        qry_type = qry.split(",")
+
+    return dom, num_years, qry_type
+
+
+@application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
+def rest_domain_price():
+    req = WebuiReq()
+
+    dom, num_years, qry_type = get_dom_data_items()
+    if dom is None:
+        return req.abort(num_years)
 
     dom_obj = domains.DomainName(dom)
 
     if dom_obj.names is None:
         return req.abort(dom_obj.err if dom_obj.err is not None else "Invalid domain name")
 
-    ok, reply = domains.get_domain_prices(dom_obj, num_yrs, qry_type, req.user_id)
+    ok, reply = domains.get_domain_prices(dom_obj, num_years, qry_type, req.user_id)
     if ok:
         return req.response(reply)
 

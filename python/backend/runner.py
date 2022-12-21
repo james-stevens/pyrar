@@ -21,7 +21,8 @@ from backend.plugins import *
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
-RECREATE_ACTIONS_FOR = [ "dom/renew", "dom/create", "dom/transfer", "dom/recover" ]
+# dom/update included here in case dom.auto_renew changes
+RECREATE_ACTIONS_FOR = [ "dom/update", "dom/renew", "dom/create", "dom/transfer", "dom/recover" ]
 
 
 def job_worked(epp_job):

@@ -212,14 +212,19 @@ function removeBasketItem(i)
 
 
 
-function start_basket_table()
+function start_basket_table(show_failed)
 {
 	let x = '<tr><th>Domain</th><th>Action</th><th>Yrs</th><th>Cost</th></tr>';
 	for(let i in gbl.basket) {
 		let item = gbl.basket[i];
 		x += `<tr onClick="removeBasketItem(${i});" title="Remove this item" class=dataRow>`
 		x += `<td>${fromPuny(item.domain)}</td><td align=center>${item.action}</td>`;
-		x += `<td align=center>${item.num_years}</td><td align=right>${format_amount(item.cost)}</td></tr>`;
+		x += `<td align=center>${item.num_years}</td><td align=right>${format_amount(item.cost)}</td>`;
+		if ((show_failed)&&(item.failed)) {
+			x += `<td align=center>${item.failed}</td>`;
+			delete item.failed;
+			}
+		x += "</tr>";
 		}
 	return x;
 }
@@ -230,7 +235,7 @@ function user_info()
 {
 	if (gbl.basket) {
 		elm.basketIcon.style.display = "block";
-		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table()
+		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table(false)
 		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
 		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
 		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
@@ -400,7 +405,7 @@ function bodyLoaded()
 
 function catch_user_data(reply)
 {
-	["transactions","user","domains","orders"].forEach((item) => {
+	["failed_basket","transactions","user","domains","orders"].forEach((item) => {
 		if (item in reply) ctx[item] = reply[item];
 		})
 }
@@ -918,7 +923,6 @@ function userDetails()
 	x += "</td></tr></table>";
 
 	if ((ctx.orders)&&(ctx.orders.length > 0)) x += order_details(false);
-	x += "</td></tr>";
 
 	return x + "</table>"
 }
@@ -964,7 +968,7 @@ function order_details(as_first)
 		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
 	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
 
-	return x;
+	return x+"</table></td></tr>";
 }
 
 
@@ -992,9 +996,15 @@ function place_order()
 		catch_user_data(reply);
 		show_one_space("userSpace");
 		delete gbl.basket;
+
+		if (ctx.failed_basket) {
+			gbl.basket = ctx.failed_basket;
+			delete ctx.failed_basket
+			}
+
 		user_info();
 		let fn = show_new_orders
-		if (ctx.orders.length==0) {
+		if ((ctx.orders.length==0)&&(!gbl.basket)) {
 			delete ctx.orders;
 			fn = show_all_orders_processed;
 			}
@@ -1016,9 +1026,15 @@ function show_all_orders_processed()
 
 function show_new_orders()
 {
-	let x = "<table align=center width=50% border=0>";
+	let x = "<table align=center width=75% border=0>";
 	x += order_details(true);
-	x += "</td></tr></table>";
+
+	if (gbl.basket) {
+		x += settings_header("Items that failed")
+		x += html_for_basket(false)
+		x += "</td></tr>";
+		}
+	x += "</table>";
 	elm.userSpace.innerHTML = x;
 	size_one_space();
 }
@@ -1029,25 +1045,36 @@ function basketCheckout()
 {
 	hidePopUp();
 	show_one_space("basketSpace");
-	let x = '<table id=placeOrderBtn align=center style="min-width: 50%;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table();
+	elm.basketSpace.innerHTML = html_for_basket(true)
+	size_one_space();
+}
+
+
+
+function html_for_basket(with_place_order)
+{
+	if (with_place_order) width="75%"; else width="100%";
+	let x = `<table align=center width=${width} border=0 cellspacing=2 cellpadding=5>` + start_basket_table(!with_place_order);
 	let total = 0;
 	for(let i of gbl.basket) total += i.cost;
 
 	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 	x += `<tr><td colspan=3 class=promptCell>Order Total :</td><td align=right>${format_amount(total)}</td></tr>`;
-	x += `<tr><td colspan=3 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
 
-	let btn_txt = "Place Order >>>";
-	if (total > ctx.user.acct_current_balance) {
-		x += `<tr><td colspan=3 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
-		btn_txt = "Place Order & Pay >>>";
+	if (with_place_order) {
+		let btn_txt = "Place Order >>>";
+		x += `<tr><td colspan=3 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
+		if (total > ctx.user.acct_current_balance) {
+			x += `<tr><td colspan=3 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
+			btn_txt = "Place Order & Pay >>>";
+			}
+		x += `<tr><td colspan=4><div class="line"/></td></tr>`;
+		x += "<tr><td id=placeOrderBtn colspan=4 align=right>"+btn("place_order()",btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
 		}
+	else
+		x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 
-	x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-
-	x += "<tr><td colspan=4 align=right>"+btn("place_order()",btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
-	elm.basketSpace.innerHTML = x+"</table>"
-	size_one_space();
+	return x+"</table>"
 }
 
 
@@ -1139,8 +1166,9 @@ function doAddDS(idx)
 
 function do_change_ns(dest_dom,src_dom)
 {
-	let default_dns_servers = policy("default_dns_servers",null);
+	let default_dns_servers = policy("dns_servers",null);
 	let dom = ctx.domains[dest_dom];
+
 	if ((src_dom >= 0)&&(src_dom < ctx.domains.length)
 		&&(dom.ns != ctx.domains[src_dom].ns))
 		{
@@ -1178,7 +1206,7 @@ function generic_popup_btn(config)
 
 function copy_btn_internal(param)
 {
-	let default_dns_servers = policy("default_dns_servers",null);
+	let default_dns_servers = policy("dns_servers",null);
 	let seen_ns = { };
 	if (default_dns_servers) seen_ns[default_dns_servers] = true;
 	let idx=param["idx"];

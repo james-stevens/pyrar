@@ -20,8 +20,6 @@ sqlsh "CREATE TABLE users (
 	two_fa					varchar(100),
 	password_reset			varchar(100),
 
-	payment_data			varchar(1000) default null,
-
 	discount_percent		int,
 
 	acct_sequence_id		${row_id},
