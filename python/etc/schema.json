@@ -1,4 +1,51 @@
 {
+    "actions": {
+        "columns": {
+            "action": {
+                "size": 50,
+                "type": "varchar",
+                "null": true
+            },
+            "action_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "serial": true,
+                "null": false
+            },
+            "domain_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
+            },
+            "execute_dt": {
+                "type": "datetime",
+                "null": false
+            }
+        },
+        "indexes": {
+            "PRIMARY": {
+                "columns": [
+                    "action_id"
+                ],
+                "unique": true
+            },
+            "by_dom": {
+                "columns": [
+                    "domain_id"
+                ],
+                "unique": false
+            },
+            "by_date": {
+                "columns": [
+                    "execute_dt"
+                ],
+                "unique": false
+            }
+        }
+    },
     "deleted_domains": {
         "columns": {
             "amended_dt": {
@@ -552,6 +599,63 @@
             }
         }
     },
+    "payments": {
+        "columns": {
+            "amended_dt": {
+                "type": "datetime",
+                "null": false
+            },
+            "created_dt": {
+                "type": "datetime",
+                "null": false
+            },
+            "payment_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "serial": true,
+                "null": false
+            },
+            "provider": {
+                "size": 50,
+                "type": "varchar",
+                "null": false
+            },
+            "providers_tag": {
+                "size": 100,
+                "type": "varchar",
+                "null": false
+            },
+            "single_use": {
+                "size": 1,
+                "type": "tinyint",
+                "null": false,
+                "default": 0
+            },
+            "user_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
+            }
+        },
+        "indexes": {
+            "PRIMARY": {
+                "columns": [
+                    "payment_id"
+                ],
+                "unique": true
+            },
+            "by_type": {
+                "columns": [
+                    "user_id",
+                    "provider"
+                ],
+                "unique": true
+            }
+        }
+    },
     "sales": {
         "columns": {
             "amended_dt": {
@@ -870,11 +974,6 @@
             },
             "password_reset": {
                 "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "payment_data": {
-                "size": 1000,
                 "type": "varchar",
                 "null": true
             },
