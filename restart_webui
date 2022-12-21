@@ -1,0 +1,1 @@
+kill $(ps ax | awk '/[w]sgi_checker.sock/ { print $1 }' | sort -n | head -1)

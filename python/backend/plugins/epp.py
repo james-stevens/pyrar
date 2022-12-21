@@ -272,7 +272,13 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
+def domain_expired(epp_job, dom_db):
+    # Probably nothing to do for EPP
+    return True
+
+
 def domain_delete(epp_job, dom_db):
+    # Probably nothing to do for EPP
     return True
 
 
@@ -290,5 +296,7 @@ handler.add_plugin(
         "dom/transfer": domain_request_transfer,
         "dom/authcode": set_authcode,
         "dom/info": domain_info,
-        "dom/delete": domain_info
+        "dom/delete": domain_delete,
+        "dom/recover": domain_renew,
+        "dom/expired": domain_expired
     })

@@ -32,11 +32,6 @@ def make_session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
-def secure_user_db_rec(data):
-    for block in ["password", "payment_data", "two_fa", "password_reset"]:
-        del data[block]
-
-
 def start_session(user_db_rec, user_agent):
     user_id = user_db_rec['user_id']
     sql.sql_delete_one("session_keys", {"user_id": user_id})
@@ -74,22 +69,22 @@ def start_user_check(data):
     return True, None
 
 
-def register(data, user_agent):
-    ok, msg = start_user_check(data)
+def register(user_db, user_agent):
+    ok, msg = start_user_check(user_db)
     if not ok:
         return ok, msg
 
-    if sql.sql_exists("users", {"email": data["email"]}):
+    if sql.sql_exists("users", {"email": user_db["email"]}):
         return False, "EMail address already in use"
 
-    if ("name" not in data) or (data["name"] == "") or (data["name"] is None):
-        data["name"] = data["email"].split("@")[0]
+    if ("name" not in user_db) or (user_db["name"] == "") or (user_db["name"] is None):
+        user_db["name"] = user_db["email"].split("@")[0]
 
     all_cols = USER_REQUIRED + ["name", "created_dt"]
-    data.update({col: None for col in all_cols if col not in data})
+    user_db.update({col: None for col in all_cols if col not in user_db})
 
-    data["password"] = passwd.crypt(data["password"])
-    ok, user_id = sql.sql_insert("users", {item: data[item] for item in all_cols})
+    user_db["password"] = passwd.crypt(user_db["password"])
+    ok, user_id = sql.sql_insert("users", {item: user_db[item] for item in all_cols})
     if not ok:
         return False, "Registration insert failed"
 
@@ -155,7 +150,7 @@ def login(data, user_agent):
 
 
 USER_CAN_CHANGE = {
-    "auto_renew_all": validate.validate_binary,
+    "default_auto_renew": validate.validate_binary,
     "email": validate.is_valid_email,
     "name": validate.is_valid_display_name
 }

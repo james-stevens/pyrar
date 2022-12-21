@@ -34,18 +34,25 @@ def domain_delete(epp_job, dom_db):
         log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'")
         return False
 
-    rrs = {"name": name, "type": "NS", "data": []}
-    ok_ns = pdns.update_rrs(tld, rrs)
+    # remove SLD from TLD in pdns - A & AAAA incase they used the SLD as an NS name
+    ok_a = pdns.update_rrs(tld, {"name": name, "type": "A", "data": []})
+    ok_aaaa = pdns.update_rrs(tld, {"name": name, "type": "AAAA", "data": []})
+    ok_ns = pdns.update_rrs(tld, {"name": name, "type": "NS", "data": []})
+    ok_ds = pdns.update_rrs(tld, {"name": name, "type": "DS", "data": []})
 
-    rrs = {"name": name, "type": "DS", "data": []}
-    ok_ns = pdns.update_rrs(tld, rrs)
+    # need code to remove glue records, when supported
 
-    return True
+    return ok_ns and ok_ds and ok_a and ok_aaaa
+
+
+def domain_expired(epp_job, dom_db):
+    return domain_delete(epp_job, dom_db)
 
 
 def domain_create(epp_job, dom_db):
-    domain_update_from_db(epp_job, dom_db)
-    return add_yrs(epp_job, dom_db)
+    ok_add = add_yrs(epp_job, dom_db)
+    ok_updt = domain_update_from_db(epp_job, dom_db)
+    return ok_add and ok_updt
 
 
 def start_up_check():
@@ -67,7 +74,7 @@ def domain_update_from_db(epp_job, dom_db):
 
     rrs = {"name": name, "type": "NS", "data": []}
     if sql.has_data(dom_db, "ns"):
-        rrs["data"] = [d + "." for d in dom_db["ns"].split(",")]
+        rrs["data"] = [d.strip(".") + "." for d in dom_db["ns"].split(",")]
 
     ok_ns = pdns.update_rrs(tld, rrs)
 
@@ -101,8 +108,8 @@ def domain_request_transfer(epp_job, dom_db):
 
 def add_yrs(epp_job, dom_db):
     values = [
-        f"status_id = {misc.STATUS_LIVE}",
         f"expiry_dt = date_add(expiry_dt,interval {epp_job['num_years']} year)",
+        f"status_id = if (expiry_dt > now(),{misc.STATUS_LIVE},{misc.STATUS_EXPIRED})",
         "amended_dt = now()"
         ]
     return sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
@@ -110,6 +117,12 @@ def add_yrs(epp_job, dom_db):
 
 def domain_renew(epp_job, dom_db):
     return add_yrs(epp_job, dom_db)
+
+
+def domain_recover(epp_job, dom_db):
+    ok_add = add_yrs(epp_job, dom_db)
+    ok_updt = domain_update_from_db(epp_job, dom_db)
+    return ok_add and ok_updt
 
 
 def domain_info(epp_job, dom_db):
@@ -135,7 +148,9 @@ handler.add_plugin(
         "dom/transfer": domain_request_transfer,
         "dom/authcode": set_authcode,
         "dom/delete": domain_delete,
-        "dom/info": domain_info
+        "dom/expired": domain_expired,
+        "dom/info": domain_info,
+        "dom/recover": domain_recover
     })
 
 if __name__ == "__main__":

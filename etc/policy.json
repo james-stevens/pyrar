@@ -36,5 +36,7 @@
 	"epp_retry_timeout": 300,
 
 	"pdns_log_level": 5,
-	"default_ttl": 86400
+	"default_ttl": 86400,
+
+	"renewal_reminders": "7,14"
 }

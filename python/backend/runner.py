@@ -5,21 +5,14 @@
 import sys
 import json
 import argparse
-import time
-import base64
-import httpx
 
 from librar import mysql as sql
 from librar import registry
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
-from librar import misc
-from librar import validate
-from librar import parse_dom_resp
 from librar import sigprocs
-from backend import whois_priv
-from backend import dom_req_xml
-from backend import xmlapi
+from actions import creator
+
 from backend import shared
 
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -28,19 +21,8 @@ from backend.plugins import *
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
-
-def debug_domain_info(domain):
-    if (ret := validate.check_domain_name(domain)) is not None:
-        print(">>>> ERROR", ret)
-        sys.exit(1)
-    xml = dom_req_xml.domain_info(domain)
-    this_reg = registry.tld_lib.reg_record_for_domain(domain)
-    ret = run_epp_request(this_reg, xml, url)
-    print(f"\n\n---------- {domain} -----------\n\n")
-    print(json.dumps(ret, indent=2))
-    if xmlapi.xmlcode(ret) == 1000:
-        print(">>>>> PARSER", json.dumps(parse_dom_resp.parse_domain_info_xml(ret, "inf"), indent=4))
-    sys.exit(0)
+# dom/update included here in case dom.auto_renew changes
+RECREATE_ACTIONS_FOR = [ "dom/update", "dom/renew", "dom/create", "dom/transfer", "dom/recover" ]
 
 
 def job_worked(epp_job):
@@ -56,6 +38,18 @@ def job_failed(epp_job):
         "failures": epp_job["failures"] + 1,
         "execute_dt": sql.now(policy.policy("epp_retry_timeout"))
     }, {"epp_job_id": epp_job["epp_job_id"]})
+
+
+def check_for_recreate(epp_job):
+    if epp_job["job_type"] not in RECREATE_ACTIONS_FOR:
+        return True
+
+    ok, dom_db = sql.sql_select_one("domains", {"domain_id":epp_job["domain_id"]})
+    if not ok:
+        log(f"ERROR: trying to create actions for missing domain {epp_job['domain_id']}")
+        return False
+
+    return creator.recreate_domain_actions(dom_db)
 
 
 def run_epp_item(epp_job):
@@ -87,7 +81,9 @@ def run_epp_item(epp_job):
     if job_run is None:
         return job_abort(epp_job)
     if job_run:
+        check_for_recreate(epp_job)
         return job_worked(epp_job)
+
     return job_failed(epp_job)
 
 
@@ -96,7 +92,7 @@ def run_server():
     signal_mtime = None
     while True:
         query = ("select * from epp_jobs where execute_dt <= now()" +
-                 f" and failures < {policy.policy('epp_retry_attempts')} limit 1")
+                 f" and failures < {policy.policy('epp_retry_attempts')} order by epp_job_id limit 1")
         ret, epp_job = sql.run_select(query)
         if ret and len(epp_job) > 0:
             run_epp_item(epp_job[0])
@@ -113,7 +109,7 @@ def start_up(is_live):
     sql.connect("epprun")
     registry.start_up()
 
-    for plugin, funcs in handler.backend_plugins.items():
+    for __, funcs in handler.backend_plugins.items():
         if "start_up" in funcs:
             funcs["start_up"]()
 
@@ -165,6 +161,7 @@ def main():
     dom_db = shared.get_dom_from_db(epp_job)
     out_js = this_fn(epp_job,dom_db)
     print(json.dumps(out_js, indent=3))
+    return 0
 
 
 if __name__ == "__main__":

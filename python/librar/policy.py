@@ -30,8 +30,10 @@ policy_defaults = {
     "max_renew_years": 10,
     "max_basket_size": 10,
     "trans_per_page": 25,
-    "orders_expire_hrs": (24*3),
-    "domain_expire_delete": 30
+    "orders_expire_days": 3,
+    "domain_expire_delete": 30,
+    "auto_renew_before": 14,
+    "renewal_reminders": "30,14,7"
 }
 
 
