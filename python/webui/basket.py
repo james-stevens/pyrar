@@ -29,12 +29,12 @@ def secure_orders_db_recs(orders):
 
 
 
-def make_blank_domain(name, user_id, status_id):
+def make_blank_domain(name, user_db, status_id):
     dom_db = {
         "name": name,
-        "user_id": user_id,
+        "user_id": user_db["user_id"],
         "ns": policy.policy("dns_servers"),
-        "auto_renew": 0,
+        "auto_renew": user_db["default_auto_renew"],
         "status_id": status_id,
         "created_dt": None,
         "amended_dt": None,
@@ -57,10 +57,14 @@ def webui_basket(basket, user_id):
 
 
 def save_basket(basket, user_id):
+    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
+    if not ok:
+        return False, user_db
+
     for order in basket:
         order_db = order["order_db"]
         if order_db["domain_id"] == -1:
-            ok, reply = make_blank_domain(order["domain"],user_id,misc.STATUS_WAITING_PAYMENT)
+            ok, reply = make_blank_domain(order["domain"],user_db,misc.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
             order_db["domain_id"] = reply
@@ -132,12 +136,12 @@ def paid_for_basket_item(item, user_db):
 
     match order_db['order_type']:
         case "dom/transfer":
-            ok, domain_id = make_blank_domain(item['domain'],user_db["user_id"],misc.STATUS_TRANS_QUEUED)
+            ok, domain_id = make_blank_domain(item['domain'],user_db,misc.STATUS_TRANS_QUEUED)
             if not ok:
                 return False
             order_db["domain_id"] = domain_id
         case "dom/create":
-            ok, domain_id = make_blank_domain(item['domain'],user_db["user_id"],misc.STATUS_LIVE)
+            ok, domain_id = make_blank_domain(item['domain'],user_db,misc.STATUS_LIVE)
             if not ok:
                 return False
             order_db["domain_id"] = domain_id

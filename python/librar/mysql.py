@@ -6,6 +6,7 @@ import os
 import json
 import datetime
 import inspect
+from dateutil.relativedelta import relativedelta
 
 from librar import fileloader
 from librar import misc
@@ -84,6 +85,12 @@ def has_data(row, col):
 def now(offset=0):
     now = datetime.datetime.now()
     now += datetime.timedelta(seconds=offset)
+    return now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def date_add(mysql_time,days=0,hours=0,minutes=0,months=0,years=0):
+    now = datetime.datetime.strptime(mysql_time,"%Y-%m-%d %H:%M:%S")
+    now += relativedelta(days=days,hours=hours,minutes=minutes,months=months,years=years)
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 

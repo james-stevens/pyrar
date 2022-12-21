@@ -162,3 +162,54 @@ function format_amount(num)
     return pfx+big+gbl.currency.separator[1]+dec;
 }
 
+
+
+
+
+
+
+function unerrMsg()
+{
+    let t1 = elm.myMsgPop.innerHTML;
+    let t2 = ctx.lastErrMsg;
+    if (t2 == null) t2 = "";
+    if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
+    delete ctx.lastErrMsg;
+    if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
+    delete ctx.err_msg_tout;
+}
+
+
+
+function errMsg(txt,tagged_elm)
+{
+    let hang_elm = null;
+    if (tagged_elm in elm) hang_elm = elm[tagged_elm];
+    else hang_elm = document.getElementById(tagged_elm);
+    if (!hang_elm) hang_elm = elm.userInfo;
+
+    let m = elm.myMsgPop;
+    m.style.width = "auto";
+    if (txt.slice(0,1)!="&") txt = gbl.warn + " " + txt;
+    m.innerHTML = "&nbsp;"+txt+"&nbsp;";
+
+    let p_box = hang_elm.getBoundingClientRect();
+    let m_box = m.getBoundingClientRect();
+    let m_width = m_box.width;
+
+    if (m_box.width < p_box.width) {
+        m.style.width = p_box.width + "px";
+        m_width = p_box.width;
+        }
+    let centre = p_box.x + (p_box.width/2);
+    let x_pos = centre - (m_width / 2)
+    m.style.left = x_pos + "px";
+    m.style.top = p_box.y + p_box.height + "px";
+
+    m.className = 'msgPop msgPopYes';
+    ctx.lastErrMsg = m.innerHTML;
+    ctx.err_msg_tout = setTimeout(unerrMsg,2500);
+}
+
+
+

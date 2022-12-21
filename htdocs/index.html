@@ -599,7 +599,7 @@ function userDomainList()
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
 
 	let x = "<table width=75% align=center border=0>";
-	x += "<tr><th colspan=2>Domain Name</th><th>Expiry Date</th><th>Name Servers</th></tr>";
+	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 	for(let i in ctx.domains) {
 		let dom = ctx.domains[i];
@@ -607,6 +607,9 @@ function userDomainList()
 		if (dom.ds) x += "<td title='DNSSEC Secured'>"+gbl.lock+"</td>"; else x += "<td></td>";
 		x += `<td title="${dom.name}">${dom.display_name}</td>`;
 
+		let auto_renew = gbl.cross;
+		if (dom.auto_renew) auto_renew = gbl.tick;
+		x += `<td title="Auto-Renew Status" align=center>${auto_renew}</td>`;
 		if (dom.status_id == 1)
 			x += `<td align=center>${dom.expiry_dt.split(" ")[0]}</td>`;
 		else
@@ -659,7 +662,7 @@ function postUserDetails()
 	let data = {
 		"name": f.user_name.value,
 		"email": f.user_email.value,
-		"auto_renew_all": parseInt(f.elements["user_auto_renew_all"].value)
+		"default_auto_renew": parseInt(f.elements["default_auto_renew"].value)
 		};
 
 	if (!valid_email.test(data.email)) return regErr("Invalid email address",f.user_email);
@@ -769,10 +772,10 @@ function user_settings()
 	x += "<table id=editUserDetails width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += settings_prompt("E-Mail")+`<input style="width: 300px;" id='user_email' value='${ctx.user.email}'></td></tr>`;
 	x += settings_prompt("Name")+`<input style="width: 300px;" id='user_name' value='${ctx.user.name}'></td></tr>`;
-    x += settings_prompt("Auto Renew All")+`<select id='user_auto_renew_all'>`;
+    x += settings_prompt("Default Auto Renew")+`<select id='default_auto_renew'>`;
 
     let yes_chk="",no_chk="";
-    if (ctx.user.auto_renew_all) yes_chk="selected"; else no_chk="selected";
+    if (ctx.user.default_auto_renew) yes_chk="selected"; else no_chk="selected";
     x += `<option ${yes_chk} value=1>Yes<option ${no_chk} value=0>No</select></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
 	x += "</table></form></td></tr>";
@@ -886,7 +889,7 @@ function userDetails()
 	let auto_renew = gbl.cross;
 	let verified = gbl.cross;
 	let has_twofa = gbl.cross;
-	if (ctx.user.auto_renew_all) auto_renew = gbl.tick;
+	if (ctx.user.default_auto_renew) auto_renew = gbl.tick;
 	if (ctx.user.email_verified) verified = gbl.tick;
 	if (ctx.user.two_fa) has_twofa = gbl.tick;
 
@@ -907,7 +910,7 @@ function userDetails()
 	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${ctx.user.last_login_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${ctx.user.amended_dt}</td></tr>`;
 	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${ctx.user.created_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Auto Renew All :</td><td class=dataCell>${auto_renew}</td></tr>`;
+	x += `<tr><td class=promptCell>Defaut Auto-Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
 
 	let show_bal = format_amount(ctx.user.acct_current_balance);
 	if (ctx.user.acct_on_hold) show_bal = "Account on hold";
@@ -1339,6 +1342,17 @@ function domain_transfer_options(idx)
 }
 
 
+function domAutoRenew(idx)
+{
+	let dom = ctx.domains[idx];
+	let e = document.getElementById("dom_auto_renew");
+	if (e) {
+		dom.auto_renew = (e.value==1);
+		dom.unsaved = true;
+		domain_settings(idx);
+		}
+}
+
 
 function domain_settings(idx)
 {
@@ -1349,6 +1363,11 @@ function domain_settings(idx)
 	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
 	x += settings_header(`Change Domain Records`,true);
 	x += "<table border=0 width=100%><colgroup><col width=30%/><col width=70%/></colgroup>";
+
+    x += `<tr><td class=promptCell>Auto Renew :</td><td><select onChange='domAutoRenew(${idx});' id=dom_auto_renew>`;
+    let yes_chk="",no_chk="";
+    if (dom.auto_renew) yes_chk="selected"; else no_chk="selected";
+    x += `<option ${yes_chk} value=1>Yes<option ${no_chk} value=0>No</select></td></tr>`;
 
 	if (dom.ns) {
 		x += "<tr><td class=promptCell>Name Servers : </td><td>";
@@ -1477,8 +1496,7 @@ function one_domain_html(idx)
 {
 	let dom = ctx.domains[idx];
 	let auto_renew = gbl.cross;
-	if (ctx.user.auto_renew_all) auto_renew = gbl.tick + " by account";
-	else if (dom.auto_renew) auto_renew = gbl.tick;
+	if (dom.auto_renew) auto_renew = gbl.tick;
 
 	let x = "<table align=center width=50% border=0>";
 
@@ -1524,52 +1542,6 @@ function show_one_domain(idx)
 	elm.userSpace.innerHTML = one_domain_html(idx);
 	size_one_space();
 }
-
-
-
-function unerrMsg()
-{
-	let t1 = elm.myMsgPop.innerHTML;
-	let t2 = ctx.lastErrMsg;
-	if (t2 == null) t2 = "";
-	if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
-	delete ctx.lastErrMsg;
-	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
-	delete ctx.err_msg_tout;
-}
-
-
-
-function errMsg(txt,tagged_elm)
-{
-	let hang_elm = null;
-	if (tagged_elm in elm) hang_elm = elm[tagged_elm];
-	else hang_elm = document.getElementById(tagged_elm);
-	if (!hang_elm) hang_elm = elm.userInfo;
-
-	let m = elm.myMsgPop;
-	m.style.width = "auto";
-	if (txt.slice(0,1)!="&") txt = gbl.warn + " " + txt;
-	m.innerHTML = "&nbsp;"+txt+"&nbsp;";
-
-	let p_box = hang_elm.getBoundingClientRect();
-	let m_box = m.getBoundingClientRect();
-	let m_width = m_box.width;
-
-	if (m_box.width < p_box.width) {
-		m.style.width = p_box.width + "px";
-		m_width = p_box.width;
-		}
-	let centre = p_box.x + (p_box.width/2);
-	let x_pos = centre - (m_width / 2)
-	m.style.left = x_pos + "px";
-	m.style.top = p_box.y + p_box.height + "px";
-
-	m.className = 'msgPop msgPopYes';
-	ctx.lastErrMsg = m.innerHTML;
-	ctx.err_msg_tout = setTimeout(unerrMsg,2500);
-}
-
 
 
 

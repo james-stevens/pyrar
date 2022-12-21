@@ -136,6 +136,9 @@ def webui_update_domain(req, post_dom):
 
     update_cols = {}
 
+    if "auto_renew" in post_dom and isinstance(post_dom["auto_renew"],bool):
+        update_cols["auto_renew"] = post_dom["auto_renew"]
+
     if "ns" in post_dom and post_dom["ns"] != dom_db["ns"]:
         if not sql.has_data(post_dom, "ns"):
             update_cols["ns"] = ""
@@ -158,7 +161,7 @@ def webui_update_domain(req, post_dom):
                     return False, "Invalid DS record"
             update_cols["ds"] = ",".join(new_ds)
 
-    ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"]})
+    ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"],"user_id":req.user_id})
 
     if not ok:
         return False, "Domain update failed"

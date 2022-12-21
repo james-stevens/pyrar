@@ -13,7 +13,9 @@ from librar import registry
 
 
 def get_next_order_to_clear():
-    query = "select orders.* from orders join users using(user_id) where price_paid <= (acct_current_balance - acct_overdraw_limit) limit 1"
+    query = ("select orders.* from orders join users using(user_id) "
+        +"where price_paid <= (acct_current_balance - acct_overdraw_limit) "
+        +"order by order_item_id limit 1")
     return sql.run_select(query)
 
 

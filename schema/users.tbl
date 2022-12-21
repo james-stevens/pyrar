@@ -13,9 +13,9 @@ sqlsh "CREATE TABLE users (
 	password				${password},
 	name					varchar(100),
 
-	email_verified			boolean not null default false,
-	auto_renew_all			boolean not null default false,
-	account_closed			boolean not null default false,
+	email_verified			boolean not null default 0,
+	default_auto_renew		boolean not null default 1,
+	account_closed			boolean not null default 0,
 
 	two_fa					varchar(100),
 	password_reset			varchar(100),
@@ -25,7 +25,7 @@ sqlsh "CREATE TABLE users (
 	discount_percent		int,
 
 	acct_sequence_id		${row_id},
-	acct_on_hold			${flag} not null default 0,
+	acct_on_hold			boolean not null default 0,
 	acct_current_balance	${money} not null default 0,
 	acct_previous_balance	${money} not null default 0,
 
