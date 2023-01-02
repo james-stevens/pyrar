@@ -35,4 +35,4 @@ sqlsh "create table domains (
 
 sqlsh "ALTER TABLE domains AUTO_INCREMENT = 10450"
 
-sqlsh "grant select,insert,update,delete on domains to raradm,epprun,webui"
+sqlsh "grant select,insert,update,delete on domains to raradm,engine,webui"

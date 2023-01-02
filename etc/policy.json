@@ -13,10 +13,11 @@
 	"session_timeout": 60,
 
 	"log_epp_api" : true,
-	"facility_epp_api" : 170,
+	"facility_epp_api" : "local0",
+	"facility_backend" : "local0",
 
 	"log_python_code": true,
-	"facility_python_code": 170,
+	"facility_python_code": "local0",
 
 	"log_python_req": false,
 	"facility_python": "local0",

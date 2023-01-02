@@ -7,8 +7,8 @@ from librar import registry
 from librar import mysql as sql
 
 
-def make_epp_job(order_db):
-    epp_job = {
+def make_backend_job(order_db):
+    bke_job = {
         "domain_id": order_db["domain_id"],
         "user_id": order_db["user_id"],
         "job_type": order_db["order_type"],
@@ -20,7 +20,7 @@ def make_epp_job(order_db):
         "amended_dt": None
     }
 
-    sql.sql_insert("epp_jobs", epp_job)
+    sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
 
 

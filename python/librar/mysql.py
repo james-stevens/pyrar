@@ -18,7 +18,7 @@ import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = ["domains", "epp_jobs", "order_items", "orders", "sales_items", "session_keys", "users"]
+AUTO_CREATED_AMENDED_DT = ["domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"]
 
 cnx = None
 my_login = None

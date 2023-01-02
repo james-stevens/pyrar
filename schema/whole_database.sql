@@ -16,6 +16,65 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `actions`
+--
+
+DROP TABLE IF EXISTS `actions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `actions` (
+  `action_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `execute_dt` datetime NOT NULL,
+  `action` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`action_id`),
+  KEY `by_dom` (`domain_id`),
+  KEY `by_date` (`execute_dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `actions`
+--
+
+LOCK TABLES `actions` WRITE;
+/*!40000 ALTER TABLE `actions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `actions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `backend`
+--
+
+DROP TABLE IF EXISTS `backend`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `backend` (
+  `backend_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `job_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `failures` int(11) NOT NULL DEFAULT 0,
+  `num_years` int(11) DEFAULT NULL,
+  `authcode` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `execute_dt` datetime DEFAULT NULL,
+  `created_dt` datetime DEFAULT NULL,
+  `amended_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`backend_id`),
+  KEY `by_user` (`execute_dt`)
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `backend`
+--
+
+LOCK TABLES `backend` WRITE;
+/*!40000 ALTER TABLE `backend` DISABLE KEYS */;
+/*!40000 ALTER TABLE `backend` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `deleted_domains`
 --
 
@@ -23,22 +82,22 @@ DROP TABLE IF EXISTS `deleted_domains`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `deleted_domains` (
-  `deleted_domain_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
   `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `renew_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `name_servers` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `auto_renew` tinyint(1) DEFAULT NULL,
+  `ns` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ds` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   `expiry_dt` datetime NOT NULL,
   `deleted_dt` datetime NOT NULL,
-  PRIMARY KEY (`zone`,`name`),
-  UNIQUE KEY `by_id` (`deleted_domain_id`),
+  UNIQUE KEY `domain_id` (`domain_id`),
+  KEY `by_name` (`name`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -82,32 +141,6 @@ LOCK TABLES `deleted_users` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `domain_actions`
---
-
-DROP TABLE IF EXISTS `domain_actions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `domain_actions` (
-  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `execute_dt` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `new_status_id` int(11) DEFAULT NULL,
-  `action` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`domain_id`,`execute_dt`),
-  KEY `by_date` (`execute_dt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `domain_actions`
---
-
-LOCK TABLES `domain_actions` WRITE;
-/*!40000 ALTER TABLE `domain_actions` DISABLE KEYS */;
-/*!40000 ALTER TABLE `domain_actions` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `domains`
 --
 
@@ -119,9 +152,9 @@ CREATE TABLE `domains` (
   `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(11) NOT NULL DEFAULT 0,
-  `auto_renew` tinyint(1) NOT NULL DEFAULT 0,
-  `name_servers` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ds_recs` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `auto_renew` tinyint(1) DEFAULT NULL,
+  `ns` varchar(3500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ds` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `for_sale_msg` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `for_sale_amount` decimal(10,0) DEFAULT NULL,
@@ -134,39 +167,16 @@ CREATE TABLE `domains` (
   UNIQUE KEY `by_id` (`domain_id`),
   KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10470 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `epp_jobs`
+-- Dumping data for table `domains`
 --
 
-DROP TABLE IF EXISTS `epp_jobs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `epp_jobs` (
-  `epp_job_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `job_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
-  `failures` int(11) NOT NULL DEFAULT 0,
-  `num_years` int(11) DEFAULT NULL,
-  `authcode` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `execute_dt` datetime DEFAULT NULL,
-  `created_dt` datetime DEFAULT NULL,
-  `amended_dt` datetime DEFAULT NULL,
-  PRIMARY KEY (`epp_job_id`),
-  KEY `by_user` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=10465 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `epp_jobs`
---
-
-LOCK TABLES `epp_jobs` WRITE;
-/*!40000 ALTER TABLE `epp_jobs` DISABLE KEYS */;
-/*!40000 ALTER TABLE `epp_jobs` ENABLE KEYS */;
+LOCK TABLES `domains` WRITE;
+/*!40000 ALTER TABLE `domains` DISABLE KEYS */;
+/*!40000 ALTER TABLE `domains` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -192,8 +202,17 @@ CREATE TABLE `events` (
   PRIMARY KEY (`event_id`),
   KEY `by_domain` (`domain_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10469 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `events`
+--
+
+LOCK TABLES `events` WRITE;
+/*!40000 ALTER TABLE `events` DISABLE KEYS */;
+/*!40000 ALTER TABLE `events` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `orders`
@@ -215,7 +234,8 @@ CREATE TABLE `orders` (
   `authcode` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
-  PRIMARY KEY (`order_item_id`)
+  PRIMARY KEY (`order_item_id`),
+  KEY `by_user` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -229,6 +249,35 @@ LOCK TABLES `orders` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `payments`
+--
+
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `payments` (
+  `payment_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `provider` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `providers_tag` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `single_use` tinyint(1) NOT NULL DEFAULT 0,
+  `created_dt` datetime NOT NULL,
+  `amended_dt` datetime NOT NULL,
+  PRIMARY KEY (`payment_id`),
+  UNIQUE KEY `by_type` (`user_id`,`provider`)
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payments`
+--
+
+LOCK TABLES `payments` WRITE;
+/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sales`
 --
 
@@ -237,12 +286,13 @@ DROP TABLE IF EXISTS `sales`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sales` (
   `sales_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `transaction_id` int(10) unsigned NOT NULL DEFAULT 0,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
-  `currrency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
-  `currrency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `domain_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `zones_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `zone_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `user_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `sales_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
   `num_years` int(11) NOT NULL,
@@ -279,6 +329,15 @@ CREATE TABLE `session_keys` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `session_keys`
+--
+
+LOCK TABLES `session_keys` WRITE;
+/*!40000 ALTER TABLE `session_keys` DISABLE KEYS */;
+/*!40000 ALTER TABLE `session_keys` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sysadmins`
 --
 
@@ -295,6 +354,15 @@ CREATE TABLE `sysadmins` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `sysadmins`
+--
+
+LOCK TABLES `sysadmins` WRITE;
+/*!40000 ALTER TABLE `sysadmins` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sysadmins` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `transactions`
 --
 
@@ -305,9 +373,7 @@ CREATE TABLE `transactions` (
   `transaction_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `is_credit` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `amount` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pre_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `post_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `sales_item_id` int(10) unsigned DEFAULT NULL,
@@ -340,14 +406,13 @@ CREATE TABLE `users` (
   `password` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,
-  `auto_renew_all` tinyint(1) NOT NULL DEFAULT 0,
+  `default_auto_renew` tinyint(1) NOT NULL DEFAULT 1,
   `account_closed` tinyint(1) NOT NULL DEFAULT 0,
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_data` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_percent` int(11) DEFAULT NULL,
   `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `acct_on_hold` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `acct_on_hold` tinyint(1) NOT NULL DEFAULT 0,
   `acct_current_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `acct_previous_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `acct_overdraw_limit` decimal(10,0) NOT NULL DEFAULT 0,
@@ -358,8 +423,17 @@ CREATE TABLE `users` (
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `by_login` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=10453 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users`
+--
+
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `zones`
@@ -384,6 +458,14 @@ CREATE TABLE `zones` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Dumping data for table `zones`
+--
+
+LOCK TABLES `zones` WRITE;
+/*!40000 ALTER TABLE `zones` DISABLE KEYS */;
+/*!40000 ALTER TABLE `zones` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -394,46 +476,47 @@ CREATE TABLE `zones` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-16 15:57:51
+-- Dump completed on 2023-01-02 15:26:17
 GRANT USAGE ON *.* TO `webui`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `pyrar`.`domains` TO `webui`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`epp_jobs` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`actions` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`users` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales_items` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`zones` TO `webui`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `webui`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `pyrar`.`orders` TO `webui`@`%`;
-GRANT SELECT, INSERT, UPDATE ON `pyrar`.`order_items` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`transactions` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `webui`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`payments` TO `webui`@`%`;
 GRANT SELECT, INSERT, UPDATE ON `pyrar`.`sales` TO `webui`@`%`;
+GRANT SELECT, INSERT ON `pyrar`.`backend` TO `webui`@`%`;
 GRANT USAGE ON *.* TO `raradm`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`zones` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `raradm`@`%`;
+GRANT SELECT, UPDATE, DELETE ON `pyrar`.`payments` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`backend` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sysadmins` TO `raradm`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`deleted_users` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`deleted_domains` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `raradm`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `raradm`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`transactions` TO `raradm`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`session_keys` TO `raradm`@`%`;
-GRANT SELECT ON `pyrar`.`users` TO `raradm`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `raradm`@`%`;
+GRANT SELECT, UPDATE, DELETE ON `pyrar`.`users` TO `raradm`@`%`;
 GRANT USAGE ON *.* TO `epprun`@`%` IDENTIFIED BY PASSWORD "YOUR-PASSWORD";
+GRANT SELECT ON `pyrar`.`zones` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE ON `pyrar`.`transactions` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`actions` TO `epprun`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`deleted_domains` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domains` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`order_items` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
+GRANT SELECT, UPDATE ON `pyrar`.`payments` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`domain_actions` TO `epprun`@`%`;
 GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`sales_items` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`epp_jobs` TO `epprun`@`%`;
+GRANT SELECT, UPDATE ON `pyrar`.`users` TO `epprun`@`%`;
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`backend` TO `epprun`@`%`;
 GRANT SELECT, INSERT ON `pyrar`.`events` TO `epprun`@`%`;
-GRANT SELECT, INSERT ON `pyrar`.`transactions` TO `epprun`@`%`;
-GRANT SELECT ON `pyrar`.`zones` TO `epprun`@`%`;
-GRANT SELECT ON `pyrar`.`users` TO `epprun`@`%`;
-GRANT SELECT, INSERT, UPDATE, DELETE ON `pyrar`.`orders` TO `epprun`@`%`;

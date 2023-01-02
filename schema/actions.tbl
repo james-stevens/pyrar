@@ -20,4 +20,4 @@ sqlsh "CREATE TABLE actions (
 	key by_date (execute_dt)
 	)"
 
-sqlsh "grant select,insert,update,delete on actions to webui,raradm,epprun"
+sqlsh "grant select,insert,update,delete on actions to webui,raradm,engine"

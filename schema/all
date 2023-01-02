@@ -14,7 +14,7 @@ ${cmd} "flush tables"
 {
 echo "webui BWB39B9M1c1ig"
 echo "raradm 132wSQI9Qik76"
-echo "epprun P0tsOvAJ2iMqo"
+echo "engine P0tsOvAJ2iMqo"
 } | while read user pass
 do
 	${cmd} "drop user ${user}"

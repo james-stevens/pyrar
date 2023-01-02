@@ -26,8 +26,8 @@ def tld_pdns_check(name):
     return tld
 
 
-def domain_delete(epp_job, dom_db):
-    job_id = epp_job["epp_job_id"]
+def domain_delete(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
@@ -45,13 +45,13 @@ def domain_delete(epp_job, dom_db):
     return ok_ns and ok_ds and ok_a and ok_aaaa
 
 
-def domain_expired(epp_job, dom_db):
-    return domain_delete(epp_job, dom_db)
+def domain_expired(bke_job, dom_db):
+    return domain_delete(bke_job, dom_db)
 
 
-def domain_create(epp_job, dom_db):
-    ok_add = add_yrs(epp_job, dom_db)
-    ok_updt = domain_update_from_db(epp_job, dom_db)
+def domain_create(bke_job, dom_db):
+    ok_add = add_yrs(bke_job, dom_db)
+    ok_updt = domain_update_from_db(bke_job, dom_db)
     return ok_add and ok_updt
 
 
@@ -64,8 +64,8 @@ def start_up_check():
     return True
 
 
-def domain_update_from_db(epp_job, dom_db):
-    job_id = epp_job["epp_job_id"]
+def domain_update_from_db(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
@@ -87,50 +87,50 @@ def domain_update_from_db(epp_job, dom_db):
     return ok_ns and ok_ds
 
 
-def domain_request_transfer(epp_job, dom_db):
-    if not sql.has_data(epp_job, "authcode") or not sql.has_data(dom_db, "authcode"):
+def domain_request_transfer(bke_job, dom_db):
+    if not sql.has_data(bke_job, "authcode") or not sql.has_data(dom_db, "authcode"):
         debug(f"Missing field")
         return None
 
-    if dom_db["user_id"] == epp_job["user_id"]:
+    if dom_db["user_id"] == bke_job["user_id"]:
         return True
 
-    if not passwd.compare(dom_db["authcode"], epp_job["authcode"]):
+    if not passwd.compare(dom_db["authcode"], bke_job["authcode"]):
         debug(f"passwords do not match {dom_db['authcode']} {enc_pass}")
         return None
 
     return sql.sql_update_one("domains", {
         "authcode": None,
-        "user_id": epp_job["user_id"]
+        "user_id": bke_job["user_id"]
     }, {"domain_id": dom_db["domain_id"]})
 
 
 
-def add_yrs(epp_job, dom_db):
+def add_yrs(bke_job, dom_db):
     values = [
-        f"expiry_dt = date_add(expiry_dt,interval {epp_job['num_years']} year)",
+        f"expiry_dt = date_add(expiry_dt,interval {bke_job['num_years']} year)",
         f"status_id = if (expiry_dt > now(),{misc.STATUS_LIVE},{misc.STATUS_EXPIRED})",
         "amended_dt = now()"
         ]
     return sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
 
 
-def domain_renew(epp_job, dom_db):
-    return add_yrs(epp_job, dom_db)
+def domain_renew(bke_job, dom_db):
+    return add_yrs(bke_job, dom_db)
 
 
-def domain_recover(epp_job, dom_db):
-    ok_add = add_yrs(epp_job, dom_db)
-    ok_updt = domain_update_from_db(epp_job, dom_db)
+def domain_recover(bke_job, dom_db):
+    ok_add = add_yrs(bke_job, dom_db)
+    ok_updt = domain_update_from_db(bke_job, dom_db)
     return ok_add and ok_updt
 
 
-def domain_info(epp_job, dom_db):
+def domain_info(bke_job, dom_db):
     return dom_db
 
 
-def set_authcode(epp_job, dom_db):
-    password = passwd.crypt(base64.b64decode(epp_job["authcode"])) if sql.has_data(epp_job, "authcode") else None
+def set_authcode(bke_job, dom_db):
+    password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if sql.has_data(bke_job, "authcode") else None
     return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 

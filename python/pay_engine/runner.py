@@ -41,7 +41,7 @@ def process_order(order_db):
     if ok and sold_id:
         sql.sql_update("transactions",{"sales_item_id":sold_id},{"transaction_id":trans_id})
 
-    sales.make_epp_job(order_db)
+    sales.make_backend_job(order_db)
     sql.sql_delete_one("orders",{"order_item_id":order_db["order_item_id"]})
     return True
 
@@ -58,6 +58,8 @@ def run_server(max_wait=None):
             process_order(order_db[0])
         else:
             signal_mtime = sigprocs.signal_wait("payeng",signal_mtime,max_wait=max_wait)
+            registry.tld_lib.check_for_new_files()
+
 
 
 if __name__ == "__main__":
@@ -66,6 +68,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     log_init(with_debug=args.debug)
 
-    sql.connect("epprun")
+    sql.connect("engine")
     registry.start_up()
     run_server(5 if args.debug else 30)

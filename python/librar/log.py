@@ -106,13 +106,14 @@ def log(line, where=None):
             syslog.syslog(txt + " " + line)
 
 
-def init(facility=LOG_LOCAL6, with_debug=False, with_logging=True,default_level=LOG_NOTICE):
+def init(facility="local0", with_debug=False, with_logging=True,default_level=LOG_NOTICE):
     global hold_debug
     global hold_with_logging
+    global done_init
+
     if isinstance(facility,str):
         facility = (facility_names[facility] << 3) + default_level
 
-    print(">>>>",facility)
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
     hold_with_logging = with_logging
     hold_debug = with_debug

@@ -46,6 +46,79 @@
             }
         }
     },
+    "backend": {
+        "columns": {
+            "amended_dt": {
+                "type": "datetime",
+                "null": true
+            },
+            "authcode": {
+                "size": 50,
+                "type": "varchar",
+                "null": true
+            },
+            "backend_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "serial": true,
+                "null": false
+            },
+            "created_dt": {
+                "type": "datetime",
+                "null": true
+            },
+            "domain_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
+            },
+            "execute_dt": {
+                "type": "datetime",
+                "null": true
+            },
+            "failures": {
+                "size": 11,
+                "type": "int",
+                "null": false,
+                "default": 0
+            },
+            "job_type": {
+                "size": 20,
+                "type": "varchar",
+                "null": false,
+                "default": "none"
+            },
+            "num_years": {
+                "size": 11,
+                "type": "int",
+                "null": true
+            },
+            "user_id": {
+                "unsigned": true,
+                "size": 10,
+                "type": "int",
+                "null": false,
+                "default": 0
+            }
+        },
+        "indexes": {
+            "PRIMARY": {
+                "columns": [
+                    "backend_id"
+                ],
+                "unique": true
+            },
+            "by_user": {
+                "columns": [
+                    "execute_dt"
+                ],
+                "unique": false
+            }
+        }
+    },
     "deleted_domains": {
         "columns": {
             "amended_dt": {
@@ -196,53 +269,6 @@
             }
         }
     },
-    "domain_actions": {
-        "columns": {
-            "action": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "action_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "execute_dt": {
-                "type": "datetime",
-                "null": false
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "action_id"
-                ],
-                "unique": true
-            },
-            "by_dom": {
-                "columns": [
-                    "domain_id"
-                ],
-                "unique": false
-            },
-            "by_date": {
-                "columns": [
-                    "execute_dt"
-                ],
-                "unique": false
-            }
-        }
-    },
     "domains": {
         "columns": {
             "amended_dt": {
@@ -257,8 +283,7 @@
             "auto_renew": {
                 "size": 1,
                 "type": "tinyint",
-                "null": false,
-                "default": 0
+                "null": true
             },
             "client_locks": {
                 "size": 100,
@@ -346,79 +371,6 @@
             "by_user": {
                 "columns": [
                     "user_id"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "epp_jobs": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "authcode": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "epp_job_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "execute_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "failures": {
-                "size": 11,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "job_type": {
-                "size": 20,
-                "type": "varchar",
-                "null": false,
-                "default": "none"
-            },
-            "num_years": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "epp_job_id"
-                ],
-                "unique": true
-            },
-            "by_user": {
-                "columns": [
-                    "execute_dt"
                 ],
                 "unique": false
             }

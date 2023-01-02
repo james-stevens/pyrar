@@ -17,8 +17,8 @@ COPY_DEL_DOM_COLS = [
 ]
 
 
-def make_epp_job(job_type,dom_db):
-    epp_job = {
+def make_backend_job(job_type,dom_db):
+    backend = {
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "job_type": job_type,
@@ -28,14 +28,14 @@ def make_epp_job(job_type,dom_db):
         "amended_dt": None
     }
 
-    ok = sql.sql_insert("epp_jobs", epp_job)
+    ok = sql.sql_insert("backend", backend)
     sigprocs.signal_service("backend")
     return ok
 
 
 def flag_expired_domain(act_db,dom_db):
     sql.sql_update_one("domains",{"status_id":misc.STATUS_EXPIRED},{"domain_id":dom_db["domain_id"]})
-    return make_epp_job("dom/expired",dom_db)
+    return make_backend_job("dom/expired",dom_db)
 
 
 def delete_domain(act_db,dom_db):
@@ -49,7 +49,7 @@ def delete_domain(act_db,dom_db):
     del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
     del_dom_db["deleted_dt"] = None
     sql.sql_insert("deleted_domains", del_dom_db)
-    return make_epp_job("dom/delete",dom_db)
+    return make_backend_job("dom/delete",dom_db)
 
 
 def auto_renew_domain(act_db,dom_db):
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     log_init(with_debug=(args.debug or args.action or args.domain))
 
-    sql.connect("epprun")
+    sql.connect("engine")
     if args.action and args.domain:
         ok, dom_db = sql.sql_select_one("domains", {"name":args.domain})
         if not ok or len(dom_db) <= 0:
