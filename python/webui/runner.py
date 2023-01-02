@@ -41,15 +41,6 @@ if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
 
-def secure_user_data(user_data):
-    if user_data is None:
-        return
-    for table in REMOVE_TO_SECURE:
-        if table in user_data and isinstance(user_data[table],dict):
-            for column in REMOVE_TO_SECURE[table]:
-                if column in user_data[table]:
-                    del user_data[table][column]
-
 
 class WebuiReq:
     """ data unique to each request to keep different users data separate """
@@ -85,8 +76,17 @@ class WebuiReq:
     def abort(self, data):
         return self.response({"error": data}, HTML_CODE_ERR)
 
+    def secure_user_data(self):
+        if self.user_data is None:
+            return
+        for table in REMOVE_TO_SECURE:
+            if table in self.user_data and isinstance(self.user_data[table],dict):
+                for column in REMOVE_TO_SECURE[table]:
+                    if column in self.user_data[table]:
+                        del self.user_data[table][column]
+
     def response(self, data, code=HTML_CODE_OK):
-        secure_user_data(self.user_data)
+        self.secure_user_data()
 
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'

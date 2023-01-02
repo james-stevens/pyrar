@@ -57,6 +57,10 @@ def domain_create(bke_job, dom_db):
 
 def start_up_check():
     pdns.start_up()
+    check_tlds_exist()
+
+
+def check_tlds_exist():
     for zone, zone_rec in registry.tld_lib.zone_data.items():
         if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and zone not in pdns.all_pdns_zones):
             pdns.create_zone(zone, True)
@@ -155,4 +159,4 @@ handler.add_plugin(
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    start_up()
+    start_up_check()

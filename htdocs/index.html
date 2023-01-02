@@ -246,9 +246,21 @@ function user_info()
 	else
 		elm.basketIcon.style.display = "none";
 
+	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="block";
+	else elm.emailIcon.style.display="none";
+
+	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="block";
+	else elm.ordersIcon.style.display="none";
+
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
+}
+
+
+function confirmEmail()
+{
+	return errMsg("Not yet implemented","errorSpan");
 }
 
 
@@ -356,7 +368,7 @@ function loggedOut()
 
 function bodyLoaded()
 {
-	["myMsgPop","errorSpan","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	["myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
 	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
@@ -1092,6 +1104,7 @@ function myAccount()
 			return errMsg(msg,"searchEdit");
 			}
 		catch_user_data(reply);
+		user_info();
 		elm.userSpace.innerHTML = userDetails();
 		size_one_space();
 		});
@@ -1653,7 +1666,10 @@ function show_one_domain(idx)
 <td align=right><table width=100% border=0>
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
 <tr><td><span id="errorSpan">&nbsp;</span></td>
-<td align=center><span id="basketIcon" style="display: none;" class="popup">
+<td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
+<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="load_domains_list(myAccount);">&#x1F4B3;</span></td>
+<td align=center>
+<span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
 <span style="margin-left: -250px;" class="popuptext" id="basketPopup">
 </span></span></td><td align=center><span id="userInfo"></span></td></tr></table></td>
