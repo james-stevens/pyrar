@@ -382,8 +382,7 @@
                 "unsigned": true,
                 "size": 10,
                 "type": "int",
-                "null": false,
-                "default": 0
+                "null": true
             },
             "event_id": {
                 "unsigned": true,
@@ -432,8 +431,7 @@
                 "unsigned": true,
                 "size": 10,
                 "type": "int",
-                "null": false,
-                "default": 0
+                "null": true
             },
             "when_dt": {
                 "type": "datetime",

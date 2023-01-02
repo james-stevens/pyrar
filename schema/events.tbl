@@ -10,8 +10,8 @@ sqlsh "create table events (
 	event_id		${auto},
 
 	event_type		varchar(25) not null default 'Unknown',
-	domain_id		${row_id},
-	user_id			${row_id},
+	domain_id		${row_id_null},
+	user_id			${row_id_null},
 	when_dt			datetime,
 
 	who_did_it      varchar(100) NULL,

@@ -4,6 +4,7 @@
 
 import sys
 import argparse
+import inspect
 
 from librar import mysql as sql
 from librar import misc
@@ -15,6 +16,23 @@ COPY_DEL_DOM_COLS = [
     "domain_id", "name", "user_id", "status_id", "auto_renew", "ns", "ds", "client_locks", "created_dt", "amended_dt",
     "expiry_dt"
 ]
+
+
+def event_log(notes, action):
+    where = inspect.stack()[1]
+    event_row = {
+        "program": where.filename.split("/")[-1].split(".")[0],
+        "function": where.function,
+        "line_num": where.lineno,
+        "when_dt": None,
+        "event_type": "Action:" + action["action"],
+        "domain_id": action["domain_id"],
+        "user_id": None,
+        "who_did_it": "action",
+        "from_where": "localhost",
+        "notes": notes
+    }
+    sql.sql_insert("events", event_row)
 
 
 def make_backend_job(job_type,dom_db):
@@ -49,14 +67,17 @@ def delete_domain(act_db,dom_db):
     del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
     del_dom_db["deleted_dt"] = None
     sql.sql_insert("deleted_domains", del_dom_db)
+
     return make_backend_job("dom/delete",dom_db)
 
 
 def auto_renew_domain(act_db,dom_db):
+    # CODE REQUIRED
     return True
 
 
 def send_expiry_reminder(act_db,dom_db):
+    # CODE REQUIRED
     return True
 
 
@@ -91,6 +112,7 @@ def runner():
     if not action_exec[act_db["action"]](act_db,dom_db):
         log(f"ERROR: Domain action '{act_db['action']}' for DOM-{dom_db['domain_id']} - action failed")
 
+    event_log(f"Domain action '{act_db['action']}' for DOM-{dom_db['domain_id']} - action done",act_db)
     return delete_action(act_db)
 
 
