@@ -25,6 +25,6 @@ sqlsh "CREATE TABLE zones (
 	key by_last_change(amended_dt,enabled,allow_sales)
 	)"
 
-sqlsh "grant select on zones to epprun"
+sqlsh "grant select on zones to engine"
 sqlsh "grant select,insert,update on zones to webui"
 sqlsh "grant select,insert,update,delete on zones to raradm"

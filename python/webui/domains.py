@@ -171,7 +171,7 @@ def webui_update_domain(req, post_dom):
     if dom_db["status_id"] not in misc.LIVE_STATUS:
         return True, update_cols
 
-    epp_job = {
+    bke_job = {
         "domain_id": post_dom["domain_id"],
         "user_id": req.user_id,
         "job_type": "dom/update",
@@ -179,7 +179,7 @@ def webui_update_domain(req, post_dom):
         "created_dt": None
     }
 
-    sql.sql_insert("epp_jobs", epp_job)
+    sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
 
     return True, update_cols
@@ -193,7 +193,7 @@ def webui_set_auth_code(req, post_dom):
     auth_code = users.make_session_key(f"{post_dom['name']}.{post_dom['domain_id']}", req.sess_code)
     auth_code = re.sub('[+/=]', '', auth_code)[:15]
 
-    epp_job = {
+    bke_job = {
         "domain_id": post_dom["domain_id"],
         "user_id": req.user_id,
         "job_type": "dom/authcode",
@@ -202,7 +202,7 @@ def webui_set_auth_code(req, post_dom):
         "created_dt": None
     }
 
-    sql.sql_insert("epp_jobs", epp_job)
+    sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
 
     return True, {"auth_code": auth_code}

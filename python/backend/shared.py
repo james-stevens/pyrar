@@ -42,16 +42,16 @@ def epp_get_domain_info(job_id, domain_name):
     return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
-def event_log(notes, epp_job):
+def event_log(notes, bke_job):
     where = inspect.stack()[1]
     event_row = {
         "program": where.filename.split("/")[-1].split(".")[0],
         "function": where.function,
         "line_num": where.lineno,
         "when_dt": None,
-        "event_type": "BackEnd:" + epp_job["job_type"],
-        "domain_id": epp_job["domain_id"],
-        "user_id": epp_job["user_id"],
+        "event_type": "BackEnd:" + bke_job["job_type"],
+        "domain_id": bke_job["domain_id"],
+        "user_id": bke_job["user_id"],
         "who_did_it": "eppsvr",
         "from_where": "localhost",
         "notes": notes
@@ -62,18 +62,18 @@ def event_log(notes, epp_job):
 def check_have_data(job_id, dom_db, items):
     for item in items:
         if not sql.has_data(dom_db, item):
-            log(f"EPP-{job_id} '{item}' missing or blank")
+            log(f"BKE-{job_id} '{item}' missing or blank")
             return False
     return True
 
 
-def check_num_years(epp_job):
-    job_id = epp_job["epp_job_id"]
-    if not check_have_data(job_id, epp_job, ["num_years"]):
+def check_num_years(bke_job):
+    job_id = bke_job["backend_id"]
+    if not check_have_data(job_id, bke_job, ["num_years"]):
         return None
-    years = int(epp_job["num_years"])
+    years = int(bke_job["num_years"])
     if years < 1 or years > policy.policy("max_renew_years"):
-        log(f"EPP-{job_id} num_years failed validation")
+        log(f"BKE-{job_id} num_years failed validation")
         return None
     return years
 
@@ -90,14 +90,14 @@ def get_domain_lists(dom_db):
     return ns_list, ds_list
 
 
-def get_dom_from_db(epp_job):
-    job_id = epp_job["epp_job_id"]
-    if not check_have_data(job_id, epp_job, ["domain_id"]):
-        log(f"EPP-{job_id} Domain '{domain_id}' missing or invalid")
+def get_dom_from_db(bke_job):
+    job_id = bke_job["backend_id"]
+    if not check_have_data(job_id, bke_job, ["domain_id"]):
+        log(f"BKE-{job_id} Domain '{domain_id}' missing or invalid")
         return None
 
-    domain_id = epp_job["domain_id"]
-    table = "deleted_domains" if epp_job["job_type"] == "dom/delete" else "domains"
+    domain_id = bke_job["domain_id"]
+    table = "deleted_domains" if bke_job["job_type"] == "dom/delete" else "domains"
     ok, dom_db = sql.sql_select_one(table, {"domain_id": int(domain_id)})
     if not ok:
         log(f"Domain id {domain_id} could not be found in '{table}'")
@@ -108,7 +108,7 @@ def get_dom_from_db(epp_job):
 
     name_ok = validate.check_domain_name(dom_db["name"])
     if (not sql.has_data(dom_db, "name")) or (name_ok is not None):
-        log(f"EPP-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})")
+        log(f"BKE-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})")
         return None
 
     return dom_db

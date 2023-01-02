@@ -246,9 +246,21 @@ function user_info()
 	else
 		elm.basketIcon.style.display = "none";
 
+	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="block";
+	else elm.emailIcon.style.display="none";
+
+	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="block";
+	else elm.ordersIcon.style.display="none";
+
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
+}
+
+
+function confirmEmail()
+{
+	return errMsg("Not yet implemented","errorSpan");
 }
 
 
@@ -356,7 +368,7 @@ function loggedOut()
 
 function bodyLoaded()
 {
-	["myMsgPop","errorSpan","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	["myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
 	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
@@ -603,7 +615,7 @@ function userDomainList()
 {
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
 
-	let x = "<table width=75% align=center border=0>";
+	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 	for(let i in ctx.domains) {
@@ -997,7 +1009,7 @@ function place_order()
 		show_one_space("userSpace");
 		delete gbl.basket;
 
-		if (ctx.failed_basket) {
+		if ((ctx.failed_basket)&&(ctx.failed_basket.length >= 1)) {
 			gbl.basket = ctx.failed_basket;
 			delete ctx.failed_basket
 			}
@@ -1092,6 +1104,7 @@ function myAccount()
 			return errMsg(msg,"searchEdit");
 			}
 		catch_user_data(reply);
+		user_info();
 		elm.userSpace.innerHTML = userDetails();
 		size_one_space();
 		});
@@ -1520,6 +1533,41 @@ function tick_cross(value)
 }
 
 
+function domain_dns(idx)
+{
+	let dom = ctx.domains[idx];
+	dom_name = dom["name"]+".";
+
+	callApi("dns/load",(ok,reply)=>{
+		if (!ok) {
+			msg = "DNS Data failed to load";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"domainBtnBar")
+			}
+
+		if ((!reply.rrsets)||(!reply.rrsets.length))
+			return errMsg("Failed to read DNS Data","domainBtnBar");
+
+		console.log(reply);
+
+		let x="<table width=75% align=center border=0>";
+		x += settings_header(`DNS Data for ${dom.display_name}`,true);
+		x += "<table width=100%>";
+		for(let i of reply.rrsets) {
+			for(let c of i.records) {
+			let show_name = i.name
+			if (i.name==dom_name) show_name = "@";
+			x += `<tr class=dataRow><td>${show_name}</td><td>${i.type}</td><td>${i.ttl}</td><td>${c.content}</td></tr>`;
+			}
+		}
+
+		x += "</table></td></tr></table>";
+		elm.userSpace.innerHTML = x;
+
+		},{ json: { "name":dom.name }})
+}
+
+
 function one_domain_html(idx)
 {
 	let dom = ctx.domains[idx];
@@ -1528,7 +1576,7 @@ function one_domain_html(idx)
 
 	let x = "<table align=center width=50% border=0>";
 
-	x += "<tr><td colspan=4 class=btmBtnBar>"
+	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
 	if (dom.status_id in {1:true,20:true})
 		x += btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
@@ -1536,10 +1584,12 @@ function one_domain_html(idx)
 	if (dom.is_live)
 		x += btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
 
-	if (dom.status_id != 20)
+	if (dom.status_id != 20) {
+		x += btn(`domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
 		x += btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+		}
 
-	x += "</td></tr>";
+	x += "</span></td></tr>";
 	x += "<tr><td colspan=4>"+gbl.gap+"</td></tr>";
 	let puny = "";
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
@@ -1653,7 +1703,10 @@ function show_one_domain(idx)
 <td align=right><table width=100% border=0>
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
 <tr><td><span id="errorSpan">&nbsp;</span></td>
-<td align=center><span id="basketIcon" style="display: none;" class="popup">
+<td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
+<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="load_domains_list(myAccount);">&#x1F4B3;</span></td>
+<td align=center>
+<span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
 <span style="margin-left: -250px;" class="popuptext" id="basketPopup">
 </span></span></td><td align=center><span id="userInfo"></span></td></tr></table></td>

@@ -85,16 +85,16 @@ def ds_in_list(ds_data, ds_list):
     return False
 
 
-def domain_renew(epp_job, dom_db):
+def domain_renew(bke_job, dom_db):
     name = dom_db["name"]
-    job_id = epp_job["epp_job_id"]
+    job_id = bke_job["backend_id"]
 
     if not shared.check_have_data(job_id, dom_db, ["expiry_dt"]):
         return False
-    if not shared.check_have_data(job_id, epp_job, ["num_years"]):
+    if not shared.check_have_data(job_id, bke_job, ["num_years"]):
         return False
 
-    if (years := shared.check_num_years(epp_job)) is None:
+    if (years := shared.check_num_years(bke_job)) is None:
         return None
 
     this_reg = registry.tld_lib.reg_record_for_domain(name)
@@ -114,14 +114,14 @@ def transfer_failed(domain_id):
     return False
 
 
-def domain_request_transfer(epp_job, dom_db):
+def domain_request_transfer(bke_job, dom_db):
     name = dom_db["name"]
-    job_id = epp_job["epp_job_id"]
+    job_id = bke_job["backend_id"]
 
-    if not shared.check_have_data(job_id, epp_job, ["num_years", "authcode"]):
+    if not shared.check_have_data(job_id, bke_job, ["num_years", "authcode"]):
         return transfer_failed(dom_db["domain_id"])
 
-    if (years := shared.check_num_years(epp_job)) is None:
+    if (years := shared.check_num_years(bke_job)) is None:
         transfer_failed(dom_db["domain_id"])
         return None
 
@@ -129,10 +129,10 @@ def domain_request_transfer(epp_job, dom_db):
     xml = run_epp_request(
         this_reg,
         dom_req_xml.domain_request_transfer(name,
-                                            base64.b64decode(epp_job["authcode"]).decode("utf-8"), years))
+                                            base64.b64decode(bke_job["authcode"]).decode("utf-8"), years))
 
     if not xml_check_code(job_id, "transfer", xml):
-        if (epp_job["failures"] + 1) >= policy.policy("epp_retry_attempts"):
+        if (bke_job["failures"] + 1) >= policy.policy("epp_retry_attempts"):
             return transfer_failed(dom_db["domain_id"])
         return False
 
@@ -146,16 +146,16 @@ def domain_request_transfer(epp_job, dom_db):
     return True
 
 
-def domain_create(epp_job, dom_db):
+def domain_create(bke_job, dom_db):
     name = dom_db["name"]
-    job_id = epp_job["epp_job_id"]
+    job_id = bke_job["backend_id"]
 
     ns_list, ds_list = shared.get_domain_lists(dom_db)
     if not check_dom_data(job_id, name, ns_list, ds_list):
         log(f"EPP-{job_id} Domain data failed validation")
         return None
 
-    if (years := shared.check_num_years(epp_job)) is None:
+    if (years := shared.check_num_years(bke_job)) is None:
         return None
 
     this_reg = registry.tld_lib.reg_record_for_domain(name)
@@ -177,7 +177,7 @@ def domain_create(epp_job, dom_db):
     return True
 
 
-def domain_info(epp_job, dom_db):
+def domain_info(bke_job, dom_db):
 
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
@@ -201,8 +201,8 @@ def epp_get_domain_info(job_id, domain_name):
     return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
-def set_authcode(epp_job, dom_db):
-    job_id = epp_job["epp_job_id"]
+def set_authcode(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
     this_reg = registry.tld_lib.reg_record_for_domain(name)
@@ -212,14 +212,14 @@ def set_authcode(epp_job, dom_db):
 
     req = dom_req_xml.domain_set_authcode(
         name,
-        base64.b64decode(epp_job["authcode"]).decode("utf-8"),
+        base64.b64decode(bke_job["authcode"]).decode("utf-8"),
     )
 
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
-def domain_update_from_db(epp_job, dom_db):
-    job_id = epp_job["epp_job_id"]
+def domain_update_from_db(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
     name = dom_db["name"]
     if (epp_info := epp_get_domain_info(job_id, name)) is None:
         return False
@@ -272,12 +272,12 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
-def domain_expired(epp_job, dom_db):
+def domain_expired(bke_job, dom_db):
     # Probably nothing to do for EPP
     return True
 
 
-def domain_delete(epp_job, dom_db):
+def domain_delete(bke_job, dom_db):
     # Probably nothing to do for EPP
     return True
 

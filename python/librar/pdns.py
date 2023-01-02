@@ -269,10 +269,10 @@ def update_rrs(zone,rrs):
 
 if __name__ == "__main__":
     start_up()
-    name="zz"
-    print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
-    # print(json.dumps(create_zone(name, True),indent=3))
-    # print(json.dumps(delete_zone(name),indent=3))
+    name="crap.zz"
+    # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
+    print(json.dumps(create_zone(name, True),indent=3))
+    print(json.dumps(delete_zone(name),indent=3))
     # print(json.dumps(all_pdns_zones,indent=3))
     # print(json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))

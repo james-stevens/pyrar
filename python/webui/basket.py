@@ -41,6 +41,7 @@ def webui_basket(basket, user_id):
     if not ok:
         return False, reply
 
+    basket[:] = [ order for order in basket if "paid-for" not in order ]
     if len(basket) > 0:
         ok, reply = save_basket(basket, user_id)
         if not ok:
@@ -55,7 +56,7 @@ def save_basket(basket, user_id):
         return False, user_db
 
     for order in basket:
-        if "failed" in order:
+        if "failed" in order or "paid-for" in order:
             continue
 
         order_db = order["order_db"]
@@ -70,13 +71,6 @@ def save_basket(basket, user_id):
         order_db["order_item_id"] = order_item_id
 
     return True, basket
-
-
-def all_failed(basket):
-    for order in basket:
-        if "failed" not in basket:
-            return False
-    return True
 
 
 def capture_basket(basket, user_id):
@@ -151,7 +145,8 @@ def paid_for_basket_item(order, user_db):
                 return False
             order_db["domain_id"] = domain_id
 
-    sales.make_epp_job(order_db)
+    order["paid-for"] = True
+    sales.make_backend_job(order_db)
     return True
 
 

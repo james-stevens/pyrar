@@ -60,7 +60,7 @@ action_fns = {misc.STATUS_LIVE: domain_actions_live, misc.STATUS_WAITING_PAYMENT
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    sql.connect("epprun")
+    sql.connect("engine")
     ok, dom_db = sql.sql_select_one("domains", {"name": sys.argv[1]})
     if ok:
         recreate_domain_actions(dom_db)

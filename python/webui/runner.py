@@ -9,6 +9,7 @@ from librar import registry
 from librar import misc
 from librar import validate
 from librar import passwd
+from librar import pdns
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
@@ -35,20 +36,12 @@ log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 registry.start_up()
+pdns.start_up()
 
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
-
-def secure_user_data(user_data):
-    if user_data is None:
-        return
-    for table in REMOVE_TO_SECURE:
-        if table in user_data and isinstance(user_data[table],dict):
-            for column in REMOVE_TO_SECURE[table]:
-                if column in user_data[table]:
-                    del user_data[table][column]
 
 
 class WebuiReq:
@@ -85,8 +78,17 @@ class WebuiReq:
     def abort(self, data):
         return self.response({"error": data}, HTML_CODE_ERR)
 
+    def secure_user_data(self):
+        if self.user_data is None:
+            return
+        for table in REMOVE_TO_SECURE:
+            if table in self.user_data and isinstance(self.user_data[table],dict):
+                for column in REMOVE_TO_SECURE[table]:
+                    if column in self.user_data[table]:
+                        del self.user_data[table][column]
+
     def response(self, data, code=HTML_CODE_OK):
-        secure_user_data(self.user_data)
+        self.secure_user_data()
 
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
@@ -370,6 +372,30 @@ def users_register():
     req.event({"notes": "User registered", "event_type": "new_user"})
 
     return req.response(val)
+
+
+@application.route('/pyrar/v1.0/dns/load', methods=['POST'])
+def domain_dns_load():
+    req = WebuiReq()
+    if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
+        return req.abort("No JSON posted or domain is missing")
+
+    if req.user_id is None or req.sess_code is None:
+        return req.abort(NOT_LOGGED_IN)
+
+    if "name" not in flask.request.json:
+        return req.abort("No domain specified")
+
+    ok, dom_db = sql.sql_select_one("domains", { "name": flask.request.json["name"], "user_id": req.user_id })
+    if not ok:
+        return req.abort("Domain not found or not yours")
+
+    dns = pdns.load_zone(dom_db["name"])
+    if dns is None:
+        pdns.create_zone(dom_db["name"])
+        dns = pdns.load_zone(dom_db["name"])
+
+    return req.response(dns)
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])

@@ -29,5 +29,5 @@ sqlsh "create table deleted_domains (
 
 sqlsh "ALTER TABLE deleted_domains AUTO_INCREMENT = 10450"
 
-sqlsh "grant select,insert on deleted_domains to epprun"
+sqlsh "grant select,insert on deleted_domains to engine"
 sqlsh "grant select,insert,update,delete on deleted_domains to raradm"

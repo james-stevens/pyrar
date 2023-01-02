@@ -4,9 +4,9 @@
 #################################################################
 . ./database
 
-sqlsh "drop table if exists epp_jobs"
-sqlsh "create table epp_jobs (
-	epp_job_id			${auto},
+sqlsh "drop table if exists backend"
+sqlsh "create table backend (
+	backend_id			${auto},
 	domain_id			${row_id},
 	user_id				${row_id},
 	job_type			varchar(20) not null default 'none',
@@ -19,11 +19,11 @@ sqlsh "create table epp_jobs (
 	created_dt			datetime null,
 	amended_dt			datetime null,
 
-	CONSTRAINT primary key (epp_job_id),
+	CONSTRAINT primary key (backend_id),
 	key by_user (execute_dt)
 )"
 
-sqlsh "ALTER TABLE epp_jobs AUTO_INCREMENT = 10450"
+sqlsh "ALTER TABLE backend AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert,select on epp_jobs to webui"
-sqlsh "grant select,insert,update,delete on epp_jobs to raradm,epprun"
+sqlsh "grant insert,select on backend to webui"
+sqlsh "grant select,insert,update,delete on backend to raradm,engine"
