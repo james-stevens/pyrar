@@ -11,7 +11,6 @@
 
 debugAPI = false;
 
-
 elm = {};
 gbl = {
 	"theme": window.localStorage.getItem("theme"),
@@ -60,6 +59,16 @@ function keyEsc(e) {
 }
 
 
+
+function hasIDN(name)
+{
+	if (name.slice(0,4)=="xn--") return true;
+	if (name.indexOf(".xn--") > 0) return true
+	return false;
+}
+
+
+
 function hideAllPopUp()
 {
 	hidePopUp();
@@ -102,7 +111,11 @@ function togglePopUp(name,tmout)
 	let popup = document.getElementById(name);
 	if (popup) popup.classList.toggle("show");
 
-	let hide_now = setTimeout(hidePopUp,tmout);
+	let hide_now = null;
+	if (tmout) {
+		hide_now = setTimeout(hidePopUp,tmout);
+		}
+
 	ctx.popup = { "timer": hide_now, "name": name }
 
 	let e = null;
@@ -110,6 +123,7 @@ function togglePopUp(name,tmout)
 	if (name=="registerPopup") e = document.formRegister.email;
 	if (name=="AddNSPopup") e = document.getElementById("inputNS");
 	if (name=="AddDSPopup") e = document.getElementById("inputDS");
+	if (name=="AddRRwin") e = document.getElementById("rr_name");
 	if (e) { e.focus(); e.select(); }
 
 	return false;
@@ -202,7 +216,7 @@ function removeBasketItem(i)
 	else gbl.basket.splice(i,1);
 
 	if (("popup" in ctx)&&("name" in ctx.popup)&&(ctx.popup.name=="basketPopup")) {
-		clearTimeout(ctx.popup.timer);
+		if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
 		delete ctx.popup.timer;
 		}
 
@@ -1207,9 +1221,12 @@ function generic_popup_btn(config)
 	if ("width" in config) style_width = `style='width: ${config["width"]}px;'`;
 	if ("style" in config) pop_style = `style='${config["style"]}'`;
 
+	let timeout = 30000;
+	if ("timeout" in config) timeout = config.timeout;
+
 	let x = `<div class="popup">`;
 	x += `<span ${style_width}75px;' tabindex=0 title="${config["title"]}" `;
-	x += `class=myBtn onClick="togglePopUp('${config["name"]}',30000);">${config["label"]}</span>`;
+	x += `class=myBtn onClick="togglePopUp('${config["name"]}',${timeout});">${config["label"]}</span>`;
 	x += `<span class="popuptext" ${pop_style} id="${config["name"]}">`;
 	x += config["internal"](config["param"]);
 	return x + `</span></div>`;
@@ -1533,39 +1550,357 @@ function tick_cross(value)
 }
 
 
+
 function domain_dns(idx)
 {
 	let dom = ctx.domains[idx];
-	dom_name = dom["name"]+".";
 
 	callApi("dns/load",(ok,reply)=>{
 		if (!ok) {
 			msg = "DNS Data failed to load";
 			if (reply.error) msg = reply.error;
-			return errMsg(msg,"domainBtnBar")
+			return errMsg(msg,"dnsBtnBar")
 			}
 
-		if ((!reply.rrsets)||(!reply.rrsets.length))
+		if ((!reply)||(!reply.rrsets)||(!reply.rrsets.length))
 			return errMsg("Failed to read DNS Data","domainBtnBar");
 
-		console.log(reply);
+		reply.rrsets.sort((a,b) => {
+			if ((a.name == reply.name)&&(b.name == reply.name)) {
+				for(tag of ["SOA","NS","MX"]) {
+					if (a.type == tag) return -1;
+					if (b.type == tag) return 1;
+					}
+				}
+			else {
+				if (a.name == reply.name) return -1;
+				if (b.name == reply.name) return 1;
+				if (a.name < b.name) return -1;
+				if (a.name > b.name) return 1;
+				}
+			if (a.type < b.type) return -1;
+			if (a.type > b.type) return 1;
+			return 0;
+			})
 
-		let x="<table width=75% align=center border=0>";
-		x += settings_header(`DNS Data for ${dom.display_name}`,true);
-		x += "<table width=100%>";
-		for(let i of reply.rrsets) {
-			for(let c of i.records) {
-			let show_name = i.name
-			if (i.name==dom_name) show_name = "@";
-			x += `<tr class=dataRow><td>${show_name}</td><td>${i.type}</td><td>${i.ttl}</td><td>${c.content}</td></tr>`;
-			}
-		}
-
-		x += "</table></td></tr></table>";
-		elm.userSpace.innerHTML = x;
+		ctx.dns = reply;
+		show_dns_data(idx);
 
 		},{ json: { "name":dom.name }})
 }
+
+
+
+function sign_zone(idx)
+{
+	let dom = ctx.domains[idx];
+
+	callApi("dns/sign",(ok,reply)=>{
+		if (!ok) {
+			msg = "DNS Data failed to load";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"dnsBtnBar")
+			}
+
+		ctx.dns = reply;
+		show_dns_data(idx);
+		},{ json: { "name": dom.name }})
+}
+
+
+function drop_zone(idx)
+{
+	let dom = ctx.domains[idx];
+
+	hideAllPopUp();
+
+	callApi("dns/drop",(ok,reply)=>{
+		if (!ok) {
+			msg = "DNS Data failed to drop";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"dnsBtnBar")
+			}
+
+		if (!reply) {
+			delete ctx.dns;
+			show_one_domain(idx);
+		} else {
+			ctx.dns = reply;
+			show_dns_data(idx);
+			}
+		},{ json: { "name": dom.name }})
+}
+
+
+
+function process_add_rr(idx)
+{
+	let dom = ctx.domains[idx];
+
+	let add_rr = {}, elems = {};
+	for(let i of ["rr_name","rr_type","rr_ttl","rr_data"]) {
+		elems[i] = document.getElementById(i);
+		add_rr[i] = elems[i].value;
+		};
+
+    add_rr.rr_ttl = parseInt(add_rr.rr_ttl);
+    if ((add_rr.rr_name == "")||(add_rr.rr_name == "@"))
+    	add_rr.rr_name = dom.name + ".";
+	else {
+		let as_puny = toASCII(add_rr.rr_name);
+		if ((as_puny != add_rr.rr_name)&&(hasIDN(as_puny)))
+			add_rr.rr_name = as_puny;
+
+		if (!hostnameCheck.test(add_rr.rr_name)) {
+			errMsg("Invalid host name","AddRRwin");
+			elems.rr_name.focus();
+			return;
+			}
+
+		add_rr.rr_name = `${add_rr.rr_name}.${dom.name}.`;
+		}
+
+	if (isNaN(add_rr.rr_ttl)) {
+		errMsg("Invalid TTL value","AddRRwin");
+		elems.rr_ttl.focus();
+		return;
+		}
+
+	val_rr = "rr" + add_rr.rr_type;
+
+	if ((val_rr in autoAddDot)&&(add_rr.rr_data.slice(-1)!=".")) add_rr.rr_data += ".";
+
+	if ((add_rr.rr_type=="TXT")&&(add_rr.rr_data.slice(0,1)!='"')&&(add_rr.rr_data.slice(-1)!='"'))
+		add_rr.rr_data = `"${add_rr.rr_data}"`;
+
+	if (val_rr in validations) {
+		if (!validations[val_rr].test(add_rr.rr_data)) {
+			console.log(add_rr.rr_data);
+			errMsg("RR data failed validation test","AddRRwin")
+			elems.rr_data.focus();
+			return; }
+		}
+
+	let prev_rr_data = add_rr["rr_data"];
+	add_rr["rr_data"] = [ add_rr["rr_data"] ];
+	add_rr["name"] = dom["name"];
+
+	for(let i of ctx.dns.rrsets) {
+		if ((i.name==add_rr.rr_name)&&(i.type==add_rr.rr_type)) {
+			for(let c of i.records)
+				if (prev_rr_data != c.content)
+					add_rr.rr_data.push(c.content)
+			}
+		}
+
+	callApi("dns/update",(ok,reply) => {
+		if (!ok) {
+			msg = "DNS Data failed to update";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"AddRRwin")
+			}
+		hideAllPopUp();
+		domain_dns(idx);
+		}, { json: add_rr });
+}
+
+
+
+function AddkeyDown(event,idx) {
+	if (event.key=="Escape") return hideAllPopUp();
+	if (event.key=="Enter") return process_add_rr(idx);
+}
+
+
+
+function edit_rr(idx,rrs_id,rec_id)
+{
+	let rrs = ctx.dns.rrsets[rrs_id];
+
+	let last_rr = {}
+	last_rr.rr_name = rrs.name;
+	last_rr.rr_type = rrs.type;
+	last_rr.rr_ttl = rrs.ttl;
+	last_rr.rr_data = rrs.records[rec_id].content;
+
+	ctx.last_rr = last_rr;
+
+	let dom = ctx.domains[idx];
+	rr_data = []
+	for(let i in rrs.records) if (i!=rec_id) rr_data.push(rrs.records[i].content);
+
+	del_rr = {
+		"name": dom["name"],
+		"rr_name":rrs.name,
+		"rr_type":rrs.type,
+		"rr_ttl": rrs.ttl,
+		"rr_data": rr_data
+		};
+
+	callApi("dns/update",(ok,reply) => {
+		if (!ok) {
+			msg = "DNS Data failed to update";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,`rrs_${rrs_id}_${rec_id}`);
+			}
+		domain_dns(idx);
+		}, { json: del_rr });
+}
+
+
+
+function rr_type_select(name,val)
+{
+	let x = "";
+	[ "A", "AAAA", "MX", "NS", "TXT", "A6", "ADDR", "AFSDB", "ALIAS", "CAA", "CDNSKEY", "CDS",
+	"CERT", "CNAME", "DHCID", "DLV", "DNAME", "DNSKEY", "DS", "EUI48", "EUI64", "HINFO", "IPSECKEY",
+	"KEY", "KX", "LOC", "LUA", "MAILA", "MAILB", "MB", "MG", "MINFO", "MR", "MX", "NAPTR", "NS",
+	"OPENPGPKEY", "OPT", "PTR", "RKEY", "RP", "RRSIG", "SIG", "SMIMEA", "SOA", "SPF", "SRV", "SSHFP",
+	"TKEY", "TLSA", "TXT", "URI", "WKS" ].forEach((i) => { 
+		if (val==i) x+= "<option selected>"+i; else x += "<option>"+i;
+		});
+
+	return `<select id=${name}>${x}</select>`;
+}
+
+
+
+function clean_host_name(dom_name,hostname)
+{
+	if (!hostname) return "";
+	if (hostname==dom_name) return '@';
+	if (hostname.slice(-1*dom_name.length)==dom_name) hostname = hostname.slice(0,-1*(dom_name.length+1))
+	if (hasIDN(hostname)) hostname = fromPuny(hostname);
+	return hostname;
+}
+
+
+
+function add_rr_form(params)
+{
+	let last_rr = { "rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
+	if (ctx.last_rr) {
+		last_rr = ctx.last_rr
+		delete ctx.last_rr;
+		last_rr.rr_data = last_rr.rr_data.replace(/'/g, "&apos;")
+		}
+
+	let idx = params.idx;
+	let dom = ctx.domains[idx];
+	let dom_name = dom["name"]+".";
+
+	let x = "<table cellspacing=1 cellpadding=0 border=0>";
+	x += `<tr><td class=formPrompt>Record Name :</td><Td><input value="${clean_host_name(dom_name,last_rr.rr_name)}" id=rr_name onkeydown="AddkeyDown(event,${idx});" style="width: 250px;"></td></tr>`;
+	x += `<tr><td class=formPrompt>Record Type :</td><Td>` + rr_type_select("rr_type",last_rr.rr_type) + "</td></tr>";
+	x += `<tr><td class=formPrompt>TTL :</td><Td><input value="${last_rr.rr_ttl}" id=rr_ttl onkeydown="AddkeyDown(event,${idx});" style="width: 100px;"></td></tr>`;
+	x += `<tr><td class=formPrompt>RR Data :</td><Td><input value='${last_rr.rr_data}' id=rr_data onkeydown="AddkeyDown(event,${idx});" style="width: 250px;"></td></tr>`;
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar>"
+	x += btn("hideAllPopUp()","Cancel","Cancel adding this RR",75);
+	x += btn(`process_add_rr(${idx})`,"Add RR","Add this RR",75);
+	x += "</table>";
+
+	return x;
+}
+
+
+
+function unsign_zone(idx)
+{
+	return errMsg("Not yet implemented","dnsBtnBar");
+}
+
+
+
+function drop_data_confirm(param)
+{
+	let x = "<table>"
+	x += "<tr><th>Are you sure you want to drop all this data?</th></tr>";
+	x += "<tr><td class=btmBtnBar>"
+	x += btn("hideAllPopUp()","Cancel","Cancel dropping this data",100);
+	x += btn(`drop_zone(${param.idx})`,"Drop all Data","Drop all RR data show here",100);
+	x += "</table>";
+	return x;
+}
+
+
+
+function show_dns_data(idx)
+{
+	let dom = ctx.domains[idx];
+	let dom_name = dom["name"]+".";
+
+	let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	x += "<tr><td align=center><table width=50%><tr><td class=btmBtnBar><span id=dnsBtnBar>"
+
+    x += generic_popup_btn({
+        "name": "DropDataWin",
+        "label": "Drop this Data",
+        "width": 100,
+        "timeout": null,
+        "title": "Drop sub-domain data for this domain",
+        "internal": drop_data_confirm,
+		"style": "overflow: auto; margin-left: -250;",
+        "param": {"idx":idx}
+        });
+
+	if (!ctx.dns.dnssec)
+		x += btn(`sign_zone(${idx})`,`Sign Zone`,"DNSSEC sign this domain",100)
+	else
+		x += btn(`unsign_zone(${idx})`,`Unsign Zone`,"Remove DNSSSEC signing on this domain",100)
+
+    let last_rr = ctx.last_rr;
+    x += generic_popup_btn({
+        "name": "AddRRwin",
+        "label": "Add RR",
+        "width": 100,
+        "timeout": null,
+        "title": "Add a DNS record to this domain",
+        "internal": add_rr_form,
+		"style": "overflow: auto; margin-left: -250;",
+        "param": {"idx":idx}
+        });
+
+	x += "</td></tr></table></td></tr>";
+
+	if (policy("dns_servers",null) != dom.ns) {
+		x += "<tr><th>Warning: this data may not be public until<br>you set this zone to use our name servers</th></tr>";
+		}
+
+	x += settings_header(`DNS Data for - ${dom.display_name}`,true);
+	x += "<table width=100%>";
+
+	for(let i in ctx.dns.rrsets) {
+		let rrs = ctx.dns.rrsets[i];
+		for(let c in rrs.records) {
+		let each_rr = rrs.records[c];
+		let func = "edit_rr";
+
+		let show_name = clean_host_name(dom_name,rrs.name);
+		if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
+
+		x += `<tr onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow><td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.keys)&&(ctx.dns.keys.length)) {
+			for(let k of ctx.dns.keys) {
+				if (k.ds) {
+					for(let d of k.ds) {
+						if (d.indexOf(" 2 ")>=0)
+							x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${d}</td></tr>`;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	x += "</table></td></tr></table>";
+	elm.userSpace.innerHTML = x;
+
+	if (last_rr) togglePopUp("AddRRwin",2000);
+}
+
+
+function rr_locked(idx,i,c) { return errMsg("That record is locked",`rrs_${i}_${c}`) }
 
 
 function one_domain_html(idx)
@@ -1729,6 +2064,6 @@ function show_one_domain(idx)
 	<span class="botSapce" id="marketPlace" style="display: none;"></span>
 </div>
 
-<div><table><tr><td><div id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
+<div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 </body>
 </html>

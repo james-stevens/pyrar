@@ -20,7 +20,7 @@ def tld_pdns_check(name):
     if (tld := registry.tld_lib.tld_of_name(name)) is None:
         return None
 
-    if tld not in pdns.all_pdns_zones:
+    if not pdns.zone_exists(tld):
         pdns.create_zone(tld, True)
 
     return tld
@@ -62,7 +62,7 @@ def start_up_check():
 
 def check_tlds_exist():
     for zone, zone_rec in registry.tld_lib.zone_data.items():
-        if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and zone not in pdns.all_pdns_zones):
+        if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and not pdns.zone_exists(zone)):
             pdns.create_zone(zone, True)
 
     return True
@@ -109,14 +109,12 @@ def domain_request_transfer(bke_job, dom_db):
     }, {"domain_id": dom_db["domain_id"]})
 
 
-
 def add_yrs(bke_job, dom_db):
     values = [
         f"expiry_dt = date_add(expiry_dt,interval {bke_job['num_years']} year)",
-        f"status_id = if (expiry_dt > now(),{misc.STATUS_LIVE},{misc.STATUS_EXPIRED})",
-        "amended_dt = now()"
-        ]
-    return sql.sql_update_one("domains",",".join(values),{"domain_id": dom_db["domain_id"]})
+        f"status_id = if (expiry_dt > now(),{misc.STATUS_LIVE},{misc.STATUS_EXPIRED})", "amended_dt = now()"
+    ]
+    return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 
 
 def domain_renew(bke_job, dom_db):
@@ -159,4 +157,6 @@ handler.add_plugin(
 
 if __name__ == "__main__":
     log_init(with_debug=True)
+    sql.connect("engine")
+    registry.start_up()
     start_up_check()

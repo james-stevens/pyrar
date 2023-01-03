@@ -10,11 +10,11 @@ import secrets
 import hashlib
 import dns.name
 
+from librar.log import log
 from librar import misc
 from librar.policy import this_policy as policy
 
 client = None
-all_pdns_zones = None
 headers = misc.HEADER
 headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
@@ -25,10 +25,13 @@ def start_up():
     global client
     client = httpx.Client(headers=headers)
 
-    get_all_pdns_zones()
     catalog_zone = policy.policy("catalog_zone")
-    if catalog_zone not in all_pdns_zones:
+    if not zone_exists(catalog_zone):
         create_zone(catalog_zone,False)
+
+
+def zone_exists(name):
+    return load_zone_keys(name) != None
 
 
 def hash_zone_name(name):
@@ -168,11 +171,7 @@ def create_zone(name, with_dnssec=False):
         request = client.build_request(req["cmd"],req["url"],json=json_data)
         response = client.send(request)
 
-    ret_js = load_zone(name)
-    if "name" not in ret_js:
-        all_pdns_zones[ret_js["name"].rstrip(".")] = True
-
-    return ret_js
+    return load_zone(name)
 
 
 def sign_zone(name):
@@ -188,18 +187,6 @@ def sign_zone(name):
     return load_zone_keys(name)
 
 
-def get_all_pdns_zones():
-    global all_pdns_zones
-
-    if all_pdns_zones is not None:
-        return
-
-    resp = client.get(f"{PDNS_BASE_URL}/zones?dnssec=false")
-    if resp.status_code < 200 or resp.status_code > 299:
-        return None
-    all_pdns_zones = { zone["name"].rstrip("."):True for zone in json.loads(resp.content) if "name" in zone }
-
-
 def delete_zone(name):
     if name[-1] != ".":
         name += "."
@@ -208,6 +195,9 @@ def delete_zone(name):
     zone_hashed = hash_zone_name(name)
 
     post_json = [ {
+        "cmd": "DELETE",
+        "url": f"{PDNS_BASE_URL}/zones/{name}"
+    } , {
         "cmd": "PATCH",
         "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
         "data": { "rrsets": [ 
@@ -218,10 +208,7 @@ def delete_zone(name):
             "changetype":"REPLACE",
             "records": []
             } ] }
-    }, {
-        "cmd": "DELETE",
-        "url": f"{PDNS_BASE_URL}/zones/{name}"
-    }, {
+    } , {
         "cmd": "PUT",
         "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
     } ]
@@ -231,7 +218,6 @@ def delete_zone(name):
         json_data = req["data"] if "data" in req else None
         request = client.build_request(req["cmd"],req["url"],json=json_data)
         resp = client.send(request)
-        print(resp)
         ret = ret and resp.status_code >= 200 and resp.status_code <= 299
 
     return ret
@@ -257,13 +243,17 @@ def update_rrs(zone,rrs):
 
     resp = client.patch(f"{PDNS_BASE_URL}/zones/{zone}",json={ "rrsets": [ rr_data ] },headers=headers)
 
-    ret = resp.status_code >= 200 and resp.status_code <= 299
-    if not ret:
-        print(">>>>>",resp.status_code,":",resp.content)
+    ok = resp.status_code >= 200 and resp.status_code <= 299
+    if not ok:
+        try:
+            js_content = json.loads(resp.content)
+            if "error" in js_content:
+                return ok, js_content["error"]
+        except Exception as e:
+            pass
+        return ok, "Failed to update"
 
-    return ret
-
-
+    return ok, resp
 
 
 
@@ -271,9 +261,13 @@ if __name__ == "__main__":
     start_up()
     name="crap.zz"
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
-    print(json.dumps(create_zone(name, True),indent=3))
-    print(json.dumps(delete_zone(name),indent=3))
-    # print(json.dumps(all_pdns_zones,indent=3))
+    print("KEYS>>>>",load_zone_keys(name))
+    print("CREATE>>>>",json.dumps(create_zone(name, False),indent=3))
+    print("KEYS>>>>",load_zone_keys(name))
+    print("EXISTS>>>>",zone_exists(name))
+    print("DELETE>>>>",json.dumps(delete_zone(name)))
+    print("EXISTS>>>>",zone_exists(name))
+    print("KEYS>>>>",load_zone_keys(name))
     # print(json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))

@@ -31,13 +31,13 @@ def subst_file(filename):
                     match_chars = res.span()
                     match_str = res.group()[1:-1]
                     pol_val = None
-                    split_comma = [match_str,None]
+                    split_comma = [match_str, None]
                     if match_str.find(",") >= 0:
                         split_comma = match_str.split(",")
                     if (pol_val := policy.policy(split_comma[0], split_comma[1])) is not None:
                         line = line[:match_chars[0]] + str(pol_val) + line[match_chars[1]:]
                     else:
-                        line=""
+                        line = ""
 
                 out_fd.write(line)
 

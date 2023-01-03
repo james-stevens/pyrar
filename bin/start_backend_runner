@@ -3,5 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 
 sleep 3 # wait for EPP rest/api to get started
+
 cd ${BASE}/python/backend
-exec ./runner.py -l >/tmp/backend.log 2>&1
+exec ./run_backend.py -l >/tmp/backend.log 2>&1

@@ -18,6 +18,50 @@ MAX_DS_LEN = {"keyTag": 5, "alg": 2, "digestType": 1}
 MAX_DS_VAL = {"keyTag": 65535, "alg": 20, "digestType": 4}
 VALID_DS_LEN = {1: 40, 2: 64, 3: 64, 4: 96}
 
+VALID_RR_TYPES = {
+    "A": True,
+    "NS": True,
+    "MD": True,
+    "MF": True,
+    "CNAME": True,
+    "SOA": True,
+    "MB": True,
+    "MG": True,
+    "MR": True,
+    "NULL": True,
+    "WKS": True,
+    "PTR": True,
+    "HINFO": True,
+    "MINFO": True,
+    "MX": True,
+    "TXT": True,
+    "RP": True,
+    "AFSDB": True,
+    "X25": True,
+    "ISDN": True,
+    "RT": True,
+    "NSAP": True,
+    "NSAP_PTR": True,
+    "SIG": True,
+    "KEY": True,
+    "PX": True,
+    "GPOS": True,
+    "AAAA": True,
+    "LOC": True,
+    "NXT": True,
+    "EID": True,
+    "NIMLOC": True,
+    "SRV": True,
+    "ATMA": True,
+    "NAPTR": True,
+    "A6": True,
+    "DNAME": True
+}
+
+
+def valid_rr_type(rr_type):
+    return rr_type in VALID_RR_TYPES
+
 
 def check_domain_name(name):
     if not registry.tld_lib.supported_tld(name):

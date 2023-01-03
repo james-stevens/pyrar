@@ -13,9 +13,8 @@ from librar import registry
 
 
 def get_next_order_to_clear():
-    query = ("select orders.* from orders join users using(user_id) "
-        +"where price_paid <= (acct_current_balance - acct_overdraw_limit) "
-        +"order by order_item_id limit 1")
+    query = ("select orders.* from orders join users using(user_id) " +
+             "where price_paid <= (acct_current_balance - acct_overdraw_limit) " + "order by order_item_id limit 1")
     return sql.run_select(query)
 
 
@@ -31,18 +30,19 @@ def process_order(order_db):
     if not ok:
         return False
 
-    trans_id = accounts.apply_transaction(user_db["user_id"],(-1*order_db["price_paid"]),
+    trans_id = accounts.apply_transaction(
+        user_db["user_id"], (-1 * order_db["price_paid"]),
         f"{order_db['order_type']} on {dom_db['name']} for {order_db['num_years']} yrs")
 
     if not trans_id:
         return False
 
-    ok, sold_id = sales.sold_item(trans_id,order_db,dom_db['name'],user_db["email"])
+    ok, sold_id = sales.sold_item(trans_id, order_db, dom_db['name'], user_db["email"])
     if ok and sold_id:
-        sql.sql_update("transactions",{"sales_item_id":sold_id},{"transaction_id":trans_id})
+        sql.sql_update("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 
     sales.make_backend_job(order_db)
-    sql.sql_delete_one("orders",{"order_item_id":order_db["order_item_id"]})
+    sql.sql_delete_one("orders", {"order_item_id": order_db["order_item_id"]})
     return True
 
 
@@ -57,9 +57,8 @@ def run_server(max_wait=None):
         if ok and len(order_db) > 0:
             process_order(order_db[0])
         else:
-            signal_mtime = sigprocs.signal_wait("payeng",signal_mtime,max_wait=max_wait)
+            signal_mtime = sigprocs.signal_wait("payeng", signal_mtime, max_wait=max_wait)
             registry.tld_lib.check_for_new_files()
-
 
 
 if __name__ == "__main__":

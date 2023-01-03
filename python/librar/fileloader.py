@@ -10,14 +10,14 @@ from librar.log import log, init as log_init
 
 def load_file_json(filename):
     context = inspect.stack()[1]
-    log(f"Reloading file '{filename}'",context)
+    log(f"Reloading file '{filename}'", context)
     try:
         with open(filename, "r", encoding='UTF-8') as file_fd:
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
     except Exception as err:
-        log(f"load_file_json: {filename} : {str(err)}",context)
+        log(f"load_file_json: {filename} : {str(err)}", context)
 
     return None
 

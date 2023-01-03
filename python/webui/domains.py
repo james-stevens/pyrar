@@ -138,7 +138,7 @@ def webui_update_domain(req, post_dom):
 
     update_cols = {}
 
-    if "auto_renew" in post_dom and isinstance(post_dom["auto_renew"],bool):
+    if "auto_renew" in post_dom and isinstance(post_dom["auto_renew"], bool):
         update_cols["auto_renew"] = post_dom["auto_renew"]
 
     if "ns" in post_dom and post_dom["ns"] != dom_db["ns"]:
@@ -163,7 +163,7 @@ def webui_update_domain(req, post_dom):
                     return False, "Invalid DS record"
             update_cols["ds"] = ",".join(new_ds)
 
-    ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"],"user_id":req.user_id})
+    ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"], "user_id": req.user_id})
 
     if not ok:
         return False, "Domain update failed"
@@ -171,9 +171,14 @@ def webui_update_domain(req, post_dom):
     if dom_db["status_id"] not in misc.LIVE_STATUS:
         return True, update_cols
 
+    domain_backend_update(dom_db)
+    return True, update_cols
+
+
+def domain_backend_update(dom_db):
     bke_job = {
-        "domain_id": post_dom["domain_id"],
-        "user_id": req.user_id,
+        "domain_id": dom_db["domain_id"],
+        "user_id": dom_db["user_id"],
         "job_type": "dom/update",
         "execute_dt": sql.now(),
         "created_dt": None
@@ -181,8 +186,6 @@ def webui_update_domain(req, post_dom):
 
     sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
-
-    return True, update_cols
 
 
 def webui_set_auth_code(req, post_dom):
