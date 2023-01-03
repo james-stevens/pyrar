@@ -28,9 +28,9 @@ SESSION_TAG_LOWER = SESSION_TAG.lower()
 # remove these columns before transmitting to user
 REMOVE_TO_SECURE = {
     "user": ["password", "two_fa", "password_reset"],
-    "orders": ["price_charged","currency_charged"],
-    "transactions": [ "sales_item_id"]
-    }
+    "orders": ["price_charged", "currency_charged"],
+    "transactions": ["sales_item_id"]
+}
 
 log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
 sql.connect("webui")
@@ -41,7 +41,6 @@ pdns.start_up()
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
-
 
 
 class WebuiReq:
@@ -82,7 +81,7 @@ class WebuiReq:
         if self.user_data is None:
             return
         for table in REMOVE_TO_SECURE:
-            if table in self.user_data and isinstance(self.user_data[table],dict):
+            if table in self.user_data and isinstance(self.user_data[table], dict):
                 for column in REMOVE_TO_SECURE[table]:
                     if column in self.user_data[table]:
                         del self.user_data[table][column]
@@ -183,10 +182,10 @@ def basket_submit():
     if not ok:
         return req.abort(reply)
 
-    req.user_data["failed_basket"] = [ item for item in reply if "failed" in item ]
+    req.user_data["failed_basket"] = [item for item in reply if "failed" in item]
     for order in req.user_data["failed_basket"]:
         for col in list(order):
-            if col in ["prices","order_db"]:
+            if col in ["prices", "order_db"]:
                 del order[col]
 
     req.user_data["orders"] = [item["order_db"] for item in reply if "order_db" in item]
@@ -228,7 +227,7 @@ def users_domains():
 
     now = sql.now()
     for dom_db in doms_db:
-        if dom_db["status_id"] ==misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
+        if dom_db["status_id"] == misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
             dom_db["status_id"] = misc.STATUS_EXPIRED
 
         if dom_db["status_id"] in misc.DOMAIN_STATUS:
@@ -374,8 +373,7 @@ def users_register():
     return req.response(val)
 
 
-@application.route('/pyrar/v1.0/dns/load', methods=['POST'])
-def domain_dns_load():
+def pdns_action(func):
     req = WebuiReq()
     if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -383,19 +381,100 @@ def domain_dns_load():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    if "name" not in flask.request.json:
+    if "name" not in flask.request.json or not validate.is_valid_fqdn(flask.request.json["name"]):
         return req.abort("No domain specified")
 
-    ok, dom_db = sql.sql_select_one("domains", { "name": flask.request.json["name"], "user_id": req.user_id })
+    ok, dom_db = sql.sql_select_one("domains", {"name": flask.request.json["name"], "user_id": req.user_id})
     if not ok:
         return req.abort("Domain not found or not yours")
 
-    dns = pdns.load_zone(dom_db["name"])
-    if dns is None:
-        pdns.create_zone(dom_db["name"])
-        dns = pdns.load_zone(dom_db["name"])
+    return func(req, dom_db)
+
+
+def pdns_get_data(req, dom_db):
+    dom_name = dom_db["name"]
+    if not pdns.zone_exists(dom_name):
+        dns = pdns.create_zone(dom_name)
+    else:
+        dns = pdns.load_zone(dom_name)
+
+    if dns and "dnssec" in dns and dns["dnssec"]:
+        dns["keys"] = pdns.load_zone_keys(dom_name)
 
     return req.response(dns)
+
+
+def pdns_sign_zone(req, dom_db):
+    key_data = pdns.sign_zone(dom_db["name"])
+    if dom_db["ns"] == policy.policy("dns_servers"):
+        update_doms_ds(req, key_data, dom_db)
+    return pdns_get_data(req, dom_db)
+
+
+def update_doms_ds(req, key_data, dom_db):
+    for key in key_data:
+        if "ds" in key:
+            for ds_rr in key["ds"]:
+                if ds_rr.find(" 2 ") >= 0:
+                    sql.sql_update_one("domains", {"ds": ds_rr}, {
+                        "domain_id": dom_db["domain_id"],
+                        "user_id": req.user_id
+                    })
+                    domains.domain_backend_update(dom_db)
+
+
+def pdns_drop_zone(req, dom_db):
+    if pdns.delete_zone(dom_db["name"]):
+        return req.response(None)
+    return req.abort("Domain data failed to drop")
+
+
+def check_rr_data(add_rr):
+    for item in ["rr_name", "rr_type", "rr_data", "rr_ttl"]:
+        if item not in add_rr:
+            log(f"missing {item}")
+            return False
+    return True
+
+
+def pdns_update_rrs(req, dom_db):
+    if not check_rr_data(flask.request.json):
+        return req.abort("RR data missing")
+
+    rr_data = {i[3:]: flask.request.json[i] for i in ["rr_name", "rr_type", "rr_data", "rr_ttl"]}
+
+    if not validate.is_valid_fqdn(rr_data["name"]):
+        return req.abort("A: Invalid data sent")
+    if not validate.valid_rr_type(rr_data["type"]):
+        return req.abort("B: Invalid data sent")
+    if not isinstance(rr_data["ttl"], int):
+        return req.abort("C: Invalid data sent")
+
+    ok, reply = pdns.update_rrs(dom_db["name"], rr_data)
+    if not ok:
+        return req.abort(reply)
+
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/dns/update', methods=['POST'])
+def domain_dns_update():
+    return pdns_action(pdns_update_rrs)
+
+
+@application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
+def domain_dns_drop():
+    return pdns_action(pdns_drop_zone)
+
+
+@application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
+def domain_dns_sign():
+    return pdns_action(pdns_sign_zone)
+
+
+@application.route('/pyrar/v1.0/dns/load', methods=['POST'])
+def domain_dns_load():
+    return pdns_action(pdns_get_data)
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
@@ -494,7 +573,7 @@ def rest_domain_price():
     if ok:
         return req.response(reply)
 
-    log("FAILED:" + str(ok) + ":" + str(reply) + ":" + str(dom_obj.names))
+    log(f"FAILED: {ok}:{reply}:{dom_obj.names}")
     return req.abort(reply)
 
 

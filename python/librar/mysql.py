@@ -88,9 +88,9 @@ def now(offset=0):
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def date_add(mysql_time,days=0,hours=0,minutes=0,months=0,years=0):
-    now = datetime.datetime.strptime(mysql_time,"%Y-%m-%d %H:%M:%S")
-    now += relativedelta(days=days,hours=hours,minutes=minutes,months=months,years=years)
+def date_add(mysql_time, days=0, hours=0, minutes=0, months=0, years=0):
+    now = datetime.datetime.strptime(mysql_time, "%Y-%m-%d %H:%M:%S")
+    now += relativedelta(days=days, hours=hours, minutes=minutes, months=months, years=years)
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 

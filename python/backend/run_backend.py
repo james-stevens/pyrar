@@ -22,7 +22,7 @@ from backend.plugins import *
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
 # dom/update included here in case dom.auto_renew changes
-RECREATE_ACTIONS_FOR = [ "dom/update", "dom/renew", "dom/create", "dom/transfer", "dom/recover" ]
+RECREATE_ACTIONS_FOR = ["dom/update", "dom/renew", "dom/create", "dom/transfer", "dom/recover"]
 
 
 def job_worked(bke_job):
@@ -44,7 +44,7 @@ def check_for_recreate(bke_job):
     if bke_job["job_type"] not in RECREATE_ACTIONS_FOR:
         return True
 
-    ok, dom_db = sql.sql_select_one("domains", {"domain_id":bke_job["domain_id"]})
+    ok, dom_db = sql.sql_select_one("domains", {"domain_id": bke_job["domain_id"]})
     if not ok:
         log(f"ERROR: trying to create actions for missing domain {bke_job['domain_id']}")
         return False
@@ -66,7 +66,7 @@ def run_backend_item(bke_job):
     if reg["type"] not in handler.backend_plugins:
         return job_abort(bke_job)
 
-    if (plugin_func := handler.run(reg["type"],bke_job["job_type"])) is None:
+    if (plugin_func := handler.run(reg["type"], bke_job["job_type"])) is None:
         log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'")
         return job_abort(bke_job)
 
@@ -97,7 +97,7 @@ def run_server():
         if ret and len(bke_job) > 0:
             run_backend_item(bke_job[0])
         else:
-            signal_mtime = sigprocs.signal_wait("backend",signal_mtime)
+            signal_mtime = sigprocs.signal_wait("backend", signal_mtime)
 
 
 def start_up(is_live):
@@ -157,9 +157,9 @@ def main():
         "job_type": args.action,
         "num_years": 1,
         "domain_id": args.domain_id
-        }
+    }
     dom_db = shared.get_dom_from_db(bke_job)
-    out_js = this_fn(bke_job,dom_db)
+    out_js = this_fn(bke_job, dom_db)
     print(json.dumps(out_js, indent=3))
     return 0
 

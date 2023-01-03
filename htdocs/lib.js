@@ -1,4 +1,7 @@
 
+// add a trailing '.' for these record types, if the user forgets
+const autoAddDot = { rrMX: true, rrNS: true, rrCNAME: true, };
+
 // regex for an FQDN hostname
 const fqdnCheck = /^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*(xn--|)[A-Za-z0-9\-]+$/;
 
@@ -210,6 +213,3 @@ function errMsg(txt,tagged_elm)
     ctx.lastErrMsg = m.innerHTML;
     ctx.err_msg_tout = setTimeout(unerrMsg,2500);
 }
-
-
-

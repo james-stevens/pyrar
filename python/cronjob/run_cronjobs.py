@@ -8,6 +8,7 @@ from librar import mysql as sql
 from librar.log import init as log_init
 from librar.policy import this_policy as policy
 
+
 def clear_old_session_keys():
     tout = policy.policy('session_timeout') * 2
     query = f"delete from session_keys where amended_dt < date_sub(now(), interval {tout} minute)"

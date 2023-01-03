@@ -4,6 +4,7 @@
 
 backend_plugins = {}
 
+
 def add_plugin(name, funcs):
     global plugins
     backend_plugins[name] = funcs

@@ -1,8 +1,6 @@
-#! /usr/bin/python3
+#! /bin/sh
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-from webui.run_webui import application
-
-if __name__ == "__main__":
-    application.run()
+cd ${BASE}/python/actions
+exec ./run_actions.py -l >/tmp/action.log 2>&1

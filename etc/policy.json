@@ -26,7 +26,7 @@
 	"facility_nginx": "local0",
 	"loglevel_nginx": "info",
 
-	"webui_sessions": 10,
+	"webui_sessions": 5,
 	"syslog_server" : null,
 
 	"dns_servers": "ns1.dns.com,ns2.dns.com",
