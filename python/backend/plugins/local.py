@@ -27,6 +27,11 @@ def tld_pdns_check(name):
 
 
 def domain_delete(bke_job, dom_db):
+	ok_remove = remove_parent_records(bke_job, dom_db)
+	return ok_remove and ok_delete and ok
+
+
+def remove_parent_records(bke_job, dom_db):
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
@@ -35,10 +40,10 @@ def domain_delete(bke_job, dom_db):
         return False
 
     # remove SLD from TLD in pdns - A & AAAA incase they used the SLD as an NS name
-    ok_a = pdns.update_rrs(tld, {"name": name, "type": "A", "data": []})
-    ok_aaaa = pdns.update_rrs(tld, {"name": name, "type": "AAAA", "data": []})
-    ok_ns = pdns.update_rrs(tld, {"name": name, "type": "NS", "data": []})
-    ok_ds = pdns.update_rrs(tld, {"name": name, "type": "DS", "data": []})
+    ok_a, __ = pdns.update_rrs(tld, {"name": name, "type": "A", "data": []})
+    ok_aaaa, __ = pdns.update_rrs(tld, {"name": name, "type": "AAAA", "data": []})
+    ok_ns, __ = pdns.update_rrs(tld, {"name": name, "type": "NS", "data": []})
+    ok_ds, __ = pdns.update_rrs(tld, {"name": name, "type": "DS", "data": []})
 
     # need code to remove glue records, when supported
 
@@ -46,7 +51,7 @@ def domain_delete(bke_job, dom_db):
 
 
 def domain_expired(bke_job, dom_db):
-    return domain_delete(bke_job, dom_db)
+    return remove_parent_records(bke_job, dom_db)
 
 
 def domain_create(bke_job, dom_db):
@@ -80,13 +85,13 @@ def domain_update_from_db(bke_job, dom_db):
     if sql.has_data(dom_db, "ns"):
         rrs["data"] = [d.strip(".") + "." for d in dom_db["ns"].split(",")]
 
-    ok_ns = pdns.update_rrs(tld, rrs)
+    ok_ns, __ = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
     if sql.has_data(dom_db, "ds"):
         rrs["data"] = dom_db["ds"].split(",")
 
-    ok_ds = pdns.update_rrs(tld, rrs)
+    ok_ds, __ = pdns.update_rrs(tld, rrs)
 
     return ok_ns and ok_ds
 
