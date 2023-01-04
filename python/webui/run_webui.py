@@ -430,18 +430,17 @@ def pdns_drop_zone(req, dom_db):
 
 
 def check_rr_data(add_rr):
-    for item in ["rr_name", "rr_type", "rr_data", "rr_ttl"]:
+    for item in ["name", "type", "data", "ttl"]:
         if item not in add_rr:
-            log(f"missing {item}")
             return False
     return True
 
 
 def pdns_update_rrs(req, dom_db):
-    if not check_rr_data(flask.request.json):
+    if "rr" not in flask.request.json or not check_rr_data(flask.request.json["rr"]):
         return req.abort("RR data missing")
 
-    rr_data = {i[3:]: flask.request.json[i] for i in ["rr_name", "rr_type", "rr_data", "rr_ttl"]}
+    rr_data = flask.request.json["rr"]
 
     if not validate.is_valid_fqdn(rr_data["name"]):
         return req.abort("A: Invalid data sent")

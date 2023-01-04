@@ -72,7 +72,7 @@ def check_domain_name(name):
 
 
 def is_valid_display_name(name):
-    if len(name.split(" ")) > 3:
+    if len(name.split(" ")) > 4:
         return False
     for illegal in "\\/:%=&'\";)({}#][<>\n\t":
         if name.find(illegal) >= 0:
@@ -104,6 +104,17 @@ def is_valid_fqdn(name):
     if len(name) > 255 or len(name) <= 0:
         return False
     return re.match(IS_FQDN, name, re.IGNORECASE) is not None
+
+
+def is_valid_hostname(name):
+    if name is None or not isinstance(name, str):
+        return False
+    if len(name) > 255 or len(name) <= 0:
+        return False
+    if name[:2]=="*.":
+        return re.match(IS_FQDN, name[2:], re.IGNORECASE) is not None
+    else:
+        return re.match(IS_FQDN, name, re.IGNORECASE) is not None
 
 
 def is_valid_ses_code(code):

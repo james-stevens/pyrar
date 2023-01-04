@@ -15,6 +15,8 @@ If you want to play with buying domains on the demo, I can give you some fake cr
 If you would like to help with this development effort, right now, the absolutely biggest help
 would be to help fund it.
 
+- [Donate by PayPal](https://www.paypal.com/donate/?hosted_button_id=L8ABXW4X8W6BW)
+
 
 # docker.com
 
