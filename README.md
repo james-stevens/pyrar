@@ -1,5 +1,5 @@
 # pyrar - Open Source EPP DNS Registrar and simple self-contained Registry
-Python engine & rest/api with JS webui
+Python engine & rest/api with JS webui to provide a complete Domain Name Registrar
 
 ### This software is still undergoing constant & rapid development, so please come back later
 
