@@ -1,13 +1,19 @@
 # pyrar - Open Source EPP DNS Registrar and simple self-contained Registry
 Python engine & rest/api with JS webui
 
-## This software is still undergoing constant & rapid development, so please come back later
+### This software is still undergoing constant & rapid development, so please come back later
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
 A lot works, but there's also a lot more to do.
 
 If you want to play with buying domains on the demo, I can give you some fake credit, just ask.
+
+
+# Help with this effort
+
+If you would like to help with this development effort, right now, the absolutely biggest help
+would be to help fund it.
 
 
 # docker.com
@@ -67,10 +73,10 @@ but registries that do not support this should work, although setting up the pri
 
 Registries that use differential prices, but do not support `fee-1.0` would not be supported without significant code changes.
 
-By "different prices", I mean different prices for different domains (e.g. most newGTLDs), as opposed to a single flat price (e.g. COM & NET).
+By "differential prices", I mean different prices for different domains (e.g. most newGTLDs), as opposed to a single flat price (e.g. COM & NET).
 
 
-#  What Works, right now
+#  What Works - right now
 
 ## Users / Accounts
 - Register
