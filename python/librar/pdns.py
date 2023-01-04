@@ -166,24 +166,42 @@ def create_zone(name, with_dnssec=False):
         "url": f"{PDNS_BASE_URL}/zones/{name}/notify"
     }]
 
+    run_cmds(post_json)
+    return load_zone(name)
+
+
+def unsign_zone(name):
+    if name[-1] != ".":
+        name += "."
+
+    keys = load_zone_keys(name)
+
+    post_json = [ {
+        "cmd": "PUT",
+        "url": f"{PDNS_BASE_URL}/zones/{name}",
+        "data": { "nsec3param":"" },
+        } ]
+
+    for key in keys:
+        post_json.append({ "cmd":"DELETE", "url":f"{PDNS_BASE_URL}/zones/{name}/cryptokeys/{key['id']}" })
+
+    return run_cmds(post_json)
+
+
+def run_cmds(post_json):
+    ret = True
     for req in post_json:
         json_data = req["data"] if "data" in req else None
         request = client.build_request(req["cmd"],req["url"],json=json_data)
         response = client.send(request)
-
-    return load_zone(name)
+        ret = ret and response.status_code >= 200 and response.status_code <= 299
+    return ret
 
 
 def sign_zone(name):
     if name[-1] != ".":
         name += "."
-    post_json = dnssec_zone_cmds(name)
-
-    for req in post_json:
-        json_data = req["data"] if "data" in req else None
-        request = client.build_request(req["cmd"],req["url"],json=json_data)
-        response = client.send(request)
-
+    run_cmds(dnssec_zone_cmds(name))
     return load_zone_keys(name)
 
 
@@ -213,14 +231,7 @@ def delete_zone(name):
         "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
     } ]
 
-    ret = True
-    for req in post_json:
-        json_data = req["data"] if "data" in req else None
-        request = client.build_request(req["cmd"],req["url"],json=json_data)
-        resp = client.send(request)
-        ret = ret and resp.status_code >= 200 and resp.status_code <= 299
-
-    return ret
+    return run_cmds(post_json)
 
 
 def update_rrs(zone,rrs):
@@ -248,7 +259,11 @@ def update_rrs(zone,rrs):
         try:
             js_content = json.loads(resp.content)
             if "error" in js_content:
-                return ok, js_content["error"]
+                err_txt = js_content["error"]
+                if err_txt.find("(try 'pdnsutil check-zone'):") > 0:
+                    err_parts = err_txt.split(":")
+                    err_txt = err_parts[0] + ":" + err_parts[2]
+                return ok, err_txt
         except Exception as e:
             pass
         return ok, "Failed to update"
@@ -259,15 +274,16 @@ def update_rrs(zone,rrs):
 
 if __name__ == "__main__":
     start_up()
-    name="crap.zz"
+    name="crazy.zz"
+    print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
-    print("KEYS>>>>",load_zone_keys(name))
-    print("CREATE>>>>",json.dumps(create_zone(name, False),indent=3))
-    print("KEYS>>>>",load_zone_keys(name))
-    print("EXISTS>>>>",zone_exists(name))
-    print("DELETE>>>>",json.dumps(delete_zone(name)))
-    print("EXISTS>>>>",zone_exists(name))
-    print("KEYS>>>>",load_zone_keys(name))
+    # print("KEYS>>>>",load_zone_keys(name))
+    # print("CREATE>>>>",json.dumps(create_zone(name, False),indent=3))
+    # print("KEYS>>>>",load_zone_keys(name))
+    # print("EXISTS>>>>",zone_exists(name))
+    # print("DELETE>>>>",json.dumps(delete_zone(name)))
+    # print("EXISTS>>>>",zone_exists(name))
+    # print("KEYS>>>>",load_zone_keys(name))
     # print(json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))

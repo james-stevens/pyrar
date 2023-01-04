@@ -21,9 +21,9 @@ def dt_to_sql(src, dt):
 
 def parse_domain_info_xml(xml, data_type):
     data = {"ds": [], "ns": [], "status": []}
-    if "extension" in xml and "secDNS:{data_type}Data" in xml["extension"] and "secDNS:dsData" in xml["extension"][
-            "secDNS:{data_type}Data"]:
-        ds_data = xml["extension"]["secDNS:{data_type}Data"]["secDNS:dsData"]
+    if "extension" in xml and f"secDNS:{data_type}Data" in xml["extension"] and "secDNS:dsData" in xml["extension"][
+            f"secDNS:{data_type}Data"]:
+        ds_data = xml["extension"][f"secDNS:{data_type}Data"]["secDNS:dsData"]
         if isinstance(ds_data, dict):
             data["ds"] = [unroll_one_ds(ds_data)]
         elif isinstance(ds_data, list):

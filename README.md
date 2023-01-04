@@ -15,6 +15,14 @@ If you want to play with buying domains on the demo, I can give you some fake cr
 If you would like to help with this development effort, right now, the absolutely biggest help
 would be to help fund it.
 
+- [Donate by PayPal](https://www.paypal.com/donate/?hosted_button_id=L8ABXW4X8W6BW)
+- Donate by BTC - 357ynBdTQiVKybo93bP2cYbrkLbpGmQCj6
+- Donate by ETH - 0x20fbf9555F09a8579540970488dcB8245244b683 (Etherium Network ONLY)
+
+Donations are paid into a UK Limited Company, so if you want a trade invoice / recipt, just ask.
+
+Or you can sponsor me [through GitHub](https://github.com/sponsors/james-stevens) - Also see `Sponsor this project`
+
 
 # docker.com
 

@@ -46,6 +46,11 @@ if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
 
 changeTheme(gbl.theme);
 
+let basket = window.localStorage.getItem("basket");
+if (basket) {
+	gbl.basket = JSON.parse(basket);
+	}
+
 
 gbl.head = document.head || document.getElementsByTagName('head')[0];
 
@@ -200,6 +205,7 @@ function loggedIn()
 function emptyCart()
 {
 	delete gbl.basket;
+	window.localStorage.removeItem("basket");
 	user_info();
 	errMsg(`${gbl.cut} basket emptied`,"errorSpan");
 	if (elm.basketSpace.style.display == "block") goSearch();
@@ -211,6 +217,7 @@ function removeBasketItem(i)
 {
 	if (gbl.basket.length == 1) {
 		delete gbl.basket;
+		window.localStorage.removeItem("basket");
 		if (elm.basketSpace.style.display == "block") goSearch();
 		}
 	else gbl.basket.splice(i,1);
@@ -220,6 +227,7 @@ function removeBasketItem(i)
 		delete ctx.popup.timer;
 		}
 
+	window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
 	user_info()
 	if (elm.basketSpace.style.display == "block") basketCheckout();
 }
@@ -521,9 +529,9 @@ function buy_one_name(domain,action)
 		let new_item = {
 			"domain": dom.name,
 			"num_years": dom.num_years,
-			 "cost": dom[action],
-			 "action": action
-			 };
+			"cost": dom[action],
+			"action": action
+			};
 
 		if (!("basket" in gbl)) { gbl.basket = [new_item]; }
 		else {
@@ -543,6 +551,7 @@ function buy_one_name(domain,action)
 				}
 			}
 
+		window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
 		user_info();
 		clr_lazy_hide();
 		elm.basketPopup.classList.add("show");
@@ -628,10 +637,12 @@ function doSearch()
 function userDomainList()
 {
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
+	let default_dns_servers = policy("dns_servers",null);
 
 	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
+
 	for(let i in ctx.domains) {
 		let dom = ctx.domains[i];
 		x += `<tr onClick="show_one_domain(${i});" class=${cls}>`;
@@ -645,7 +656,8 @@ function userDomainList()
 			x += `<td align=center>${dom.expiry_dt.split(" ")[0]}</td>`;
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
-		x += `<td>${dom.ns.slice(0,40)}</td>`;
+
+		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td>${dom.ns.slice(0,40)}</td>`;
 
 		x += "</tr>";
 		}
@@ -1021,11 +1033,13 @@ function place_order()
 			}
 		catch_user_data(reply);
 		show_one_space("userSpace");
+		window.localStorage.removeItem("basket");
 		delete gbl.basket;
 
 		if ((ctx.failed_basket)&&(ctx.failed_basket.length >= 1)) {
 			gbl.basket = ctx.failed_basket;
 			delete ctx.failed_basket
+			window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
 			}
 
 		user_info();
@@ -1089,10 +1103,12 @@ function html_for_basket(with_place_order)
 
 	if (with_place_order) {
 		let btn_txt = "Place Order >>>";
-		x += `<tr><td colspan=3 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
-		if (total > ctx.user.acct_current_balance) {
-			x += `<tr><td colspan=3 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
-			btn_txt = "Place Order & Pay >>>";
+		if (ctx.user) {
+			x += `<tr><td colspan=3 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
+			if (total > ctx.user.acct_current_balance) {
+				x += `<tr><td colspan=3 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
+				btn_txt = "Place Order & Pay >>>";
+				}
 			}
 		x += `<tr><td colspan=4><div class="line"/></td></tr>`;
 		x += "<tr><td id=placeOrderBtn colspan=4 align=right>"+btn("place_order()",btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
@@ -1597,7 +1613,7 @@ function sign_zone(idx)
 
 	callApi("dns/sign",(ok,reply)=>{
 		if (!ok) {
-			msg = "DNS Data failed to load";
+			msg = "Domain failed to sign";
 			if (reply.error) msg = reply.error;
 			return errMsg(msg,"dnsBtnBar")
 			}
@@ -1640,56 +1656,54 @@ function process_add_rr(idx)
 	let add_rr = {}, elems = {};
 	for(let i of ["rr_name","rr_type","rr_ttl","rr_data"]) {
 		elems[i] = document.getElementById(i);
-		add_rr[i] = elems[i].value;
+		add_rr[i.slice(3)] = elems[i].value;
 		};
 
-    add_rr.rr_ttl = parseInt(add_rr.rr_ttl);
-    if ((add_rr.rr_name == "")||(add_rr.rr_name == "@"))
-    	add_rr.rr_name = dom.name + ".";
+    add_rr.ttl = parseInt(add_rr.ttl);
+    if ((add_rr.name == "")||(add_rr.name == "@"))
+    	add_rr.name = dom.name + ".";
 	else {
-		let as_puny = toASCII(add_rr.rr_name);
-		if ((as_puny != add_rr.rr_name)&&(hasIDN(as_puny)))
-			add_rr.rr_name = as_puny;
+		let as_puny = toASCII(add_rr.name);
+		if ((as_puny != add_rr.name)&&(hasIDN(as_puny)))
+			add_rr.name = as_puny;
 
-		if (!hostnameCheck.test(add_rr.rr_name)) {
+		if (!hostnameCheck.test(add_rr.name)) {
 			errMsg("Invalid host name","AddRRwin");
 			elems.rr_name.focus();
 			return;
 			}
 
-		add_rr.rr_name = `${add_rr.rr_name}.${dom.name}.`;
+		add_rr.name = `${add_rr.name}.${dom.name}.`;
 		}
 
-	if (isNaN(add_rr.rr_ttl)) {
+	if (isNaN(add_rr.ttl)) {
 		errMsg("Invalid TTL value","AddRRwin");
 		elems.rr_ttl.focus();
 		return;
 		}
 
-	val_rr = "rr" + add_rr.rr_type;
+	let val_rr = "rr" + add_rr.type;
 
-	if ((val_rr in autoAddDot)&&(add_rr.rr_data.slice(-1)!=".")) add_rr.rr_data += ".";
-
-	if ((add_rr.rr_type=="TXT")&&(add_rr.rr_data.slice(0,1)!='"')&&(add_rr.rr_data.slice(-1)!='"'))
-		add_rr.rr_data = `"${add_rr.rr_data}"`;
+	if ((add_rr.type=="TXT")&&(add_rr.data.slice(0,1)!='"')&&(add_rr.data.slice(-1)!='"'))
+		add_rr.data = `"${add_rr.data}"`;
 
 	if (val_rr in validations) {
-		if (!validations[val_rr].test(add_rr.rr_data)) {
-			console.log(add_rr.rr_data);
+		if (!validations[val_rr].test(add_rr.data)) {
 			errMsg("RR data failed validation test","AddRRwin")
 			elems.rr_data.focus();
 			return; }
 		}
 
-	let prev_rr_data = add_rr["rr_data"];
-	add_rr["rr_data"] = [ add_rr["rr_data"] ];
-	add_rr["name"] = dom["name"];
+	if ((val_rr in autoAddDot)&&(add_rr.data.slice(-1)!=".")) add_rr.data += ".";
+
+	let prev_rr_data = add_rr["data"];
+	add_rr["data"] = [ add_rr["data"] ];
 
 	for(let i of ctx.dns.rrsets) {
-		if ((i.name==add_rr.rr_name)&&(i.type==add_rr.rr_type)) {
+		if ((i.name==add_rr.name)&&(i.type==add_rr.type)) {
 			for(let c of i.records)
-				if (prev_rr_data != c.content)
-					add_rr.rr_data.push(c.content)
+				if (prev_data != c.content)
+					add_rr.data.push(c.content)
 			}
 		}
 
@@ -1701,7 +1715,7 @@ function process_add_rr(idx)
 			}
 		hideAllPopUp();
 		domain_dns(idx);
-		}, { json: add_rr });
+		}, { json: { "name":dom["name"], "rr": add_rr }} );
 }
 
 
@@ -1716,25 +1730,26 @@ function AddkeyDown(event,idx) {
 function edit_rr(idx,rrs_id,rec_id)
 {
 	let rrs = ctx.dns.rrsets[rrs_id];
-
-	let last_rr = {}
-	last_rr.rr_name = rrs.name;
-	last_rr.rr_type = rrs.type;
-	last_rr.rr_ttl = rrs.ttl;
-	last_rr.rr_data = rrs.records[rec_id].content;
-
-	ctx.last_rr = last_rr;
+	ctx.last_rr = {
+		"rr_name": rrs.name,
+		"rr_type": rrs.type,
+		"rr_ttl": rrs.ttl,
+		"rr_data": rrs.records[rec_id].content
+		}
 
 	let dom = ctx.domains[idx];
 	rr_data = []
-	for(let i in rrs.records) if (i!=rec_id) rr_data.push(rrs.records[i].content);
+	for(let i in rrs.records)
+		if (i!=rec_id) rr_data.push(rrs.records[i].content);
 
 	del_rr = {
 		"name": dom["name"],
-		"rr_name":rrs.name,
-		"rr_type":rrs.type,
-		"rr_ttl": rrs.ttl,
-		"rr_data": rr_data
+		"rr": {
+			"name":rrs.name,
+			"type":rrs.type,
+			"ttl": rrs.ttl,
+			"data": rr_data
+			}
 		};
 
 	callApi("dns/update",(ok,reply) => {
@@ -1807,7 +1822,16 @@ function add_rr_form(params)
 
 function unsign_zone(idx)
 {
-	return errMsg("Not yet implemented","dnsBtnBar");
+	let dom = ctx.domains[idx];
+	callApi("dns/unsign",(ok,reply)=>{
+		if (!ok) {
+			msg = "Domain failed to unsign";
+			if (reply.error) msg = reply.error;
+			return errMsg(msg,"dnsBtnBar")
+			}
+		ctx.dns = reply;
+		show_dns_data(idx);
+		},{ json: { "name": dom.name }})
 }
 
 
@@ -1832,6 +1856,8 @@ function show_dns_data(idx)
 
 	let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td align=center><table width=50%><tr><td class=btmBtnBar><span id=dnsBtnBar>"
+
+	x += btn(`show_one_domain(${idx})`,`< Back`,"Go back to the domain info",100)
 
     x += generic_popup_btn({
         "name": "DropDataWin",

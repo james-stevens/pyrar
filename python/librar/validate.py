@@ -20,42 +20,70 @@ VALID_DS_LEN = {1: 40, 2: 64, 3: 64, 4: 96}
 
 VALID_RR_TYPES = {
     "A": True,
-    "NS": True,
+    "A6": True,
+    "AAAA": True,
+    "ADDR": True,
+    "AFSDB": True,
+    "ALIAS": True,
+    "ATMA": True,
+    "CAA": True,
+    "CDNSKEY": True,
+    "CDS": True,
+    "CERT": True,
+    "CNAME": True,
+    "DHCID": True,
+    "DLV": True,
+    "DNAME": True,
+    "DNSKEY": True,
+    "DS": True,
+    "EID": True,
+    "EUI48": True,
+    "EUI64": True,
+    "GPOS": True,
+    "HINFO": True,
+    "IPSECKEY": True,
+    "ISDN": True,
+    "KEY": True,
+    "KX": True,
+    "LOC": True,
+    "LUA": True,
+    "MAILA": True,
+    "MAILB": True,
+    "MB": True,
     "MD": True,
     "MF": True,
-    "CNAME": True,
-    "SOA": True,
-    "MB": True,
     "MG": True,
-    "MR": True,
-    "NULL": True,
-    "WKS": True,
-    "PTR": True,
-    "HINFO": True,
     "MINFO": True,
+    "MR": True,
     "MX": True,
-    "TXT": True,
-    "RP": True,
-    "AFSDB": True,
-    "X25": True,
-    "ISDN": True,
-    "RT": True,
+    "NAPTR": True,
+    "NIMLOC": True,
+    "NS": True,
     "NSAP": True,
     "NSAP_PTR": True,
-    "SIG": True,
-    "KEY": True,
-    "PX": True,
-    "GPOS": True,
-    "AAAA": True,
-    "LOC": True,
+    "NULL": True,
     "NXT": True,
-    "EID": True,
-    "NIMLOC": True,
+    "OPENPGPKEY": True,
+    "OPT": True,
+    "PTR": True,
+    "PX": True,
+    "RKEY": True,
+    "RP": True,
+    "RRSIG": True,
+    "RT": True,
+    "SIG": True,
+    "SMIMEA": True,
+    "SOA": True,
+    "SPF": True,
     "SRV": True,
-    "ATMA": True,
-    "NAPTR": True,
-    "A6": True,
-    "DNAME": True
+    "SSHFP": True,
+    "TKEY": True,
+    "TLSA": True,
+    "TXT": True,
+    "URI": True,
+    "WKS": True,
+    "WKS ": True,
+    "X25": True
 }
 
 
@@ -72,7 +100,7 @@ def check_domain_name(name):
 
 
 def is_valid_display_name(name):
-    if len(name.split(" ")) > 3:
+    if len(name.split(" ")) > 4:
         return False
     for illegal in "\\/:%=&'\";)({}#][<>\n\t":
         if name.find(illegal) >= 0:
@@ -104,6 +132,17 @@ def is_valid_fqdn(name):
     if len(name) > 255 or len(name) <= 0:
         return False
     return re.match(IS_FQDN, name, re.IGNORECASE) is not None
+
+
+def is_valid_hostname(name):
+    if name is None or not isinstance(name, str):
+        return False
+    if len(name) > 255 or len(name) <= 0:
+        return False
+    if name[:2]=="*.":
+        return re.match(IS_FQDN, name[2:], re.IGNORECASE) is not None
+    else:
+        return re.match(IS_FQDN, name, re.IGNORECASE) is not None
 
 
 def is_valid_ses_code(code):

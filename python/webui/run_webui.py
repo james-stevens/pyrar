@@ -10,6 +10,7 @@ from librar import misc
 from librar import validate
 from librar import passwd
 from librar import pdns
+from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
@@ -381,7 +382,7 @@ def pdns_action(func):
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    if "name" not in flask.request.json or not validate.is_valid_fqdn(flask.request.json["name"]):
+    if not validate.is_valid_fqdn(flask.request.json["name"]):
         return req.abort("No domain specified")
 
     ok, dom_db = sql.sql_select_one("domains", {"name": flask.request.json["name"], "user_id": req.user_id})
@@ -411,6 +412,18 @@ def pdns_sign_zone(req, dom_db):
     return pdns_get_data(req, dom_db)
 
 
+def pdns_unsign_zone(req, dom_db):
+    key_data = pdns.unsign_zone(dom_db["name"])
+    if dom_db["ns"] == policy.policy("dns_servers"):
+        sql.sql_update_one("domains", {"ds": None}, {
+            "domain_id": dom_db["domain_id"],
+            "user_id": req.user_id
+        })
+        domains.domain_backend_update(dom_db)
+        sigprocs.signal_service("backend")
+    return pdns_get_data(req, dom_db)
+
+
 def update_doms_ds(req, key_data, dom_db):
     for key in key_data:
         if "ds" in key:
@@ -421,36 +434,47 @@ def update_doms_ds(req, key_data, dom_db):
                         "user_id": req.user_id
                     })
                     domains.domain_backend_update(dom_db)
+                    sigprocs.signal_service("backend")
 
 
 def pdns_drop_zone(req, dom_db):
     if pdns.delete_zone(dom_db["name"]):
-        return req.response(None)
+        return req.response(True)
     return req.abort("Domain data failed to drop")
 
 
-def check_rr_data(add_rr):
-    for item in ["rr_name", "rr_type", "rr_data", "rr_ttl"]:
-        if item not in add_rr:
-            log(f"missing {item}")
+def check_rr_data(dom_db,add_rr):
+    if "rr" not in add_rr:
+        log("No `rr` property")
+        return False
+
+    for item in ["name", "type", "data", "ttl"]:
+        if item not in add_rr["rr"]:
+            log(f"{item} is missing")
             return False
+
+    if not validate.is_valid_hostname(add_rr["rr"]["name"]):
+        log("Invalid host name")
+        return False
+    if not validate.valid_rr_type(add_rr["rr"]["type"]):
+        log(f"Invalid RR type")
+        return False
+    if not isinstance(add_rr["rr"]["ttl"], int):
+        log(f"TTL is not integer")
+        return False
+
+    if len(add_rr["rr"]["name"]) > len(dom_db["name"]) and add_rr["rr"]["name"][-1*len(dom_db["name"])-1:-1] != dom_db["name"]:
+        log(f"Bad name suffix")
+        return False
+
     return True
 
 
 def pdns_update_rrs(req, dom_db):
-    if not check_rr_data(flask.request.json):
-        return req.abort("RR data missing")
+    if not check_rr_data(dom_db,flask.request.json):
+        return req.abort("RR data missing or invalid")
 
-    rr_data = {i[3:]: flask.request.json[i] for i in ["rr_name", "rr_type", "rr_data", "rr_ttl"]}
-
-    if not validate.is_valid_fqdn(rr_data["name"]):
-        return req.abort("A: Invalid data sent")
-    if not validate.valid_rr_type(rr_data["type"]):
-        return req.abort("B: Invalid data sent")
-    if not isinstance(rr_data["ttl"], int):
-        return req.abort("C: Invalid data sent")
-
-    ok, reply = pdns.update_rrs(dom_db["name"], rr_data)
+    ok, reply = pdns.update_rrs(dom_db["name"], flask.request.json["rr"])
     if not ok:
         return req.abort(reply)
 
@@ -465,6 +489,11 @@ def domain_dns_update():
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
     return pdns_action(pdns_drop_zone)
+
+
+@application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
+def domain_dns_unsign():
+    return pdns_action(pdns_unsign_zone)
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
