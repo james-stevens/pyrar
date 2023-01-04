@@ -21,7 +21,7 @@ would be to help fund it.
 
 Donations are paid into a UK Limited Company, so if you want a trade invoice / recipt, just ask.
 
-Or you can sponsor me through GitHub.
+Or you can sponsor me [through GitHub](https://github.com/sponsors/james-stevens) - Also see `Sponsor this project`
 
 
 # docker.com
