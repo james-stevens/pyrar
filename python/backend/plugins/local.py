@@ -27,8 +27,8 @@ def tld_pdns_check(name):
 
 
 def domain_delete(bke_job, dom_db):
-	ok_remove = remove_parent_records(bke_job, dom_db)
-	return ok_remove and ok_delete and ok
+    ok_remove = remove_parent_records(bke_job, dom_db)
+    return ok_remove and ok_delete and ok
 
 
 def remove_parent_records(bke_job, dom_db):

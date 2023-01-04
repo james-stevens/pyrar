@@ -63,7 +63,7 @@ def delete_domain(act_db, dom_db):
     if dom_db["status_id"] == misc.STATUS_WAITING_PAYMENT:
         return True
 
-	ok_pdns = pdns.delete_zone(dom_db["name"])
+    ok_pdns = pdns.delete_zone(dom_db["name"])
 
     del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
     del_dom_db["deleted_dt"] = None
