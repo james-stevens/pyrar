@@ -11,6 +11,9 @@ DEFAULT_CURRENCY = {"iso": "USD", "separator": [",", "."], "symbol": "$", "decim
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
 policy_defaults = {
+	"website_name": "https://example.com",
+	"email_sender": "support@example.com",
+	"email_return": "no_reply@example.com",
     "facility_backend": "local0",
     "facility_python_code": "local0",
     "log_python_code": True,
@@ -30,8 +33,8 @@ policy_defaults = {
     "max_renew_years": 10,
     "max_basket_size": 10,
     "trans_per_page": 25,
-    "orders_expire_days": 3,
-    "domain_expire_delete": 30,
+    "orders_expire_hrs": int(6.5*24),
+    "expire_recover_limit": 30,
     "auto_renew_before": 14,
     "renewal_reminders": "30,14,7"
 }

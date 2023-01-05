@@ -37,7 +37,7 @@ def process_order(order_db):
     if not trans_id:
         return False
 
-    ok, sold_id = sales.sold_item(trans_id, order_db, dom_db['name'], user_db["email"])
+    ok, sold_id = sales.sold_item(trans_id, order_db, dom_db, user_db)
     if ok and sold_id:
         sql.sql_update("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 

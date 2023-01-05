@@ -33,57 +33,81 @@ def make_blank_domain(name, user_db, status_id):
         "amended_dt": None,
         "expiry_dt": None
         }
-    return sql.sql_insert("domains",dom_db)
+    ok, dom_id = sql.sql_insert("domains",dom_db)
+    if ok:
+        dom_db["domain_id"] = dom_id
+
+    return ok, dom_db
 
 
-def webui_basket(basket, user_id):
-    ok, reply = capture_basket(basket, user_id)
+def event_log(req,order):
+    event_db = misc.where_event_log()
+    event_db.update(req.base_event)
+    event_db.update({
+        "event_type": f"order/{order['action']}",
+        "notes": f"Order: {order['domain']} order for {order['action']} for {order['num_years']} yrs - {'failed' not in order}",
+        "domain_id": order["dom_db"]["domain_id"] if "dom_db" in order else None
+        })
+    sql.sql_insert("events", event_db)
+
+
+def webui_basket(basket, req):
+    ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
+    if not ok:
+        return False, user_db
+
+    whole_basket = {
+        "basket": basket,
+        "user_db": user_db
+        }
+
+    ok, reply = capture_basket(req, whole_basket)
     if not ok:
         return False, reply
 
+
     basket[:] = [ order for order in basket if "paid-for" not in order ]
     if len(basket) > 0:
-        ok, reply = save_basket(basket, user_id)
+        ok, reply = save_basket(req, whole_basket)
         if not ok:
             return False, reply
 
     return True, basket
 
 
-def save_basket(basket, user_id):
-    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
-    if not ok:
-        return False, user_db
-
+def save_basket(req, whole_basket):
+    basket = whole_basket["basket"]
+    user_db = whole_basket["user_db"]
     for order in basket:
         if "failed" in order or "paid-for" in order:
             continue
 
         order_db = order["order_db"]
         if order_db["domain_id"] == -1:
-            ok, reply = make_blank_domain(order["domain"],user_db,misc.STATUS_WAITING_PAYMENT)
+            ok, dom_db = make_blank_domain(order["domain"],user_db,misc.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
-            order_db["domain_id"] = reply
+            order_db["domain_id"] = dom_db["domain_id"]
+            order["dom_db"] = dom_db
         ok, order_item_id = sql.sql_insert("orders",order_db)
         if not ok:
             return False, order_item_id
         order_db["order_item_id"] = order_item_id
+        event_log(req,order)
 
-    return True, basket
+    return True, True
 
 
-def capture_basket(basket, user_id):
+def capture_basket(req, whole_basket):
+    basket = whole_basket["basket"]
+    user_db = whole_basket["user_db"]
+
     if len(basket) > policy.policy("max_basket_size"):
         return False, "Basket too full"
 
-    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
+    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_db["user_id"]}, "sum(price_paid) 'sum_orders'")
     if not ok:
         return False, "Failed to read database"
-
-    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
-    if not ok:
-        return False, "Failed to read user account"
 
     availble_balance = user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]
 
@@ -93,29 +117,27 @@ def capture_basket(basket, user_id):
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
         return False, "Please clear your debt before placing more orders"
 
-    ok, reply = parse_basket(basket, user_db)
+    ok, reply = parse_basket(whole_basket)
     if not ok:
         return False, reply
 
-    live_process_basket(basket, user_db)
+    live_process_basket(req, whole_basket)
     return True, basket
 
 
-def live_process_basket(basket, user_db):
+def live_process_basket(req, whole_basket):
+    user_db = whole_basket["user_db"]
+    basket = whole_basket["basket"]
     for order in basket:
-        if "failed" in basket:
+        if "failed" in order:
             continue
 
-        if (ok := paid_for_basket_item(order,user_db)) is None:
+        if (ok := paid_for_basket_item(req, order,user_db)) is None:
             if ok is None:
                 order["failed"] = "Pay for failed"
-        else:
-            ok, user_db = sql.sql_select_one("users", {"user_id": user_db["user_id"]})
-            if not ok:
-                order["failed"] = "Database read failed"
 
 
-def paid_for_basket_item(order, user_db):
+def paid_for_basket_item(req, order, user_db):
     if "failed" in order:
         return False
 
@@ -129,22 +151,25 @@ def paid_for_basket_item(order, user_db):
     if not trans_id:
         return False
 
-    ok, sold_id = sales.sold_item(trans_id,order_db,order['domain'],user_db["email"])
+    match order_db['order_type']:
+        case "dom/transfer":
+            ok, dom_db = make_blank_domain(order['domain'],user_db,misc.STATUS_TRANS_QUEUED)
+            if not ok:
+                return False
+            order_db["domain_id"] = dom_db["domain_id"]
+            order["dom_db"] = dom_db
+        case "dom/create":
+            ok, dom_db = make_blank_domain(order['domain'],user_db,misc.STATUS_LIVE)
+            if not ok:
+                return False
+            order_db["domain_id"] = dom_db["domain_id"]
+            order["dom_db"] = dom_db
+
+    ok, sold_id = sales.sold_item(trans_id,order_db,order["dom_db"],user_db)
     if ok and sold_id:
         sql.sql_update("transactions",{"sales_item_id":sold_id},{"transaction_id":trans_id})
 
-    match order_db['order_type']:
-        case "dom/transfer":
-            ok, domain_id = make_blank_domain(order['domain'],user_db,misc.STATUS_TRANS_QUEUED)
-            if not ok:
-                return False
-            order_db["domain_id"] = domain_id
-        case "dom/create":
-            ok, domain_id = make_blank_domain(order['domain'],user_db,misc.STATUS_LIVE)
-            if not ok:
-                return False
-            order_db["domain_id"] = domain_id
-
+    event_log(req,order)
     order["paid-for"] = True
     sales.make_backend_job(order_db)
     return True
@@ -166,7 +191,9 @@ def check_basket_item(basket_item):
     return True, None
 
 
-def parse_basket(basket, user_db):
+def parse_basket(whole_basket):
+    basket = whole_basket["basket"]
+    user_db = whole_basket["user_db"]
     for order in basket:
         ok, reply = check_basket_item(order)
         if not ok:
@@ -192,11 +219,7 @@ def parse_basket(basket, user_db):
             order["order_db"] = reply
 
     for order in basket:
-        if "failed" in order:
-            continue
-
-        if order["cost"] != order["order_db"]["price_paid"]:
-            debug(f'{order["cost"]} is not {order["order_db"]["price_paid"]}')
+        if "failed" not in order and order["cost"] != order["order_db"]["price_paid"]:
             order["failed"] = "Cost mismatch"
 
     return True, basket
@@ -236,6 +259,8 @@ def get_order_domain_id(order, user_db):
     ok, dom_db = sql.sql_select_one("domains", {"name": order["domain"]})
     if not ok:
         return False, f"Domain database lookup error: {order['domain']}"
+
+    order["dom_db"] = dom_db
 
     match order["action"]:
         case "transfer":
@@ -316,10 +341,10 @@ def main():
     log_init(with_debug=True)
     sql.connect("webui")
     registry.start_up()
-    # run_test(1)
-    user_id = 10452
-    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
-    print(ok,sum_orders)
+    run_test(1)
+    # user_id = 10452
+    # ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_id}, "sum(price_paid) 'sum_orders'")
+    # print(ok,sum_orders)
 
 
 if __name__ == "__main__":

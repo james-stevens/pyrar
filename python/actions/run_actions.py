@@ -55,19 +55,22 @@ def flag_expired_domain(act_db, dom_db):
     return make_backend_job("dom/expired", dom_db)
 
 
+def order_cancel(act_db, dom_db):
+    sql.sql_delete_one("orders",{"domain_id":dom_db["domain_id"],"user_id":dom_db["user_id"]})
+    return delete_domain(act_db, dom_db)
+
+
 def delete_domain(act_db, dom_db):
     ok = sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
     if not ok:
         return False
 
-    if dom_db["status_id"] == misc.STATUS_WAITING_PAYMENT:
-        return True
-
     ok_pdns = pdns.delete_zone(dom_db["name"])
 
-    del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
-    del_dom_db["deleted_dt"] = None
-    sql.sql_insert("deleted_domains", del_dom_db)
+    if dom_db["status_id"] == misc.STATUS_WAITING_PAYMENT:
+        del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
+        del_dom_db["deleted_dt"] = None
+        sql.sql_insert("deleted_domains", del_dom_db)
 
     return make_backend_job("dom/delete", dom_db)
 
@@ -88,6 +91,7 @@ def delete_action(act_db):
 
 
 action_exec = {
+    "order/cancel": order_cancel,
     "dom/delete": delete_domain,
     "dom/expired": flag_expired_domain,
     "dom/auto-renew": auto_renew_domain,

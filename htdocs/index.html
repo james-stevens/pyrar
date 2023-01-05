@@ -205,7 +205,6 @@ function loggedIn()
 function emptyCart()
 {
 	delete gbl.basket;
-	window.localStorage.removeItem("basket");
 	user_info();
 	errMsg(`${gbl.cut} basket emptied`,"errorSpan");
 	if (elm.basketSpace.style.display == "block") goSearch();
@@ -217,7 +216,6 @@ function removeBasketItem(i)
 {
 	if (gbl.basket.length == 1) {
 		delete gbl.basket;
-		window.localStorage.removeItem("basket");
 		if (elm.basketSpace.style.display == "block") goSearch();
 		}
 	else gbl.basket.splice(i,1);
@@ -227,7 +225,6 @@ function removeBasketItem(i)
 		delete ctx.popup.timer;
 		}
 
-	window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
 	user_info()
 	if (elm.basketSpace.style.display == "block") basketCheckout();
 }
@@ -255,18 +252,7 @@ function start_basket_table(show_failed)
 
 function user_info()
 {
-	if (gbl.basket) {
-		elm.basketIcon.style.display = "block";
-		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table(false)
-		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
-		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
-		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
-		x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
-		x += "</table>";
-		elm.basketPopup.innerHTML = x;
-		}
-	else
-		elm.basketIcon.style.display = "none";
+	basket_changed();
 
 	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="block";
 	else elm.emailIcon.style.display="none";
@@ -383,7 +369,32 @@ function loggedOut()
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "none";
 	elm.userInfo.innerHTML = "";
+
+	elm.emailIcon.style.display="none";
+	elm.ordersIcon.style.display="none";
+
 	goSearch();
+}
+
+
+
+function basket_changed()
+{
+	if (gbl.basket) {
+		elm.basketIcon.style.display = "block";
+		let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>' + start_basket_table(false)
+		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
+		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
+		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
+		x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
+		x += "</table>";
+		elm.basketPopup.innerHTML = x;
+        window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
+		}
+	else {
+		elm.basketIcon.style.display = "none";
+		window.localStorage.removeItem("basket");
+		}
 }
 
 
@@ -423,8 +434,9 @@ function bodyLoaded()
 
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 		size_one_space();
+		basket_changed();
 
-		if ("session" in ctx) {
+		if (ctx.session) {
 			callApi("users/details",(ret,reply) => {
 				if (ret) {
 					catch_user_data(reply);
@@ -551,7 +563,7 @@ function buy_one_name(domain,action)
 				}
 			}
 
-		window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
+		basket_changed();
 		user_info();
 		clr_lazy_hide();
 		elm.basketPopup.classList.add("show");
@@ -1020,6 +1032,43 @@ function domain_of(domain_id)
 }
 
 
+function check_login_for_order()
+{
+	function complete_place_order(reply)
+	{
+		catch_user_data(reply);
+		loggedIn();
+		elm.basketSpace.innerHTML = html_for_basket(true)
+		place_order()
+	}
+
+	if (!gbl.basket) return errMsg("Basket is empty","placeOrderBtn");
+
+	let login = {};
+
+	for(let i of ["email","password","confirm"]) {
+		let e = document.getElementById("reg_pay_"+i);
+		if (!e) return errMsg("Error: login field ${i} missing","placeOrderBtn");
+		login[i] = e.value;
+		}
+
+	callApi("users/login",(ret,reply) => {
+			if (ret) return complete_place_order(reply);
+
+			if ((!login.password.length)||(!login.confirm.length)||(login.password!=login.confirm))
+				return errMsg("Password / Confirm missing or do not match","placeOrderBtn")
+
+			callApi("users/register",(ret,reply) => {
+				if (ret) return complete_place_order(reply);
+
+				let msg="Error in registration";
+				if ("error" in reply) msg = reply["error"];
+				errMsg(msg,"placeOrderBtn");
+				}, { json: login });
+		}, { json: login });
+}
+
+
 
 function place_order()
 {
@@ -1033,13 +1082,11 @@ function place_order()
 			}
 		catch_user_data(reply);
 		show_one_space("userSpace");
-		window.localStorage.removeItem("basket");
 		delete gbl.basket;
 
 		if ((ctx.failed_basket)&&(ctx.failed_basket.length >= 1)) {
 			gbl.basket = ctx.failed_basket;
 			delete ctx.failed_basket
-			window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
 			}
 
 		user_info();
@@ -1049,7 +1096,7 @@ function place_order()
 			fn = show_all_orders_processed;
 			}
 		load_domains_list(fn);
-		}, { json:gbl.basket });
+		}, { json: gbl.basket });
 }
 
 
@@ -1094,7 +1141,23 @@ function basketCheckout()
 function html_for_basket(with_place_order)
 {
 	if (with_place_order) width="75%"; else width="100%";
-	let x = `<table align=center width=${width} border=0 cellspacing=2 cellpadding=5>` + start_basket_table(!with_place_order);
+	let x = `<table align=center width=${width} border=0 cellspacing=2 cellpadding=5>`;
+	let fn = "place_order()";
+
+	if ((with_place_order)&&(!ctx.session)) {
+		x += "<tr><td colspan=4>";
+		x += "<table width=100%>";
+		x += "<colgroup><col width=30%/><col width=70%/></colgroup>";
+		x += "<tr onClick='toggleRegister();'><Td colspan=2><div style='height: 15px;'></div></td></tr>";
+		x += "<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input style='width: 250px;' id='reg_pay_email'>&nbsp;</td></tr>";
+		x += "<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_password'>&nbsp;</td></tr>";
+		x += "<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_confirm'>&nbsp;</td></tr>";
+		x += "<tr><td colspan=2><div style='height: 7px;'></div></td></tr>";
+		x += "</table></td></tr>";
+		fn = "check_login_for_order()";
+	}
+
+	x += start_basket_table(!with_place_order);
 	let total = 0;
 	for(let i of gbl.basket) total += i.cost;
 
@@ -1111,7 +1174,7 @@ function html_for_basket(with_place_order)
 				}
 			}
 		x += `<tr><td colspan=4><div class="line"/></td></tr>`;
-		x += "<tr><td id=placeOrderBtn colspan=4 align=right>"+btn("place_order()",btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
+		x += "<tr><td id=placeOrderBtn colspan=4 align=right>"+btn(fn,btn_txt,"Please this order & pay for it, if necessary")+"</td></tr>";
 		}
 	else
 		x += `<tr><td colspan=4><div class="line"/></td></tr>`;
@@ -1578,19 +1641,19 @@ function domain_dns(idx)
 			return errMsg(msg,"dnsBtnBar")
 			}
 
-		if ((!reply)||(!reply.rrsets)||(!reply.rrsets.length))
+		if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
 			return errMsg("Failed to read DNS Data","domainBtnBar");
 
-		reply.rrsets.sort((a,b) => {
-			if ((a.name == reply.name)&&(b.name == reply.name)) {
+		reply.dns.rrsets.sort((a,b) => {
+			if ((a.name == reply.dns.name)&&(b.name == reply.dns.name)) {
 				for(tag of ["SOA","NS","MX"]) {
 					if (a.type == tag) return -1;
 					if (b.type == tag) return 1;
 					}
 				}
 			else {
-				if (a.name == reply.name) return -1;
-				if (b.name == reply.name) return 1;
+				if (a.name == reply.dns.name) return -1;
+				if (b.name == reply.dns.name) return 1;
 				if (a.name < b.name) return -1;
 				if (a.name > b.name) return 1;
 				}
@@ -1599,7 +1662,12 @@ function domain_dns(idx)
 			return 0;
 			})
 
-		ctx.dns = reply;
+		if (reply.domain) {
+			reply.domain.display_name = fromPuny(reply.domain.name);
+			ctx.domains[idx] = reply.domain;
+			}
+
+		ctx.dns = reply.dns;
 		show_dns_data(idx);
 
 		},{ json: { "name":dom.name }})
@@ -1618,7 +1686,12 @@ function sign_zone(idx)
 			return errMsg(msg,"dnsBtnBar")
 			}
 
-		ctx.dns = reply;
+		if (reply.domain) {
+			reply.domain.display_name = fromPuny(reply.domain.name);
+			ctx.domains[idx] = reply.domain;
+			}
+		if (reply.dns) ctx.dns = reply.dns;
+		
 		show_dns_data(idx);
 		},{ json: { "name": dom.name }})
 }
@@ -1637,13 +1710,8 @@ function drop_zone(idx)
 			return errMsg(msg,"dnsBtnBar")
 			}
 
-		if (!reply) {
-			delete ctx.dns;
-			show_one_domain(idx);
-		} else {
-			ctx.dns = reply;
-			show_dns_data(idx);
-			}
+		delete ctx.dns;
+		show_one_domain(idx);
 		},{ json: { "name": dom.name }})
 }
 
@@ -1829,7 +1897,13 @@ function unsign_zone(idx)
 			if (reply.error) msg = reply.error;
 			return errMsg(msg,"dnsBtnBar")
 			}
-		ctx.dns = reply;
+
+		if (reply.domain) {
+			reply.domain.display_name = fromPuny(reply.domain.name);
+			ctx.domains[idx] = reply.domain;
+			}
+		if (reply.dns) ctx.dns = reply.dns;
+
 		show_dns_data(idx);
 		},{ json: { "name": dom.name }})
 }
@@ -1906,16 +1980,9 @@ function show_dns_data(idx)
 		if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
 
 		x += `<tr onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow><td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
-		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.keys)&&(ctx.dns.keys.length)) {
-			for(let k of ctx.dns.keys) {
-				if (k.ds) {
-					for(let d of k.ds) {
-						if (d.indexOf(" 2 ")>=0)
-							x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${d}</td></tr>`;
-						}
-					}
-				}
-			}
+
+		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.ds))
+			x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${ctx.dns.ds}</td></tr>`;
 		}
 	}
 

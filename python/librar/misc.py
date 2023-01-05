@@ -2,6 +2,8 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import inspect
+
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
@@ -27,6 +29,15 @@ DOMAIN_STATUS = {
     101: "Transfer Requested",
     120: "Transfer Failed"
 }
+
+def where_event_log():
+    where = inspect.stack()[2]
+    return {
+        "program": where.filename.split("/")[-1].split(".")[0],
+        "function": where.function,
+        "line_num": where.lineno,
+        "when_dt": None
+        }
 
 
 def ashex(line):

@@ -3,4 +3,4 @@
 # Alternative license arrangements possible, contact me for more information
 
 cd ${BASE}/python/actions
-exec ./run_actions.py -l >/tmp/action.log 2>&1
+exec ./run_actions.py >/tmp/action.log 2>&1

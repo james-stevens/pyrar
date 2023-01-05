@@ -9,7 +9,7 @@ sqlsh "create table backend (
 	backend_id			${auto},
 	domain_id			${row_id},
 	user_id				${row_id},
-	job_type			varchar(20) not null default 'none',
+	job_type			varchar(50),
 	failures			int not null default 0,
 
 	num_years			int,
