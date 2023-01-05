@@ -1498,7 +1498,7 @@ function domain_settings(idx)
 	let x="<table width=75% align=center border=0>";
 	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings For - ${dom.display_name}</td></tr>`;
 	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
-	x += settings_header(`Change Domain Records`,true);
+	x += settings_header(`Change Parent Zone Records`,true);
 	x += "<table border=0 width=100%><colgroup><col width=30%/><col width=70%/></colgroup>";
 
     x += `<tr><td class=promptCell>Auto Renew :</td><td><select onChange='domAutoRenew(${idx});' id=dom_auto_renew>`;
