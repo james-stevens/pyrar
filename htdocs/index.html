@@ -1979,7 +1979,8 @@ function show_dns_data(idx)
 		let show_name = clean_host_name(dom_name,rrs.name);
 		if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
 
-		x += `<tr onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow><td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+		x += `<tr title='Click to delete / edit this record' onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow>2;
+		x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
 
 		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.ds))
 			x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${ctx.dns.ds}</td></tr>`;
@@ -1989,7 +1990,7 @@ function show_dns_data(idx)
 	x += "</table></td></tr></table>";
 	elm.userSpace.innerHTML = x;
 
-	if (last_rr) togglePopUp("AddRRwin",2000);
+	if (last_rr) togglePopUp("AddRRwin",0);
 }
 
 
