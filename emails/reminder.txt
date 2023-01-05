@@ -1,0 +1,22 @@
+From: {{ policy.email_sender }}
+X-Env-From: {{ policy.email_return }}
+Date: {{ email.date }}
+To: {{ user.email }}
+Subject: Renewal of domain {{ domain.name }}
+Content-Type: text/plain; charset=UTF-8;
+
+         IMPORTANT - THIS REQUIRES YOUR ATTENTION
+         ========================================
+
+Your registration for {{ domain.name }} expires on {{ domain.expiry_dt.split()[0] }}
+
+
+To renew the domain, please visit our online processing center at
+{{ policy.website_name }}/go/renew/{{ domain.name }}
+
+You may make changes to your registration using our Online Processing Center
+at {{ policy.website_name }}/go/moddom/{{ domain.name }}
+
+If you have forgotten your password you can reset it using this link...
+{{ policy.website_name }}/go/mailpass/{{ domain.name }}
+

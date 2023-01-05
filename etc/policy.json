@@ -10,6 +10,10 @@
 		"pow10" : 100
 		},
 
+	"website_name": "https://namehake.net",
+	"email_sender": "technical@namehake.net",
+	"email_return": "no_reply@namehake.net",
+
 	"session_timeout": 60,
 
 	"log_epp_api" : true,

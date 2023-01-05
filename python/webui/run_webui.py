@@ -146,7 +146,7 @@ def orders_cancel():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None or "order_item_id" not in flask.request.json:
+    if flask.request.json is None or "order_item_id" not in flask.request.json or not isinstance(flask.request.json["order_item_id"],int):
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": flask.request.json["order_item_id"]}
@@ -155,6 +155,15 @@ def orders_cancel():
         return req.abort(order_db)
     if len(order_db) <= 0:
         return req.abort("Order not found")
+
+    event_db = { "event_type": "order/cancel" }
+    dom_name = f"DOM-{order_db['domain_id']}"
+    ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id})
+    if ok:
+        event_db["domain_id"] = dom_db["domain_id"]
+        dom_name = dom_db['name']
+
+    event_db["notes"] = f"Cancel Order: {dom_name} order for {order_db['order_type']} for {order_db['num_years']}"
 
     ok = sql.sql_delete_one("orders", where)
     if not ok:
@@ -167,6 +176,7 @@ def orders_cancel():
             "status_id": misc.STATUS_WAITING_PAYMENT
         })
 
+    req.event(event_db)
     return load_orders_and_reply(req)
 
 
@@ -179,7 +189,7 @@ def basket_submit():
     if flask.request.json is None:
         return req.abort("No JSON posted")
 
-    ok, reply = basket.webui_basket(flask.request.json, req.user_id)
+    ok, reply = basket.webui_basket(flask.request.json, req)
     if not ok:
         return req.abort(reply)
 
@@ -401,40 +411,48 @@ def pdns_get_data(req, dom_db):
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(dom_name)
+        dns["ds"] = find_best_ds(dns["keys"])
 
-    return req.response(dns)
+    return req.response({"domain":dom_db,"dns":dns})
 
 
 def pdns_sign_zone(req, dom_db):
     key_data = pdns.sign_zone(dom_db["name"])
+    if key_data is None:
+        return req.abort("No DNSSEC Keys found")
+
     if dom_db["ns"] == policy.policy("dns_servers"):
         update_doms_ds(req, key_data, dom_db)
-    return pdns_get_data(req, dom_db)
+
+    return pdns_get_data(req,dom_db)
 
 
 def pdns_unsign_zone(req, dom_db):
-    key_data = pdns.unsign_zone(dom_db["name"])
-    if dom_db["ns"] == policy.policy("dns_servers"):
-        sql.sql_update_one("domains", {"ds": None}, {
-            "domain_id": dom_db["domain_id"],
-            "user_id": req.user_id
-        })
+    if pdns.unsign_zone(dom_db["name"]) and dom_db["ns"] == policy.policy("dns_servers"):
+        sql.sql_update_one("domains", {"ds": None}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
+        dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
         sigprocs.signal_service("backend")
-    return pdns_get_data(req, dom_db)
+    return pdns_get_data(req,dom_db)
 
 
 def update_doms_ds(req, key_data, dom_db):
+    ds_rr = find_best_ds(key_data)
+    dom_db["ds"] = ds_rr
+    sql.sql_update_one("domains", {"ds": ds_rr}, {
+        "domain_id": dom_db["domain_id"],
+        "user_id": req.user_id
+    })
+    domains.domain_backend_update(dom_db)
+    sigprocs.signal_service("backend")
+
+
+def find_best_ds(key_data):
     for key in key_data:
         if "ds" in key:
             for ds_rr in key["ds"]:
                 if ds_rr.find(" 2 ") >= 0:
-                    sql.sql_update_one("domains", {"ds": ds_rr}, {
-                        "domain_id": dom_db["domain_id"],
-                        "user_id": req.user_id
-                    })
-                    domains.domain_backend_update(dom_db)
-                    sigprocs.signal_service("backend")
+                    return ds_rr
 
 
 def pdns_drop_zone(req, dom_db):
@@ -443,7 +461,7 @@ def pdns_drop_zone(req, dom_db):
     return req.abort("Domain data failed to drop")
 
 
-def check_rr_data(dom_db,add_rr):
+def check_rr_data(dom_db, add_rr):
     if "rr" not in add_rr:
         log("No `rr` property")
         return False
@@ -463,7 +481,8 @@ def check_rr_data(dom_db,add_rr):
         log(f"TTL is not integer")
         return False
 
-    if len(add_rr["rr"]["name"]) > len(dom_db["name"]) and add_rr["rr"]["name"][-1*len(dom_db["name"])-1:-1] != dom_db["name"]:
+    if len(add_rr["rr"]["name"]) > len(
+            dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
         log(f"Bad name suffix")
         return False
 
@@ -471,7 +490,7 @@ def check_rr_data(dom_db,add_rr):
 
 
 def pdns_update_rrs(req, dom_db):
-    if not check_rr_data(dom_db,flask.request.json):
+    if not check_rr_data(dom_db, flask.request.json):
         return req.abort("RR data missing or invalid")
 
     ok, reply = pdns.update_rrs(dom_db["name"], flask.request.json["rr"])
