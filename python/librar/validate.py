@@ -88,9 +88,9 @@ VALID_RR_TYPES = {
 
 
 def hasIDN(name):
-    if name[:4]=='xn--':
+    if name[:4] == 'xn--':
         return True
-    if name.find(".xn--")>0:
+    if name.find(".xn--") > 0:
         return True
     return False
 
@@ -155,7 +155,7 @@ def is_valid_hostname(name):
         return False
     if len(name) > 255 or len(name) <= 0:
         return False
-    if name[:2]=="*.":
+    if name[:2] == "*.":
         return re.match(IS_FQDN, name[2:], re.IGNORECASE) is not None
     else:
         return re.match(IS_FQDN, name, re.IGNORECASE) is not None

@@ -146,7 +146,8 @@ def orders_cancel():
     if req.user_id is None or req.sess_code is None:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None or "order_item_id" not in flask.request.json or not isinstance(flask.request.json["order_item_id"],int):
+    if flask.request.json is None or "order_item_id" not in flask.request.json or not isinstance(
+            flask.request.json["order_item_id"], int):
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": flask.request.json["order_item_id"]}
@@ -156,7 +157,7 @@ def orders_cancel():
     if len(order_db) <= 0:
         return req.abort("Order not found")
 
-    event_db = { "event_type": "order/cancel" }
+    event_db = {"event_type": "order/cancel"}
     dom_name = f"DOM-{order_db['domain_id']}"
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id})
     if ok:
@@ -413,7 +414,7 @@ def pdns_get_data(req, dom_db):
         dns["keys"] = pdns.load_zone_keys(dom_name)
         dns["ds"] = find_best_ds(dns["keys"])
 
-    return req.response({"domain":dom_db,"dns":dns})
+    return req.response({"domain": dom_db, "dns": dns})
 
 
 def pdns_sign_zone(req, dom_db):
@@ -424,7 +425,7 @@ def pdns_sign_zone(req, dom_db):
     if dom_db["ns"] == policy.policy("dns_servers"):
         update_doms_ds(req, key_data, dom_db)
 
-    return pdns_get_data(req,dom_db)
+    return pdns_get_data(req, dom_db)
 
 
 def pdns_unsign_zone(req, dom_db):
@@ -433,16 +434,13 @@ def pdns_unsign_zone(req, dom_db):
         dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
         sigprocs.signal_service("backend")
-    return pdns_get_data(req,dom_db)
+    return pdns_get_data(req, dom_db)
 
 
 def update_doms_ds(req, key_data, dom_db):
     ds_rr = find_best_ds(key_data)
     dom_db["ds"] = ds_rr
-    sql.sql_update_one("domains", {"ds": ds_rr}, {
-        "domain_id": dom_db["domain_id"],
-        "user_id": req.user_id
-    })
+    sql.sql_update_one("domains", {"ds": ds_rr}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
     domains.domain_backend_update(dom_db)
     sigprocs.signal_service("backend")
 

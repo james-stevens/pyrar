@@ -13,30 +13,26 @@ from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
 
-def add_domain_action(dom_db,when,action):
-    sql.sql_insert(
-        "actions", {
-            "domain_id": dom_db["domain_id"],
-            "execute_dt": when,
-            "action": action
-        })
+def add_domain_action(dom_db, when, action):
+    sql.sql_insert("actions", {"domain_id": dom_db["domain_id"], "execute_dt": when, "action": action})
 
 
 def domain_actions_live(dom_db):
     if dom_db["auto_renew"]:
-        add_domain_action(dom_db,sql.date_add(dom_db["expiry_dt"], days=-1 * policy.policy("auto_renew_before")),"dom/auto-renew")
+        add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=-1 * policy.policy("auto_renew_before")),
+                          "dom/auto-renew")
     else:
         if (reminders_at := policy.policy("renewal_reminders")) is not None:
             for days in reminders_at.split(","):
-                add_domain_action(dom_db,sql.date_add(dom_db["expiry_dt"], days=-1 * int(days)),"dom/reminder")
+                add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=-1 * int(days)), "dom/reminder")
 
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
-    add_domain_action(dom_db,dom_db["expiry_dt"],"dom/expired")
-    add_domain_action(dom_db,sql.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]),"dom/delete")
+    add_domain_action(dom_db, dom_db["expiry_dt"], "dom/expired")
+    add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]), "dom/delete")
 
 
 def domain_actions_pending_order(dom_db):
-    add_domain_action(dom_db,sql.date_add(dom_db["created_dt"], hours=this_reg["orders_expire_hrs"]),"order/cancel")
+    add_domain_action(dom_db, sql.date_add(dom_db["created_dt"], hours=this_reg["orders_expire_hrs"]), "order/cancel")
 
 
 def recreate_domain_actions(dom_db):
@@ -73,7 +69,7 @@ if __name__ == "__main__":
     registry.start_up()
 
     ok, dom_db = sql.sql_select_one("domains", {"name": sys.argv[1]})
-    if ok and len(dom_db)>0:
+    if ok and len(dom_db) > 0:
         recreate_domain_actions(dom_db)
         ok, reply = sql.sql_select("actions", {"domain_id": dom_db["domain_id"]}, order_by="execute_dt")
         print(json.dumps(dom_db, indent=3))

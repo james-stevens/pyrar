@@ -30,6 +30,7 @@ DOMAIN_STATUS = {
     120: "Transfer Failed"
 }
 
+
 def where_event_log():
     where = inspect.stack()[2]
     return {
@@ -37,7 +38,7 @@ def where_event_log():
         "function": where.function,
         "line_num": where.lineno,
         "when_dt": None
-        }
+    }
 
 
 def ashex(line):
