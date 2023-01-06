@@ -2,3 +2,4 @@ __pycache__
 pems/server.pem
 etc/logins.json
 env
+storage/perm/postfix/pid/master.pid
