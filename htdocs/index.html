@@ -13,7 +13,7 @@ debugAPI = false;
 
 elm = {};
 gbl = {
-	"theme": window.localStorage.getItem("theme"),
+	"theme": window.localStorage.theme,
 
 	tick: "&#x2611;",
 	cross: "&#x2612;",
@@ -46,7 +46,7 @@ if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
 
 changeTheme(gbl.theme);
 
-let basket = window.localStorage.getItem("basket");
+let basket = window.localStorage.basket;
 if (basket) {
 	gbl.basket = JSON.parse(basket);
 	}
@@ -216,17 +216,19 @@ function removeBasketItem(i)
 {
 	if (gbl.basket.length == 1) {
 		delete gbl.basket;
-		if (elm.basketSpace.style.display == "block") goSearch();
+		if ((elm.basketSpace.style.display == "block")||(elm.userSpace.style.display == "block"))
+			goSearch();
 		}
 	else gbl.basket.splice(i,1);
 
-	if (("popup" in ctx)&&("name" in ctx.popup)&&(ctx.popup.name=="basketPopup")) {
+	if ((ctx.popup)&&(ctx.popup.name)&&(ctx.popup.name=="basketPopup")) {
 		if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
 		delete ctx.popup.timer;
 		}
 
 	user_info()
-	if (elm.basketSpace.style.display == "block") basketCheckout();
+	if ((elm.basketSpace.style.display == "block")||(elm.userSpace.style.display == "block"))
+		basketCheckout();
 }
 
 
@@ -490,7 +492,11 @@ function showSearch(ret,data)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
 
-	if ((!ret)&&("error" in data)) { errMsg(data.error,search); return; }
+	if (!ret) {
+		let msg="Search failed";
+		if (data.error) msg=data.error
+		return errMsg(msg,"searchEdit");
+		}
 
 	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(); return; }
 
@@ -1148,7 +1154,7 @@ function html_for_basket(with_place_order)
 		x += "<tr><td colspan=4>";
 		x += "<table width=100%>";
 		x += "<colgroup><col width=30%/><col width=70%/></colgroup>";
-		x += "<tr onClick='toggleRegister();'><Td colspan=2><div style='height: 15px;'></div></td></tr>";
+		x += "<tr><Td colspan=2><div style='height: 15px;'></div></td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input style='width: 250px;' id='reg_pay_email'>&nbsp;</td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_password'>&nbsp;</td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_confirm'>&nbsp;</td></tr>";
@@ -1498,7 +1504,7 @@ function domain_settings(idx)
 	let x="<table width=75% align=center border=0>";
 	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings For - ${dom.display_name}</td></tr>`;
 	x += "<tr><td><div style='height: 50px;'></div></td></tr>";
-	x += settings_header(`Change Domain Records`,true);
+	x += settings_header(`Change Parent Zone Records`,true);
 	x += "<table border=0 width=100%><colgroup><col width=30%/><col width=70%/></colgroup>";
 
     x += `<tr><td class=promptCell>Auto Renew :</td><td><select onChange='domAutoRenew(${idx});' id=dom_auto_renew>`;
@@ -1859,13 +1865,23 @@ function clean_host_name(dom_name,hostname)
 
 
 
+function delete_rr(idx)
+{
+	document.getElementById("AddRRwin").innerHTML = add_rr_form({"idx":idx});
+	hideAllPopUp();
+}
+
+
+
 function add_rr_form(params)
 {
+	let have_last_rr = false;
 	let last_rr = { "rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
 	if (ctx.last_rr) {
-		last_rr = ctx.last_rr
+		last_rr = ctx.last_rr;
 		delete ctx.last_rr;
-		last_rr.rr_data = last_rr.rr_data.replace(/'/g, "&apos;")
+		last_rr.rr_data = last_rr.rr_data.replace(/'/g, "&apos;");
+		have_last_rr = true;
 		}
 
 	let idx = params.idx;
@@ -1879,8 +1895,13 @@ function add_rr_form(params)
 	x += `<tr><td class=formPrompt>RR Data :</td><Td><input value='${last_rr.rr_data}' id=rr_data onkeydown="AddkeyDown(event,${idx});" style="width: 250px;"></td></tr>`;
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 	x += "<tr><td colspan=2 class=btmBtnBar>"
-	x += btn("hideAllPopUp()","Cancel","Cancel adding this RR",75);
-	x += btn(`process_add_rr(${idx})`,"Add RR","Add this RR",75);
+	if (have_last_rr) {
+		x += btn(`delete_rr(${idx})`,"Delete RR","Delete this RR from the zone",75);
+		x += btn(`process_add_rr(${idx})`,"Update RR","Update this RR back into the zone",75);
+	} else {
+		x += btn("hideAllPopUp()","Cancel","Cancel adding this RR",75);
+		x += btn(`process_add_rr(${idx})`,"Add RR","Add this RR",75);
+	}
 	x += "</table>";
 
 	return x;
@@ -1979,7 +2000,8 @@ function show_dns_data(idx)
 		let show_name = clean_host_name(dom_name,rrs.name);
 		if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
 
-		x += `<tr onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow><td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+		x += `<tr title='Click to delete / edit this record' onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow>`;
+		x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
 
 		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.ds))
 			x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${ctx.dns.ds}</td></tr>`;
@@ -1989,7 +2011,7 @@ function show_dns_data(idx)
 	x += "</table></td></tr></table>";
 	elm.userSpace.innerHTML = x;
 
-	if (last_rr) togglePopUp("AddRRwin",2000);
+	if (last_rr) togglePopUp("AddRRwin",0);
 }
 
 

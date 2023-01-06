@@ -39,6 +39,10 @@ class DomainName:
         if isinstance(domain, list):
             self.process_list(domain)
 
+        if self.err:
+            log(f"FAILED to process: {domain}")
+            return
+
         if self.registry is None:
             self.err = "TLD not supported"
             self.names = None

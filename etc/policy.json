@@ -10,9 +10,11 @@
 		"pow10" : 100
 		},
 
-	"website_name": "https://namehake.net",
-	"email_sender": "technical@namehake.net",
-	"email_return": "no_reply@namehake.net",
+	"smtp_server": "192.168.1.20",
+	"website_name": "https://nameshake.net/",
+	"name_sender": "NameShake Registry",
+	"email_sender": "technical@nameshake.net",
+	"email_return": "no_reply@nameshake.net",
 
 	"session_timeout": 60,
 

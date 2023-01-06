@@ -87,6 +87,14 @@ VALID_RR_TYPES = {
 }
 
 
+def hasIDN(name):
+    if name[:4]=='xn--':
+        return True
+    if name.find(".xn--")>0:
+        return True
+    return False
+
+
 def valid_rr_type(rr_type):
     return rr_type in VALID_RR_TYPES
 
@@ -131,7 +139,15 @@ def is_valid_fqdn(name):
         return False
     if len(name) > 255 or len(name) <= 0:
         return False
-    return re.match(IS_FQDN, name, re.IGNORECASE) is not None
+    if re.match(IS_FQDN, name, re.IGNORECASE) is None:
+        return False
+    if not hasIDN(name):
+        return True
+    try:
+        idn = name.encode("utf-8").decode("idna")
+    except UnicodeError:
+        return False
+    return True
 
 
 def is_valid_hostname(name):
@@ -221,5 +237,4 @@ if __name__ == "__main__":
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
     for x in sys.argv:
-        print(">>>>>", x, frag_ds(x))
-        print(x, is_valid_ds(frag_ds(x)))
+        print(x, is_valid_fqdn(x))

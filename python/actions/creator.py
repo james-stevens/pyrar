@@ -41,7 +41,6 @@ def domain_actions_pending_order(dom_db):
 
 def recreate_domain_actions(dom_db):
     where = inspect.stack()[1]
-    print(">>>>",dom_db)
     event_db = {
         "program": where.filename.split("/")[-1].split(".")[0],
         "function": where.function,
@@ -57,8 +56,11 @@ def recreate_domain_actions(dom_db):
     sql.sql_insert("events", event_db)
 
     sql.sql_exec(f"delete from actions where domain_id = {dom_db['domain_id']}")
+
     if dom_db["status_id"] in action_fns:
         return action_fns[dom_db["status_id"]](dom_db)
+    else:
+        log(f"WARNINNG: No domain action recreate for domain status {dom_db['status_id']}")
 
     return True
 

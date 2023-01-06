@@ -8,7 +8,7 @@ RUN ln -s /dev/shm /run
 RUN apk add nginx curl
 
 RUN apk add python3 jq py-pip
-RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient py3-dnspython py3-dateutil
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient py3-dnspython py3-dateutil py3-jinja2 py3-tzdata
 RUN pip install apscheduler httpx
 
 RUN apk add sysklogd
@@ -45,6 +45,7 @@ RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pe
 
 COPY policy_subst /opt/pyrar/policy_subst/
 COPY admin_docs /opt/pyrar/admin_docs/
+COPY emails /opt/pyrar/emails/
 
 COPY bin /usr/local/bin/
 COPY htdocs /opt/pyrar/htdocs/

@@ -4,6 +4,7 @@
 
 import inspect
 
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import validate
@@ -26,20 +27,6 @@ def do_domain_update(job_id, name, dom_db, epp_info):
 
     if len(add_ns) > 0:
         run_host_create(job_id, this_reg, url, add_ns)
-
-
-def epp_get_domain_info(job_id, domain_name):
-    this_reg, url = registry.tld_lib.reg_record_for_domain(domain_name)
-    if this_reg is None or url is None:
-        log(f"BackEnd:{job_id} '{domain_name}' this_reg or url not given")
-        return None
-
-    xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name), url)
-
-    if not xml_check_code(job_id, "info", xml):
-        return None
-
-    return parse_dom_resp.parse_domain_info_xml(xml, "inf")
 
 
 def event_log(notes, bke_job):
@@ -93,14 +80,14 @@ def get_domain_lists(dom_db):
 def get_dom_from_db(bke_job):
     job_id = bke_job["backend_id"]
     if not check_have_data(job_id, bke_job, ["domain_id"]):
-        log(f"BKE-{job_id} Domain '{domain_id}' missing or invalid")
+        log(f"BKE-{job_id}: DOM-'{domain_id}' missing or invalid")
         return None
 
     domain_id = bke_job["domain_id"]
     table = "deleted_domains" if bke_job["job_type"] == "dom/delete" else "domains"
     ok, dom_db = sql.sql_select_one(table, {"domain_id": int(domain_id)})
     if not ok:
-        log(f"Domain id {domain_id} could not be found in '{table}'")
+        log(f"BKE-{job_id}: DOM-{domain_id} could not be found in '{table}'")
         return None
 
     if "name" not in dom_db:
@@ -108,7 +95,7 @@ def get_dom_from_db(bke_job):
 
     name_ok = validate.check_domain_name(dom_db["name"])
     if (not sql.has_data(dom_db, "name")) or (name_ok is not None):
-        log(f"BKE-{job_id} For '{domain_id}' domain name missing or invalid ({name_ok})")
+        log(f"BKE-{job_id}: DOM-{domain_id} domain name missing or invalid ({name_ok})")
         return None
 
     return dom_db

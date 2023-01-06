@@ -17,8 +17,9 @@ if test "${syslog}" = "null"
 mkdir -p /run/epp
 mkdir /run/nginx; chown nginx: /run/nginx
 
-mkdir ${BASE}/storage ${BASE}/storage/perm ${BASE}/storage/perm/email
-mkdir ${BASE}/storage/shared ${BASE}/storage/shared/signals
+perm="${BASE}/storage/perm"
+mkdir -p ${BASE}/storage ${perm} ${perm}/email ${perm}/spooler ${perm}/mail_error
+mkdir -p ${BASE}/storage/shared ${BASE}/storage/shared/signals
 
 
 flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
