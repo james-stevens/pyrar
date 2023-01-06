@@ -18,7 +18,7 @@ mkdir -p /run/epp
 mkdir /run/nginx; chown nginx: /run/nginx
 
 perm="${BASE}/storage/perm"
-mkdir -p ${BASE}/storage ${perm} ${perm}/email ${perm}/spooler ${perm}/mail_error
+mkdir -p ${BASE}/storage ${perm} ${perm}/spooler ${perm}/mail_error ${perm}/postfix
 mkdir -p ${BASE}/storage/shared ${BASE}/storage/shared/signals
 
 
@@ -43,6 +43,8 @@ if test "${PDNS_API_KEY}"
 		echo "${PDNS_API_KEY}" > /run/pdns_api_key
 		chmod 400 /run/pdns_api_key
 	fi
+
+postfix set-permissions
 
 ${BASE}/python/bin/policy_subst.py
 

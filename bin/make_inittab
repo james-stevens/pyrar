@@ -4,12 +4,19 @@
 
 {
 echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
-awk '{ printf "::respawn:/usr/local/bin/start_wsgi_epprest 1 %s\n",$1 }' /run/regs_ports
-echo "::respawn:/usr/local/bin/start_wsgi_webui"
-echo "::respawn:/usr/sbin/pdns_server >/tmp/pdns.log 2>&1"
-echo "::respawn:/usr/local/bin/start_nginx"
-echo "::respawn:/usr/local/bin/start_backend_runner"
-echo "::respawn:/usr/local/bin/start_pay_engine"
-echo "::respawn:/usr/local/bin/start_spooler"
-echo "::respawn:/usr/sbin/crond -f -c /etc/crontabs -l 9"
+
+awk '{
+	printf "::respawn:/usr/local/bin/start_wsgi_epprest 1 %s\n",$1
+	}' /run/regs_ports
+
+echo "
+::respawn:/usr/local/bin/start_wsgi_webui
+::respawn:/usr/sbin/pdns_server >/tmp/pdns.log 2>&1
+::respawn:/usr/local/bin/start_nginx
+::respawn:/usr/local/bin/start_backend_runner
+::respawn:/usr/local/bin/start_pay_engine
+::respawn:/usr/local/bin/start_spooler
+::respawn:/usr/sbin/crond -f -c /etc/crontabs -l 9
+::respawn:/usr/sbin/postfix start-fg
+"
 } > /run/inittab
