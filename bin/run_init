@@ -14,7 +14,7 @@ if test "${syslog}" = "null"
 		echo "*.* @${syslog}"
 	fi > /run/syslog.conf
 
-mkdir -p /run/epp
+mkdir -p /run/epp /run/postfix
 mkdir /run/nginx; chown nginx: /run/nginx
 
 perm="${BASE}/storage/perm"
