@@ -1,0 +1,6 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+cd ${BASE}/python/mailer
+exec ./run_spooler.py >/tmp/spooler.log 2>&1

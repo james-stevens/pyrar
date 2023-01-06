@@ -71,7 +71,7 @@ def run_backend_item(bke_job):
         return job_abort(bke_job)
 
     job_run = plugin_func(bke_job, dom_db)
-    print(">>>>>",bke_job,job_run,reg["type"], bke_job["job_type"])
+
     notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']}:{bke_job['job_type']}' " +
              f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
              f"{policy.policy('backend_retry_attempts')}")

@@ -260,9 +260,11 @@ def update_rrs(zone,rrs):
             js_content = json.loads(resp.content)
             if "error" in js_content:
                 err_txt = js_content["error"]
+                err_parts = err_txt.split(":")
                 if err_txt.find("(try 'pdnsutil check-zone'):") > 0:
-                    err_parts = err_txt.split(":")
-                    err_txt = err_parts[0] + ":" + err_parts[2]
+                    err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[2]
+                else:
+                    err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[1]
                 return ok, err_txt
         except Exception as e:
             pass

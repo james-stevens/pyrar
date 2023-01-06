@@ -5,6 +5,7 @@ docker run \
 	-v /opt/github/pyrar/etc:/opt/pyrar/etc \
 	-v /opt/github/pyrar/htdocs:/opt/pyrar/htdocs \
 	-v /opt/github/pyrar/python:/opt/pyrar/python \
+	-v /opt/github/pyrar/storage:/opt/pyrar/storage \
 	-p 10000:10000 \
 	-p 10001:10001 \
 	-p 8081:8081 \
