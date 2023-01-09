@@ -86,10 +86,9 @@
                 "default": 0
             },
             "job_type": {
-                "size": 20,
+                "size": 50,
                 "type": "varchar",
-                "null": false,
-                "default": "none"
+                "null": true
             },
             "num_years": {
                 "size": 11,
@@ -392,10 +391,9 @@
                 "null": false
             },
             "event_type": {
-                "size": 25,
+                "size": 50,
                 "type": "varchar",
-                "null": false,
-                "default": "Unknown"
+                "null": true
             },
             "filename": {
                 "size": 1024,
@@ -647,6 +645,11 @@
                 "type": "decimal",
                 "null": false,
                 "default": 0
+            },
+            "registry": {
+                "size": 50,
+                "type": "varchar",
+                "null": false
             },
             "sales_item_id": {
                 "unsigned": true,

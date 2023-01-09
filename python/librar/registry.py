@@ -128,7 +128,7 @@ class ZoneLib:
 
         self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
-            for param in ["max_renew_years","expire_recover_limit","orders_expire_hrs"]:
+            for param in ["max_renew_years", "expire_recover_limit", "orders_expire_hrs"]:
                 if param not in reg_data:
                     reg_data[param] = policy.policy(param)
 
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     # print(tld_lib.registry)
     # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
-    print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"),indent=3))
+    print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
     # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     # print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
     # print("ZONE_FROM_DB", json.dumps(tld_lib.zones_from_db, indent=3))

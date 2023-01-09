@@ -25,8 +25,9 @@ def do_flatten(pfx, inp_js, out_flat):
     else:
         out_flat[".".join(pfx)] = inp_js
 
+
 if __name__ == "__main__":
     for file in sys.argv[1:]:
         with open(file, "r", encoding='UTF-8') as fd:
             read_js = json.load(fd)
-            print(json.dumps(flatten(read_js),indent=3))
+            print(json.dumps(flatten(read_js), indent=3))

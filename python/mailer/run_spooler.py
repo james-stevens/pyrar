@@ -11,7 +11,6 @@ import time
 import smtplib
 import argparse
 
-
 from librar import mysql as sql
 from librar import flat
 from librar import registry
@@ -24,7 +23,11 @@ from mailer import creator
 
 
 def spool_email_file(filename):
-    with open(filename,"r",encoding="utf-8",) as fd:
+    with open(
+            filename,
+            "r",
+            encoding="utf-8",
+    ) as fd:
         data = json.load(fd)
 
     if "email" not in data or "message" not in data["email"]:
@@ -37,7 +40,7 @@ def spool_email_file(filename):
         return False
 
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.environ['BASE']}/emails"))
-    template = environment.get_template(which_message+".txt")
+    template = environment.get_template(which_message + ".txt")
 
     data["policy"] = policy.policy_defaults
     data["policy"].update(policy.this_policy.data())
@@ -50,19 +53,19 @@ def spool_email_file(filename):
         hdr = line.split(":")
         tag = hdr[0].lower()
         if tag in header:
-            if isinstance(header[tag],list):
+            if isinstance(header[tag], list):
                 header[tag].append(hdr[1].strip())
             else:
-                header[tag] = [ hdr[1].strip(), header[tag] ]
+                header[tag] = [hdr[1].strip(), header[tag]]
         else:
             header[hdr[0].lower()] = hdr[1].strip()
 
-    content = content[content.find("\n\n")+2:]
+    content = content[content.find("\n\n") + 2:]
 
     if "to" not in header and "user" in data:
         header["to"] = data["user"]["email"]
 
-    if isinstance(header["to"],str):
+    if isinstance(header["to"], str):
         header["to"] = [header["to"]]
 
     if "from" not in header:
@@ -82,8 +85,8 @@ def spool_email_file(filename):
 
     log(f"Emailing: {data['email']['message']} to {header['to']} via {smtp_server}")
 
-    with smtplib.SMTP(smtp_server,25) as smtp_cnx:
-        smtp_cnx.send_message(msg,smtp_from_addr,header["to"])
+    with smtplib.SMTP(smtp_server, 25) as smtp_cnx:
+        smtp_cnx.send_message(msg, smtp_from_addr, header["to"])
         smtp_cnx.quit()
 
     return True
@@ -95,7 +98,7 @@ def process_emails_waiting():
         if os.path.isfile(path) and spool_email_file(path):
             os.remove(path)
         else:
-            os.replace(path,os.path.join(creator.ERROR_BASE,file))
+            os.replace(path, os.path.join(creator.ERROR_BASE, file))
 
 
 def run_server():
@@ -119,4 +122,3 @@ if __name__ == "__main__":
     sql.connect("engine")
     registry.start_up()
     run_server()
-

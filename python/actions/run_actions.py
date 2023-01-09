@@ -56,7 +56,7 @@ def flag_expired_domain(act_db, dom_db):
 
 
 def order_cancel(act_db, dom_db):
-    sql.sql_delete_one("orders",{"domain_id":dom_db["domain_id"],"user_id":dom_db["user_id"]})
+    sql.sql_delete_one("orders", {"domain_id": dom_db["domain_id"], "user_id": dom_db["user_id"]})
     return delete_domain(act_db, dom_db)
 
 

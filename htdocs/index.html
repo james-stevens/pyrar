@@ -52,6 +52,12 @@ if (basket) {
 	}
 
 
+if (window.location.pathname!="/") {
+	window.localStorage.setItem("router_path",window.location.pathname);
+	window.location = window.location.origin;
+	}
+
+
 gbl.head = document.head || document.getElementsByTagName('head')[0];
 
 function keyEsc(e) {
@@ -443,10 +449,21 @@ function bodyLoaded()
 				if (ret) {
 					catch_user_data(reply);
 					loggedIn();
+					check_router_path();
 					}
 				});
-			} else { loggedOut(); }
+			} else { loggedOut(); check_router_path(); }
 		});
+}
+
+
+
+function check_router_path()
+{
+	if (window.localStorage.router_path) {
+		gbl.router_path = window.localStorage.router_path;
+		window.localStorage.removeItem("router_path");
+		}
 }
 
 
@@ -691,6 +708,8 @@ function load_domains_list(success_fn)
 			ctx.domains = reply.domains;
 			for(let dom of ctx.domains) {
 				dom.display_name = fromPuny(dom.name);
+				if (dom.status in gbl.config.status)
+					dom.status_desc = gbl.config.status[dom.status];
 				}
 			success_fn();
 			}
@@ -945,6 +964,116 @@ function show_transactions(with_more)
 
 
 
+function click_add_payment()
+{
+	let data = {}
+	for(let i of ["provider","provider_tag","single_use","can_pull"]) {
+		let e = document.getElementById("pay."+i);
+		if (!e) {
+			errMsg("Failure in payment plugin, see console","add_pay_div");
+			console.log(`ERROR: Field 'pay.${i}' is missing from the plug-in HTML`);
+			return; }
+
+		data[i] = e.value;
+		}
+
+	callApi("payments/validate",(ok,reply) => {
+		if (ok) return payment_methods();
+		let msg="Error adding this payment"
+		if (reply.error) msg=reply.error
+		errMsg(msg,"add_pay_div");
+		}, { json: data })
+}
+
+
+
+function add_payment()
+{
+	hidePopUp();
+
+	let e = document.getElementById("add_payment_type");
+	if (!e) return;
+
+	callApi("payments/html",(ok,reply) => {
+		let p = document.getElementById("add_pay_div");
+		if ((ok)&&(p)) {
+			let x="<table align=center border=0>";
+			x += settings_header(`Add Payment Method - ${gbl.config.payments[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
+			p.innerHTML = x;
+			let f = document.getElementById("pay.provider_tag");
+			if (f) f.focus();
+			return;
+			}
+		let msg="Error getting HTML for payment"
+		if (reply.error) msg=reply.error
+		errMsg(msg,"add_pay_div");
+		},{ json: {"method":e.value}});
+}
+
+
+
+function add_payment_form()
+{
+	let x = "<table>";
+	x += "<tr><td class=fpormPromt>Select method to add:</td>";
+	x += "<td><select id=add_payment_type>"
+	for(let i in gbl.config.payments) {
+		x += `<option value='${i}'>${gbl.config.payments[i]}`;
+		}
+	x += "</select></td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar>"+btn("add_payment()","Add","Add payment method",75)+"</td></tr>";
+	return x +"</table>";
+}
+
+
+
+function remove_payment(provider,provider_tag)
+{
+	callApi("payments/delete",(ok,reply) => {
+		if (!ok) {
+			let msg="Delete payment method failed";
+			if (reply.error) msg=reply.error
+			return errMsg(msg,"add_pay_div");
+			}
+		payment_methods();
+		}, { json: { "provider":provider, "provider_tag":provider_tag }});
+}
+
+
+
+function payment_methods()
+{
+	callApi("payments/list",(ok,reply) => {
+		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+		x += "<tr><td class=btmBtnBar>";
+		x += generic_popup_btn({
+			"name": "AddPayment",
+			"label": "Add Payment",
+			"width": 100,
+			"timeout": null,
+			"title": "Add a payment method",
+			"internal": add_payment_form,
+			"style": "overflow: auto; margin-left: -250;"
+			});
+		x += "</td></tr></table>";
+		x += "<div id='add_pay_div'>"+gbl.gap;
+		if (reply.length>0) {
+			x += "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+			x += "<tr><th>Payment Method</th><th>Payment Data</th></tr>"
+			for(let i of reply) {
+				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payments[i.provider]}</td>`;
+				x += `<td>${i.provider_tag}</td></tr>`;
+				}
+			x += "</table>";
+			}
+		else x += "<h2>No payment methods set up yet</h2>";
+		x += "</div>";
+	    elm.userSpace.innerHTML = x;
+		size_one_space();
+		});
+}
+
+
 function userDetails()
 {
 	let auto_renew = gbl.cross;
@@ -961,6 +1090,7 @@ function userDetails()
 		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true)","Statement","View a statement of all your transactions",100)
+	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
 	x += btn("user_settings()","Settings","Change this accounts settings",100)
 	x += "</td></tr>";
 
@@ -1703,6 +1833,7 @@ function sign_zone(idx)
 }
 
 
+
 function drop_zone(idx)
 {
 	let dom = ctx.domains[idx];
@@ -1723,9 +1854,15 @@ function drop_zone(idx)
 
 
 
-function process_add_rr(idx)
+function process_add_rr(idx,rrs_id,rec_id)
 {
 	let dom = ctx.domains[idx];
+
+	let old_content = null;
+	if ((rrs_id>=0)&&(rec_id>=0)) {
+		rrs = ctx.dns.rrsets[rrs_id];
+		old_content = rrs.records[rec_id].content;
+		}
 
 	let add_rr = {}, elems = {};
 	for(let i of ["rr_name","rr_type","rr_ttl","rr_data"]) {
@@ -1775,9 +1912,10 @@ function process_add_rr(idx)
 
 	for(let i of ctx.dns.rrsets) {
 		if ((i.name==add_rr.name)&&(i.type==add_rr.type)) {
-			for(let c of i.records)
-				if (prev_data != c.content)
+			for(let c of i.records) {
+				if ((prev_rr_data != c.content)&&(old_content!=c.content))
 					add_rr.data.push(c.content)
+				}
 			}
 		}
 
@@ -1794,9 +1932,9 @@ function process_add_rr(idx)
 
 
 
-function AddkeyDown(event,idx) {
+function AddkeyDown(event,idx,rrs_id,rec_id) {
 	if (event.key=="Escape") return hideAllPopUp();
-	if (event.key=="Enter") return process_add_rr(idx);
+	if (event.key=="Enter") return process_add_rr(idx,rrs_id,rec_id);
 }
 
 
@@ -1808,10 +1946,22 @@ function edit_rr(idx,rrs_id,rec_id)
 		"rr_name": rrs.name,
 		"rr_type": rrs.type,
 		"rr_ttl": rrs.ttl,
-		"rr_data": rrs.records[rec_id].content
+		"rr_data": rrs.records[rec_id].content,
+		"rrs_id": rrs_id,
+		"rec_id": rec_id
 		}
 
+	document.getElementById("AddRRwin").innerHTML = add_rr_form({"idx":idx});
+	togglePopUp("AddRRwin",0);
+}
+
+
+
+function delete_rr(idx,rrs_id,rec_id)
+{
 	let dom = ctx.domains[idx];
+	let rrs = ctx.dns.rrsets[rrs_id];
+
 	rr_data = []
 	for(let i in rrs.records)
 		if (i!=rec_id) rr_data.push(rrs.records[i].content);
@@ -1825,6 +1975,8 @@ function edit_rr(idx,rrs_id,rec_id)
 			"data": rr_data
 			}
 		};
+
+	hideAllPopUp();
 
 	callApi("dns/update",(ok,reply) => {
 		if (!ok) {
@@ -1865,18 +2017,10 @@ function clean_host_name(dom_name,hostname)
 
 
 
-function delete_rr(idx)
-{
-	document.getElementById("AddRRwin").innerHTML = add_rr_form({"idx":idx});
-	hideAllPopUp();
-}
-
-
-
 function add_rr_form(params)
 {
 	let have_last_rr = false;
-	let last_rr = { "rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
+	let last_rr = { "rrs_id":-1,"rec_id":-1,"rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
 	if (ctx.last_rr) {
 		last_rr = ctx.last_rr;
 		delete ctx.last_rr;
@@ -1888,23 +2032,33 @@ function add_rr_form(params)
 	let dom = ctx.domains[idx];
 	let dom_name = dom["name"]+".";
 
+	let add_key = `onkeydown="AddkeyDown(event,${idx},${last_rr.rrs_id},${last_rr.rec_id});"`
 	let x = "<table cellspacing=1 cellpadding=0 border=0>";
-	x += `<tr><td class=formPrompt>Record Name :</td><Td><input value="${clean_host_name(dom_name,last_rr.rr_name)}" id=rr_name onkeydown="AddkeyDown(event,${idx});" style="width: 250px;"></td></tr>`;
+	x += `<tr><td class=formPrompt>Record Name :</td><Td><input value="${clean_host_name(dom_name,last_rr.rr_name)}" id=rr_name ${add_key} style="width: 250px;"></td></tr>`;
 	x += `<tr><td class=formPrompt>Record Type :</td><Td>` + rr_type_select("rr_type",last_rr.rr_type) + "</td></tr>";
-	x += `<tr><td class=formPrompt>TTL :</td><Td><input value="${last_rr.rr_ttl}" id=rr_ttl onkeydown="AddkeyDown(event,${idx});" style="width: 100px;"></td></tr>`;
-	x += `<tr><td class=formPrompt>RR Data :</td><Td><input value='${last_rr.rr_data}' id=rr_data onkeydown="AddkeyDown(event,${idx});" style="width: 250px;"></td></tr>`;
+	x += `<tr><td class=formPrompt>TTL :</td><Td><input value="${last_rr.rr_ttl}" id=rr_ttl ${add_key} style="width: 100px;"></td></tr>`;
+	x += `<tr><td class=formPrompt>RR Data :</td><Td><input value='${last_rr.rr_data}' id=rr_data ${add_key} style="width: 250px;"></td></tr>`;
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 	x += "<tr><td colspan=2 class=btmBtnBar>"
 	if (have_last_rr) {
-		x += btn(`delete_rr(${idx})`,"Delete RR","Delete this RR from the zone",75);
-		x += btn(`process_add_rr(${idx})`,"Update RR","Update this RR back into the zone",75);
+		x += btn(`cancel_rr(${idx})`,"Cancel","Cancel changing this RR",75);
+		x += btn(`delete_rr(${idx},${last_rr.rrs_id},${last_rr.rec_id})`,"Delete RR","Delete this RR from the zone",75);
+		x += btn(`process_add_rr(${idx},${last_rr.rrs_id},${last_rr.rec_id})`,"Update RR","Update this RR back into the zone",75);
 	} else {
-		x += btn("hideAllPopUp()","Cancel","Cancel adding this RR",75);
-		x += btn(`process_add_rr(${idx})`,"Add RR","Add this RR",75);
+		x += btn(`cancel_rr(${idx})`,"Cancel","Cancel adding this RR",75);
+		x += btn(`process_add_rr(${idx},-1,-1)`,"Add RR","Add this RR",75);
 	}
 	x += "</table>";
 
 	return x;
+}
+
+
+
+function cancel_rr(idx)
+{
+	document.getElementById("AddRRwin").innerHTML = add_rr_form({"idx":idx});
+	hideAllPopUp();
 }
 
 
@@ -2010,8 +2164,6 @@ function show_dns_data(idx)
 
 	x += "</table></td></tr></table>";
 	elm.userSpace.innerHTML = x;
-
-	if (last_rr) togglePopUp("AddRRwin",0);
 }
 
 
@@ -2045,8 +2197,7 @@ function one_domain_html(idx)
 	if (dom.display_name != dom.name) puny = `&nbsp;&nbsp;<span class=searchRenew>${dom.name}</span>`;
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
 	x += `<tr><td class=promptCell>Is Live :</td><td class=dataCell>${tick_cross(dom.is_live)}</td></tr>`;
-	if (!dom.is_live)
-		x += `<tr><td class=promptCell>Status :</td><td class=dataCell>${dom.status_desc}</td></tr>`;
+	x += `<tr><td class=promptCell>Status :</td><td class=dataCell>${dom.status_desc}</td></tr>`;
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;

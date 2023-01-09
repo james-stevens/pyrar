@@ -8,7 +8,7 @@ from librar import parsexml
 from librar import mysql as sql
 from librar import misc
 
-from webui import handler
+from webui import dom_handler
 
 
 def http_price_domains(domobj, years, qry_type):
@@ -84,4 +84,4 @@ def fees_one(action, years):
     }
 
 
-handler.add_plugin("epp", {"dom/price": epp_domain_prices})
+dom_handler.add_plugin("epp", {"dom/price": epp_domain_prices})

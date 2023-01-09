@@ -14,13 +14,12 @@ if test "${syslog}" = "null"
 		echo "*.* @${syslog}"
 	fi > /run/syslog.conf
 
-mkdir -p /run/epp
+mkdir -p /run/epp /run/postfix
 mkdir /run/nginx; chown nginx: /run/nginx
 
 perm="${BASE}/storage/perm"
-mkdir -p ${BASE}/storage ${perm} ${perm}/email ${perm}/spooler ${perm}/mail_error
+mkdir -p ${BASE}/storage ${perm} ${perm}/spooler ${perm}/mail_error ${perm}/postfix
 mkdir -p ${BASE}/storage/shared ${BASE}/storage/shared/signals
-
 
 flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 	{ if (have[$1]=="") have[$1]=n++; }
@@ -41,8 +40,11 @@ if test "${PDNS_API_KEY}"
 	else
 		export PDNS_API_KEY="$(dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./')"
 		echo "${PDNS_API_KEY}" > /run/pdns_api_key
-		chmod 400 /run/pdns_api_key
 	fi
+chmod 400 /run/pdns_api_key
+
+postfix set-permissions
+rm -f ${perm}/postfix/pid/master.pid
 
 ${BASE}/python/bin/policy_subst.py
 

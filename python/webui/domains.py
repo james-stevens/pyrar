@@ -17,9 +17,9 @@ from actions import creator
 
 from webui import users
 
-from webui import handler
+from webui import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from webui.plugins import *
+from webui.dom_plugins import *
 
 
 class DomainName:
@@ -99,7 +99,7 @@ def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
     if not domobj.registry or "type" not in domobj.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := handler.run(domobj.registry["type"], "dom/price")) is None:
+    if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
         return False, "No plugin for this Registrar"
 
     ok, ret_js = plugin_func(domobj, num_years, qry_type, user_id)
@@ -117,13 +117,14 @@ def close_epp_sess():
 
 
 def check_domain_is_mine(user_id, domain, require_live):
-    if not sql.has_data(domain, ["domain_id", "name"]):
-        return False, "Domain data missing"
+    if (not sql.has_data(domain, ["domain_id", "name"]) or not isinstance(domain["domain_id"], int)
+            or not validate.is_valid_fqdn(domain["name"])):
+        return False, "Domain data missing or invalid"
 
     ok, dom_db = sql.sql_select_one("domains", {
-        "domain_id": domain["domain_id"],
+        "domain_id": int(domain["domain_id"]),
         "name": domain["name"],
-        "user_id": user_id
+        "user_id": int(user_id)
     })
 
     if not ok:

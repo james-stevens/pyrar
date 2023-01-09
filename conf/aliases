@@ -1,0 +1,19 @@
+MAILER-DAEMON:	postmaster
+postmaster:	root
+bin:		root
+daemon:		root
+named:		root
+nobody:		root
+uucp:		root
+www:		root
+ftp-bugs:	root
+postfix:	root
+manager:	root
+dumper:		root
+operator:	root
+abuse:		postmaster
+decode:		root
+
+webhook: "| /usr/local/bin/webhook_wrapper"
+noreply: "| cat >/dev/null"
+drs-ticket: "| /usr/local/bin/process_ticket_email > /tmp/ticket.log 2>&1"

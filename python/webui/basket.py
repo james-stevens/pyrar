@@ -15,9 +15,9 @@ from librar import mysql as sql
 from librar.policy import this_policy as policy
 
 from webui import domains
-from webui import handler
+from webui import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from webui.plugins import *
+from webui.dom_plugins import *
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
@@ -151,6 +151,9 @@ def paid_for_basket_item(req, order, user_db):
     if not trans_id:
         return False
 
+    user_db["acct_previous_balance"] = user_db["acct_current_balance"]
+    user_db["acct_current_balance"] -= order_db["price_paid"]
+
     match order_db['order_type']:
         case "dom/transfer":
             ok, dom_db = make_blank_domain(order['domain'],user_db,misc.STATUS_TRANS_QUEUED)
@@ -233,7 +236,7 @@ def price_order_item(order, user_db):
     if not domobj.registry or "type" not in domobj.registry or "name" not in domobj.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := handler.run(domobj.registry["type"],"dom/price")) is None:
+    if (plugin_func := dom_handler.run(domobj.registry["type"],"dom/price")) is None:
         return False, f"No plugin for this Registrar: {domobj.registry['name']}"
 
     ok, prices = plugin_func(domobj, order["num_years"], [order["action"]], user_db)

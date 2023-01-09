@@ -11,7 +11,7 @@ port="$(echo ${MYSQL_CONNECT} | cut -f 2 -d:)"
 {
 mysqldump -l -h ${host} -P ${port} -u ${MYSQL_USERNAME} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}
 
-for name in webui raradm epprun
+for name in webui raradm engine
 do
 	${cmd} "show grants for ${name}"
 done | awk '/IDENTIFIED BY PASSWORD/ { $NF="\"YOUR-PASSWORD\""; } { print $0 ";" }'
