@@ -979,7 +979,9 @@ function click_add_payment()
 
 	callApi("payments/validate",(ok,reply) => {
 		if (ok) return payment_methods();
-		errMsg(reply,"add_pay_div");
+		let msg="Error adding this payment"
+		if (reply.error) msg=reply.error
+		errMsg(msg,"add_pay_div");
 		}, { json: data })
 }
 
@@ -1002,7 +1004,9 @@ function add_payment()
 			if (f) f.focus();
 			return;
 			}
-		errMsg(reply,"add_pay_div");
+		let msg="Error getting HTML for payment"
+		if (reply.error) msg=reply.error
+		errMsg(msg,"add_pay_div");
 		},{ json: {"method":e.value}});
 }
 
