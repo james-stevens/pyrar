@@ -3,6 +3,7 @@
 	"icon": "milkshake.png",
 	"business_name": "NameShake Registrar",
 	"currency" : {
+		"desc": "US Dollars",
 		"iso": "USD",
 		"symbol": "$",
 		"separator": [",","."],

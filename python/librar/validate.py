@@ -141,11 +141,7 @@ def is_valid_fqdn(name):
         return False
     if re.match(IS_FQDN, name, re.IGNORECASE) is None:
         return False
-    if not hasIDN(name):
-        return True
-    try:
-        idn = name.encode("utf-8").decode("idna")
-    except UnicodeError:
+    if hasIDN(name) and misc.puny_to_utf8(name) is None:
         return False
     return True
 

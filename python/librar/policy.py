@@ -7,7 +7,7 @@ import librar.log as log
 
 WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
 
-DEFAULT_CURRENCY = {"iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2, "pow10": 100}
+DEFAULT_CURRENCY = {"desc": "US Dollars","iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2, "pow10": 100}
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
 policy_defaults = {

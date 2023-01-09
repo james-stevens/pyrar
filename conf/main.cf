@@ -1,4 +1,4 @@
-compatibility_level = 2
+#compatibility_level = 2
 queue_directory = /opt/pyrar/storage/perm/postfix
 command_directory = /usr/sbin
 daemon_directory = /usr/libexec/postfix

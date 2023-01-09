@@ -5,7 +5,7 @@
 from librar import parsexml
 from librar import mysql as sql
 
-from webui import handler
+from webui import dom_handler
 
 
 def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
@@ -36,4 +36,4 @@ def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_
     return True, ret_js
 
 
-handler.add_plugin("local", {"dom/price": local_domain_prices})
+dom_handler.add_plugin("local", {"dom/price": local_domain_prices})

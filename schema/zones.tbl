@@ -26,5 +26,5 @@ sqlsh "CREATE TABLE zones (
 	)"
 
 sqlsh "grant select on zones to engine"
-sqlsh "grant select,insert,update on zones to webui"
+sqlsh "grant select on zones to webui"
 sqlsh "grant select,insert,update,delete on zones to raradm"

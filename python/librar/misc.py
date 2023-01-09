@@ -3,6 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 import inspect
+import idna
 
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
@@ -50,7 +51,30 @@ def ashex(line):
     return ret
 
 
+def puny_to_utf8(name,strict_idna_2008=False):
+    try:
+        idn = idna.decode(name)
+        return idn
+    except idna.IDNAError as e:
+        if strict_idna_2008:
+            return None
+        try:
+            idn = name.encode("utf-8").decode("idna")
+            return idn
+        except UnicodeError as e:
+            return None
+    return None
+
+
+
 if __name__ == "__main__":
-    print(ashex("tst"))
-    print(ashex("tst".encode("utf-8")))
-    print(ashex("🐸tst".encode("utf-8")))
+    print(puny_to_utf8("frog.xn--k3h"))
+    print(puny_to_utf8("frog.xn--k3hw410f"))
+    print(puny_to_utf8("xn--e28h.xn--dp8h"))
+    print(puny_to_utf8("xn--strae-oqa.com"))
+
+    print(puny_to_utf8("frog.xn--k3h",True))
+    print(puny_to_utf8("frog.xn--k3hw410f",True))
+    print(puny_to_utf8("xn--e28h.xn--dp8h",True))
+    print(puny_to_utf8("xn--strae-oqa.com",True))
+    print(puny_to_utf8("xn--st-rae-oqa.com",True))

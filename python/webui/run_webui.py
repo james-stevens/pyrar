@@ -18,6 +18,11 @@ from webui import users
 from webui import domains
 from webui import basket
 
+from webui import pay_handler
+# pylint: disable=unused-wildcard-import, wildcard-import
+from webui.pay_plugins import *
+
+
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
 
@@ -51,6 +56,7 @@ class WebuiReq:
         self.sess_code = None
         self.user_id = None
         self.user_data = None
+        self.post_js = flask.request.json
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
         self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
 
@@ -59,6 +65,7 @@ class WebuiReq:
             self.parse_user_data(logged_in, check_sess_data)
 
         self.base_event = self.set_base_event()
+        self.is_logged_in = (self.user_id is not None and self.sess_code is not None)
 
     def parse_user_data(self, logged_in, check_sess_data):
         if not logged_in or "session" not in check_sess_data:
@@ -115,6 +122,8 @@ def get_config():
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
+        "status": misc.DOMAIN_STATUS,
+        "payments": { pay:pay_data["desc"] for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data },
         "policy": policy.data()
     })
 
@@ -134,7 +143,7 @@ def hello():
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
 def orders_details():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
     return load_orders_and_reply(req)
@@ -143,14 +152,14 @@ def orders_details():
 @application.route('/pyrar/v1.0/orders/cancel', methods=['POST'])
 def orders_cancel():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None or "order_item_id" not in flask.request.json or not isinstance(
-            flask.request.json["order_item_id"], int):
+    if req.post_js is None or "order_item_id" not in req.post_js or not isinstance(
+            req.post_js["order_item_id"], int):
         return req.abort("No/invalid JSON posted")
 
-    where = {"user_id": req.user_id, "order_item_id": flask.request.json["order_item_id"]}
+    where = {"user_id": req.user_id, "order_item_id": int(req.post_js["order_item_id"])}
     ok, order_db = sql.sql_select_one("orders", where)
     if not ok:
         return req.abort(order_db)
@@ -184,13 +193,13 @@ def orders_cancel():
 @application.route('/pyrar/v1.0/basket/submit', methods=['POST'])
 def basket_submit():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None:
+    if req.post_js is None:
         return req.abort("No JSON posted")
 
-    ok, reply = basket.webui_basket(flask.request.json, req)
+    ok, reply = basket.webui_basket(req.post_js, req)
     if not ok:
         return req.abort(reply)
 
@@ -204,19 +213,83 @@ def basket_submit():
     return req.response(req.user_data)
 
 
+@application.route('/pyrar/v1.0/payments/delete', methods=['POST'])
+def payments_delete():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if not sql.has_data(req.post_js,["provider","provider_tag"]):
+        return req.abort("Missing or invalid payment method data")
+    req.post_js["user_id"] = req.user_id
+    ok = sql.sql_delete_one("payments",req.post_js)
+    if not ok:
+        return req.abort("Failed to remove payment method")
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/payments/validate', methods=['POST'])
+def payments_validate():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if not sql.has_data(req.post_js,["provider","provider_tag","single_use","can_pull"]):
+        return req.abort("Missing or invalid payment method data")
+
+    if (plugin_func :=  pay_handler.run(req.post_js["provider"],"validate")) is None:
+        return req.abort("Missing or invalid payment method data")
+
+    req.post_js["user_id"] = req.user_id
+    ok = plugin_func(req.post_js)
+    if not ok:
+        return req.abort("Failed validation")
+
+    req.post_js["created_dt"] = None
+    req.post_js["amended_dt"] = None
+    ok, reply = sql.sql_insert("payments",req.post_js)
+    if not ok:
+        return req.abort("Adding payments data failed")
+
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/payments/html', methods=['POST'])
+def payments_html():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if req.post_js is None or "method" not in req.post_js or req.post_js["method"] not in pay_handler.pay_plugins:
+        return req.abort("Missign or invalid payment method")
+    if (plugin_func :=  pay_handler.run(req.post_js["method"],"html")) is None:
+        return req.abort("Missign or invalid payment method")
+
+    ok, reply = plugin_func(req.user_id)
+    if not ok:
+        return req.abort("Missign or invalid payment method")
+    return req.response(reply)
+
+
+@application.route('/pyrar/v1.0/payments/list', methods=['GET', 'POST'])
+def payments_list():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    ok, reply = sql.sql_select("payments",{"user_id":req.user_id})
+    if not ok:
+        return req.abort("Failed to load payment data")
+    return req.response(reply)
+
+
 @application.route('/pyrar/v1.0/users/transactions', methods=['GET', 'POST'])
 def users_transactions():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None:
-        limit = policy.policy("trans_per_page")
-    else:
-        if "limit" in flask.request.json:
-            limit = flask.request.json["limit"]
-            if "skip" in flask.request.json:
-                limit = f"{limit} OFFSET {flask.request.json['skip']}"
+    limit = int(policy.policy("trans_per_page"))
+    if req.post_js is not None and "limit" in req.post_js and isinstance(req.post_js["limit"],int):
+        limit = int(req.post_js["limit"])
+        if "skip" in req.post_js and isinstance(req.post_js["skip"],int):
+            limit = f"{limit} OFFSET {int(req.post_js['skip'])}"
 
     ok, trans_db = sql.sql_select("transactions", {"user_id": req.user_id},
                                   limit=limit,
@@ -230,7 +303,7 @@ def users_transactions():
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
 def users_domains():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
     ret, doms_db = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
@@ -241,10 +314,6 @@ def users_domains():
     for dom_db in doms_db:
         if dom_db["status_id"] == misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
             dom_db["status_id"] = misc.STATUS_EXPIRED
-
-        if dom_db["status_id"] in misc.DOMAIN_STATUS:
-            dom_db["status_desc"] = misc.DOMAIN_STATUS[dom_db["status_id"]]
-
         dom_db["is_live"] = dom_db["status_id"] in misc.LIVE_STATUS
 
     req.user_data["domains"] = doms_db
@@ -255,13 +324,13 @@ def users_domains():
 @application.route('/pyrar/v1.0/users/update', methods=['POST'])
 def users_update():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if flask.request.json is None:
+    if req.post_js is None:
         return req.abort("No JSON posted")
 
-    ret, user_data = users.update_user(req.user_id, flask.request.json)
+    ret, user_data = users.update_user(req.user_id, req.post_js)
     if not ret:
         return req.abort(user_data)
 
@@ -273,10 +342,10 @@ def users_update():
 @application.route('/pyrar/v1.0/users/close', methods=['POST'])
 def users_close():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not users.check_password(req.user_id, flask.request.json):
+    if not users.check_password(req.user_id, req.post_js):
         return req.abort("Password match failed")
 
     ok = sql.sql_update_one(
@@ -297,13 +366,13 @@ def users_close():
 @application.route('/pyrar/v1.0/users/password', methods=['POST'])
 def users_password():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not users.check_password(req.user_id, flask.request.json):
+    if not users.check_password(req.user_id, req.post_js):
         return req.abort("Password match failed")
 
-    new_pass = passwd.crypt(flask.request.json["new_password"])
+    new_pass = passwd.crypt(req.post_js["new_password"])
     ok = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
 
     if not ok:
@@ -315,7 +384,7 @@ def users_password():
 @application.route('/pyrar/v1.0/users/details', methods=['GET'])
 def users_details():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
     ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
@@ -339,10 +408,10 @@ def load_orders_and_reply(req):
 @application.route('/pyrar/v1.0/users/login', methods=['POST'])
 def users_login():
     req = WebuiReq()
-    if flask.request.json is None:
+    if req.post_js is None:
         return req.abort("No JSON posted")
 
-    ret, data = users.login(flask.request.json, req.user_agent)
+    ret, data = users.login(req.post_js, req.user_agent)
     if not ret or not data:
         return req.abort("Login failed")
 
@@ -353,7 +422,7 @@ def users_login():
 @application.route('/pyrar/v1.0/users/logout', methods=['GET'])
 def users_logout():
     req = WebuiReq()
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
     users.logout(req.sess_code, req.user_id, req.user_agent)
@@ -367,10 +436,10 @@ def users_logout():
 @application.route('/pyrar/v1.0/users/register', methods=['POST'])
 def users_register():
     req = WebuiReq()
-    if flask.request.json is None:
+    if req.post_js is None:
         return req.abort("No JSON posted")
 
-    ret, val = users.register(flask.request.json, req.user_agent)
+    ret, val = users.register(req.post_js, req.user_agent)
     if not ret:
         return req.abort(val)
 
@@ -387,16 +456,13 @@ def users_register():
 
 def pdns_action(func):
     req = WebuiReq()
-    if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
+    if req.post_js is None or not sql.has_data(req.post_js, "name") or not validate.is_valid_fqdn(req.post_js["name"]):
         return req.abort("No JSON posted or domain is missing")
 
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not validate.is_valid_fqdn(flask.request.json["name"]):
-        return req.abort("No domain specified")
-
-    ok, dom_db = sql.sql_select_one("domains", {"name": flask.request.json["name"], "user_id": req.user_id})
+    ok, dom_db = sql.sql_select_one("domains", {"name": req.post_js["name"], "user_id": req.user_id})
     if not ok:
         return req.abort("Domain not found or not yours")
 
@@ -488,10 +554,10 @@ def check_rr_data(dom_db, add_rr):
 
 
 def pdns_update_rrs(req, dom_db):
-    if not check_rr_data(dom_db, flask.request.json):
+    if not check_rr_data(dom_db, req.post_js):
         return req.abort("RR data missing or invalid")
 
-    ok, reply = pdns.update_rrs(dom_db["name"], flask.request.json["rr"])
+    ok, reply = pdns.update_rrs(dom_db["name"], req.post_js["rr"])
     if not ok:
         return req.abort(reply)
 
@@ -540,27 +606,29 @@ def domain_authcode():
 
 def run_user_domain_task(domain_function, func_name):
     req = WebuiReq()
-    if flask.request.json is None or not sql.has_data(flask.request.json, "name"):
+    if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
-    if req.user_id is None or req.sess_code is None:
+    if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ok, reply = domain_function(req, flask.request.json)
+    ok, reply = domain_function(req, req.post_js)
 
     if not ok:
         return req.abort(reply)
 
     context = inspect.stack()[1]
     notes = context.function
-    if "dest_email" in flask.request.json:
-        notes = f"Domain gifted from {req.user_id} to {flask.request.json['dest_email']}"
+    if func_name == "Gift":
+        if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
+            return req.abort("Invalid recipient")
+        notes = f"Domain gifted from {req.user_id} to {req.post_js['dest_email']}"
 
-    req.event({"domain_id": flask.request.json["domain_id"], "notes": notes, "event_type": context.function})
+    req.event({"domain_id": req.post_js["domain_id"], "notes": notes, "event_type": context.function})
     if func_name == "Gift":
         req.event({
             "user_id": reply["new_user_id"],
-            "domain_id": flask.request.json["domain_id"],
+            "domain_id": req.post_js["domain_id"],
             "notes": notes,
             "event_type": context.function
         })
@@ -571,16 +639,18 @@ def run_user_domain_task(domain_function, func_name):
 def get_dom_data_items():
     num_years = 1
     qry_type = ["create", "renew"]
+    post_js = flask.request.json
 
-    if flask.request.json is not None:
-        dom = flask.request.json["domain"]
+    if post_js is not None:
+        dom = post_js["domain"]
+
         if not isinstance(dom, str) and not isinstance(dom, list):
             return None, "Unsupported data type for domain", None
 
-        if "num_years" in flask.request.json:
-            num_years = int(flask.request.json["num_years"])
-        if "qry_type" in flask.request.json:
-            qry_type = flask.request.json["qry_type"].split(",")
+        if "num_years" in post_js:
+            num_years = int(post_js["num_years"])
+        if "qry_type" in post_js:
+            qry_type = post_js["qry_type"].split(",")
         return dom, num_years, qry_type
 
     data = None

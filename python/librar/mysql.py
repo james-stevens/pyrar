@@ -18,10 +18,11 @@ import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = ["domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"]
+AUTO_CREATED_AMENDED_DT = ["paymwnts","domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"]
 
 cnx = None
 my_login = None
+my_password = None
 
 logins = fileloader.FileLoader(LOGINS_JSON)
 
@@ -245,12 +246,30 @@ def connect(login):
 
     global cnx
     global my_login
+    global my_password
 
     logins.check_for_new()
     my_login = login
+    my_password = None
     mysql_json = logins.data()["mysql"]
 
+    if not has_data(mysql_json,["database",login]):
+        log(f"Missing database or login data")
+        return False
+
     conn = mysql_json["connect"]
+    if isinstance(mysql_json[login],str):
+        my_password = mysql_json[login]
+    elif isinstance(mysql_json[login],list) and len(mysql_json[login]) == 2:
+        my_login = mysql_json[login][0]
+        my_password = mysql_json[login][1]
+    elif isinstance(mysql_json[login],dict) and has_data(mysql_json[login],"username","password"):
+        my_login = mysql_json[login]["username"]
+        my_password = mysql_json[login]["password"]
+
+    if my_password is None:
+        log(f"ERROR: Could not find MySQL password for user {login}")
+        return False
 
     host = None
     port = None
@@ -267,8 +286,8 @@ def connect(login):
             port = int(svr[1])
 
     try:
-        cnx = _mysql.connect(user=login,
-                             password=mysql_json[login],
+        cnx = _mysql.connect(user=my_login,
+                             password=my_password,
                              unix_socket=sock,
                              host=host,
                              port=port,
@@ -280,20 +299,21 @@ def connect(login):
         log("Failed to connet to MySQL: " + str(exc))
         cnx = None
 
+    return cnx is not None
+
 
 if __name__ == "__main__":
     log_init(with_debug=True)
 
-    print(format_col("name_dt", None))
-    sys.exit(0)
-
-    connect("webui")
+    connect("admin")
 
     ret, db_rows = run_select("select * from events limit 3")
     if ret:
         print("ROWS:", cnx.affected_rows())
         print("ROWID:", cnx.insert_id())
         print(">>>> DEBUG", json.dumps(db_rows, indent=4))
+
+    sys.exit(0)
 
     ret, db_rows = run_select("select * from domains")
     print(">>>> DOMAINS", ret, json.dumps(db_rows, indent=4))
