@@ -274,9 +274,23 @@ function user_info()
 }
 
 
+
 function confirmEmail()
 {
-	return errMsg("Not yet implemented","errorSpan");
+	let x = "<h2>Click to send a verification email to your address</h2>";
+	x += "<center><input type=button onClick='send_confirm_email();' value='Send EMail' class=myBtn></center>";
+	elm.userSpace.innerHTML = x;
+	show_one_space("userSpace");
+}
+
+
+
+function send_confirm_email()
+{
+	callApi("send/verify",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to send verification email",reply,"errorSpan");
+		elm.userSpace.innerHTML = "<h2>"+gbl.tick+"&nbsp;Verification email sent</h2>";
+		});
 }
 
 
@@ -419,13 +433,8 @@ function bodyLoaded()
 	let srchDiv = document.getElementById("search");
 	srchDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
 
-	callApi("config",(ret,reply) => {
-		if (!ret) {
-			let msg = "Error contacting servers";
-			if ("error" in reply) msg = reply["error"];
-			return errMsg(msg,"searchEdit");
-			}
-
+	callApi("config",(ok,reply) => {
+		if (!ok) return def_errMsg("Error contacting servers",reply,"searchEdit");
 		gbl.config = reply;
 		gbl.config.ok_tlds = {};
 		gbl.currency = policy("currency",gbl.config.default_currency);
@@ -445,25 +454,49 @@ function bodyLoaded()
 		basket_changed();
 
 		if (ctx.session) {
-			callApi("users/details",(ret,reply) => {
-				if (ret) {
+			callApi("users/details",(ok,reply) => {
+				if (ok) {
 					catch_user_data(reply);
 					loggedIn();
-					check_router_path();
 					}
+				check_router_path();
 				});
 			} else { loggedOut(); check_router_path(); }
 		});
 }
 
 
+function router_user_email_verify(params)
+{
+	callApi("users/verify",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to verify email",reply,"errorSpan");
+
+		show_one_space("userSpace");
+		elm.userSpace.innerHTML="<h2>Email Address Verified</h2>";
+		elm.emailIcon.style.display="none";
+
+		}, { json: {
+			"user_id":parseInt(params[0]),
+			"hash":params[1]
+			}})
+}
+
+
 
 function check_router_path()
 {
-	if (window.localStorage.router_path) {
-		gbl.router_path = window.localStorage.router_path;
-		window.localStorage.removeItem("router_path");
-		}
+	if (!window.localStorage.router_path) return;
+
+	let router = { "verify": router_user_email_verify };
+
+	let router_path = window.localStorage.router_path;
+	window.localStorage.removeItem("router_path");
+
+	let path_parts = router_path.split("/").slice(1);
+	if (!(path_parts[0] in router)) return;
+
+	let fn_call = router[path_parts[0]];
+	fn_call(path_parts.slice(1));
 }
 
 
@@ -509,11 +542,7 @@ function showSearch(ret,data)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
 
-	if (!ret) {
-		let msg="Search failed";
-		if (data.error) msg=data.error
-		return errMsg(msg,"searchEdit");
-		}
+	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
 
 	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(); return; }
 
@@ -756,10 +785,7 @@ function postUserDetails()
 				size_one_space();
 				}
 			}
-		else {
-			if ("error" in reply) msg=reply["error"]; else msg="Failed";
-			errMsg(msg,"editUserDetails");
-			}
+		else def_errMsg("Failed",reply,"editUserDetails");
 		}, { json: data });
 
 	return false;
@@ -809,10 +835,7 @@ function postCloseAccount()
 
 	callApi("users/close",(ret,reply) => {
 		if (ret) goSearch();
-		else {
-			if ("error" in reply) msg=reply["error"]; else msg="Failed";
-			errMsg(msg,"editCloseAccount");
-			}
+		else def_errMsg("failed",reply,"editCloseAccount");
 		}, { json: { "password": f.password.value }});
 
 	return false;
@@ -917,11 +940,7 @@ function user_statement(from_start)
 		}
 
 	callApi("users/transactions",(ok,reply) => {
-		if (!ok) {
-			msg = "Error submitting basket";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"userBtnBar")
-			}
+		if (!ok) return def_errMsg("Error submitting basket",reply,"userBtnBar")
 
 		if (!reply.transactions) return errMsg("No transactions found","userBtnBar")
 
@@ -979,9 +998,7 @@ function click_add_payment()
 
 	callApi("payments/validate",(ok,reply) => {
 		if (ok) return payment_methods();
-		let msg="Error adding this payment"
-		if (reply.error) msg=reply.error
-		errMsg(msg,"add_pay_div");
+		def_errMsg("Error adding this payment",reply,"add_pay_div");
 		}, { json: data })
 }
 
@@ -1004,9 +1021,7 @@ function add_payment()
 			if (f) f.focus();
 			return;
 			}
-		let msg="Error getting HTML for payment"
-		if (reply.error) msg=reply.error
-		errMsg(msg,"add_pay_div");
+		def_errMsg("Error getting HTML for payment",reply,"add_pay_div");
 		},{ json: {"method":e.value}});
 }
 
@@ -1030,11 +1045,7 @@ function add_payment_form()
 function remove_payment(provider,provider_tag)
 {
 	callApi("payments/delete",(ok,reply) => {
-		if (!ok) {
-			let msg="Delete payment method failed";
-			if (reply.error) msg=reply.error
-			return errMsg(msg,"add_pay_div");
-			}
+		if (!ok) return def_errMsg("Delete payment method failed",reply,"add_pay_div");
 		payment_methods();
 		}, { json: { "provider":provider, "provider_tag":provider_tag }});
 }
@@ -1117,11 +1128,7 @@ function userDetails()
 function cancel_order(order_item_id)
 {
 	callApi("orders/cancel",(ok,reply) => {
-		if (!ok) {
-			msg = "Error cancelling order";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,`orderRow${order_item_id}`)
-			}
+		if (!ok) return def_errMsg("Error cancelling order",reply,`orderRow${order_item_id}`)
 		myAccount();
 		},{json:{"order_item_id":order_item_id}});
 }
@@ -1196,10 +1203,7 @@ function check_login_for_order()
 
 			callApi("users/register",(ret,reply) => {
 				if (ret) return complete_place_order(reply);
-
-				let msg="Error in registration";
-				if ("error" in reply) msg = reply["error"];
-				errMsg(msg,"placeOrderBtn");
+				def_errMsg("Error in registration",reply,"placeOrderBtn");
 				}, { json: login });
 		}, { json: login });
 }
@@ -1211,11 +1215,7 @@ function place_order()
 	if (!gbl.basket) return errMsg("Basket is empty","placeOrderBtn");
 
 	callApi("basket/submit",(ok,reply) => {
-		if (!ok) {
-			msg = "Error submitting basket";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"placeOrderBtn")
-			}
+		if (!ok) return def_errMsg("Error submitting basket",reply,"placeOrderBtn")
 		catch_user_data(reply);
 		show_one_space("userSpace");
 		delete gbl.basket;
@@ -1327,10 +1327,8 @@ function myAccount()
 	size_one_space();
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
-			let msg="Error in etting your data";
-			if ("error" in reply) msg = reply["error"];
 			goSearch();
-			return errMsg(msg,"searchEdit");
+			return def_errMsg("Error in setting your data",reply,"searchEdit");
 			}
 		catch_user_data(reply);
 		user_info();
@@ -1524,16 +1522,10 @@ function add_rec_type_btn(rec_type,idx,inside_func)
 function saveDomDetails(idx)
 {
 	let dom = ctx.domains[idx];
-	callApi("domain/update",(ret,reply) => {
-		if (ret) {
-			delete dom.unsaved;
-			myDomains(idx);
-			}
-		else {
-			let msg = "Domain save failed";
-			if ("error" in reply) msg = reply["error"];
-			errMsg(msg,"saveButton");
-			}
+	callApi("domain/update",(ok,reply) => {
+		if (!ok) return def_errMsg("Domain save failed",reply,"saveButton");
+		delete dom.unsaved;
+		myDomains(idx);
 		}, { json: dom });
 }
 
@@ -1694,9 +1686,7 @@ function giftDomain(idx)
 			myDomains();
 			}
 		else {
-			let msg = "Domain gifting failed";
-			if ("error" in reply) msg = reply["error"];
-			errMsg(msg,"giftDomainDest");
+			def_errMsg("Domain gifting failed",reply,"giftDomainDest");
 			e.focus();
 			}
 		}, { json: dom });
@@ -1750,11 +1740,7 @@ function getAuthCode(idx)
 		if ((ok)&&("auth_code" in reply)) {
 			show_auth_code(reply["auth_code"]);
 			}
-		else {
-			msg = "Get AuthCode failed";
-			if ("error" in reply) msg=reply["error"];
-			errMsg(msg,"showAuthCode");
-			}
+		else def_errMsg("Get AuthCode failed",reply,"showAuthCode");
 		}, { json: dom });
 }
 
@@ -1771,11 +1757,7 @@ function domain_dns(idx)
 	let dom = ctx.domains[idx];
 
 	callApi("dns/load",(ok,reply)=>{
-		if (!ok) {
-			msg = "DNS Data failed to load";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"dnsBtnBar")
-			}
+		if (!ok) return def_errMsg("DNS Data failed to load",reply,"dnsBtnBar")
 
 		if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
 			return errMsg("Failed to read DNS Data","domainBtnBar");
@@ -1816,11 +1798,7 @@ function sign_zone(idx)
 	let dom = ctx.domains[idx];
 
 	callApi("dns/sign",(ok,reply)=>{
-		if (!ok) {
-			msg = "Domain failed to sign";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"dnsBtnBar")
-			}
+		if (!ok) return def_errMsg("Domain failed to sign",reply,"dnsBtnBar")
 
 		if (reply.domain) {
 			reply.domain.display_name = fromPuny(reply.domain.name);
@@ -1841,11 +1819,7 @@ function drop_zone(idx)
 	hideAllPopUp();
 
 	callApi("dns/drop",(ok,reply)=>{
-		if (!ok) {
-			msg = "DNS Data failed to drop";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"dnsBtnBar")
-			}
+		if (!ok) return def_errMsg("DNS Data failed to drop",reply,"dnsBtnBar")
 
 		delete ctx.dns;
 		show_one_domain(idx);
@@ -1920,11 +1894,7 @@ function process_add_rr(idx,rrs_id,rec_id)
 		}
 
 	callApi("dns/update",(ok,reply) => {
-		if (!ok) {
-			msg = "DNS Data failed to update";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"AddRRwin")
-			}
+		if (!ok) return def_errMsg("DNS Data failed to update",reply,"AddRRwin")
 		hideAllPopUp();
 		domain_dns(idx);
 		}, { json: { "name":dom["name"], "rr": add_rr }} );
@@ -1979,11 +1949,7 @@ function delete_rr(idx,rrs_id,rec_id)
 	hideAllPopUp();
 
 	callApi("dns/update",(ok,reply) => {
-		if (!ok) {
-			msg = "DNS Data failed to update";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,`rrs_${rrs_id}_${rec_id}`);
-			}
+		if (!ok) return def_errMsg("DNS Data failed to update",reply,`rrs_${rrs_id}_${rec_id}`);
 		domain_dns(idx);
 		}, { json: del_rr });
 }
@@ -2067,11 +2033,7 @@ function unsign_zone(idx)
 {
 	let dom = ctx.domains[idx];
 	callApi("dns/unsign",(ok,reply)=>{
-		if (!ok) {
-			msg = "Domain failed to unsign";
-			if (reply.error) msg = reply.error;
-			return errMsg(msg,"dnsBtnBar")
-			}
+		if (!ok) return def_errMsg("Domain failed to unsign",reply,"dnsBtnBar")
 
 		if (reply.domain) {
 			reply.domain.display_name = fromPuny(reply.domain.name);

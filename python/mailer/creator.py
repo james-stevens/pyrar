@@ -11,27 +11,30 @@ from librar.log import log, debug, init as log_init
 from librar import mysql as sql
 from librar import registry
 from librar import misc
+from librar import hashstr
 
 SPOOL_BASE = f"{os.environ['BASE']}/storage/perm/spooler"
 ERROR_BASE = f"{os.environ['BASE']}/storage/perm/mail_error"
 TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 
-
 def load_records(which_message, request_list):
     return_data = {"email": {"message": which_message}}
     for request in request_list:
-        ok, reply = sql.sql_select_one(request[0], request[1])
+        table = request[0]
+        ok, reply = sql.sql_select_one(table, request[1])
 
         if not ok or len(reply) <= 0:
-            log(f"SPOOLER: Failed to load '{request[0]}' where '{request[1]}'")
+            log(f"SPOOLER: Failed to load '{table}' where '{request[1]}'")
             return None
 
-        if request[0] == "users" and not reply["email_verified"]:
-            return None
+        if table == "users":
+            if not reply["email_verified"] and which_message != "verify_email":
+                return None
+            reply["hash_confirm"] = hashstr.hash_confirm(reply["created_dt"]+":"+reply["email"])
 
-        tag = request[3] if len(request) == 3 else request[0].rstrip("s")
+        tag = request[3] if len(request) == 3 else table.rstrip("s")
 
-        if request[0] == "domains" and sql.has_data(reply, "name"):
+        if table == "domains" and sql.has_data(reply, "name"):
             if (idn := misc.puny_to_utf8(reply["name"])) is not None:
                 reply["display_name"] = idn
             else:
@@ -61,4 +64,4 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("engine")
     registry.start_up()
-    print("spool_email>>",spool_email("reminder", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "flip@flop.com"}]]))
+    print("spool_email>>",spool_email("verify_email", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]))

@@ -1,4 +1,5 @@
-#compatibility_level = 2
+compatibility_level=3.6
+
 queue_directory = /opt/pyrar/storage/perm/postfix
 command_directory = /usr/sbin
 daemon_directory = /usr/libexec/postfix
@@ -32,4 +33,3 @@ maximal_queue_lifetime = 30d
 maximal_backoff_time = 60m
 minimal_backoff_time = 15m
 queue_run_delay = 15m
-

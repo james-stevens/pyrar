@@ -11,7 +11,8 @@ DEFAULT_CURRENCY = {"desc": "US Dollars","iso": "USD", "separator": [",", "."], 
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
 policy_defaults = {
-    "smtp_server": "127.0.0.1",
+    "pdns_log_facility": 0,
+    "pdns_log_level": 5,
     "website_name": "https://example.com/",
     "name_sender": "Customer Support",
     "email_sender": "support@example.com",

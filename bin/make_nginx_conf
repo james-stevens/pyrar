@@ -2,11 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-lvl="$(jq .loglevel_nginx ${BASE}/etc/policy.json | tr -d '"')"
-if test "${lvl}" = "null"; then lvl="info"; fi
-
-fac="$(jq .facility_nginx ${BASE}/etc/policy.json | tr -d '"')"
-if test "${fac}" = "null"; then fac="local0"; fi
+. /run/policy_subst/env.inc
 
 
 function if_has_pem()
@@ -39,7 +35,7 @@ pid /run/nginx.pid;
 events { worker_connections  1024; }
 
 user nginx;
-error_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx error;
+error_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx error;
 
 http {
 	fastcgi_intercept_errors on;
@@ -55,7 +51,7 @@ http {
 		server unix:/run/wsgi_checker.sock;
 		}
 	server {
-		access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx_webui,severity=${lvl};
+		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_webui,severity=${LOGLEVEL_NGINX};
 		error_page 404 =200 /;
 
 
@@ -71,7 +67,7 @@ echo "
 		}
 
 	server {
-		access_log syslog:server=unix:/dev/log,facility=${fac},tag=nginx_webui,severity=${lvl};
+		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_webui,severity=${LOGLEVEL_NGINX};
 		error_page 404 =200 /;
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
@@ -85,7 +81,7 @@ echo "
 			}
 	}"
 
-awk 'BEGIN { fac="'"${fac}"'"; lvl="'"${lvl}"'"; }
+awk 'BEGIN { fac="'"${FACILITY_NGINX}"'"; lvl="'"${LOGLEVEL_NGINX}"'"; }
 	{
 	printf "\tupstream epp_%s {\n",$1
 	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$1

@@ -2,15 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-log="$(jq .log_python_req ${BASE}/etc/policy.json | tr -d '"')"
-if test "${log}" = "true"
-    then
-        lvl="$(jq .loglevel_python ${BASE}/etc/policy.json | tr -d '"')"
-        if test "${lvl}" = "null"; then lvl="info"; fi
-
-        fac="$(jq .facility_python ${BASE}/etc/policy.json | tr -d '"')"
-        if test "${fac}" = "null"; then fac="local0"; fi
-
-        extra="--log-syslog --log-syslog-to udp://127.0.0.1:514"
-        extra="${extra} --log-syslog-facility ${fac} --log-level ${lvl}"
-    fi
+. /run/policy_subst/env.inc
+if test "${LOG_PYTHON_REQ}" = "True"
+	then
+		lvl="${LOGLEVEL_PYTHON}"
+		fac="${FACILITY_PYTHON}"
+		extra="--log-syslog --log-syslog-to udp://127.0.0.1:514"
+		extra="${extra} --log-syslog-facility ${fac} --log-level ${lvl}"
+	fi

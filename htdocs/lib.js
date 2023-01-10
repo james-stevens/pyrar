@@ -170,7 +170,10 @@ function format_amount(num)
 
 
 
-
+function def_errMsg(msg,reply,tagged_elm)
+{
+	if (reply.error) errMsg(reply.error,tagged_elm); else errMsg(msg,tagged_elm);
+}
 
 
 function unerrMsg()

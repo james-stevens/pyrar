@@ -2,8 +2,11 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import os
 import inspect
 import idna
+
+LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
 
 HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}

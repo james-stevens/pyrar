@@ -81,11 +81,9 @@ def spool_email_file(filename):
     if "x-env-from" in header:
         from_addr = header["x-env-from"]
 
-    smtp_server = policy.this_policy.policy("smtp_server")
+    log(f"Emailing: {data['email']['message']} to {header['to']}")
 
-    log(f"Emailing: {data['email']['message']} to {header['to']} via {smtp_server}")
-
-    with smtplib.SMTP(smtp_server, 25) as smtp_cnx:
+    with smtplib.SMTP("127.0.0.1", 25) as smtp_cnx:
         smtp_cnx.send_message(msg, smtp_from_addr, header["to"])
         smtp_cnx.quit()
 

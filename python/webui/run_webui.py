@@ -17,6 +17,7 @@ from librar import mysql as sql
 from webui import users
 from webui import domains
 from webui import basket
+from mailer import creator
 
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -431,6 +432,29 @@ def users_logout():
     req.user_id = None
 
     return req.response("logged-out")
+
+
+@application.route('/pyrar/v1.0/send/verify', methods=['GET','POST'])
+def send_verify():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if creator.spool_email("verify_email",[["users",{"user_id":req.user_id}]]):
+        return req.response(True)
+    return req.abort("Failed to send email verification")
+
+
+@application.route('/pyrar/v1.0/users/verify', methods=['POST'])
+def users_verify():
+    req = WebuiReq()
+    if req.post_js is None:
+        return req.abort("No JSON posted")
+
+    if not sql.has_data(req.post_js,["user_id","hash"]) or not isinstance(req.post_js["user_id"],int) or len(req.post_js["hash"]) != 20:
+        return req.abort("Invalid verification data")
+    if users.verify_email(int(req.post_js["user_id"]),req.post_js["hash"]):
+        return req.response(True)
+    return req.abort("Email verification failed")
 
 
 @application.route('/pyrar/v1.0/users/register', methods=['POST'])

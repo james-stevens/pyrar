@@ -5,6 +5,7 @@ FROM alpine:3.16
 
 RUN rmdir /run
 RUN ln -s /dev/shm /run
+RUN mkdir /run/policy_subst
 RUN apk add nginx curl
 
 RUN apk add python3 jq py-pip
@@ -12,9 +13,7 @@ RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-my
 RUN pip install apscheduler httpx
 
 RUN apk add postfix
-COPY conf/main.cf /etc/postfix
-COPY conf/aliases /etc/postfix
-RUN postalias /etc/postfix/aliases
+COPY conf/aliases /etc/postfix/aliases
 
 RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
@@ -35,7 +34,8 @@ RUN ln -fns /run/policy_subst/pdns.conf /etc/pdns/pdns.conf
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
 
-COPY pems /opt/pyrar/pems/
+COPY pems/myCA.pem /opt/pyrar/pems/myCA.pem
+COPY pems/myCA-2.pem /opt/pyrar/pems/myCA-2.pem
 RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
