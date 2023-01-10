@@ -1996,7 +1996,7 @@ function process_add_rr(idx,rrs_id,rec_id)
 	callApi("dns/update",(ok,reply) => {
 		if (!ok) return def_errMsg("DNS Data failed to update",reply,"AddRRwin")
 		hideAllPopUp();
-		push_domain_dns(idx);
+		domain_dns(idx);
 		}, { json: { "name":dom["name"], "rr": add_rr }} );
 }
 
@@ -2050,7 +2050,7 @@ function delete_rr(idx,rrs_id,rec_id)
 
 	callApi("dns/update",(ok,reply) => {
 		if (!ok) return def_errMsg("DNS Data failed to update",reply,`rrs_${rrs_id}_${rec_id}`);
-		push_domain_dns(idx);
+		domain_dns(idx);
 		}, { json: del_rr });
 }
 
