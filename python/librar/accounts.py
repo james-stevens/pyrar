@@ -53,4 +53,4 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
-    print(">>>>>>", apply_transaction(10450, 9000, "Here's some fake money"))
+    print(">>>>>>", apply_transaction(10450, 90000, "Here's some fake money"))
