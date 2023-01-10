@@ -190,8 +190,9 @@ function do_size_one_space()
 }
 
 
-function goSearch()
+function goSearch(with_push)
 {
+	if (with_push) push_hist("goSearch");
 	show_one_space("search");
 	document.searchForm.searchEdit.focus();
 	size_one_space();
@@ -213,7 +214,7 @@ function emptyCart()
 	delete gbl.basket;
 	user_info();
 	errMsg(`${gbl.cut} basket emptied`,"errorSpan");
-	if (elm.basketSpace.style.display == "block") goSearch();
+	if (elm.basketSpace.style.display == "block") goSearch(true);
 }
 
 
@@ -223,7 +224,7 @@ function removeBasketItem(i)
 	if (gbl.basket.length == 1) {
 		delete gbl.basket;
 		if ((elm.basketSpace.style.display == "block")||(elm.userSpace.style.display == "block"))
-			goSearch();
+			goSearch(true);
 		}
 	else gbl.basket.splice(i,1);
 
@@ -234,7 +235,7 @@ function removeBasketItem(i)
 
 	user_info()
 	if ((elm.basketSpace.style.display == "block")||(elm.userSpace.style.display == "block"))
-		basketCheckout();
+		basketCheckout(true);
 }
 
 
@@ -395,7 +396,7 @@ function loggedOut()
 	elm.emailIcon.style.display="none";
 	elm.ordersIcon.style.display="none";
 
-	goSearch();
+	goSearch(true);
 }
 
 
@@ -408,7 +409,7 @@ function basket_changed()
 		x += `<tr><td colspan=4>${gbl.gap}</td></tr>`;
 		x += "<tr><Td class=btmBtnBar colspan=4 align=center>";
 		x += "<button style='width: 110px;' onClick='emptyCart();' class=myBtn>Empty</button>";
-		x += "<button style='width: 110px;' onClick='basketCheckout();' class=myBtn>Checkout</button></td></tr>";
+		x += "<button style='width: 110px;' onClick='basketCheckout(true);' class=myBtn>Checkout</button></td></tr>";
 		x += "</table>";
 		elm.basketPopup.innerHTML = x;
         window.localStorage.setItem("basket",JSON.stringify(gbl.basket));
@@ -420,14 +421,59 @@ function basket_changed()
 }
 
 
+function history_back(event)
+{
+	let router = {
+		"basketCheckout": basketCheckout,
+		"payment_methods": payment_methods,
+		"domain_dns": go_domain_dns,
+		"domain_transfer_options": go_domain_transfer_options,
+		"domain_settings": go_domain_settings,
+		"show_one_domain": go_show_one_domain,
+		"user_statement": go_user_statement,
+		"user_settings": user_settings,
+		"myAccount": myAccount,
+		"myDomains": myDomains,
+		"goSearch": goSearch,
+		"welcome": go_welcome
+		};
+
+	let rest = null;
+	let func_name = event.state;
+	if (func_name.indexOf("/")>=0) {
+		let parts = event.state.split("/");
+		func_name = parts[0];
+		rest = parts.slice(1);
+		}
+
+	if (func_name in router) router[func_name](false,rest);
+	return true;
+}
+
+
 
 function bodyLoaded()
+{
+	window.addEventListener('popstate',history_back);
+	go_welcome(true);
+}
+
+
+
+function push_hist(data)
+{
+	window.history.pushState(data,"",policy("website_name"));
+}
+
+
+function go_welcome(with_push)
 {
 	["myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
 	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
 
+	show_one_space("search");
 	let mainDiv = document.getElementById("allBottom");
 	mainDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
 	let srchDiv = document.getElementById("search");
@@ -452,6 +498,8 @@ function bodyLoaded()
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 		size_one_space();
 		basket_changed();
+		document.searchForm.searchEdit.focus();
+		if (with_push) push_hist("welcome");
 
 		if (ctx.session) {
 			callApi("users/details",(ok,reply) => {
@@ -544,7 +592,7 @@ function showSearch(ret,data)
 
 	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
 
-	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(); return; }
+	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(true); return; }
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
@@ -709,7 +757,7 @@ function userDomainList()
 
 	for(let i in ctx.domains) {
 		let dom = ctx.domains[i];
-		x += `<tr onClick="show_one_domain(${i});" class=${cls}>`;
+		x += `<tr onClick="push_show_one_domain(${i});" class=${cls}>`;
 		if (dom.ds) x += "<td title='DNSSEC Secured'>"+gbl.lock+"</td>"; else x += "<td></td>";
 		x += `<td title="${dom.name}">${dom.display_name}</td>`;
 
@@ -740,11 +788,13 @@ function load_domains_list(success_fn)
 				if (dom.status in gbl.config.status)
 					dom.status_desc = gbl.config.status[dom.status];
 				}
-			success_fn();
+			success_fn(true);
 			}
 		else delete ctx.domains;
 		});
 }
+
+
 
 function show_domains_list()
 {
@@ -753,8 +803,10 @@ function show_domains_list()
 }
 
 
-function myDomains()
+
+function myDomains(with_push)
 {
+	if (with_push) push_hist("myDomains");
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	load_domains_list(show_domains_list)
@@ -834,7 +886,7 @@ function postCloseAccount()
 	if (f.password.value=="") return regErr("Password missing",f.password);
 
 	callApi("users/close",(ret,reply) => {
-		if (ret) goSearch();
+		if (ret) goSearch(true);
 		else def_errMsg("failed",reply,"editCloseAccount");
 		}, { json: { "password": f.password.value }});
 
@@ -867,8 +919,9 @@ function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><t
 
 
 
-function user_settings()
+function user_settings(with_push)
 {
+	if (with_push) push_hist("user_settings");
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
@@ -927,9 +980,12 @@ function user_settings()
 }
 
 
+function go_user_statement() { return user_statement(false,true); }
 
-function user_statement(from_start)
+
+function user_statement(with_push,from_start)
 {
+	if (with_push) push_hist("user_statement");
 	let num = policy("trans_per_page",25);
 	let limit = null;
 
@@ -973,7 +1029,7 @@ function show_transactions(with_more)
 	if (with_more) {
 		x += "<tr><td>"+gbl.gap+"</td></tr>";
 		x += "<tr><td colspan=2><td id=moreTransBtn class=btmBtnBar align=right colspan=3>";
-		x += btn("user_statement(false)","More >>>","Load more transations");
+		x += btn("user_statement(true,false)","More >>>","Load more transations");
 		x += "</td></tr>";
 		}
 	elm.userSpace.innerHTML = x+"</table>";
@@ -997,7 +1053,7 @@ function click_add_payment()
 		}
 
 	callApi("payments/validate",(ok,reply) => {
-		if (ok) return payment_methods();
+		if (ok) return payment_methods(true);
 		def_errMsg("Error adding this payment",reply,"add_pay_div");
 		}, { json: data })
 }
@@ -1046,14 +1102,15 @@ function remove_payment(provider,provider_tag)
 {
 	callApi("payments/delete",(ok,reply) => {
 		if (!ok) return def_errMsg("Delete payment method failed",reply,"add_pay_div");
-		payment_methods();
+		payment_methods(true);
 		}, { json: { "provider":provider, "provider_tag":provider_tag }});
 }
 
 
 
-function payment_methods()
+function payment_methods(with_push)
 {
+	if (with_push) push_hist("payment_methods");
 	callApi("payments/list",(ok,reply) => {
 		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><td class=btmBtnBar>";
@@ -1100,9 +1157,9 @@ function userDetails()
 	if (!ctx.user.email_verified) 
 		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
 
-	x += btn("user_statement(true)","Statement","View a statement of all your transactions",100)
+	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
-	x += btn("user_settings()","Settings","Change this accounts settings",100)
+	x += btn("user_settings(true)","Settings","Change this accounts settings",100)
 	x += "</td></tr>";
 
 	x += "<tr><td>"+gbl.gap+"</td></tr><tr><td><table width=100%>";
@@ -1129,7 +1186,7 @@ function cancel_order(order_item_id)
 {
 	callApi("orders/cancel",(ok,reply) => {
 		if (!ok) return def_errMsg("Error cancelling order",reply,`orderRow${order_item_id}`)
-		myAccount();
+		myAccount(true);
 		},{json:{"order_item_id":order_item_id}});
 }
 
@@ -1264,8 +1321,9 @@ function show_new_orders()
 
 
 
-function basketCheckout()
+function basketCheckout(with_push)
 {
+	if (with_push) push_hist("basketCheckout");
 	hidePopUp();
 	show_one_space("basketSpace");
 	elm.basketSpace.innerHTML = html_for_basket(true)
@@ -1320,14 +1378,15 @@ function html_for_basket(with_place_order)
 
 
 
-function myAccount()
+function myAccount(with_push)
 {
+	if (with_push) push_hist("myAccount");
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	size_one_space();
 	callApi("users/details",(ret,reply) => {
 		if (!ret) {
-			goSearch();
+			goSearch(true);
 			return def_errMsg("Error in setting your data",reply,"searchEdit");
 			}
 		catch_user_data(reply);
@@ -1364,7 +1423,7 @@ function doAddNS(idx)
 		if (dom.ns=="") dom.ns = e.value;
 		else dom.ns += ","+e.value;
 		dom.unsaved = true;
-		domain_settings(idx);
+		push_domain_settings(idx);
 		}
 	else {
 		errMsg("Name server already present","AddNSPopup");
@@ -1395,7 +1454,7 @@ function doAddDS(idx)
 		if (!dom.ds) dom.ds = e.value;
 		else dom.ds += ","+e.value;
 		dom.unsaved = true;
-		domain_settings(idx);
+		push_domain_settings(idx);
 		}
 	else {
 		errMsg("DS already present","AddDSPopup");
@@ -1423,7 +1482,7 @@ function do_change_ns(dest_dom,src_dom)
 		}
 
 	hidePopUp();
-	domain_settings(dest_dom);
+	push_domain_settings(dest_dom);
 }
 
 
@@ -1525,7 +1584,7 @@ function saveDomDetails(idx)
 	callApi("domain/update",(ok,reply) => {
 		if (!ok) return def_errMsg("Domain save failed",reply,"saveButton");
 		delete dom.unsaved;
-		myDomains(idx);
+		myDomains(true);
 		}, { json: dom });
 }
 
@@ -1549,7 +1608,7 @@ function removeNS(idx,ns_name)
 	ns.splice(pos,1);
 	dom.ns = ns.join(",");
 	dom.unsaved = true;
-	domain_settings(idx);
+	push_domain_settings(idx);
 }
 
 
@@ -1572,10 +1631,13 @@ function removeDS(idx,ds_data)
 	ds.splice(pos,1);
 	dom.ds = ds.join(",");
 	dom.unsaved = true;
-	domain_settings(idx);
+	push_domain_settings(idx);
 }
 
 
+
+function push_domain_transfer_options(idx) { push_hist(`domain_transfer_options/${idx}`); return domain_transfer_options(idx); }
+function go_domain_transfer_options(with_push,rest) { domain_transfer_options(parseInt(rest[0])); }
 
 function domain_transfer_options(idx)
 {
@@ -1614,9 +1676,13 @@ function domAutoRenew(idx)
 	if (e) {
 		dom.auto_renew = (e.value==1);
 		dom.unsaved = true;
-		domain_settings(idx);
+		push_domain_settings(idx);
 		}
 }
+
+
+function push_domain_settings(idx) { push_hist(`domain_settings/${idx}`); return domain_settings(idx); }
+function go_domain_settings(with_push,rest) { domain_settings(parseInt(rest[0])); }
 
 
 function domain_settings(idx)
@@ -1683,7 +1749,7 @@ function giftDomain(idx)
 	callApi("domain/gift",(ok, reply) => {
 		if (ok) {
 			errMsg(gbl.tick+" Domain gifted","userInfo");
-			myDomains();
+			myDomains(true);
 			}
 		else {
 			def_errMsg("Domain gifting failed",reply,"giftDomainDest");
@@ -1751,6 +1817,9 @@ function tick_cross(value)
 }
 
 
+
+function push_domain_dns(idx) { push_hist(`domain_dns/${idx}`); return domain_dns(idx); }
+function go_domain_dns(with_push,rest) { domain_dns(parseInt(rest[0])); }
 
 function domain_dns(idx)
 {
@@ -1822,7 +1891,7 @@ function drop_zone(idx)
 		if (!ok) return def_errMsg("DNS Data failed to drop",reply,"dnsBtnBar")
 
 		delete ctx.dns;
-		show_one_domain(idx);
+		push_show_one_domain(idx);
 		},{ json: { "name": dom.name }})
 }
 
@@ -1896,7 +1965,7 @@ function process_add_rr(idx,rrs_id,rec_id)
 	callApi("dns/update",(ok,reply) => {
 		if (!ok) return def_errMsg("DNS Data failed to update",reply,"AddRRwin")
 		hideAllPopUp();
-		domain_dns(idx);
+		push_domain_dns(idx);
 		}, { json: { "name":dom["name"], "rr": add_rr }} );
 }
 
@@ -1950,7 +2019,7 @@ function delete_rr(idx,rrs_id,rec_id)
 
 	callApi("dns/update",(ok,reply) => {
 		if (!ok) return def_errMsg("DNS Data failed to update",reply,`rrs_${rrs_id}_${rec_id}`);
-		domain_dns(idx);
+		push_domain_dns(idx);
 		}, { json: del_rr });
 }
 
@@ -2066,9 +2135,7 @@ function show_dns_data(idx)
 	let dom_name = dom["name"]+".";
 
 	let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
-	x += "<tr><td align=center><table width=50%><tr><td class=btmBtnBar><span id=dnsBtnBar>"
-
-	x += btn(`show_one_domain(${idx})`,`< Back`,"Go back to the domain info",100)
+	x += "<tr><td align=center><table width=100%><tr><td class=btmBtnBar><span id=dnsBtnBar>"
 
     x += generic_popup_btn({
         "name": "DropDataWin",
@@ -2138,7 +2205,7 @@ function one_domain_html(idx)
 	let auto_renew = gbl.cross;
 	if (dom.auto_renew) auto_renew = gbl.tick;
 
-	let x = "<table align=center width=50% border=0>";
+	let x = "<table align=center width=75% border=0>";
 
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
@@ -2146,11 +2213,11 @@ function one_domain_html(idx)
 		x += btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
 
 	if (dom.is_live)
-		x += btn(`domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
+		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {
-		x += btn(`domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
-		x += btn(`domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+		x += btn(`push_domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
+		x += btn(`push_domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
 		}
 
 	x += "</span></td></tr>";
@@ -2176,6 +2243,9 @@ function one_domain_html(idx)
 }
 
 
+
+function push_show_one_domain(idx) { push_hist(`show_one_domain/${idx}`); return show_one_domain(idx); }
+function go_show_one_domain(with_push,rest) { show_one_domain(parseInt(rest[0])); }
 
 function show_one_domain(idx)
 {
@@ -2238,7 +2308,7 @@ function show_one_domain(idx)
 </span>
 
 <span style="display:none;" id="isLoggedIn">
-	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains();">Domains</span>
+	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains(true);">Domains</span>
 	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="load_domains_list(myAccount); return false;">Account</span>
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
 </span>
@@ -2258,7 +2328,7 @@ function show_one_domain(idx)
 <tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
 </table>
 </span>
-<span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch();">Search</span>
+<span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch(true);">Search</span>
 <span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 </td>
