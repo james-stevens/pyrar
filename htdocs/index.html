@@ -424,6 +424,7 @@ function basket_changed()
 function history_back(event)
 {
 	let router = {
+		"resend_password": resend_password,
 		"basketCheckout": basketCheckout,
 		"payment_methods": payment_methods,
 		"domain_dns": go_domain_dns,
@@ -2285,6 +2286,39 @@ function show_one_domain(idx)
 }
 
 
+function submit_resend()
+{
+	console.log(">>>",document.resendPass.email.value);
+	return false;
+}
+
+
+function resend_password(with_push)
+{
+	if (with_push) push_hist("resend_password");
+	hideAllPopUp()
+	pin_code = ("00000"+Math.trunc(Math.random()*10000)).slice(-4);
+	let x = "<form name=resendPass action=# method=post onSubmit='return submit_resend();'><table width=75% align=center border=0>";
+	x += settings_header("Reset Password",true);
+	x += "Enter your email address below and we will email you a link to reset your password</td></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "<tr><Td style='white-space: normal;'>When you click the password reset link in the email, you will be asked for the PIN number shown below. ";
+	x += "You will <B>NOT</b> be able to reset your password without this PIN Number</td></tr>"
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += `<tr><td><h2>${pin_code}</h2></td></tr>`;
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "<tr><td><table width=100%><tr><td class=formPrompt>Your email address:</td>";
+	x += "<td><input autofocus style='width: 350px;' name=email></td></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "<tr><td class=btmBtnBar colspan=2><input type=submit value='Reset Password' class=myBtn></td></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += "</form></table></td></tr></table>";
+	elm.userSpace.innerHTML = x;
+	show_one_space("userSpace");
+	document.resendPass.email.focus();
+	return false;
+}
+
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -2324,6 +2358,8 @@ function show_one_domain(idx)
 		<tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
 			<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
 			<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
+		<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
+		<tr><td align=center colspan=2><a href=# onClick="return resend_password(true);">Forgotton</a> your password</td></tr>
 		<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 		<tr>
 			<td class=btmBtnBar colspan=2>
