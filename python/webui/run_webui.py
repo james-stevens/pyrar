@@ -116,6 +116,13 @@ class WebuiReq:
         sql.sql_insert("events", data)
 
 
+@application.before_request
+def before_request():
+    if policy.policy("strict_referrer") and flask.request.referrer != policy.policy("website_name"):
+        log(f"Referer mismatch: {flask.request.referrer} "+policy.policy("website_name"))
+        return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
+
+
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
@@ -660,12 +667,14 @@ def run_user_domain_task(domain_function, func_name):
     return req.response(reply)
 
 
-def get_dom_data_items():
+def get_dom_data_items(post_js):
     num_years = 1
     qry_type = ["create", "renew"]
-    post_js = flask.request.json
 
     if post_js is not None:
+        if "domain" not in post_js:
+            return None, "Missing domain", None
+
         dom = post_js["domain"]
 
         if not isinstance(dom, str) and not isinstance(dom, list):
@@ -682,6 +691,7 @@ def get_dom_data_items():
         data = flask.request.form
     if flask.request.method == "GET":
         data = flask.request.args
+
     if data is None or len(data) <= 0:
         return None, "No data sent", None
 
@@ -699,8 +709,7 @@ def get_dom_data_items():
 @application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
     req = WebuiReq()
-
-    dom, num_years, qry_type = get_dom_data_items()
+    dom, num_years, qry_type = get_dom_data_items(req.post_js)
     if dom is None:
         return req.abort(num_years)
 

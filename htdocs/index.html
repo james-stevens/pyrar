@@ -363,6 +363,7 @@ function doLogin()
 		loggedIn();
 
 		if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
+		if (elm.basketSpace.style.display != "none") basketCheckout(false);
 
 		f.email.value = "";
 		f.password.value = "";
@@ -514,6 +515,7 @@ function go_welcome(with_push)
 }
 
 
+
 function router_user_email_verify(params)
 {
 	callApi("users/verify",(ok,reply) => {
@@ -531,11 +533,29 @@ function router_user_email_verify(params)
 
 
 
+function user_err(pfx,msg,reply)
+{
+	if (reply.error) msg=reply.error;
+	elm.userSpace.innerHTML = `<h2>${pfx}: ${msg}</h2>`;
+	show_one_space("userSpace");
+}
+
+
+function router_renew_domain(params)
+{
+	buy_one_name(params[0],"renew",false);
+}
+
+
+
 function check_router_path()
 {
 	if (!window.localStorage.router_path) return;
 
-	let router = { "verify": router_user_email_verify };
+	let router = {
+		"verify": router_user_email_verify,
+		"renew": router_renew_domain
+		};
 
 	let router_path = window.localStorage.router_path;
 	window.localStorage.removeItem("router_path");
@@ -576,7 +596,7 @@ function one_search_line(item,block_not_avail)
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
 			let amt = format_amount(item.create);
-			x += btn(`buy_one_name('${item.name}','create')`,`<b>BUY ${amt}</b>`,`Buy '${item.name}' for ${amt}`,120);
+			x += btn(`buy_one_name('${item.name}','create',true)`,`<b>BUY ${amt}</b>`,`Buy '${item.name}' for ${amt}`,120);
 			x += "</td>";
 			}
 		}
@@ -611,7 +631,7 @@ function showSearch(ret,data)
 
 
 
-function buy_one_name(domain,action)
+function buy_one_name(domain,action,show_basket)
 {
 	let qry = { "domain" : domain, "num_years": 1 }
 
@@ -666,8 +686,13 @@ function buy_one_name(domain,action)
 		basket_changed();
 		user_info();
 		clr_lazy_hide();
-		elm.basketPopup.classList.add("show");
-		ctx.popup = { "timer": setTimeout(hidePopUp,2500), "name": "basketPopup" };
+
+		if (show_basket) {
+			elm.basketPopup.classList.add("show");
+			ctx.popup = { "timer": setTimeout(hidePopUp,2500), "name": "basketPopup" };
+		} else {
+			if ((gbl.basket)&&(gbl.basket.length)) basketCheckout();
+			}
 
 		}, { json: qry });
 }
@@ -778,16 +803,22 @@ function userDomainList()
 
 
 
+function preset_domain_extras(dom)
+{
+	dom.display_name = fromPuny(dom.name);
+	dom.status_desc = dom.status_id;
+	if (dom.status_id in gbl.config.status)
+		dom.status_desc = gbl.config.status[dom.status_id];
+}
+
+
+
 function load_domains_list(success_fn)
 {
 	callApi("users/domains",(ret,reply) => {
 		if ((ret)&&(reply.domains)) {
 			ctx.domains = reply.domains;
-			for(let dom of ctx.domains) {
-				dom.display_name = fromPuny(dom.name);
-				if (dom.status in gbl.config.status)
-					dom.status_desc = gbl.config.status[dom.status];
-				}
+			for(let dom of ctx.domains) preset_domain_extras(dom);
 			success_fn(true);
 			}
 		else delete ctx.domains;
@@ -1850,7 +1881,7 @@ function domain_dns(idx)
 			})
 
 		if (reply.domain) {
-			reply.domain.display_name = fromPuny(reply.domain.name);
+			preset_domain_extras(reply.domain);
 			ctx.domains[idx] = reply.domain;
 			}
 
@@ -1870,7 +1901,7 @@ function sign_zone(idx)
 		if (!ok) return def_errMsg("Domain failed to sign",reply,"dnsBtnBar")
 
 		if (reply.domain) {
-			reply.domain.display_name = fromPuny(reply.domain.name);
+			preset_domain_extras(reply.domain);
 			ctx.domains[idx] = reply.domain;
 			}
 		if (reply.dns) ctx.dns = reply.dns;
@@ -2105,7 +2136,7 @@ function unsign_zone(idx)
 		if (!ok) return def_errMsg("Domain failed to unsign",reply,"dnsBtnBar")
 
 		if (reply.domain) {
-			reply.domain.display_name = fromPuny(reply.domain.name);
+			preset_domain_extras(reply.domain);
 			ctx.domains[idx] = reply.domain;
 			}
 		if (reply.dns) ctx.dns = reply.dns;
@@ -2210,7 +2241,7 @@ function one_domain_html(idx)
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
 	if (dom.status_id in {1:true,20:true})
-		x += btn(`buy_one_name('${dom.name}','renew')`,`Renew`,"Renew this domain",100)
+		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
 	if (dom.is_live)
 		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
