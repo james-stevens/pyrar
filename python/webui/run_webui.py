@@ -17,7 +17,7 @@ from librar import mysql as sql
 from webui import users
 from webui import domains
 from webui import basket
-from mailer import creator
+from mailer import spool_email
 
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -439,7 +439,7 @@ def send_verify():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if creator.spool_email("verify_email",[["users",{"user_id":req.user_id}]]):
+    if spool_email.spool("verify_email",[["users",{"user_id":req.user_id}]]):
         return req.response(True)
     return req.abort("Failed to send email verification")
 

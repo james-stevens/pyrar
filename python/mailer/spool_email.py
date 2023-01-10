@@ -46,7 +46,7 @@ def load_records(which_message, request_list):
     return return_data
 
 
-def spool_email(which_message, request_list):
+def spool(which_message, request_list):
     if not os.path.isfile(f"{TEMPLATE_DIR}/{which_message}.txt"):
         return False
 

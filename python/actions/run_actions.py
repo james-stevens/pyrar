@@ -9,7 +9,9 @@ import inspect
 from librar import mysql as sql
 from librar import misc
 from librar import sigprocs
+from librar import registry
 from librar.log import log, debug, init as log_init
+from mailer import spool_email
 
 COPY_DEL_DOM_COLS = [
     "domain_id", "name", "user_id", "status_id", "auto_renew", "ns", "ds", "client_locks", "created_dt", "amended_dt",
@@ -81,7 +83,10 @@ def auto_renew_domain(act_db, dom_db):
 
 
 def send_expiry_reminder(act_db, dom_db):
-    # CODE REQUIRED
+    spool_email.spool("reminder",[
+    	["users",{"user_id":dom_db["user_id"]}],
+    	["domains",{"domain_id":dom_db["domain_id"]}]
+    	])
     return True
 
 
@@ -131,6 +136,7 @@ if __name__ == "__main__":
 
     sql.connect("engine")
     if args.action and args.domain:
+        registry.start_up()
         ok, dom_db = sql.sql_select_one("domains", {"name": args.domain})
         if not ok or len(dom_db) <= 0:
             debug(f"ERROR: {args.domain} not found")
