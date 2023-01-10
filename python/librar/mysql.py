@@ -18,7 +18,9 @@ import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = ["paymwnts","domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"]
+AUTO_CREATED_AMENDED_DT = [
+    "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
+]
 
 cnx = None
 my_login = None
@@ -253,17 +255,17 @@ def connect(login):
     my_password = None
     mysql_json = logins.data()["mysql"]
 
-    if not has_data(mysql_json,["database",login]):
+    if not has_data(mysql_json, ["database", login]):
         log(f"Missing database or login data")
         return False
 
     conn = mysql_json["connect"]
-    if isinstance(mysql_json[login],str):
+    if isinstance(mysql_json[login], str):
         my_password = mysql_json[login]
-    elif isinstance(mysql_json[login],list) and len(mysql_json[login]) == 2:
+    elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
         my_login = mysql_json[login][0]
         my_password = mysql_json[login][1]
-    elif isinstance(mysql_json[login],dict) and has_data(mysql_json[login],"username","password"):
+    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
         my_login = mysql_json[login]["username"]
         my_password = mysql_json[login]["password"]
 

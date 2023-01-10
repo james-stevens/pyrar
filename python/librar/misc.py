@@ -54,7 +54,7 @@ def ashex(line):
     return ret
 
 
-def puny_to_utf8(name,strict_idna_2008=False):
+def puny_to_utf8(name, strict_idna_2008=False):
     try:
         idn = idna.decode(name)
         return idn
@@ -69,15 +69,14 @@ def puny_to_utf8(name,strict_idna_2008=False):
     return None
 
 
-
 if __name__ == "__main__":
     print(puny_to_utf8("frog.xn--k3h"))
     print(puny_to_utf8("frog.xn--k3hw410f"))
     print(puny_to_utf8("xn--e28h.xn--dp8h"))
     print(puny_to_utf8("xn--strae-oqa.com"))
 
-    print(puny_to_utf8("frog.xn--k3h",True))
-    print(puny_to_utf8("frog.xn--k3hw410f",True))
-    print(puny_to_utf8("xn--e28h.xn--dp8h",True))
-    print(puny_to_utf8("xn--strae-oqa.com",True))
-    print(puny_to_utf8("xn--st-rae-oqa.com",True))
+    print(puny_to_utf8("frog.xn--k3h", True))
+    print(puny_to_utf8("frog.xn--k3hw410f", True))
+    print(puny_to_utf8("xn--e28h.xn--dp8h", True))
+    print(puny_to_utf8("xn--strae-oqa.com", True))
+    print(puny_to_utf8("xn--st-rae-oqa.com", True))

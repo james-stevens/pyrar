@@ -18,11 +18,12 @@ SPOOL_BASE = f"{os.environ['BASE']}/storage/perm/spooler"
 ERROR_BASE = f"{os.environ['BASE']}/storage/perm/mail_error"
 TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 
-REQUIRE_FORMATTING = [ "price_paid","acct_current_balance" ]
+REQUIRE_FORMATTING = ["price_paid", "acct_current_balance"]
 
-def format_currency(number,currency):
-    fmt = currency["symbol"]+"{:,."+str(currency["decimal"])+"f}"
-    return fmt.format(number/currency["pow10"])
+
+def format_currency(number, currency):
+    fmt = currency["symbol"] + "{:,." + str(currency["decimal"]) + "f}"
+    return fmt.format(number / currency["pow10"])
 
 
 def load_records(which_message, request_list):
@@ -38,12 +39,12 @@ def load_records(which_message, request_list):
 
         for fmt in REQUIRE_FORMATTING:
             if fmt in reply:
-                reply[fmt+"_fmt"] = format_currency(reply[fmt],my_currency)
+                reply[fmt + "_fmt"] = format_currency(reply[fmt], my_currency)
 
         if table == "users":
             if not reply["email_verified"] and which_message != "verify_email":
                 return None
-            reply["hash_confirm"] = hashstr.hash_confirm(reply["created_dt"]+":"+reply["email"])
+            reply["hash_confirm"] = hashstr.hash_confirm(reply["created_dt"] + ":" + reply["email"])
 
         tag = request[3] if len(request) == 3 else table.rstrip("s")
 
@@ -78,8 +79,10 @@ if __name__ == "__main__":
     sql.connect("engine")
     registry.start_up()
     # print("spool_email>>",spool_email("verify_email", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]))
-    spool("receipt",[
-        ["sales",{"sales_item_id": 10535}],
-        ["domains",{"domain_id": 10460 }],
-        ["users",{"user_id":10450}]
-        ])
+    spool("receipt", [["sales", {
+        "sales_item_id": 10535
+    }], ["domains", {
+        "domain_id": 10460
+    }], ["users", {
+        "user_id": 10450
+    }]])

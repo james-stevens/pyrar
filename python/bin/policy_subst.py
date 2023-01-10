@@ -12,7 +12,7 @@ from librar import misc
 SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"
 
-merge_data = { "logins":fileloader.load_file_json(misc.LOGINS_JSON) }
+merge_data = {"logins": fileloader.load_file_json(misc.LOGINS_JSON)}
 with open("/run/pdns_api_key", "r") as fd:
     merge_data["api_key"] = fd.readline().strip()
 
@@ -24,9 +24,9 @@ if not os.path.isdir(DEST_DIR):
 
 environment = jinja2.Environment(loader=jinja2.FileSystemLoader(SRC_DIR))
 for file in os.listdir(SRC_DIR):
-    if os.path.isfile(os.path.join(SRC_DIR,file)):
+    if os.path.isfile(os.path.join(SRC_DIR, file)):
         dst_path = os.path.join(DEST_DIR, file)
         template = environment.get_template(file)
         content = template.render(**merge_data)
-        with open(dst_path,"w") as fd:
+        with open(dst_path, "w") as fd:
             fd.write(content)

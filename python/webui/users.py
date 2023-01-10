@@ -196,9 +196,12 @@ def verify_email(user_id, hash_sent):
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
-    hash_found = hashstr.hash_confirm(user_db["created_dt"]+":"+user_db["email"])
+    hash_found = hashstr.hash_confirm(user_db["created_dt"] + ":" + user_db["email"])
     if hash_found == hash_sent:
-        return sql.sql_update_one("users",{"email_verified":True,"amended_dt":None},{"user_id":user_db["user_id"]})
+        return sql.sql_update_one("users", {
+            "email_verified": True,
+            "amended_dt": None
+        }, {"user_id": user_db["user_id"]})
     return False
 
 

@@ -83,10 +83,11 @@ def auto_renew_domain(act_db, dom_db):
 
 
 def send_expiry_reminder(act_db, dom_db):
-    spool_email.spool("reminder",[
-    	["users",{"user_id":dom_db["user_id"]}],
-    	["domains",{"domain_id":dom_db["domain_id"]}]
-    	])
+    spool_email.spool("reminder", [["users", {
+        "user_id": dom_db["user_id"]
+    }], ["domains", {
+        "domain_id": dom_db["domain_id"]
+    }]])
     return True
 
 

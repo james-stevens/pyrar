@@ -63,10 +63,16 @@ def sold_item(trans_id, order_db, dom_db, user_db):
 
     ok, row_id = sql.sql_insert("sales", sales)
 
-    spool_email.spool("receipt",[
-    	["sales",{"sales_item_id":row_id}],
-    	["domains",{"domain_id":dom_db["domain_id"]}],
-    	["users",{"user_id":dom_db["user_id"]}],
-    	]);
+    spool_email.spool("receipt", [
+        ["sales", {
+            "sales_item_id": row_id
+        }],
+        ["domains", {
+            "domain_id": dom_db["domain_id"]
+        }],
+        ["users", {
+            "user_id": dom_db["user_id"]
+        }],
+    ])
 
     return ok, row_id
