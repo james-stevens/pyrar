@@ -1,49 +1,32 @@
 #! /usr/bin/python3
 
 import os
-import re
 import sys
+import json
+import jinja2
 
-from librar.policy import this_policy as policy
+from librar import policy
 from librar import fileloader
+from librar import misc
 
 SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"
 
-LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
-logins = fileloader.load_file_json(LOGINS_JSON)
-
+merge_data = { "logins":fileloader.load_file_json(misc.LOGINS_JSON) }
 with open("/run/pdns_api_key", "r") as fd:
-    policy.add_policy(f"api_key", fd.readline().strip())
+    merge_data["api_key"] = fd.readline().strip()
 
-policy_re = re.compile(r'{[a-zA-Z0-9_\.]+(,.+)?}')
-
-for registry, this_login in logins.items():
-    for login_prop in this_login:
-        policy.add_policy(f"logins.{registry}.{login_prop}", this_login[login_prop])
-
-
-def subst_file(filename):
-    with open(SRC_DIR + filename, "r") as in_fd:
-        with open(DEST_DIR + filename, "w") as out_fd:
-            for line in in_fd.readlines():
-                while (res := policy_re.search(line)) is not None:
-                    match_chars = res.span()
-                    match_str = res.group()[1:-1]
-                    pol_val = None
-                    split_comma = [match_str, None]
-                    if match_str.find(",") >= 0:
-                        split_comma = match_str.split(",")
-                    if (pol_val := policy.policy(split_comma[0], split_comma[1])) is not None:
-                        line = line[:match_chars[0]] + str(pol_val) + line[match_chars[1]:]
-                    else:
-                        line = ""
-
-                out_fd.write(line)
-
+merge_data["policy"] = policy.policy_defaults
+merge_data["policy"].update(policy.this_policy.data())
 
 if not os.path.isdir(DEST_DIR):
     os.mkdir(DEST_DIR, mode=0o755)
 
-for filename in os.listdir(f"{os.environ['BASE']}/policy_subst"):
-    subst_file(filename)
+environment = jinja2.Environment(loader=jinja2.FileSystemLoader(SRC_DIR))
+for file in os.listdir(SRC_DIR):
+    if os.path.isfile(os.path.join(SRC_DIR,file)):
+        dst_path = os.path.join(DEST_DIR, file)
+        template = environment.get_template(file)
+        content = template.render(**merge_data)
+        with open(dst_path,"w") as fd:
+            fd.write(content)

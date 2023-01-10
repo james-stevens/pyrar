@@ -33,3 +33,6 @@ maximal_queue_lifetime = 30d
 maximal_backoff_time = 60m
 minimal_backoff_time = 15m
 queue_run_delay = 15m
+
+relayhost = {{policy.smtp_relayhost}}
+

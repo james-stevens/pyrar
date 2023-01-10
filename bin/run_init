@@ -5,13 +5,29 @@
 export BASE="/opt/pyrar"
 export PYTHONPATH=${BASE}/python
 
-syslog="$(jq .syslog_server ${BASE}/etc/policy.json | tr -d '"')"
+if test "${PDNS_API_KEY}"
+	then
+		echo "${PDNS_API_KEY}" > /run/pdns_api_key
+	else
+		export PDNS_API_KEY="$(dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./')"
+		echo "${PDNS_API_KEY}" > /run/pdns_api_key
+	fi
+chmod 400 /run/pdns_api_key
 
-if test "${syslog}" = "null"
+${BASE}/python/bin/policy_subst.py
+. /run/policy_subst/env.inc
+
+cp /run/policy_subst/main.cf /etc/postfix/main.cf
+chown root: /etc/postfix/main.cf
+chmod 600 /etc/postfix/main.cf
+
+postalias /etc/postfix/aliases
+
+if test "${SYSLOG_SERVER}" = "None"
 	then
 		echo "*.* -/dev/console"
 	else
-		echo "*.* @${syslog}"
+		echo "*.* @${SYSLOG_SERVER}"
 	fi > /run/syslog.conf
 
 mkdir -p /run/epp /run/postfix
@@ -33,20 +49,8 @@ flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 			}
 		}' > /run/regs_ports
 
-
-if test "${PDNS_API_KEY}"
-	then
-		echo "${PDNS_API_KEY}" > /run/pdns_api_key
-	else
-		export PDNS_API_KEY="$(dd if=/dev/urandom bs=1 count=50 2>/dev/null | base64 | tr -d $'\n +=./')"
-		echo "${PDNS_API_KEY}" > /run/pdns_api_key
-	fi
-chmod 400 /run/pdns_api_key
-
 postfix set-permissions
 rm -f ${perm}/postfix/pid/master.pid
-
-${BASE}/python/bin/policy_subst.py
 
 /usr/local/bin/make_inittab
 

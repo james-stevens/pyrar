@@ -1,0 +1,9 @@
+{% include "start.inc" %}
+Subject: Email Address verification for {{policy.business_name}}
+
+Click on this link to verify your email address.
+
+{{policy.website_name}}verify/{{user.user_id}}/{{user.hash_confirm}}/
+
+
+{% include "end.inc" %}

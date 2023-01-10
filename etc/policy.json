@@ -1,7 +1,7 @@
 {
 	"user_message": "Welcome to this site<P>🐸 Don't break it - be kind",
 	"icon": "milkshake.png",
-	"business_name": "NameShake Registrar",
+	"business_name": "PyRar Registrar",
 	"currency" : {
 		"desc": "US Dollars",
 		"iso": "USD",
@@ -11,10 +11,10 @@
 		"pow10" : 100
 		},
 
-	"smtp_server": "192.168.1.20",
-	"website_name": "https://nameshake.net/",
-	"name_sender": "NameShake Registry",
-	"email_sender": "technical@nameshake.net",
+	"smtp_relayhost": "[192.168.1.20]",
+	"website_name": "https://pyrar.jrcs.net/",
+	"name_sender": "PyRar Registry",
+	"email_sender": "pyrar@jrcs.net",
 	"email_return": "no_reply@nameshake.net",
 
 	"session_timeout": 60,

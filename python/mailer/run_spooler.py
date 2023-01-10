@@ -19,7 +19,7 @@ from librar.log import log, debug, init as log_init
 
 from email.message import EmailMessage
 
-from mailer import creator
+from mailer import spool_email
 
 
 def spool_email_file(filename):
@@ -35,8 +35,8 @@ def spool_email_file(filename):
         return False
 
     which_message = data["email"]["message"]
-    if not os.path.isfile(f"{creator.TEMPLATE_DIR}/{which_message}.txt"):
-        log(f"Template file {creator.TEMPLATE_DIR}/{which_message}.txt not found")
+    if not os.path.isfile(f"{spool_email.TEMPLATE_DIR}/{which_message}.txt"):
+        log(f"Template file {spool_email.TEMPLATE_DIR}/{which_message}.txt not found")
         return False
 
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.environ['BASE']}/emails"))
@@ -81,11 +81,9 @@ def spool_email_file(filename):
     if "x-env-from" in header:
         from_addr = header["x-env-from"]
 
-    smtp_server = policy.this_policy.policy("smtp_server")
+    log(f"Emailing: {data['email']['message']} to {header['to']}")
 
-    log(f"Emailing: {data['email']['message']} to {header['to']} via {smtp_server}")
-
-    with smtplib.SMTP(smtp_server, 25) as smtp_cnx:
+    with smtplib.SMTP("127.0.0.1", 25) as smtp_cnx:
         smtp_cnx.send_message(msg, smtp_from_addr, header["to"])
         smtp_cnx.quit()
 
@@ -93,19 +91,19 @@ def spool_email_file(filename):
 
 
 def process_emails_waiting():
-    for file in os.listdir(creator.SPOOL_BASE):
-        path = os.path.join(creator.SPOOL_BASE, file)
+    for file in os.listdir(spool_email.SPOOL_BASE):
+        path = os.path.join(spool_email.SPOOL_BASE, file)
         if os.path.isfile(path) and spool_email_file(path):
             os.remove(path)
         else:
-            os.replace(path, os.path.join(creator.ERROR_BASE, file))
+            os.replace(path, os.path.join(spool_email.ERROR_BASE, file))
 
 
 def run_server():
     log("SMTP SPOOLER RUNNING")
     signal_mtime = None
     while True:
-        new_mtime = os.path.getmtime(creator.SPOOL_BASE)
+        new_mtime = os.path.getmtime(spool_email.SPOOL_BASE)
         if new_mtime == signal_mtime:
             time.sleep(3)
         else:

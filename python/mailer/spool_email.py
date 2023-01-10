@@ -8,30 +8,46 @@ import datetime
 import tempfile
 
 from librar.log import log, debug, init as log_init
+from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import registry
 from librar import misc
+from librar import hashstr
 
 SPOOL_BASE = f"{os.environ['BASE']}/storage/perm/spooler"
 ERROR_BASE = f"{os.environ['BASE']}/storage/perm/mail_error"
 TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 
+REQUIRE_FORMATTING = [ "price_paid","acct_current_balance" ]
+
+def format_currency(number,currency):
+    fmt = currency["symbol"]+"{:,."+str(currency["decimal"])+"f}"
+    return fmt.format(number/currency["pow10"])
+
 
 def load_records(which_message, request_list):
+    my_currency = policy.policy("currency")
     return_data = {"email": {"message": which_message}}
     for request in request_list:
-        ok, reply = sql.sql_select_one(request[0], request[1])
+        table = request[0]
+        ok, reply = sql.sql_select_one(table, request[1])
 
         if not ok or len(reply) <= 0:
-            log(f"SPOOLER: Failed to load '{request[0]}' where '{request[1]}'")
+            log(f"SPOOLER: Failed to load '{table}' where '{request[1]}'")
             return None
 
-        if request[0] == "users" and not reply["email_verified"]:
-            return None
+        for fmt in REQUIRE_FORMATTING:
+            if fmt in reply:
+                reply[fmt+"_fmt"] = format_currency(reply[fmt],my_currency)
 
-        tag = request[3] if len(request) == 3 else request[0].rstrip("s")
+        if table == "users":
+            if not reply["email_verified"] and which_message != "verify_email":
+                return None
+            reply["hash_confirm"] = hashstr.hash_confirm(reply["created_dt"]+":"+reply["email"])
 
-        if request[0] == "domains" and sql.has_data(reply, "name"):
+        tag = request[3] if len(request) == 3 else table.rstrip("s")
+
+        if table == "domains" and sql.has_data(reply, "name"):
             if (idn := misc.puny_to_utf8(reply["name"])) is not None:
                 reply["display_name"] = idn
             else:
@@ -43,7 +59,7 @@ def load_records(which_message, request_list):
     return return_data
 
 
-def spool_email(which_message, request_list):
+def spool(which_message, request_list):
     if not os.path.isfile(f"{TEMPLATE_DIR}/{which_message}.txt"):
         return False
 
@@ -61,4 +77,9 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("engine")
     registry.start_up()
-    print("spool_email>>",spool_email("reminder", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "flip@flop.com"}]]))
+    # print("spool_email>>",spool_email("verify_email", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]))
+    spool("receipt",[
+        ["sales",{"sales_item_id": 10535}],
+        ["domains",{"domain_id": 10460 }],
+        ["users",{"user_id":10450}]
+        ])
