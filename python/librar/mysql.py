@@ -18,11 +18,14 @@ import MySQLdb.converters
 
 LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = ["paymwnts","domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"]
+AUTO_CREATED_AMENDED_DT = [
+    "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
+]
 
 cnx = None
 my_login = None
 my_password = None
+my_database = None
 
 logins = fileloader.FileLoader(LOGINS_JSON)
 
@@ -127,6 +130,7 @@ def first_not_mysql():
 
 def log_sql(sql):
     debug(" SQL " + sql, first_not_mysql())
+    # log(" SQL " + sql, first_not_mysql())
 
 
 def run_sql(sql, func):
@@ -247,23 +251,24 @@ def connect(login):
     global cnx
     global my_login
     global my_password
+    global my_database
 
     logins.check_for_new()
     my_login = login
     my_password = None
     mysql_json = logins.data()["mysql"]
 
-    if not has_data(mysql_json,["database",login]):
+    if not has_data(mysql_json, ["database", login]):
         log(f"Missing database or login data")
         return False
 
     conn = mysql_json["connect"]
-    if isinstance(mysql_json[login],str):
+    if isinstance(mysql_json[login], str):
         my_password = mysql_json[login]
-    elif isinstance(mysql_json[login],list) and len(mysql_json[login]) == 2:
+    elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
         my_login = mysql_json[login][0]
         my_password = mysql_json[login][1]
-    elif isinstance(mysql_json[login],dict) and has_data(mysql_json[login],"username","password"):
+    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
         my_login = mysql_json[login]["username"]
         my_password = mysql_json[login]["password"]
 
@@ -271,6 +276,7 @@ def connect(login):
         log(f"ERROR: Could not find MySQL password for user {login}")
         return False
 
+    my_database = mysql_json["database"]
     host = None
     port = None
     sock = ""
@@ -291,7 +297,7 @@ def connect(login):
                              unix_socket=sock,
                              host=host,
                              port=port,
-                             database=mysql_json["database"],
+                             database=my_database,
                              conv=my_conv,
                              charset='utf8mb4',
                              init_command='set names utf8mb4')

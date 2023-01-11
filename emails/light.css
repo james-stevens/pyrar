@@ -1,0 +1,424 @@
+
+.fullvis { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; text-align: center; }
+.fadein  { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
+.fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
+
+
+.userIcons {
+	margin-right: 10px;
+	cursor: pointer;
+	font-size: 22px;
+	}
+
+.botSapce {
+	width: 75%;
+	margin-left: auto;
+	margin-right: auto;
+	background-color: #ffffff;
+	border: 1px solid;
+	border-color: #cccccc;
+	box-shadow: 3px 3px #d6d8dA;
+	padding: 10px;
+	border-radius: 6px;
+	}
+
+::placeholder {
+	color: #e0e0e0;
+	opacity: 1; }
+
+.topLink { font-size: 20px; }
+h2 { text-align: center; }
+
+.line {
+	background: #aaaaaa;
+	width: 100%;
+	height: 1px;
+	}
+
+.btmBtnBar {
+	text-align: center;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	border-radius: 6px;
+	}
+
+
+.searchDomain { font-size: 20px; }
+.searchDomain:hover { background-color: #F6F8FA; }
+
+.searchRenew {
+	font-size: 12px;
+	color: #555555;
+	}
+
+.settingsBanner {
+	font-weight: bold;
+	font-size: 18px;
+	padding: 7px;
+	border-bottom: 1px solid #F6F8FA;
+	}
+
+.pageHeading {
+	font-weight: bold;
+	font-size: 25px;
+	padding: 7px;
+	text-align: center;
+	border-bottom: 1px solid #F6F8FA;
+	}
+
+#topSpan{
+	background-color: #F6F8FA;
+	height: 100px;
+	line-height: 100px;
+	margin-top: 0px;
+	padding-left: 0px;
+	padding-top: 1px;
+	top: 0px;
+	}
+
+#businessName {
+	font-weight: bold;
+	padding-left: 30px;
+	font-size: 25px;
+	margin-left: 10px;
+	}
+
+.userMsg {
+	padding: 30px;
+	font-size: 32px;
+	margin-top: 50px;
+	text-align: center;
+	}
+
+html {
+	color: #000000;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size: 14px;
+	background-color: #ffffff;
+	scrollbar-base-color: #999999;
+	scrollbar-arrow-color: #ffffff;
+	}
+
+th {
+	color: #000000;
+	font-family: inherit;
+	font-size: 18px;
+	font-weight: normal;
+	background-color: #F6F8FA;
+	padding-left: 6px;
+	padding-right: 6px;
+	}
+
+select {
+	padding: 5px 12px;
+	background-color: #F6F8FA;
+	color: #000000;
+	font-family: inherit;
+	font-size: 14px;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+}
+
+input {
+	padding: 5px 12px;
+	background-color: #F6F8FA;
+	color: #000000;
+	font-family: inherit;
+	font-size: 14px;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	}
+
+.searchBox {
+	padding: 5px 12px;
+	background-color: #F6F8FA;
+	color: #000000;
+	font-family: inherit;
+	font-size: 20px;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #aaaaaa;
+	width: 100%;
+	}
+
+.inputBad {
+	color: #000000;
+	background-color: #000000;
+	font-family: inherit;
+	font-size: 14px;
+	}
+
+#allBottom {
+	background-size: 100% 100%;
+	height: 100%;
+	width: 100%;
+	}
+
+body {
+	color: #000000;
+	font-family: inherit;
+	font-size: inherit;
+	margin-top: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	height: 100%;
+	width: 100%;
+	scrollbar-base-color: #999999;
+	scrollbar-arrow-color: #ffffff;
+
+	background-color: #ffffff;
+	background-image: url(\"/img/bg-light.jpg\");
+	background-size: contain;
+	background-size: 100vw 100vh;
+	}
+
+
+a {
+	color: #9898ff;
+	text-decoration:none;
+	}
+
+a:hover {
+	text-decoration: underline;
+	}
+
+form {
+	margin:0px;
+	}
+
+.myBtn {
+	text-align: center;
+	display: inline-block;
+	background-color: #F0F2F4;
+	color: #000000;
+	font-family: inherit;
+	font-size: 14px;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #cccccc;
+	padding: 5px 16px;
+	cursor: pointer;
+	margin-top: 0px;
+	margin-left: 10px;
+	margin-bottom: 2px;
+	margin-right: 2px;
+	}
+
+.myBtn:hover {
+	border-color: #303030;
+	background-color: #F6F8FA;
+	}
+
+.myBtn:active {
+	position: relative;
+	box-shadow: none;
+	text-shadow: none;
+	top: 1px;
+	left: 1px;
+	}
+
+.dnskey {
+	color: #555555;
+	}
+
+td {
+	font-family:inherit;
+	font-size: inherit;
+	vertical-align: top;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: nowrap;
+	}
+
+.promptCell {
+	font-weight: bold;
+	font-family:inherit;
+	font-size: inherit;
+	vertical-align: top;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: normal;
+	min-width: 50%;
+	white-space: nowrap;
+	text-align: right;
+	}
+
+.dataCell {
+	font-family:inherit;
+	font-size: inherit;
+	vertical-align: top;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: normal;
+	min-width: 50%;
+	white-space: nowrap;
+	}
+
+.dataRow {
+	font-family: inherit;
+	font-size: 14px;
+	cursor: pointer;
+	color: #000000;
+	background-color: #ffffff;
+	}
+
+.dataRow:hover { background-color: #F0F2F4; }
+
+.dataRowBig {
+	font-family: inherit;
+	font-size: 16px;
+	cursor: pointer;
+	color: #000000;
+	background-color: #ffffff;
+	}
+
+.dataRowBig:hover { background-color: #F0F2F4; }
+
+
+.formPrompt {
+	font-family:inherit;
+	font-size: 14px;
+	color: #000000;
+	text-align: right;
+	padding-top: 8px;
+	}
+
+
+.msgPop {
+	position: absolute;
+	font-family:inherit;
+	font-size: 16pt;
+	width: 95%;
+	background: #000000;
+	text-align: center;
+	color: #000000;
+	padding: 5px;
+	border-radius: 6px;
+	width: auto;
+	}
+
+.msgPopNo {
+	visibility: hidden;
+	opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
+	}
+
+.msgPopYes {
+	visibility: visible;
+	opacity: 1; transition: opacity 0.5s linear;
+	}
+
+/* Popup container */
+.popup {
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
+}
+
+/* The actual popup (appears on top) */
+.popBelow .popBelowText {
+	visibility: hidden;
+	background-color: #F6F8FA;
+	color: #fff;
+	border-radius: 6px;
+	padding: 8px;
+	position: absolute;
+	z-index: 1;
+	height: 175px
+	left: 75%;
+	margin-left: -120;
+	margin-top: 30px;
+	border: 1px solid;
+	border-color: #cccccc;
+	box-shadow: 3px 3px #d6d8dA;
+	}
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+.popBelow .show {
+	visibility: visible;
+	-webkit-animation: fadeIn 1s;
+	animation: fadeIn 1s
+	}
+
+/* The actual popup (appears on top) */
+.popup .popuptext {
+	visibility: hidden;
+	background-color: #F6F8FA;
+	color: #fff;
+	border-radius: 6px;
+	padding: 8px;
+	position: absolute;
+	z-index: 1;
+	height: 175px
+	left: 75%;
+	margin-left: -350px;
+	margin-top: 30px;
+	border: 1px solid;
+	border-color: #cccccc;
+	box-shadow: 3px 3px #d6d8dA;
+	}
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+.popup .show {
+	visibility: visible;
+	-webkit-animation: fadeIn 1s;
+	animation: fadeIn 1s
+	}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity: 1;}
+	}
+
+@keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity:1 ;}
+	}
+
+#noLoginBtns {
+	margin-right: 50px;
+	}
+
+#isLoggedIn {
+	margin-right: 50px;
+	}
+
+#userInfo {
+	margin-right: 50px;
+	}
+
+.fullvis { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; text-align: center; }
+.fadein  { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
+.fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
+
+.msgPop {
+	position: absolute;
+	left: 10px;
+	top: 20px;
+	font-family:inherit;
+	font-size:16pt;
+	background: #F0F2F4;
+	text-align: center;
+	color: #000000;
+	padding: 5px;
+	border-radius: 6px;
+	box-shadow: 3px 3px #d6d8dA;
+	}
+
+.msgPopNo {
+	visibility: hidden;
+	opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
+	}
+
+.msgPopYes {
+	visibility: visible;
+	opacity: 1; transition: opacity 0.5s linear;
+	}
+
+
+

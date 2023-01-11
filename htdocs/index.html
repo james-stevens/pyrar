@@ -71,15 +71,6 @@ function keyEsc(e) {
 
 
 
-function hasIDN(name)
-{
-	if (name.slice(0,4)=="xn--") return true;
-	if (name.indexOf(".xn--") > 0) return true
-	return false;
-}
-
-
-
 function hideAllPopUp()
 {
 	hidePopUp();
@@ -88,19 +79,6 @@ function hideAllPopUp()
 		popup.classList.remove("show")
 		});
 }
-
-
-function changeFavicon(src) {
-	var link = document.createElement('link'),
-		oldLink = document.getElementById('dynamic-favicon');
-
-	link.id = 'dynamic-favicon';
-	link.rel = 'shortcut icon';
-	link.href = src;
-	if (oldLink) gbl.head.removeChild(oldLink);
-	gbl.head.appendChild(link);
-	}
-
 
 
 function clr_lazy_hide()
@@ -521,8 +499,8 @@ function router_user_email_verify(params)
 	callApi("users/verify",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to verify email",reply,"errorSpan");
 
-		show_one_space("userSpace");
 		elm.userSpace.innerHTML="<h2>Email Address Verified</h2>";
+		show_one_space("userSpace");
 		elm.emailIcon.style.display="none";
 
 		}, { json: {
@@ -547,6 +525,75 @@ function router_renew_domain(params)
 }
 
 
+function router_reset_password(params)
+{
+	if (params[0].length!=30) {
+		elm.userSpace.innerHTML = "Invalid reset code";
+		show_one_space("userSpace");
+		return;
+		}
+
+	if (ctx.session) {
+		elm.userSpace.innerHTML = "<h2>You are already logged in</h2>";
+		show_one_space("userSpace");
+		return;
+		}
+
+	let x = "";
+	x += "<form name=resetPass action=# method=post onSubmit='return do_reset_password();'><table width=75% id='reset_table' align=center border=0>";
+	x += "<tr><th colspan=2>Reset your password</th></tr>";
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += `<input type=hidden name=reset_code value='${params[0]}'>`;
+	x += '<tr><td class=formPrompt>&nbsp;Reset PIN Number:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 100px;" id="reset_pin">&nbsp;</td></tr>';
+	x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input autocomplete="new-password" onkeydown="keyEsc(event);" style="width: 250px;" type=password id="reset_password">&nbsp;</td></tr>';
+	x += '<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input autocomplete="new-password" onkeydown="keyEsc(event);" style="width: 250px;" type=password id="reset_confirm">&nbsp;</td></tr>';
+	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
+	x += '<tr><td class=btmBtnBar colspan=2>';
+	x += '<span style="width: 75px;" tabindex=0 title="Cancel" class=myBtn onClick="goSearch();">Cancel</span>';
+	x += '<input style="width: 110px;" tabindex=0 type=submit title="Reset your password" class=myBtn value="Reset">';
+	x += '</td>';
+	x += '</tr></form></table>';
+
+	elm.userSpace.innerHTML = x;
+	show_one_space("userSpace");
+	let e = document.getElementById("reset_pin");
+	if (e) e.focus();
+}
+
+
+
+function do_reset_password()
+{
+	send_json = {
+		"pin": document.resetPass.reset_pin.value,
+		"code": document.resetPass.reset_code.value,
+		"password": document.resetPass.reset_password.value,
+		"confirm": document.resetPass.reset_confirm.value
+		};
+
+	if (send_json.code.length != 30) { goSearch(); return false; }
+	if (send_json.pin.length != 4) {
+		errMsg("Invalid PIN Number");
+		document.resetPass.reset_pin.focus();
+		document.resetPass.reset_pin.select();
+		return false;
+		}
+
+	if ((!send_json.password.length)||(!send_json.confirm.length)||(send_json.password != send_json.confirm)) {
+		errMsg("Password and confirm do not match or are invalid","reset_table");
+		document.resetPass.reset_password.focus();
+		document.resetPass.reset_password.select();
+		return false;
+		}
+
+	callApi("users/reset",(ok,reply) => {
+		if (!ok) def_errMsg("Password reset failed",reply,"reset_table");
+		else elm.userSpace.innerHTML = "<h2>Your password has been reset</h2>";
+		}, { json: send_json });
+
+	return false;
+}
+
 
 function check_router_path()
 {
@@ -554,6 +601,8 @@ function check_router_path()
 
 	let router = {
 		"verify": router_user_email_verify,
+		"pass_reset": router_reset_password,
+		"mailpass": resend_password,
 		"renew": router_renew_domain
 		};
 
@@ -2288,7 +2337,28 @@ function show_one_domain(idx)
 
 function submit_resend()
 {
-	console.log(">>>",document.resendPass.email.value);
+	send_json = {
+		"email": document.resendPass.email.value,
+		"pin":document.resendPass.pin.value
+		};
+
+	if (!valid_email.test(send_json.email)) {
+		errMsg("Email address is invalid",'resend_table');
+		document.resendPass.email.focus();
+		return false;
+		}
+
+	callApi("request/reset",(ok,reply) => {
+		if (!ok) {
+			def_errMsg("Reset password request failed",reply,"resend_table");
+			return false;
+			}
+
+		elm.userSpace.innerHTML = "<h2>Reset request processed</h2><P>"
+			+"<center>If a matching account has been found<br>you will receive an email with a reset link</center><P>";
+
+		},{ json: send_json });
+
 	return false;
 }
 
@@ -2297,8 +2367,8 @@ function resend_password(with_push)
 {
 	if (with_push) push_hist("resend_password");
 	hideAllPopUp()
-	pin_code = ("00000"+Math.trunc(Math.random()*10000)).slice(-4);
-	let x = "<form name=resendPass action=# method=post onSubmit='return submit_resend();'><table width=75% align=center border=0>";
+	pin_code = (Math.trunc(Math.random()*1000000)).toString().slice(-4);
+	let x = "<form name=resendPass action=# method=post onSubmit='return submit_resend();'><table width=75% id='resend_table' align=center border=0>";
 	x += settings_header("Reset Password",true);
 	x += "Enter your email address below and we will email you a link to reset your password</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
@@ -2308,6 +2378,7 @@ function resend_password(with_push)
 	x += `<tr><td><h2>${pin_code}</h2></td></tr>`;
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += "<tr><td><table width=100%><tr><td class=formPrompt>Your email address:</td>";
+	x += `<input type=hidden name=pin value='${pin_code}'>`;
 	x += "<td><input autofocus style='width: 350px;' name=email></td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += "<tr><td class=btmBtnBar colspan=2><input type=submit value='Reset Password' class=myBtn></td></tr>";

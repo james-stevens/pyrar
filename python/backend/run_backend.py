@@ -16,8 +16,8 @@ from actions import creator
 from backend import shared
 
 # pylint: disable=unused-wildcard-import, wildcard-import
-from backend import handler
-from backend.plugins import *
+from backend import dom_handler
+from backend.dom_plugins import *
 
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
@@ -63,10 +63,10 @@ def run_backend_item(bke_job):
             return job_abort(bke_job)
 
     reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
-    if reg["type"] not in handler.backend_plugins:
+    if reg["type"] not in dom_handler.backend_plugins:
         return job_abort(bke_job)
 
-    if (plugin_func := handler.run(reg["type"], bke_job["job_type"])) is None:
+    if (plugin_func := dom_handler.run(reg["type"], bke_job["job_type"])) is None:
         log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'")
         return job_abort(bke_job)
 
@@ -110,7 +110,7 @@ def start_up(is_live):
     sql.connect("engine")
     registry.start_up()
 
-    for __, funcs in handler.backend_plugins.items():
+    for __, funcs in dom_handler.backend_plugins.items():
         if "start_up" in funcs:
             funcs["start_up"]()
 
@@ -141,17 +141,17 @@ def main():
         print("Plugin or action or domain_id not specified")
         sys.exit(1)
 
-    if args.plugin not in handler.backend_plugins:
+    if args.plugin not in dom_handler.backend_plugins:
         print(f"Plugin '{args.plugin}' not supported")
         sys.exit(1)
 
-    if args.action not in handler.backend_plugins[args.plugin]:
+    if args.action not in dom_handler.backend_plugins[args.plugin]:
         print(f"Action '{args.action}' not supported by Plugin '{args.plugin}'")
         sys.exit(1)
 
     start_up(args.live)
 
-    this_fn = handler.backend_plugins[args.plugin][args.action]
+    this_fn = dom_handler.backend_plugins[args.plugin][args.action]
     bke_job = {
         "backend_id": "TEST",
         "authcode": "eFNaYTlXZ2FVcW8xcmcy",

@@ -23,6 +23,7 @@ from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
 
+want_referrer_check = True
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -118,8 +119,9 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if policy.policy("strict_referrer") and flask.request.referrer != policy.policy("website_name"):
-        log(f"Referer mismatch: {flask.request.referrer} "+policy.policy("website_name"))
+    if want_referrer_check and policy.policy(
+            "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
+        log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
 
@@ -131,7 +133,8 @@ def get_config():
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
         "status": misc.DOMAIN_STATUS,
-        "payments": { pay:pay_data["desc"] for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data },
+        "payments": {pay: pay_data["desc"]
+                     for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data},
         "policy": policy.data()
     })
 
@@ -163,8 +166,7 @@ def orders_cancel():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if req.post_js is None or "order_item_id" not in req.post_js or not isinstance(
-            req.post_js["order_item_id"], int):
+    if req.post_js is None or "order_item_id" not in req.post_js or not isinstance(req.post_js["order_item_id"], int):
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": int(req.post_js["order_item_id"])}
@@ -226,10 +228,10 @@ def payments_delete():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js,["provider","provider_tag"]):
+    if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
         return req.abort("Missing or invalid payment method data")
     req.post_js["user_id"] = req.user_id
-    ok = sql.sql_delete_one("payments",req.post_js)
+    ok = sql.sql_delete_one("payments", req.post_js)
     if not ok:
         return req.abort("Failed to remove payment method")
     return req.response(True)
@@ -240,10 +242,10 @@ def payments_validate():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js,["provider","provider_tag","single_use","can_pull"]):
+    if not sql.has_data(req.post_js, ["provider", "provider_tag", "single_use", "can_pull"]):
         return req.abort("Missing or invalid payment method data")
 
-    if (plugin_func :=  pay_handler.run(req.post_js["provider"],"validate")) is None:
+    if (plugin_func := pay_handler.run(req.post_js["provider"], "validate")) is None:
         return req.abort("Missing or invalid payment method data")
 
     req.post_js["user_id"] = req.user_id
@@ -253,7 +255,7 @@ def payments_validate():
 
     req.post_js["created_dt"] = None
     req.post_js["amended_dt"] = None
-    ok, reply = sql.sql_insert("payments",req.post_js)
+    ok, reply = sql.sql_insert("payments", req.post_js)
     if not ok:
         return req.abort("Adding payments data failed")
 
@@ -267,7 +269,7 @@ def payments_html():
         return req.abort(NOT_LOGGED_IN)
     if req.post_js is None or "method" not in req.post_js or req.post_js["method"] not in pay_handler.pay_plugins:
         return req.abort("Missign or invalid payment method")
-    if (plugin_func :=  pay_handler.run(req.post_js["method"],"html")) is None:
+    if (plugin_func := pay_handler.run(req.post_js["method"], "html")) is None:
         return req.abort("Missign or invalid payment method")
 
     ok, reply = plugin_func(req.user_id)
@@ -281,7 +283,7 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments",{"user_id":req.user_id})
+    ok, reply = sql.sql_select("payments", {"user_id": req.user_id})
     if not ok:
         return req.abort("Failed to load payment data")
     return req.response(reply)
@@ -294,9 +296,9 @@ def users_transactions():
         return req.abort(NOT_LOGGED_IN)
 
     limit = int(policy.policy("trans_per_page"))
-    if req.post_js is not None and "limit" in req.post_js and isinstance(req.post_js["limit"],int):
+    if req.post_js is not None and "limit" in req.post_js and isinstance(req.post_js["limit"], int):
         limit = int(req.post_js["limit"])
-        if "skip" in req.post_js and isinstance(req.post_js["skip"],int):
+        if "skip" in req.post_js and isinstance(req.post_js["skip"], int):
             limit = f"{limit} OFFSET {int(req.post_js['skip'])}"
 
     ok, trans_db = sql.sql_select("transactions", {"user_id": req.user_id},
@@ -441,12 +443,12 @@ def users_logout():
     return req.response("logged-out")
 
 
-@application.route('/pyrar/v1.0/send/verify', methods=['GET','POST'])
+@application.route('/pyrar/v1.0/send/verify', methods=['GET', 'POST'])
 def send_verify():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if spool_email.spool("verify_email",[["users",{"user_id":req.user_id}]]):
+    if spool_email.spool("verify_email", [["users", {"user_id": req.user_id}]]):
         return req.response(True)
     return req.abort("Failed to send email verification")
 
@@ -457,11 +459,42 @@ def users_verify():
     if req.post_js is None:
         return req.abort("No JSON posted")
 
-    if not sql.has_data(req.post_js,["user_id","hash"]) or not isinstance(req.post_js["user_id"],int) or len(req.post_js["hash"]) != 20:
+    if not sql.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
+                                                                            int) or len(req.post_js["hash"]) != 20:
         return req.abort("Invalid verification data")
-    if users.verify_email(int(req.post_js["user_id"]),req.post_js["hash"]):
+    if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
         return req.response(True)
     return req.abort("Email verification failed")
+
+
+@application.route('/pyrar/v1.0/request/reset', methods=['POST'])
+def request_reset_password():
+    req = WebuiReq()
+    if req.post_js is None:
+        return req.abort("No JSON posted")
+    if not sql.has_data(req.post_js, ["pin", "email"]):
+        return req.abort("Missing data")
+    if len(req.post_js["pin"]) != 4 or not validate.is_valid_email(req.post_js["email"]):
+        return req.abort("Invalid data")
+    users.request_password_reset(req.post_js["email"], req.post_js["pin"])
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/users/reset', methods=['POST'])
+def users_reset_password():
+    req = WebuiReq()
+    if req.post_js is None:
+        return req.abort("No JSON posted")
+    if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
+        return req.abort("Missing data")
+    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or len(
+            req.post_js["pin"]) != 4:
+        return req.abort("Invalid data")
+
+    if not users.reset_users_password(req.post_js["code"], req.post_js["pin"], req.post_js["password"]):
+        return req.abort("Password update failed")
+
+    return req.response(True)
 
 
 @application.route('/pyrar/v1.0/users/register', methods=['POST'])
@@ -728,5 +761,6 @@ def rest_domain_price():
 
 if __name__ == "__main__":
     log_init(with_debug=True)
+    want_referrer_check = False
     application.run()
     domains.close_epp_sess()

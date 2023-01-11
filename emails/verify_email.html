@@ -1,0 +1,16 @@
+{% include "start.inc" %}
+Subject: Email Address verification for {{policy.business_name}}
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+Click on this link to verify your email address.<br>
+
+<a href="{{policy.website_name}}verify/{{user.user_id}}/{{user.hash_confirm}}/">{{policy.website_name}}verify/{{user.user_id}}/{{user.hash_confirm}}/</a><P>
+
+
+{% include "end.html" %}

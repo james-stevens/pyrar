@@ -217,4 +217,29 @@ function errMsg(txt,tagged_elm)
     m.className = 'msgPop msgPopYes';
     ctx.lastErrMsg = m.innerHTML;
     ctx.err_msg_tout = setTimeout(unerrMsg,2500);
+
+    return false;
+}
+
+
+
+function hasIDN(name)
+{
+    if (name.slice(0,4)=="xn--") return true;
+    if (name.indexOf(".xn--") > 0) return true
+    return false;
+}
+
+
+
+function changeFavicon(src)
+{
+	var link = document.createElement('link'),
+		oldLink = document.getElementById('dynamic-favicon');
+
+	link.id = 'dynamic-favicon';
+	link.rel = 'shortcut icon';
+	link.href = src;
+	if (oldLink) gbl.head.removeChild(oldLink);
+	gbl.head.appendChild(link);
 }

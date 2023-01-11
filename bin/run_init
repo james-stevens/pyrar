@@ -50,7 +50,7 @@ flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 		}' > /run/regs_ports
 
 postfix set-permissions
-rm -f ${perm}/postfix/pid/master.pid
+rm -f ${perm}/postfix/pid/*.pid
 
 /usr/local/bin/make_inittab
 

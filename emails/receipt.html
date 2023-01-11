@@ -1,0 +1,26 @@
+{% include "start.inc" %}
+Subject: Order processed for {{sale.sales_type}} on {{domain.display_name}} ({{domain.name}})
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+Your order for `{{sale.sales_type}}` for {{sale.num_years}} years, has been successfully processed.
+<P>
+
+<table style="margin-left: 100px">
+<tr><Td class=promptCell>Domain Name :</td><td class=dataCell>{{domain.display_name}} ({{domain.name}})</td></tr>
+<tr><Td class=promptCell>Order Type :</td><td class=dataCell>{{sale.sales_type}}</td></tr>
+<tr><Td class=promptCell>Numer of Years :</td><td class=dataCell>{{sale.num_years}}</td></tr>
+<tr><Td class=promptCell>Expiry Date :</td><td class=dataCell>{{domain.expiry_dt.split()[0]}}</td></tr>
+<tr><Td class=promptCell></td></tr>
+<tr><Td class=promptCell>Amount Paid :</td><td class=dataCell>{{sale.price_paid_fmt}}</td></tr>
+<tr><Td class=promptCell>Account Balance :</td><td class=dataCell>{{user.acct_current_balance_fmt}}</td></tr>
+</table>
+
+
+{% include "end.html" %}
+</body></html>

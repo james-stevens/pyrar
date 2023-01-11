@@ -6,6 +6,7 @@ import base64
 import hashlib
 import time
 import os
+import sys
 
 from librar import mysql as sql
 from librar import validate
@@ -13,6 +14,8 @@ from librar import passwd
 from librar.policy import this_policy as policy
 from librar.log import log, debug, init as log_init
 from librar import hashstr
+
+from mailer import spool_email
 
 USER_REQUIRED = ["email", "password"]
 
@@ -33,8 +36,8 @@ def make_session_key(session_code, user_agent):
     return base64.b64encode(hsh.digest()).decode("utf-8")
 
 
-def start_session(user_db_rec, user_agent):
-    user_id = user_db_rec['user_id']
+def start_session(user_db, user_agent):
+    user_id = user_db['user_id']
     sql.sql_delete_one("session_keys", {"user_id": user_id})
 
     ses_code = make_session_code(user_id)
@@ -44,7 +47,7 @@ def start_session(user_db_rec, user_agent):
     if not ok:
         return False, "Failed to start session"
 
-    ret = {"user_id": user_id, "user": user_db_rec, "session": ses_code}
+    ret = {"user_id": user_id, "user": user_db, "session": ses_code}
 
     ok, orders_db = sql.sql_select("orders", {"user_id": user_id})
     if ok and len(orders_db) >= 1:
@@ -90,11 +93,11 @@ def register(user_db, user_agent):
         return False, "Registration insert failed"
 
     update_user_login_dt(user_id)
-    ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False, "Registration retrieve failed"
 
-    return start_session(user_db_rec, user_agent)
+    return start_session(user_db, user_agent)
 
 
 def check_session(ses_code, user_agent):
@@ -138,16 +141,16 @@ def login(data, user_agent):
     if not ok:
         return False, None
 
-    ok, user_db_rec = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
-    if not ok or user_db_rec == {}:
+    ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
+    if not ok or not len(user_db):
         return False, None
 
-    if not check_password(user_db_rec["user_id"], data, user_db_rec):
+    if not check_password(user_db["user_id"], data, user_db):
         return False, None
 
-    update_user_login_dt(user_db_rec['user_id'])
-    log(f"USR-{user_db_rec['user_id']} logged in")
-    return start_session(user_db_rec, user_agent)
+    update_user_login_dt(user_db['user_id'])
+    log(f"USR-{user_db['user_id']} logged in")
+    return start_session(user_db, user_agent)
 
 
 USER_CAN_CHANGE = {
@@ -162,51 +165,92 @@ def update_user(user_id, post_json):
         if item not in USER_CAN_CHANGE or not USER_CAN_CHANGE[item](post_json[item]):
             return False, f"Invalid data item - '{item}'"
 
-    ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False, "Failed to load user"
 
-    if "email" in post_json and user_db_rec["email"] != post_json["email"]:
+    if "email" in post_json and user_db["email"] != post_json["email"]:
         post_json["email_verified"] = 0
 
     ok = sql.sql_update_one("users", post_json, {"user_id": user_id})
     if not ok:
         return False, "Failed to update user"
 
-    ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False, "Failed to load user"
 
-    return ok, user_db_rec
+    return ok, user_db
 
 
-def check_password(user_id, data, user_db_rec=None):
+def check_password(user_id, data, user_db=None):
     if not sql.has_data(data, "password"):
         return False
 
-    if user_db_rec is None:
-        ok, user_db_rec = sql.sql_select_one("users", {"user_id": user_id})
+    if user_db is None:
+        ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
         if not ok:
             return False
 
-    return passwd.compare(data["password"], user_db_rec["password"])
+    return passwd.compare(data["password"], user_db["password"])
 
 
 def verify_email(user_id, hash_sent):
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
-    hash_found = hashstr.hash_confirm(user_db["created_dt"]+":"+user_db["email"])
+    hash_found = hashstr.hash_confirm(user_db["created_dt"] + ":" + user_db["email"])
     if hash_found == hash_sent:
-        return sql.sql_update_one("users",{"email_verified":True,"amended_dt":None},{"user_id":user_db["user_id"]})
+        return sql.sql_update_one("users", {
+            "email_verified": True,
+            "amended_dt": None
+        }, {"user_id": user_db["user_id"]})
     return False
+
+
+def request_password_reset(email, pin_num):
+    if not validate.is_valid_email(email) or len(pin_num) != 4:
+        return False
+    ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": email})
+    if not ok or not len(user_db):
+        return None
+
+    send_hash = hashstr.make_hash(f"{email}:{user_db['created_dt']}:{pin_num}", 30)
+    store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
+    if not sql.sql_update_one("users", {"password_reset": store_hash}, {"user_id": user_db["user_id"]}):
+        return None
+
+    spool_email.spool("reset_request", [["users", {"user_id": user_db["user_id"]}], [None, {"reset_code": send_hash}]])
+    return send_hash
+
+
+def reset_users_password(send_hash, pin_num, new_password):
+    store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
+    ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "password_reset": store_hash})
+    if not ok or not len(user_db):
+        return False
+
+    if not sql.sql_update_one("users", {
+            "password": passwd.crypt(new_password),
+            "password_reset": None
+    }, {"user_id": user_db["user_id"]}):
+        return False
+
+    spool_email.spool("password_reset", [["users", {"user_id": user_db["user_id"]}]])
+    return True
 
 
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
-    login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
-    debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data))
+
+    send_hash = request_password_reset("dan@jrcs.net", 1234)
+    print(">>> Ask-RESET", send_hash)
+    #print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
+
+    sys.exit(0)
+    # login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
+    # debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
     # print(make_session_code(100))

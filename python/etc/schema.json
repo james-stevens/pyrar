@@ -1,1034 +1,1033 @@
 {
-    "actions": {
-        "columns": {
-            "action": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "action_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "execute_dt": {
-                "type": "datetime",
-                "null": false
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "action_id"
-                ],
-                "unique": true
-            },
-            "by_dom": {
-                "columns": [
-                    "domain_id"
-                ],
-                "unique": false
-            },
-            "by_date": {
-                "columns": [
-                    "execute_dt"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "backend": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "authcode": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "backend_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "execute_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "failures": {
-                "size": 11,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "job_type": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "num_years": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "backend_id"
-                ],
-                "unique": true
-            },
-            "by_user": {
-                "columns": [
-                    "execute_dt"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "deleted_domains": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "auto_renew": {
-                "size": 1,
-                "type": "tinyint",
-                "null": true
-            },
-            "client_locks": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "deleted_dt": {
-                "type": "datetime",
-                "null": false
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "ds": {
-                "size": 3500,
-                "type": "varchar",
-                "null": true
-            },
-            "expiry_dt": {
-                "type": "datetime",
-                "null": false
-            },
-            "name": {
-                "size": 260,
-                "type": "varchar",
-                "null": false,
-                "default": ""
-            },
-            "ns": {
-                "size": 3500,
-                "type": "varchar",
-                "null": true
-            },
-            "status_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "domain_id": {
-                "columns": [
-                    "domain_id"
-                ],
-                "unique": true
-            },
-            "by_name": {
-                "columns": [
-                    "name"
-                ],
-                "unique": false
-            },
-            "by_user": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "deleted_users": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "deleted_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "deleted_user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "email": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "name": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "password": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "payment_data": {
-                "type": "longtext",
-                "null": true
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "deleted_user_id"
-                ],
-                "unique": true
-            },
-            "by_login": {
-                "columns": [
-                    "email"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "domains": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "authcode": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "auto_renew": {
-                "size": 1,
-                "type": "tinyint",
-                "null": true
-            },
-            "client_locks": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "ds": {
-                "size": 3500,
-                "type": "varchar",
-                "null": true
-            },
-            "expiry_dt": {
-                "type": "datetime",
-                "null": false
-            },
-            "for_sale_amount": {
-                "size": 10,
-                "type": "decimal",
-                "null": true
-            },
-            "for_sale_msg": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "name": {
-                "size": 260,
-                "type": "varchar",
-                "null": false,
-                "default": ""
-            },
-            "ns": {
-                "size": 3500,
-                "type": "varchar",
-                "null": false
-            },
-            "reg_create_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "status_id": {
-                "size": 11,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "name"
-                ],
-                "unique": true
-            },
-            "by_id": {
-                "columns": [
-                    "domain_id"
-                ],
-                "unique": true
-            },
-            "by_expdt": {
-                "columns": [
-                    "expiry_dt"
-                ],
-                "unique": false
-            },
-            "by_user": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "events": {
-        "columns": {
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": true
-            },
-            "event_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "event_type": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "filename": {
-                "size": 1024,
-                "type": "varchar",
-                "null": true
-            },
-            "from_where": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "function": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "line_num": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "notes": {
-                "size": 1024,
-                "type": "varchar",
-                "null": true
-            },
-            "program": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": true
-            },
-            "when_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "who_did_it": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "event_id"
-                ],
-                "unique": true
-            },
-            "by_domain": {
-                "columns": [
-                    "domain_id"
-                ],
-                "unique": false
-            },
-            "by_user": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "orders": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "authcode": {
-                "size": 50,
-                "type": "varchar",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "currency_charged": {
-                "size": 3,
-                "type": "char",
-                "null": true
-            },
-            "currency_paid": {
-                "size": 3,
-                "type": "char",
-                "null": true
-            },
-            "domain_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "num_years": {
-                "size": 11,
-                "type": "int",
-                "null": false
-            },
-            "order_item_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "order_type": {
-                "size": 20,
-                "type": "varchar",
-                "null": false,
-                "default": "none"
-            },
-            "price_charged": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "price_paid": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "order_item_id"
-                ],
-                "unique": true
-            },
-            "by_user": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": false
-            }
-        }
-    },
-    "payments": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": false
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": false
-            },
-            "payment_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "provider": {
-                "size": 50,
-                "type": "varchar",
-                "null": false
-            },
-            "providers_tag": {
-                "size": 100,
-                "type": "varchar",
-                "null": false
-            },
-            "single_use": {
-                "size": 1,
-                "type": "tinyint",
-                "null": false,
-                "default": 0
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "payment_id"
-                ],
-                "unique": true
-            },
-            "by_type": {
-                "columns": [
-                    "user_id",
-                    "provider"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "sales": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "currency_charged": {
-                "size": 3,
-                "type": "char",
-                "null": true
-            },
-            "currency_paid": {
-                "size": 3,
-                "type": "char",
-                "null": true
-            },
-            "domain_name": {
-                "size": 260,
-                "type": "varchar",
-                "null": true
-            },
-            "num_years": {
-                "size": 11,
-                "type": "int",
-                "null": false
-            },
-            "price_charged": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "price_paid": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "registry": {
-                "size": 50,
-                "type": "varchar",
-                "null": false
-            },
-            "sales_item_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "sales_type": {
-                "size": 20,
-                "type": "varchar",
-                "null": false,
-                "default": "none"
-            },
-            "transaction_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "user_email": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "zone_name": {
-                "size": 260,
-                "type": "varchar",
-                "null": true
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "sales_item_id"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "session_keys": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "session_key": {
-                "size": 100,
-                "type": "varchar",
-                "null": false
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "session_key"
-                ],
-                "unique": true
-            },
-            "by_user_id": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "sysadmins": {
-        "columns": {
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "htpasswd": {
-                "size": 100,
-                "type": "varchar",
-                "null": false
-            },
-            "login": {
-                "size": 50,
-                "type": "varchar",
-                "null": false
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "login"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "transactions": {
-        "columns": {
-            "acct_sequence_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "amount": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "description": {
-                "size": 255,
-                "type": "varchar",
-                "null": true
-            },
-            "post_balance": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "pre_balance": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "sales_item_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": true
-            },
-            "transaction_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "user_id",
-                    "acct_sequence_id"
-                ],
-                "unique": true
-            },
-            "by_id": {
-                "columns": [
-                    "transaction_id"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "users": {
-        "columns": {
-            "account_closed": {
-                "size": 1,
-                "type": "tinyint",
-                "null": false,
-                "default": 0
-            },
-            "acct_current_balance": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "acct_next_warning_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "acct_on_hold": {
-                "size": 1,
-                "type": "tinyint",
-                "null": false,
-                "default": 0
-            },
-            "acct_overdraw_limit": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "acct_previous_balance": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "acct_sequence_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": false,
-                "default": 0
-            },
-            "acct_warn_low_balance": {
-                "size": 10,
-                "type": "decimal",
-                "null": false,
-                "default": 0
-            },
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "default_auto_renew": {
-                "size": 1,
-                "type": "tinyint",
-                "null": false,
-                "default": 1
-            },
-            "discount_percent": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "email": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "email_verified": {
-                "size": 1,
-                "type": "tinyint",
-                "null": false,
-                "default": 0
-            },
-            "last_login_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "name": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "password": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "password_reset": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "two_fa": {
-                "size": 100,
-                "type": "varchar",
-                "null": true
-            },
-            "user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "serial": true,
-                "null": false
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "user_id"
-                ],
-                "unique": true
-            },
-            "by_login": {
-                "columns": [
-                    "email"
-                ],
-                "unique": true
-            }
-        }
-    },
-    "zones": {
-        "columns": {
-            "allow_sales": {
-                "unsigned": true,
-                "size": 3,
-                "type": "tinyint",
-                "null": false,
-                "default": 1
-            },
-            "amended_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "created_dt": {
-                "type": "datetime",
-                "null": true
-            },
-            "enabled": {
-                "unsigned": true,
-                "size": 3,
-                "type": "tinyint",
-                "null": false,
-                "default": 1
-            },
-            "owner_royalty_rate": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "owner_user_id": {
-                "unsigned": true,
-                "size": 10,
-                "type": "int",
-                "null": true
-            },
-            "price_info": {
-                "size": 3500,
-                "type": "varchar",
-                "null": true
-            },
-            "registry": {
-                "size": 50,
-                "type": "varchar",
-                "null": false
-            },
-            "renew_limit": {
-                "size": 11,
-                "type": "int",
-                "null": true
-            },
-            "zone": {
-                "size": 260,
-                "type": "varchar",
-                "null": false
-            }
-        },
-        "indexes": {
-            "PRIMARY": {
-                "columns": [
-                    "zone"
-                ],
-                "unique": true
-            },
-            "by_last_change": {
-                "columns": [
-                    "amended_dt",
-                    "enabled",
-                    "allow_sales"
-                ],
-                "unique": false
-            }
-        }
-    }
+   "actions": {
+      "columns": {
+         "action": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "action_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "execute_dt": {
+            "type": "datetime",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "action_id"
+            ],
+            "unique": true
+         },
+         "by_dom": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": false
+         },
+         "by_date": {
+            "columns": [
+               "execute_dt"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "backend": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "authcode": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "backend_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "execute_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "failures": {
+            "size": 11,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "job_type": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "num_years": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "backend_id"
+            ],
+            "unique": true
+         },
+         "by_user": {
+            "columns": [
+               "execute_dt"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "deleted_domains": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "auto_renew": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true
+         },
+         "client_locks": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "deleted_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "ds": {
+            "size": 3500,
+            "type": "varchar",
+            "null": true
+         },
+         "expiry_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "name": {
+            "size": 260,
+            "type": "varchar",
+            "null": false,
+            "default": ""
+         },
+         "ns": {
+            "size": 3500,
+            "type": "varchar",
+            "null": true
+         },
+         "status_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "domain_id": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": true
+         },
+         "by_name": {
+            "columns": [
+               "name"
+            ],
+            "unique": false
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "deleted_users": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "deleted_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "deleted_user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "email": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "name": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "password": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "payment_data": {
+            "type": "longtext",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "deleted_user_id"
+            ],
+            "unique": true
+         },
+         "by_login": {
+            "columns": [
+               "email"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "domains": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "authcode": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "auto_renew": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true
+         },
+         "client_locks": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "ds": {
+            "size": 3500,
+            "type": "varchar",
+            "null": true
+         },
+         "expiry_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "for_sale_amount": {
+            "size": 10,
+            "type": "decimal",
+            "null": true
+         },
+         "for_sale_msg": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "name": {
+            "size": 260,
+            "type": "varchar",
+            "null": false,
+            "default": ""
+         },
+         "ns": {
+            "size": 3500,
+            "type": "varchar",
+            "null": false
+         },
+         "reg_create_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "status_id": {
+            "size": 11,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "name"
+            ],
+            "unique": true
+         },
+         "by_id": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": true
+         },
+         "by_expdt": {
+            "columns": [
+               "expiry_dt"
+            ],
+            "unique": false
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "events": {
+      "columns": {
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
+         "event_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "event_type": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "filename": {
+            "size": 1024,
+            "type": "varchar",
+            "null": true
+         },
+         "from_where": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "function": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "line_num": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "notes": {
+            "size": 1024,
+            "type": "varchar",
+            "null": true
+         },
+         "program": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
+         "when_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "who_did_it": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "event_id"
+            ],
+            "unique": true
+         },
+         "by_domain": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": false
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "orders": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "authcode": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "currency_charged": {
+            "size": 3,
+            "type": "char",
+            "null": true
+         },
+         "currency_paid": {
+            "size": 3,
+            "type": "char",
+            "null": true
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "num_years": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "order_item_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "order_type": {
+            "size": 20,
+            "type": "varchar",
+            "null": false,
+            "default": "none"
+         },
+         "price_charged": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "price_paid": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "order_item_id"
+            ],
+            "unique": true
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "payments": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "can_pull": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "payment_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "provider": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         },
+         "provider_tag": {
+            "size": 100,
+            "type": "varchar",
+            "null": false
+         },
+         "single_use": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "payment_id"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "sales": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "currency_charged": {
+            "size": 3,
+            "type": "char",
+            "null": true
+         },
+         "currency_paid": {
+            "size": 3,
+            "type": "char",
+            "null": true
+         },
+         "domain_name": {
+            "size": 260,
+            "type": "varchar",
+            "null": true
+         },
+         "num_years": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "price_charged": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "price_paid": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "registry": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         },
+         "sales_item_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "sales_type": {
+            "size": 20,
+            "type": "varchar",
+            "null": false,
+            "default": "none"
+         },
+         "transaction_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "user_email": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "zone_name": {
+            "size": 260,
+            "type": "varchar",
+            "null": true
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "sales_item_id"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "session_keys": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "session_key": {
+            "size": 100,
+            "type": "varchar",
+            "null": false
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "session_key"
+            ],
+            "unique": true
+         },
+         "by_user_id": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "sysadmins": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "htpasswd": {
+            "size": 100,
+            "type": "varchar",
+            "null": false
+         },
+         "login": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "login"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "transactions": {
+      "columns": {
+         "acct_sequence_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "amount": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "description": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         },
+         "post_balance": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "pre_balance": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "sales_item_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
+         "transaction_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "user_id",
+               "acct_sequence_id"
+            ],
+            "unique": true
+         },
+         "by_id": {
+            "columns": [
+               "transaction_id"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "users": {
+      "columns": {
+         "account_closed": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
+         },
+         "acct_current_balance": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "acct_next_warning_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "acct_on_hold": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
+         },
+         "acct_overdraw_limit": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "acct_previous_balance": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "acct_sequence_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         },
+         "acct_warn_low_balance": {
+            "size": 10,
+            "type": "decimal",
+            "null": false,
+            "default": 0
+         },
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "default_auto_renew": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 1
+         },
+         "discount_percent": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "email": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "email_verified": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
+         },
+         "last_login_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "name": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "password": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "password_reset": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "two_fa": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": true
+         },
+         "by_login": {
+            "columns": [
+               "email"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "zones": {
+      "columns": {
+         "allow_sales": {
+            "unsigned": true,
+            "size": 3,
+            "type": "tinyint",
+            "null": false,
+            "default": 1
+         },
+         "amended_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": true
+         },
+         "enabled": {
+            "unsigned": true,
+            "size": 3,
+            "type": "tinyint",
+            "null": false,
+            "default": 1
+         },
+         "owner_royalty_rate": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "owner_user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
+         "price_info": {
+            "size": 3500,
+            "type": "varchar",
+            "null": true
+         },
+         "registry": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         },
+         "renew_limit": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "zone": {
+            "size": 260,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "zone"
+            ],
+            "unique": true
+         },
+         "by_last_change": {
+            "columns": [
+               "amended_dt",
+               "enabled",
+               "allow_sales"
+            ],
+            "unique": false
+         }
+      }
+   }
 }

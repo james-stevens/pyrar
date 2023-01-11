@@ -1,0 +1,28 @@
+{% include "start.inc" %}
+Subject: Expiry of domain {{domain.display_name}} ({{domain.name}})
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<h2>IMPORTANT - THIS REQUIRES YOUR ATTENTION</h2>
+
+<font size=+1>Hi {{user.name}},</font>
+<P>
+Your domain name {{domain.display_name}} expires on {{domain.expiry_dt.split()[0]}}.
+To ensure no loss of service, you need to renew it as soon as you can.
+<P>
+After {{domain.expiry_dt.split()[0]}} your domain will probably stop working. After that
+you get a further {{registry.expire_recover_limit}} days until it will be lost forever.
+<P>&nbsp;<P>
+
+
+To renew the domain, please visit our online processing center at<br>
+<a href="{{policy.website_name}}renew/{{domain.name}}">{{policy.website_name}}renew/{{domain.name}}</a><br>
+<P>
+If you have forgotten your password you can reset it using this link<br>
+<a href="{{policy.website_name}}mailpass/">{{policy.website_name}}mailpass/</a><br>
+<P>
+
+{% include "end.html" %}

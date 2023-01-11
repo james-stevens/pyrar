@@ -1,7 +1,3 @@
-
-
 Yours
-    {{ policy.name_sender }}
-    {{ policy.website_name }}
-
-
+	{{ policy.name_sender }}
+	{{ policy.website_name }}

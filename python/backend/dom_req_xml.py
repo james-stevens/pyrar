@@ -3,7 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 import json
-import whois_priv
+from backend import whois_priv
 
 
 def pad_ds(ds_dt):
