@@ -94,6 +94,8 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Run an account
 - View a history of transactions
 - Change password
+- Password reset
+- Maintain payment options e.g. card / account details etc (some done, still needs work)
 - Close account
 
 ## Domains
@@ -119,23 +121,25 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 ## Admin Web/UI
 - A Web/UI to the PowerDNS server is provided
 
+## EMails
+- Can email users from template, either plain text or HTML
+- Password Reset request
+- Password reset confirmation
+- Renewal Reminder
+- Verify User's email address
 
 
 # What doesn't work, yet
 
 ## Users
 - 2fA (enable & disable)
-- Password reset
-- Make payments - PayPal, Stripe & Coinbase are planned
-- Maintain payment options e.g. card / account details etc
+- Make payments - e.g. PayPal, Stripe, Coinbase
 
 ## Domains
 - UI to request transfers
 - Auto-renewals
 - Ability to "recover" an expired domain
 
-## Engine
-- Currently no code exists to generate / send emails, e.g. receipts, reminders, etc
 
 ## EPP
 - Poll for messages and know what some mean!!

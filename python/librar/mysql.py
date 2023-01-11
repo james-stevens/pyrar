@@ -25,6 +25,7 @@ AUTO_CREATED_AMENDED_DT = [
 cnx = None
 my_login = None
 my_password = None
+my_database = None
 
 logins = fileloader.FileLoader(LOGINS_JSON)
 
@@ -250,6 +251,7 @@ def connect(login):
     global cnx
     global my_login
     global my_password
+    global my_database
 
     logins.check_for_new()
     my_login = login
@@ -274,6 +276,7 @@ def connect(login):
         log(f"ERROR: Could not find MySQL password for user {login}")
         return False
 
+    my_database = mysql_json["database"]
     host = None
     port = None
     sock = ""
@@ -294,7 +297,7 @@ def connect(login):
                              unix_socket=sock,
                              host=host,
                              port=port,
-                             database=mysql_json["database"],
+                             database=my_database,
                              conv=my_conv,
                              charset='utf8mb4',
                              init_command='set names utf8mb4')
