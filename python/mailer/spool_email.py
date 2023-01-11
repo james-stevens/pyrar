@@ -61,7 +61,8 @@ def load_records(which_message, request_list):
 
 
 def spool(which_message, request_list):
-    if not os.path.isfile(f"{TEMPLATE_DIR}/{which_message}.txt"):
+    pfx = f"{TEMPLATE_DIR}/{which_message}"
+    if not os.path.isfile(f"{pfx}.txt") and not os.path.isfile(f"{pfx}.html"):
         return False
 
     if (request_data := load_records(which_message, request_list)) is None:
