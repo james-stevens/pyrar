@@ -189,10 +189,8 @@ dom_handler.add_plugin(
         "dom/price": local_domain_prices
     })
 
-
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("engine")
     registry.start_up()
     start_up_check()
-

@@ -22,10 +22,10 @@ from email.mime.text import MIMEText
 
 from mailer import spool_email
 
-RCPT_TAGS = { "to":"To","cc":"CC","bcc":"BCC" }
+RCPT_TAGS = {"to": "To", "cc": "CC", "bcc": "BCC"}
 
 
-def spool_email_file(filename,server=None):
+def spool_email_file(filename, server=None):
     with open(
             filename,
             "r",
@@ -38,7 +38,7 @@ def spool_email_file(filename,server=None):
         return False
 
     which_message = data["email"]["message"]
-    pfx=f"{spool_email.TEMPLATE_DIR}/{which_message}"
+    pfx = f"{spool_email.TEMPLATE_DIR}/{which_message}"
     merge_file = None
     is_html = False
     if os.path.isfile(f"{pfx}.txt"):
@@ -58,15 +58,15 @@ def spool_email_file(filename,server=None):
 
     content = template.render(**data)
     header = {}
-    lines = [ line.rstrip() for line in content.split("\n") ]
+    lines = [line.rstrip() for line in content.split("\n")]
     while len(lines) and lines[0] != "":
         colon = lines[0].find(":")
         space = lines[0].find(":")
-        if colon<0 or space<0 or space<colon:
+        if colon < 0 or space < 0 or space < colon:
             break
 
         tag = lines[0][:colon].lower()
-        rest = lines[0][colon+2:]
+        rest = lines[0][colon + 2:]
 
         if tag in header:
             if isinstance(header[tag], list):
@@ -127,7 +127,7 @@ def process_emails_waiting(server=None):
             continue
 
         try:
-            ok = spool_email_file(path,server)
+            ok = spool_email_file(path, server)
         except Exception as e:
             log(f"ERROR: Failed to email '{path}'")
             ok = False

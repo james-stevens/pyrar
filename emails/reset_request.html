@@ -1,0 +1,16 @@
+{% include "start.inc" %}
+Subject: Password reset at {{policy.business_name}}
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+Click on this link to reset your password.<br>
+
+<a href="{{policy.website_name}}pass_reset/{{reset_code}}/">{{policy.website_name}}pass_reset/{{reset_code}}/</a>
+
+
+{% include "end.html" %}

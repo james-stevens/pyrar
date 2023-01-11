@@ -14,10 +14,10 @@ from librar import sales
 from librar import mysql as sql
 from librar.policy import this_policy as policy
 
-from webui import domains
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend.dom_plugins import *
+from webui import domains
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 

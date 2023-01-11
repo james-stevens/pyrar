@@ -119,7 +119,8 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if want_referrer_check and policy.policy("strict_referrer") and flask.request.referrer != policy.policy("website_name"):
+    if want_referrer_check and policy.policy(
+            "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
         log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
@@ -464,6 +465,36 @@ def users_verify():
     if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
         return req.response(True)
     return req.abort("Email verification failed")
+
+
+@application.route('/pyrar/v1.0/request/reset', methods=['POST'])
+def request_reset_password():
+    req = WebuiReq()
+    if req.post_js is None:
+        return req.abort("No JSON posted")
+    if not sql.has_data(req.post_js, ["pin", "email"]):
+        return req.abort("Missing data")
+    if len(req.post_js["pin"]) != 4 or not validate.is_valid_email(req.post_js["email"]):
+        return req.abort("Invalid data")
+    users.request_password_reset(req.post_js["email"], req.post_js["pin"])
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/users/reset', methods=['POST'])
+def users_reset_password():
+    req = WebuiReq()
+    if req.post_js is None:
+        return req.abort("No JSON posted")
+    if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
+        return req.abort("Missing data")
+    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or len(
+            req.post_js["pin"]) != 4:
+        return req.abort("Invalid data")
+
+    if not users.reset_users_password(req.post_js["code"], req.post_js["pin"], req.post_js["password"]):
+        return req.abort("Password update failed")
+
+    return req.response(True)
 
 
 @application.route('/pyrar/v1.0/users/register', methods=['POST'])
