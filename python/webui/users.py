@@ -215,7 +215,7 @@ def request_password_reset(email, pin_num):
     if not ok or not len(user_db):
         return None
 
-    send_hash = hashstr.make_hash(f"{email}:{user_db['created_dt']}", 30)
+    send_hash = hashstr.make_hash(f"{email}:{user_db['created_dt']}:{pin_num}", 30)
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     if not sql.sql_update_one("users", {"password_reset": store_hash}, {"user_id": user_db["user_id"]}):
         return None
