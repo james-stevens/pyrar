@@ -154,14 +154,14 @@ def run_server():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='SMTP Spooler')
     parser.add_argument("-D", '--debug', action="store_true")
-    parser.add_argument("-S", '--server', default="127.0.0.1")
+    parser.add_argument("-S", '--server')
     args = parser.parse_args()
     log_init(with_debug=args.debug)
 
     sql.connect("engine")
     registry.start_up()
 
-    if args.debug:
+    if args.server:
         process_emails_waiting(args.server)
     else:
         run_server()

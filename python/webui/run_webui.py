@@ -23,6 +23,8 @@ from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
 
+want_referrer_check = True
+
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
 
@@ -117,7 +119,7 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if policy.policy("strict_referrer") and flask.request.referrer != policy.policy("website_name"):
+    if want_referrer_check and policy.policy("strict_referrer") and flask.request.referrer != policy.policy("website_name"):
         log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
@@ -728,5 +730,6 @@ def rest_domain_price():
 
 if __name__ == "__main__":
     log_init(with_debug=True)
+    want_referrer_check = False
     application.run()
     domains.close_epp_sess()

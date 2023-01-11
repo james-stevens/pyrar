@@ -5,9 +5,8 @@
 
 import json
 
-import xmlapi
-
 from librar import misc
+from backend import xmlapi
 
 WHOIS_PRIVACY_ID = "whoisPrivacy"
 

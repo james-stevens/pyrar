@@ -17,9 +17,9 @@ from actions import creator
 
 from webui import users
 
-from webui import dom_handler
+from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from webui.dom_plugins import *
+from backend.dom_plugins import *
 
 
 class DomainName:

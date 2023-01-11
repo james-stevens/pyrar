@@ -6,7 +6,7 @@ backend_plugins = {}
 
 
 def add_plugin(name, funcs):
-    global plugins
+    global backend_plugins
     backend_plugins[name] = funcs
     return True
 

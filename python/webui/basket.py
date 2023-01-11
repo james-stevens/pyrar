@@ -15,9 +15,9 @@ from librar import mysql as sql
 from librar.policy import this_policy as policy
 
 from webui import domains
-from webui import dom_handler
+from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from webui.dom_plugins import *
+from backend.dom_plugins import *
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
