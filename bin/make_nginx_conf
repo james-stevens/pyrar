@@ -47,9 +47,9 @@ http {
 	sendfile        on;
 	keepalive_timeout  65;
 
-	upstream wsgi_checker {
-		server unix:/run/wsgi_checker.sock;
-		}
+	upstream wsgi_webui { server unix:/run/wsgi_webui.sock; }
+	upstream wsgi_admin { server unix:/run/wsgi_admin.sock; }
+
 	server {
 		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_webui,severity=${LOGLEVEL_NGINX};
 		error_page 404 =200 /;
@@ -60,18 +60,18 @@ http {
 if_has_pem 443 80
 
 echo "
-		location /pyrar {
-			proxy_pass http://wsgi_checker/pyrar;
-			}
+		location /pyrar { proxy_pass http://wsgi_webui/pyrar; }
 		root ${BASE}/htdocs;
 		}
 
 	server {
-		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_webui,severity=${LOGLEVEL_NGINX};
+		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_admin,severity=${LOGLEVEL_NGINX};
 		error_page 404 =200 /;
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
-		root ${BASE}/admin_docs;"
+		location /usr/ { alias ${BASE}/htdocs/; }
+		location /adm { proxy_pass http://wsgi_admin/adm; }
+		root ${BASE}/admin_htdocs;"
 
 if_has_pem 1000 1000
 echo "

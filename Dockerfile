@@ -9,7 +9,8 @@ RUN mkdir /run/policy_subst
 RUN apk add nginx curl
 
 RUN apk add python3 jq py-pip
-RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient py3-dnspython py3-dateutil py3-jinja2 py3-tzdata
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
+RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-tzdata py3-yaml
 RUN pip install apscheduler httpx
 
 RUN apk add postfix
@@ -49,7 +50,7 @@ RUN ln -fns /usr/local/bin/run_cron_jobs /etc/periodic/hourly/run_cron_jobs
 RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pem
 
 COPY policy_subst /opt/pyrar/policy_subst/
-COPY admin_docs /opt/pyrar/admin_docs/
+COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY emails /opt/pyrar/emails/
 
 COPY bin /usr/local/bin/

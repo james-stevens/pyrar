@@ -118,7 +118,7 @@ def reconnect():
 def return_select():
     res = cnx.store_result()
     db_rows = res.fetch_row(maxrows=0, how=1)
-    return True, db_rows
+    return True, list(db_rows)
 
 
 def first_not_mysql():

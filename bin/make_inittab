@@ -11,6 +11,7 @@ awk '{
 
 echo "
 ::respawn:/usr/local/bin/start_wsgi_webui
+::respawn:/usr/local/bin/start_wsgi_admin
 ::respawn:/usr/sbin/pdns_server >/tmp/pdns.log 2>&1
 ::respawn:/usr/local/bin/start_nginx
 ::respawn:/usr/local/bin/start_backend_runner

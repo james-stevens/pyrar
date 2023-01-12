@@ -19,6 +19,12 @@ from mailer import spool_email
 
 USER_REQUIRED = ["email", "password"]
 
+def event_log(req, more_event_items):
+    event_db = misc.where_event_log()
+    event_db.update(req.base_event)
+    event_db.update(more_event_items)
+    sql.sql_insert("events", event_db)
+
 
 def make_session_code(user_id):
     hsh = hashlib.sha256()
@@ -208,14 +214,16 @@ def verify_email(user_id, hash_sent):
     return False
 
 
-def request_password_reset(email, pin_num):
-    if not validate.is_valid_email(email) or len(pin_num) != 4:
+def request_password_reset(req):
+    email = req.post_js["email"]
+    pin_num = req.post_js["pin"]
+    if not validate.is_valid_email(email) or not validate.is_valid_pin(pin_num):
         return False
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": email})
     if not ok or not len(user_db):
         return None
 
-    send_hash = hashstr.make_hash(f"{email}:{user_db['created_dt']}:{pin_num}", 30)
+    send_hash = make_session_code(user_db["user_id"])[:30]
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     if not sql.sql_update_one("users", {"password_reset": store_hash}, {"user_id": user_db["user_id"]}):
         return None
@@ -224,7 +232,13 @@ def request_password_reset(email, pin_num):
     return send_hash
 
 
-def reset_users_password(send_hash, pin_num, new_password):
+def reset_users_password(req):
+    send_hash = req.post_js["code"]
+    pin_num = req.post_js["pin"]
+    new_password = req.post_js["password"]
+    if not validate.is_valid_pin(pin_num) or len(send_hash) != 30:
+        return False
+
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "password_reset": store_hash})
     if not ok or not len(user_db):
@@ -240,11 +254,18 @@ def reset_users_password(send_hash, pin_num, new_password):
     return True
 
 
+class Empty:
+    pass
+
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
 
-    send_hash = request_password_reset("dan@jrcs.net", 1234)
+    req = Empty()
+    req.post_js = {}
+    req.post_js["email"] = "dan@jrcs.net"
+    req.post_js["pin"] = "1234"
+    send_hash = request_password_reset(req)
     print(">>> Ask-RESET", send_hash)
     #print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
 

@@ -137,6 +137,16 @@ h2 { text-align: center; }
 	margin-left: 10px;
 	}
 
+#businessName a {
+	color: #${cols[16]};
+	}
+
+#businessName a:hover {
+    text-decoration: none;
+	color: #${cols[11]};
+	}
+
+
 .userMsg {
 	padding: 30px;
 	font-size: 32px;
@@ -473,5 +483,5 @@ td {
 	}
 
 
-`;
+`.replace(/[\n\t]/g,"");
 }

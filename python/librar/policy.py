@@ -12,8 +12,7 @@ DEFAULT_CURRENCY = {
     "iso": "USD",
     "separator": [",", "."],
     "symbol": "$",
-    "decimal": 2,
-    "pow10": 100
+    "decimal": 2
 }
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
@@ -29,6 +28,8 @@ policy_defaults = {
     "facility_python_code": "local0",
     "log_python_code": True,
     "session_timeout": 60,
+    "webui_sessions": 5,
+    "admin_sessions": 3,
     "currency": DEFAULT_CURRENCY,
     "facility_epp_api": "local0",
     "log_epp_api": True,

@@ -87,10 +87,6 @@ def gracefulExit():
 atexit.register(gracefulExit)
 
 
-class Empty:
-    pass
-
-
 def abort(err_no, message):
     response = flask.jsonify({"error": {"message": message}})
     response.status_code = err_no

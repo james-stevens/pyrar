@@ -474,9 +474,9 @@ def request_reset_password():
         return req.abort("No JSON posted")
     if not sql.has_data(req.post_js, ["pin", "email"]):
         return req.abort("Missing data")
-    if len(req.post_js["pin"]) != 4 or not validate.is_valid_email(req.post_js["email"]):
+    if not validate.is_valid_pin(req.post_js["pin"]) or not validate.is_valid_email(req.post_js["email"]):
         return req.abort("Invalid data")
-    users.request_password_reset(req.post_js["email"], req.post_js["pin"])
+    users.request_password_reset(req)
     return req.response(True)
 
 
@@ -487,11 +487,10 @@ def users_reset_password():
         return req.abort("No JSON posted")
     if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
         return req.abort("Missing data")
-    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or len(
-            req.post_js["pin"]) != 4:
+    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
         return req.abort("Invalid data")
 
-    if not users.reset_users_password(req.post_js["code"], req.post_js["pin"], req.post_js["password"]):
+    if not users.reset_users_password(req):
         return req.abort("Password update failed")
 
     return req.response(True)

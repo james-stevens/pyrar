@@ -2,13 +2,13 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-ses="${WEBUI_SESSIONS}"
+ses="${ADMIN_SESSIONS}"
 if test "${ses}" = "null"; then ses="3"; fi
 
 . /usr/local/bin/get_py_log
 
-cd ${BASE}/python/webui
+cd ${BASE}/python/admin
 exec gunicorn \
         --workers ${ses} \
-		${extra} --bind unix:/run/wsgi_webui.sock \
-        wsgi >/tmp/start_webui.log 2>&1
+		${extra} --bind unix:/run/wsgi_admin.sock \
+        wsgi >/tmp/start_admin.log 2>&1
