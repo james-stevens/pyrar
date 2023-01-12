@@ -22,7 +22,8 @@ from email.mime.text import MIMEText
 
 from mailer import spool_email
 
-RCPT_TAGS = {"to": "To", "cc": "CC", "bcc": "BCC"}
+DO_NOT_INCLUDE_TAGS = {"X-Env-From", "BCC"}
+MULTILINE_TAGS = {"To", "CC", "BCC"}
 
 
 def spool_email_file(filename, server=None):
@@ -58,41 +59,40 @@ def spool_email_file(filename, server=None):
 
     content = template.render(**data)
     header = {}
-    lines = [line.rstrip() for line in content.split("\n")]
-    while len(lines) and lines[0] != "":
-        colon = lines[0].find(":")
-        space = lines[0].find(":")
-        if colon < 0 or space < 0 or space < colon:
-            break
 
-        tag = lines[0][:colon].lower()
+    lines = [line.rstrip() for line in content.split("\n")]
+    msg = MIMEMultipart('alternative')
+
+    while (len(lines) and len(lines[0]) and (colon := lines[0].find(":")) > 0 and (space := lines[0].find(" ")) > 0
+           and space > colon):
+
+        tag = lines[0][:colon]
         rest = lines[0][colon + 2:]
 
-        if tag in header:
-            if isinstance(header[tag], list):
-                header[tag].append(rest)
-            else:
-                header[tag] = [rest, header[tag]]
+        if tag in header and len(header[tag]) > 0 and tag in MULTILINE_TAGS:
+            header[tag] += "," + rest
         else:
             header[tag] = rest
+
         del lines[0]
 
-    if "to" not in header and "user" in data:
-        header["to"] = data["user"]["email"]
+    if len(lines[0].rstrip()) == 0:
+        del lines[0]
 
-    for hdr_tag in RCPT_TAGS:
-        if hdr_tag in header and isinstance(header[hdr_tag], str):
-            header[hdr_tag] = [header[hdr_tag]]
+    if "To" not in header and "user" in data:
+        header["To"] = data["user"]["email"]
 
-    if "from" not in header:
-        header["from"] = f"policy.this_policy.policy('policy.name_sender') <policy.this_policy.policy('email_return')>"
+    del header["From"]
+    if "From" not in header:
+        name = policy.this_policy.policy("name_sender")
+        if name is None:
+            name = policy.this_policy.policy("business_name")
+        email = policy.this_policy.policy("email_return")
+        header["From"] = f"{name} <{email}>"
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = header["subject"]
-    msg['From'] = header["from"]
-    for hdr_tag in RCPT_TAGS:
-        if hdr_tag in header:
-            msg[RCPT_TAGS[hdr_tag]] = ",".join(header[hdr_tag])
+    for tag in header:
+        if tag not in DO_NOT_INCLUDE_TAGS:
+            msg[tag] = header[tag]
 
     if is_html:
         msg.attach(MIMEText("\n".join(lines), 'html'))
@@ -100,21 +100,24 @@ def spool_email_file(filename, server=None):
         msg.attach(MIMEText("\n".join(lines), 'plain'))
 
     smtp_from_addr = policy.this_policy.policy("email_return")
-    if "x-env-from" in header:
-        from_addr = header["x-env-from"]
+    if "X-Env-From" in header:
+        from_addr = header["X-Env-From"]
 
-    log(f"Emailing: {data['email']['message']} to {header['to']}")
-
-    all_rcpt = []
-    for hdr_tag in RCPT_TAGS:
+    all_rcpt = ""
+    for hdr_tag in MULTILINE_TAGS:
         if hdr_tag in header and len(header[hdr_tag]) > 0:
-            all_rcpt.append(header[hdr_tag])
+            all_rcpt += "," + header[hdr_tag]
+    all_rcpt = all_rcpt[1:]
 
+    log(f"Emailing: {data['email']['message']} to {all_rcpt}")
+
+    if server is None:
+        server = policy.this_policy.policy("smtp_server")
     if server is None:
         server = "127.0.0.1"
 
     with smtplib.SMTP(server, 25) as smtp_cnx:
-        smtp_cnx.sendmail(smtp_from_addr, all_rcpt, msg.as_string())
+        smtp_cnx.sendmail(smtp_from_addr, all_rcpt.split(","), msg.as_string())
         smtp_cnx.quit()
 
     return True
@@ -129,7 +132,7 @@ def process_emails_waiting(server=None):
         try:
             ok = spool_email_file(path, server)
         except Exception as e:
-            log(f"ERROR: Failed to email '{path}'")
+            log(f"ERROR: Failed to email '{path}' - {e}")
             ok = False
 
         if ok:
