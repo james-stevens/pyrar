@@ -208,15 +208,19 @@ def validate_binary(val):
     return val in [0, 1]
 
 
+def is_valid_pin(val):
+    return len(val) == 4 and val.isdecimal()
+
+
 def valid_currency(currency):
-    for item in ["iso", "symbol", "separator", "decimal", "pow10"]:
+    for item in ["iso", "symbol", "separator", "decimal", "desc"]:
         if item not in currency:
             return False
 
     if len(currency["iso"]) != 3:
         return False
 
-    if not isinstance(currency["decimal"], int) or not isinstance(currency["pow10"], int):
+    if not isinstance(currency["decimal"], int):
         return False
 
     return True
@@ -233,4 +237,4 @@ if __name__ == "__main__":
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
     for x in sys.argv:
-        print(x, is_valid_fqdn(x))
+        print(x, is_valid_pin(x))

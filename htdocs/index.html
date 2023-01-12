@@ -183,6 +183,7 @@ function loggedIn()
 	e.style.display = "none";
 	e = document.getElementById("isLoggedIn");
 	e.style.display = "block";
+	if (elm.userSpace.style.display == "block") goSearch(true);
 	user_info();
 }
 
@@ -470,9 +471,9 @@ function go_welcome(with_push)
 		document.title = site_name;
 		if (my_icon) {
 			changeFavicon("/icons/"+my_icon)
-			elm.businessName.innerHTML = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
+			site_name = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
 			}
-		else elm.businessName.innerHTML = site_name;
+		elm.businessName.innerHTML = `<a href="${policy('website_name')}">${site_name}</a>`;
 
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 		size_one_space();
@@ -2355,7 +2356,8 @@ function submit_resend()
 			}
 
 		elm.userSpace.innerHTML = "<h2>Reset request processed</h2><P>"
-			+"<center>If a matching account has been found<br>you will receive an email with a reset link</center><P>";
+			+"<center>If a matching account has been found<br>you will receive an email with a reset link<P>"
+			+`<P>Don't forget you will need your PIN number<P><h2>${send_json.pin}</h2></center>`;
 
 		},{ json: send_json });
 
