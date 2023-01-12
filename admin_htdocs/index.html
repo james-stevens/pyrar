@@ -1,0 +1,162 @@
+<html>
+<head>
+    <title>PyRar Admin</title>
+    <meta charSet="utf-8"/>
+    <script src="/usr/theme.js"></script>
+    <script src="/usr/punycode.js"></script>
+    <script src="/usr/lib.js"></script>
+</head>
+<style type='text/css'>.msgPop { visibility: hidden;}</style>
+<script language="Javascript">
+
+debugAPI = false;
+
+elm = {};
+gbl = {
+    "theme": window.localStorage.theme,
+
+    tick: "&#x2611;",
+    cross: "&#x2612;",
+    timer: "&#x23f3;",
+    cut: "&#x2702;",
+    waste: "&#x1F5D1;",
+    warn: "&#x26a0;",
+    page: "&#x1F5CE;",
+    nsec: "&#x1F512;",
+    nsec3: "&#x1F510;",
+    clip: "&#x1F4CE;",
+    cart: "&#128722;",
+    email: "&#128231;",
+    copy: "&#x2398",
+    credit: "&#x1F4B3;",
+    lock: "&#x1F512;",
+
+    gap: "<div style='height: 7px;'></div>",
+    settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
+
+    def_max_checks: 2
+    };
+
+ctx = {};
+
+if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
+    gbl.theme="default";
+    window.localStorage.setItem("theme",gbl.theme);
+    }
+
+changeTheme(gbl.theme);
+if (window.location.pathname!="/") {
+    window.localStorage.setItem("router_path",window.location.pathname);
+    window.location = window.location.origin;
+    }
+
+function toggleTheme() { togglePopUp("themePopup",5000); }
+
+function hideAllPopUp()
+{
+    hidePopUp();
+    ["loginPopup","registerPopup","themePopup"].forEach(item => {
+        let popup = document.getElementById(item);
+        popup.classList.remove("show")
+        });
+}
+
+
+function clr_lazy_hide()
+{
+    if (!ctx.popup) return;
+    if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
+    delete ctx.popup;
+}
+
+
+
+
+function togglePopUp(name,tmout)
+{
+    if ("popup" in ctx) {
+        let save_name = ctx.popup.name;
+        hidePopUp();
+        if (save_name==name) { unerrMsg(); return; }
+        }
+
+    let popup = document.getElementById(name);
+    if (popup) popup.classList.toggle("show");
+
+    let hide_now = null;
+    if (tmout) {
+        hide_now = setTimeout(hidePopUp,tmout);
+        }
+
+    ctx.popup = { "timer": hide_now, "name": name }
+
+    let e = null;
+	// focus on edit box, if you want
+    if (e) { e.focus(); e.select(); }
+
+    return false;
+}
+
+
+
+function hidePopUp()
+{
+    if (!("popup" in ctx)) return;
+    let popup = document.getElementById(ctx.popup.name);
+    if (popup) popup.classList.remove("show")
+    clr_lazy_hide();
+}
+
+function do_theme_change(value)
+{
+    clr_lazy_hide();
+    if (value in theme_colours) changeTheme(value);
+    let popup = document.getElementById("themePopup");
+    popup.classList.remove("show")
+}
+
+
+function startUp()
+{
+}
+
+</script>
+
+<body onLoad="startUp();">
+
+<div id="topSpan">
+<table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
+<colgroup><col width=70%/><col/></colgroup>
+<tr>
+<td align=left><span id="businessName" class="businessName">PyRar Admin</span></td>
+<td align=right>
+<a href="/pdns.html" target=_window><span name=hitMe style='width: 110px;' class=myBtn>PowerDNS</span></a>
+
+</td></tr>
+
+
+<tr><Td>
+<div class="popBelow">
+<span style='width: 85px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
+<span class="popBelowText" id="themePopup">
+<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>
+<tr class=dataRow onClick='do_theme_change("dark");'><td>dark</td></tr>
+<tr class=dataRow onClick='do_theme_change("light");'><td>light</td></tr>
+<tr class=dataRow onClick='do_theme_change("red");'><td>red</td></tr>
+<tr class=dataRow onClick='do_theme_change("green");'><td>green</td></tr>
+<tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
+</table>
+</span>
+</div>
+</td>
+<td>More</td></tr>
+</table>
+</div>
+
+
+<div id="lowerSpan">
+    <div style='height: 10px;'></div>
+	<h2>Hello</h2>
+</div>
+
+<div id=myMsgPop style="visibility: hidden;" class='msgPop msgPopNo'></div>

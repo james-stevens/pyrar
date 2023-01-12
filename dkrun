@@ -8,6 +8,7 @@ docker run \
 	-v /opt/github/pyrar/storage:/opt/pyrar/storage \
 	-v /opt/github/pyrar/emails:/opt/pyrar/emails \
 	-v /opt/github/pyrar/pems:/opt/pyrar/pems \
+	-v /opt/github/pyrar/admin_htdocs:/opt/pyrar/admin_htdocs \
 	--env BASE="/opt/pyrar" \
 	--env PYTHONPATH="/opt/pyrar/python" \
 	-p 10000:10000 \

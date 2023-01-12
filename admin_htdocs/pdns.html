@@ -2,272 +2,25 @@
 <!--- Alternative license arrangements are possible, contact me for more information --->
 <html>
 <head>
-	<title>PowerDNS Admin WebUI - Login</title>
+	<title>PyRar PowerDNS Admin WebUI - Login</title>
 	<meta charSet="utf-8"/>
+	<script src="/usr/theme.js"></script>
+	<script src="/usr/punycode.js"></script>
 </head>
 <style type='text/css'></style>
 <script language="Javascript">
 
 debugAPI = false;
 
-const theme_colours = {
-	"blue": [
-		"000000","383855","4f4f6f","555577","666688",
-		"666699","777799","8888aa","9999bb","a0a0cc",
-		"aaaacc","b0b0ff","c0c0e0","d0d0ff","ddddff",
-		"ffd0d0","ffffff","8888aa"
-		],
-	"red": [
-		"000000","553838","6f4f4f","775555","886666",
-		"996666","997777","aa8888","bb9999","cca0a0",
-		"ccaaaa","ffb0b0","e0c0c0","ffd0d0","ffdddd",
-		"d0d0ff","ffffff","aa8888"
-		],
-	"green": [
-		"000000","385538","4f6f4f","557755","668866",
-		"669966","779977","88aa88","99bb99","a0cca0",
-		"aaccaa","b0ffb0","c0e0c0","d0ffd0","ddffdd",
-		"d0d0ff","ffffff","88aa88"
-		],
-	"light": [
-		"000000","555555","F0F2F4","F6F8FA","ffffff",
-		"999999","F6F8FA","aaaaaa","F0F2F4","cccccc",
-		"cccccc","9898ff","e0e0e0","cccccc","ffffff",
-		"000000","000000","F0F2F4"
-		],
-	"dark": [
-		"C9D1D9","555555","25303B","010409","15202B",
-		"999999","25303B","464B52","35404B","464B52",
-		"464B52","9898ff","e0e0e0","767B92","ffffff",
-		"ffd0d0","C9D1D9","25303B"
-		],
-	"custom": [
-		"C9D1D9","555555","25303B","010409","15202B",
-		"999999","25303B","464B52","35404B","464B52",
-		"464B52","9898ff","e0e0e0","767B92","ffffff",
-		"ffd0d0","C9D1D9","25303B"
-		]
-	};
-
-
-function theme_css(theme) {
-	let cols = theme_colours[theme];
-	return `
-.fullvis { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; text-align: center; }
-.fadein  { font-family:inherit; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
-.fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
-
-::placeholder {
-	color: #${cols[12]};
-	opacity: 1; }
-
-.topLink { font-size: 20px; }
-h2 { text-align: center; }
-
-.btmBtnBar {
-	text-align: center;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	border: 1px solid;
-	border-color: #${cols[7]};
-	border-radius: 6px;
-	}
-
-#topSpan{
-	background-color: #${cols[6]};
-	height: 55px;
-	line-height: 55px;
-	margin-top: 0px;
-	padding-left: 0px;
-	padding-top: 1px;
-	top: 0px;
-	}
-
-html {
-	color: #${cols[16]};
-	font-family:Verdana,Arial,Helvetica,sans-serif;
-	font-size: 14px;
-	background-color: #${cols[4]};
-	scrollbar-base-color: #${cols[5]};
-	scrollbar-arrow-color: #${cols[14]};
-	}
-
-th {
-	color: #${cols[0]};
-	font-family: inherit;
-	font-size: 18px;
-	background-color: #${cols[9]};
-	font-weight: bold;
-	padding-left: 6px;
-	padding-right: 6px;
-	}
-
-select {
-	padding: 5px 12px;
-	background-color: #${cols[3]};
-	color: #${cols[16]};
-	font-family: inherit;
-	font-size: 14px;
-	border-radius: 6px;
-	border: 1px solid;
-	border-color: #${cols[7]};
-}
-
-input {
-	padding: 5px 12px;
-	background-color: #${cols[3]};
-	color: #${cols[16]};
-	font-family: inherit;
-	font-size: 14px;
-	border-radius: 6px;
-	border: 1px solid;
-	border-color: #${cols[7]};
-	}
-
-.inputBad {
-	color: #${cols[0]};
-	background-color: #${cols[15]};
-	font-family: inherit;
-	font-size: 14px;
-	}
-
-body {
-	color: #${cols[16]};
-	font-family: inherit;
-	font-size: inherit;
-	margin-top: 0px;
-	margin-left: 0px;
-	margin-right: 0px;
-	background-color: #${cols[4]};
-	scrollbar-base-color: #${cols[5]};
-	scrollbar-arrow-color: #${cols[14]};
-	}
-
-
-a {
-	color: #${cols[11]};
-	text-decoration:none;
-	}
-
-a:hover {
-	text-decoration: underline;
-	}
-
-form {
-	margin:0px;
-	}
-
-.myBtn {
-	text-align: center;
-	display: inline-block;
-	background-color: #${cols[17]};
-	color: #${cols[16]};
-	font-family: inherit;
-	font-size: 14px;
-	border-radius: 6px;
-	border: 1px solid;
-	border-color: #${cols[10]};
-	padding: 5px 16px;
-	cursor: pointer;
-	margin-top: 0px;
-	margin-left: 10px;
-	margin-bottom: 2px;
-	margin-right: 2px;
-	}
-
-.myBtn:hover {
-	border-color: #${cols[13]};
-	background-color: #${cols[8]};
-	}
-
-.myBtn:active {
-	position: relative;
-	box-shadow: none;
-	text-shadow: none;
-	top: 1px;
-	left: 1px;
-	}
-
-.dnskey {
-	color: #${cols[1]};
-	}
-
-td {
-	font-family:inherit;
-	font-size: 14px;
-	vertical-align: top;
-	padding-left: 7px;
-	padding-right: 7px;
-	white-space: nowrap;
-	}
-
-.dataCell {
-	font-family:inherit;
-	font-size: 14px;
-	vertical-align: top;
-	padding-left: 7px;
-	padding-right: 7px;
-	white-space: normal;
-	min-width: 50%;
-	overflow-wrap: anywhere;
-	}
-
-.dataRow {
-	font-family: inherit;
-	font-size: 14px;
-	cursor: pointer;
-	color: #${cols[16]};
-	background-color: #${cols[4]};
-	}
-
-.dataRow:hover {
-	background-color: #${cols[2]};
-	}
-
-
-.formPrompt {
-	font-family:inherit;
-	font-size: 14px;
-	color: #${cols[16]};
-	text-align: right;
-	padding-top: 8px;
-	}
-
-
-.msgPop {
-	position: absolute;
-	left: 10px;
-	top: 20px;
-	font-family:inherit;
-	font-size:16pt;
-	width: 95%;
-	background: #${cols[15]};
-	text-align: center;
-	color: #${cols[0]};
-	padding: 5px;
-	border-radius: 6px;
-	}
-
-.msgPopNo {
-	visibility: hidden;
-	opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
-	}
-
-.msgPopYes {
-	visibility: visible;
-	opacity: 1; transition: opacity 0.5s linear;
-	}
-`};
-
 
 console.clear();
 
 var gbl = {
+	"theme": window.localStorage.theme,
 	server: null,
 	apikey: null,
 	with_https: true,
 	fast_zone_list: false,
-	theme: "blue",
 	zone_list: "zones",
 	default_ttl: 86400,
 	state: { state: "login" },
@@ -287,6 +40,14 @@ var gbl = {
 
 var ctx = { }; // will store the context of what the user is up to
 
+if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
+	gbl.theme="default";
+	window.localStorage.setItem("theme",gbl.theme);
+	}
+changeTheme(gbl.theme);
+
+
+
 
 //=============================================================================================
 // Some system constants
@@ -296,7 +57,7 @@ var ctx = { }; // will store the context of what the user is up to
 // add a trailing '.' for these record types, if the user forgets
 const autoAddDot = { rrMX: true, rrNS: true, rrCNAME: true, };
 
-const pdnsCookies = { "pdns_theme":1, "pdns_fast_zone_list":1, "pdns_with_https":1,"pdns_server":1 };
+const pdnsCookies = { "pdns_fast_zone_list":1, "pdns_with_https":1,"pdns_server":1 };
 
 
 // regex for an FQDN hostname
@@ -2348,7 +2109,6 @@ function searchFormSubmit()
 	let as_puny = toASCII(s);
 	if ((as_puny != s)&&(hasIDN(as_puny))) s = as_puny;
 
-	console.log(s);
 	ctx.searchTerm = s;
 	document.searchForm.searchTerm.value = "";
 	callApi(`search-data?q=${s}`,searchResults);
@@ -2787,8 +2547,7 @@ function loadCookies()
 	if ("pdns_server" in ckobj) f.server.value = ckobj["pdns_server"];
 	if ("pdns_with_https" in ckobj) f.with_https.checked = (ckobj["pdns_with_https"] == "true");
 	if ("pdns_fast_zone_list" in ckobj) f.fast_zone_list.checked = (ckobj["pdns_fast_zone_list"] == "true");
-	if ("pdns_theme" in ckobj) f.theme.value = ckobj["pdns_theme"];
-	changeTheme(f.theme.value);
+	document.loginForm.theme.value = gbl.theme;
 }
 
 
@@ -2801,7 +2560,6 @@ function startUp()
 	if (f.server.value == "") f.server.value = window.location.host;
 	f.with_https.checked = (window.location.protocol == "https:");
 	f.fast_zone_list.checked = gbl.fast_zone_list;
-	f.theme.value = gbl.theme;
 
 	loadCookies()
 
@@ -2843,12 +2601,6 @@ function startUp()
 
 
 
-function changeTheme(theme_name)
-{
-	gbl.theme = theme_name;
-	document.querySelector("style").innerText = theme_css(theme_name);
-}
-
 
 
 function initialLogin()
@@ -2858,12 +2610,10 @@ function initialLogin()
 	gbl.apikey = f.apikey.value;
 	gbl.with_https = f.with_https.checked;
 	gbl.fast_zone_list = f.fast_zone_list.checked;
-	gbl.theme = f.theme.value;
 
 	gbl.pdns_server = gbl.server;
 	gbl.pdns_with_https = gbl.with_https;
 	gbl.pdns_fast_zone_list = gbl.fast_zone_list;
-	gbl.pdns_theme = gbl.theme;
 
 	if (gbl.pdns_fast_zone_list) gbl.zone_list = "zones?dnssec=false"; else gbl.zone_list="zones";
 
@@ -2975,7 +2725,7 @@ function keyEsc(e) {
 <div id="topSpan">
 <div style='height: 10px;'></div>
 <table border=0 cellspacing=0 cellpadding=0 width=100%>
-<tr><td><h1 style="text-align:center">PowerDNS Admin WebUI</h1></td></tr>
+<tr><td><h1 style="text-align:center">PyRar PowerDNS Admin WebUI</h1></td></tr>
 </table>
 </div>
 
@@ -3098,425 +2848,3 @@ function keyEsc(e) {
 </div>
 
 <div id=myMsgPop style="visibility: hidden;" class='msgPop msgPopNo'></div>
-
-<script language="Javascript">
-
-/*
-The rest of this file is a very slightly modified version of the `punycode.js` module by Mathias Bynens
-https://github.com/mathiasbynens/punycode.js
-*/
-
-/** Highest positive signed 32-bit float value */
-const maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
-
-/** Bootstring parameters */
-const base = 36;
-const tMin = 1;
-const tMax = 26;
-const skew = 38;
-const damp = 700;
-const initialBias = 72;
-const initialN = 128; // 0x80
-const delimiter = '-'; // '\x2D'
-
-/** Regular expressions */
-const regexPunycode = /^xn--/;
-const regexNonASCII = /[^\0-\x7E]/; // non-ASCII chars
-const regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g; // RFC 3490 separators
-
-/** Error messages */
-const errors = {
-	'overflow': 'Overflow: input needs wider integers to process',
-	'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-	'invalid-input': 'Invalid input'
-};
-
-/** Convenience shortcuts */
-const baseMinusTMin = base - tMin;
-const floor = Math.floor;
-const stringFromCharCode = String.fromCharCode;
-
-/*--------------------------------------------------------------------------*/
-
-/**
- * A generic error utility function.
- * @private
- * @param {String} type The error type.
- * @returns {Error} Throws a `RangeError` with the applicable error message.
- */
-function error(type) {
-	throw new RangeError(errors[type]);
-}
-
-/**
- * A generic `Array#map` utility function.
- * @private
- * @param {Array} array The array to iterate over.
- * @param {Function} callback The function that gets called for every array
- * item.
- * @returns {Array} A new array of values returned by the callback function.
- */
-function map(array, fn) {
-	const result = [];
-	let length = array.length;
-	while (length--) {
-		result[length] = fn(array[length]);
-	}
-	return result;
-}
-
-/**
- * A simple `Array#map`-like wrapper to work with domain name strings or email
- * addresses.
- * @private
- * @param {String} domain The domain name or email address.
- * @param {Function} callback The function that gets called for every
- * character.
- * @returns {Array} A new string of characters returned by the callback
- * function.
- */
-function mapDomain(string, fn) {
-	const parts = string.split('@');
-	let result = '';
-	if (parts.length > 1) {
-		// In email addresses, only the domain name should be punycoded. Leave
-		// the local part (i.e. everything up to `@`) intact.
-		result = parts[0] + '@';
-		string = parts[1];
-	}
-	// Avoid `split(regex)` for IE8 compatibility. See #17.
-	string = string.replace(regexSeparators, '\x2E');
-	const labels = string.split('.');
-	const encoded = map(labels, fn).join('.');
-	return result + encoded;
-}
-
-/**
- * Creates an array containing the numeric code points of each Unicode
- * character in the string. While JavaScript uses UCS-2 internally,
- * this function will convert a pair of surrogate halves (each of which
- * UCS-2 exposes as separate characters) into a single code point,
- * matching UTF-16.
- * @see `punycode.ucs2.encode`
- * @see <https://mathiasbynens.be/notes/javascript-encoding>
- * @memberOf punycode.ucs2
- * @name decode
- * @param {String} string The Unicode input string (UCS-2).
- * @returns {Array} The new array of code points.
- */
-function ucs2decode(string) {
-	const output = [];
-	let counter = 0;
-	const length = string.length;
-	while (counter < length) {
-		const value = string.charCodeAt(counter++);
-		if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-			// It's a high surrogate, and there is a next character.
-			const extra = string.charCodeAt(counter++);
-			if ((extra & 0xFC00) == 0xDC00) { // Low surrogate.
-				output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-			} else {
-				// It's an unmatched surrogate; only append this code unit, in case the
-				// next code unit is the high surrogate of a surrogate pair.
-				output.push(value);
-				counter--;
-			}
-		} else {
-			output.push(value);
-		}
-	}
-	return output;
-}
-
-/**
- * Creates a string based on an array of numeric code points.
- * @see `punycode.ucs2.decode`
- * @memberOf punycode.ucs2
- * @name encode
- * @param {Array} codePoints The array of numeric code points.
- * @returns {String} The new Unicode string (UCS-2).
- */
-const ucs2encode = array => String.fromCodePoint(...array);
-
-/**
- * Converts a basic code point into a digit/integer.
- * @see `digitToBasic()`
- * @private
- * @param {Number} codePoint The basic numeric code point value.
- * @returns {Number} The numeric value of a basic code point (for use in
- * representing integers) in the range `0` to `base - 1`, or `base` if
- * the code point does not represent a value.
- */
-const basicToDigit = function(codePoint) {
-	if (codePoint - 0x30 < 0x0A) {
-		return codePoint - 0x16;
-	}
-	if (codePoint - 0x41 < 0x1A) {
-		return codePoint - 0x41;
-	}
-	if (codePoint - 0x61 < 0x1A) {
-		return codePoint - 0x61;
-	}
-	return base;
-};
-
-/**
- * Converts a digit/integer into a basic code point.
- * @see `basicToDigit()`
- * @private
- * @param {Number} digit The numeric value of a basic code point.
- * @returns {Number} The basic code point whose value (when used for
- * representing integers) is `digit`, which needs to be in the range
- * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
- * used; else, the lowercase form is used. The behavior is undefined
- * if `flag` is non-zero and `digit` has no uppercase form.
- */
-const digitToBasic = function(digit, flag) {
-	//  0..25 map to ASCII a..z or A..Z
-	// 26..35 map to ASCII 0..9
-	return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-};
-
-/**
- * Bias adaptation function as per section 3.4 of RFC 3492.
- * https://tools.ietf.org/html/rfc3492#section-3.4
- * @private
- */
-const adapt = function(delta, numPoints, firstTime) {
-	let k = 0;
-	delta = firstTime ? floor(delta / damp) : delta >> 1;
-	delta += floor(delta / numPoints);
-	for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-		delta = floor(delta / baseMinusTMin);
-	}
-	return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-};
-
-/**
- * Converts a Punycode string of ASCII-only symbols to a string of Unicode
- * symbols.
- * @memberOf punycode
- * @param {String} input The Punycode string of ASCII-only symbols.
- * @returns {String} The resulting string of Unicode symbols.
- */
-const decode = function(input) {
-	// Don't use UCS-2.
-	const output = [];
-	const inputLength = input.length;
-	let i = 0;
-	let n = initialN;
-	let bias = initialBias;
-
-	// Handle the basic code points: let `basic` be the number of input code
-	// points before the last delimiter, or `0` if there is none, then copy
-	// the first basic code points to the output.
-
-	let basic = input.lastIndexOf(delimiter);
-	if (basic < 0) {
-		basic = 0;
-	}
-
-	for (let j = 0; j < basic; ++j) {
-		// if it's not a basic code point
-		if (input.charCodeAt(j) >= 0x80) {
-			error('not-basic');
-		}
-		output.push(input.charCodeAt(j));
-	}
-
-	// Main decoding loop: start just after the last delimiter if any basic code
-	// points were copied; start at the beginning otherwise.
-
-	for (let index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-		// `index` is the index of the next character to be consumed.
-		// Decode a generalized variable-length integer into `delta`,
-		// which gets added to `i`. The overflow checking is easier
-		// if we increase `i` as we go, then subtract off its starting
-		// value at the end to obtain `delta`.
-		let oldi = i;
-		for (let w = 1, k = base; /* no condition */; k += base) {
-
-			if (index >= inputLength) {
-				error('invalid-input');
-			}
-
-			const digit = basicToDigit(input.charCodeAt(index++));
-
-			if (digit >= base || digit > floor((maxInt - i) / w)) {
-				error('overflow');
-			}
-
-			i += digit * w;
-			const t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-			if (digit < t) {
-				break;
-			}
-
-			const baseMinusT = base - t;
-			if (w > floor(maxInt / baseMinusT)) {
-				error('overflow');
-			}
-
-			w *= baseMinusT;
-
-		}
-
-		const out = output.length + 1;
-		bias = adapt(i - oldi, out, oldi == 0);
-
-		// `i` was supposed to wrap around from `out` to `0`,
-		// incrementing `n` each time, so we'll fix that now:
-		if (floor(i / out) > maxInt - n) {
-			error('overflow');
-		}
-
-		n += floor(i / out);
-		i %= out;
-
-		// Insert `n` at position `i` of the output.
-		output.splice(i++, 0, n);
-
-	}
-
-	return String.fromCodePoint(...output);
-};
-
-/**
- * Converts a string of Unicode symbols (e.g. a domain name label) to a
- * Punycode string of ASCII-only symbols.
- * @memberOf punycode
- * @param {String} input The string of Unicode symbols.
- * @returns {String} The resulting Punycode string of ASCII-only symbols.
- */
-const encode = function(input) {
-	const output = [];
-
-	// Convert the input in UCS-2 to an array of Unicode code points.
-	input = ucs2decode(input);
-
-	// Cache the length.
-	let inputLength = input.length;
-
-	// Initialize the state.
-	let n = initialN;
-	let delta = 0;
-	let bias = initialBias;
-
-	// Handle the basic code points.
-	for (const currentValue of input) {
-		if (currentValue < 0x80) {
-			output.push(stringFromCharCode(currentValue));
-		}
-	}
-
-	let basicLength = output.length;
-	let handledCPCount = basicLength;
-
-	// `handledCPCount` is the number of code points that have been handled;
-	// `basicLength` is the number of basic code points.
-
-	// Finish the basic string with a delimiter unless it's empty.
-	if (basicLength) {
-		output.push(delimiter);
-	}
-
-	// Main encoding loop:
-	while (handledCPCount < inputLength) {
-
-		// All non-basic code points < n have been handled already. Find the next
-		// larger one:
-		let m = maxInt;
-		for (const currentValue of input) {
-			if (currentValue >= n && currentValue < m) {
-				m = currentValue;
-			}
-		}
-
-		// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-		// but guard against overflow.
-		const handledCPCountPlusOne = handledCPCount + 1;
-		if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-			error('overflow');
-		}
-
-		delta += (m - n) * handledCPCountPlusOne;
-		n = m;
-
-		for (const currentValue of input) {
-			if (currentValue < n && ++delta > maxInt) {
-				error('overflow');
-			}
-			if (currentValue == n) {
-				// Represent delta as a generalized variable-length integer.
-				let q = delta;
-				for (let k = base; /* no condition */; k += base) {
-					const t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-					if (q < t) {
-						break;
-					}
-					const qMinusT = q - t;
-					const baseMinusT = base - t;
-					output.push(
-						stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-					);
-					q = floor(qMinusT / baseMinusT);
-				}
-
-				output.push(stringFromCharCode(digitToBasic(q, 0)));
-				bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-				delta = 0;
-				++handledCPCount;
-			}
-		}
-
-		++delta;
-		++n;
-
-	}
-	return output.join('');
-};
-
-/**
- * Converts a Punycode string representing a domain name or an email address
- * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
- * it doesn't matter if you call it on a string that has already been
- * converted to Unicode.
- * @memberOf punycode
- * @param {String} input The Punycoded domain name or email address to
- * convert to Unicode.
- * @returns {String} The Unicode representation of the given Punycode
- * string.
- */
-const toUnicode = function(input) {
-	return mapDomain(input, function(string) {
-		return regexPunycode.test(string)
-			? decode(string.slice(4).toLowerCase())
-			: string;
-	});
-};
-
-/**
- * Converts a Unicode string representing a domain name or an email address to
- * Punycode. Only the non-ASCII parts of the domain name will be converted,
- * i.e. it doesn't matter if you call it with a domain that's already in
- * ASCII.
- * @memberOf punycode
- * @param {String} input The domain name or email address to convert, as a
- * Unicode string.
- * @returns {String} The Punycode representation of the given domain name or
- * email address.
- */
-const toASCII = function(input) {
-	return mapDomain(input, function(string) {
-		return regexNonASCII.test(string)
-			? 'xn--' + encode(string)
-			: string;
-	});
-};
-
-/*--------------------------------------------------------------------------*/
-</script>
-
-</body></html>

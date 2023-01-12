@@ -49,7 +49,7 @@ RUN ln -fns /usr/local/bin/run_cron_jobs /etc/periodic/hourly/run_cron_jobs
 RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pem
 
 COPY policy_subst /opt/pyrar/policy_subst/
-COPY admin_docs /opt/pyrar/admin_docs/
+COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY emails /opt/pyrar/emails/
 
 COPY bin /usr/local/bin/

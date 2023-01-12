@@ -71,7 +71,8 @@ echo "
 		error_page 404 =200 /;
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
-		root ${BASE}/admin_docs;"
+		location /usr/ { alias ${BASE}/htdocs/; }
+		root ${BASE}/admin_htdocs;"
 
 if_has_pem 1000 1000
 echo "
