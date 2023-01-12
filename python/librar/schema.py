@@ -9,6 +9,7 @@ from librar import mysql as sql
 
 numbers = {"tinyint", "int", "decimal"}
 
+
 def sortElm(i):
     return i["Field"]
 

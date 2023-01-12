@@ -13,7 +13,8 @@ from librar import schema
 
 SCHEMA_FILE = f"{os.environ['BASE']}/python/etc/schema.json"
 
-def type_change(col1,col2):
+
+def type_change(col1, col2):
     if col1["type"] != col2["type"]:
         return True
     if "size" in col1 or "size" in col2:
@@ -46,7 +47,6 @@ if args.recreate:
         fd.write(json.dumps(live_schema, indent=3))
     sys.exit(0)
 
-
 with open(SCHEMA_FILE, "r") as fd:
     save_schema = json.load(fd)
 
@@ -56,7 +56,7 @@ for table, table_data in save_schema.items():
 
         if column not in live_schema[table]["columns"]:
             sql = f"alter table {table} add column {column}"
-        elif type_change(live_schema[table]["columns"][column],column_data):
+        elif type_change(live_schema[table]["columns"][column], column_data):
             sql = f"alter table {table} change column {column} {column}"
 
         if sql is not None:

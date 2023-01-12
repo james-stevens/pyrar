@@ -32,22 +32,23 @@ def make_blank_domain(name, user_db, status_id):
         "created_dt": None,
         "amended_dt": None,
         "expiry_dt": None
-        }
-    ok, dom_id = sql.sql_insert("domains",dom_db)
+    }
+    ok, dom_id = sql.sql_insert("domains", dom_db)
     if ok:
         dom_db["domain_id"] = dom_id
 
     return ok, dom_db
 
 
-def event_log(req,order):
+def event_log(req, order):
     event_db = misc.where_event_log()
     event_db.update(req.base_event)
     event_db.update({
         "event_type": f"order/{order['action']}",
-        "notes": f"Order: {order['domain']} order for {order['action']} for {order['num_years']} yrs - {'failed' not in order}",
+        "notes":
+        f"Order: {order['domain']} order for {order['action']} for {order['num_years']} yrs - {'failed' not in order}",
         "domain_id": order["dom_db"]["domain_id"] if "dom_db" in order else None
-        })
+    })
     sql.sql_insert("events", event_db)
 
 
@@ -56,17 +57,13 @@ def webui_basket(basket, req):
     if not ok:
         return False, user_db
 
-    whole_basket = {
-        "basket": basket,
-        "user_db": user_db
-        }
+    whole_basket = {"basket": basket, "user_db": user_db}
 
     ok, reply = capture_basket(req, whole_basket)
     if not ok:
         return False, reply
 
-
-    basket[:] = [ order for order in basket if "paid-for" not in order ]
+    basket[:] = [order for order in basket if "paid-for" not in order]
     if len(basket) > 0:
         ok, reply = save_basket(req, whole_basket)
         if not ok:
@@ -84,16 +81,16 @@ def save_basket(req, whole_basket):
 
         order_db = order["order_db"]
         if order_db["domain_id"] == -1:
-            ok, dom_db = make_blank_domain(order["domain"],user_db,misc.STATUS_WAITING_PAYMENT)
+            ok, dom_db = make_blank_domain(order["domain"], user_db, misc.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
             order_db["domain_id"] = dom_db["domain_id"]
             order["dom_db"] = dom_db
-        ok, order_item_id = sql.sql_insert("orders",order_db)
+        ok, order_item_id = sql.sql_insert("orders", order_db)
         if not ok:
             return False, order_item_id
         order_db["order_item_id"] = order_item_id
-        event_log(req,order)
+        event_log(req, order)
 
     return True, True
 
@@ -132,7 +129,7 @@ def live_process_basket(req, whole_basket):
         if "failed" in order:
             continue
 
-        if (ok := paid_for_basket_item(req, order,user_db)) is None:
+        if (ok := paid_for_basket_item(req, order, user_db)) is None:
             if ok is None:
                 order["failed"] = "Pay for failed"
 
@@ -145,7 +142,8 @@ def paid_for_basket_item(req, order, user_db):
     if (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]) < order_db["price_paid"]:
         return False
 
-    trans_id = accounts.apply_transaction(user_db["user_id"],(-1*order_db["price_paid"]),
+    trans_id = accounts.apply_transaction(
+        user_db["user_id"], (-1 * order_db["price_paid"]),
         f"{order_db['order_type']} on {order['domain']} for {order_db['num_years']} yrs")
 
     if not trans_id:
@@ -154,25 +152,24 @@ def paid_for_basket_item(req, order, user_db):
     user_db["acct_previous_balance"] = user_db["acct_current_balance"]
     user_db["acct_current_balance"] -= order_db["price_paid"]
 
-    match order_db['order_type']:
-        case "dom/transfer":
-            ok, dom_db = make_blank_domain(order['domain'],user_db,misc.STATUS_TRANS_QUEUED)
-            if not ok:
-                return False
-            order_db["domain_id"] = dom_db["domain_id"]
-            order["dom_db"] = dom_db
-        case "dom/create":
-            ok, dom_db = make_blank_domain(order['domain'],user_db,misc.STATUS_LIVE)
-            if not ok:
-                return False
-            order_db["domain_id"] = dom_db["domain_id"]
-            order["dom_db"] = dom_db
+    if order_db['order_type'] == "dom/transfer":
+        ok, dom_db = make_blank_domain(order['domain'], user_db, misc.STATUS_TRANS_QUEUED)
+        if not ok:
+            return False
+        order_db["domain_id"] = dom_db["domain_id"]
+        order["dom_db"] = dom_db
+    elif order_db['order_type'] == "dom/create":
+        ok, dom_db = make_blank_domain(order['domain'], user_db, misc.STATUS_LIVE)
+        if not ok:
+            return False
+        order_db["domain_id"] = dom_db["domain_id"]
+        order["dom_db"] = dom_db
 
-    ok, sold_id = sales.sold_item(trans_id,order_db,order["dom_db"],user_db)
+    ok, sold_id = sales.sold_item(trans_id, order_db, order["dom_db"], user_db)
     if ok and sold_id:
-        sql.sql_update("transactions",{"sales_item_id":sold_id},{"transaction_id":trans_id})
+        sql.sql_update("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 
-    event_log(req,order)
+    event_log(req, order)
     order["paid-for"] = True
     sales.make_backend_job(order_db)
     return True
@@ -236,7 +233,7 @@ def price_order_item(order, user_db):
     if not domobj.registry or "type" not in domobj.registry or "name" not in domobj.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := dom_handler.run(domobj.registry["type"],"dom/price")) is None:
+    if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
         return False, f"No plugin for this Registrar: {domobj.registry['name']}"
 
     ok, prices = plugin_func(domobj, order["num_years"], [order["action"]], user_db)
@@ -265,19 +262,16 @@ def get_order_domain_id(order, user_db):
 
     order["dom_db"] = dom_db
 
-    match order["action"]:
-        case "transfer":
-            if dom_db["user_id"] == user_db["user_id"]:
-                return False, "Domain is already yours: {order['domain']}/{order['action']}"
-
-        case ["recover", "renew"]:
-            if dom_db["user_id"] != user_db["user_id"]:
-                return False, f"{dom_db['name']} is not your domain ({order['action']})"
-
-        case "create":
-            if len(dom_db) >= 1:
-                return False, "Domain already exists: {order['domain']}/{order['action']}"
-            return True, -1
+    if order["action"] == "transfer":
+        if dom_db["user_id"] == user_db["user_id"]:
+            return False, "Domain is already yours: {order['domain']}/{order['action']}"
+    elif order["action"] == ["recover", "renew"]:
+        if dom_db["user_id"] != user_db["user_id"]:
+            return False, f"{dom_db['name']} is not your domain ({order['action']})"
+    elif order["action"] == "create":
+        if len(dom_db) >= 1:
+            return False, "Domain already exists: {order['domain']}/{order['action']}"
+        return True, -1
 
     if "domain_id" in dom_db:
         return True, dom_db["domain_id"]
@@ -339,6 +333,7 @@ def run_test(which):
 
     print(ok, json.dumps(reply, indent=3))
     sys.exit(0)
+
 
 def main():
     log_init(with_debug=True)
