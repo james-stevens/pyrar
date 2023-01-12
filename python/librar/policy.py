@@ -28,6 +28,8 @@ policy_defaults = {
     "facility_python_code": "local0",
     "log_python_code": True,
     "session_timeout": 60,
+    "webui_sessions": 5,
+    "admin_sessions": 3,
     "currency": DEFAULT_CURRENCY,
     "facility_epp_api": "local0",
     "log_epp_api": True,

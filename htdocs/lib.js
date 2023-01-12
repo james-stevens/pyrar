@@ -50,8 +50,10 @@ function callApi(sfx,callback,inData)
 	if (debugAPI) { console.log("API>>>",sfx); console.log("API>>>",inData); }
 
 	let url = `${window.location.origin}/pyrar/v1.0/${sfx}`;
+	if (gbl.url_prefix)
+		url = `${window.location.origin}${gbl.url_prefix}${sfx}`;
 	if (sfx.slice(0,1)=="/")
-		url = `${window.location.origin}${sfx}`
+		url = `${window.location.origin}${sfx}`;
 
 	let okResp = 200;
 	let httpCmd = { headers: { }, method: 'GET' };

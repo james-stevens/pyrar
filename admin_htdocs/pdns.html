@@ -57,9 +57,6 @@ changeTheme(gbl.theme);
 // add a trailing '.' for these record types, if the user forgets
 const autoAddDot = { rrMX: true, rrNS: true, rrCNAME: true, };
 
-const pdnsCookies = { "pdns_fast_zone_list":1, "pdns_with_https":1,"pdns_server":1 };
-
-
 // regex for an FQDN hostname
 const fqdnCheck = /^(([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)*(xn--|)[A-Za-z0-9\-]+[.]$/;
 
@@ -171,8 +168,8 @@ function callApi(sfx,callback,inData)
 		msg(`Loading ... ${gbl.timer}`);
 
 	let p = "https";
-	if (!gbl.with_https) p = "http";
-	let url = `${p}://${gbl.server}/api/v1/servers/localhost/${sfx}`;
+	if (!gbl.pdns_with_https) p = "http";
+	let url = `${p}://${gbl.pdns_server}/api/v1/servers/localhost/${sfx}`;
 
 	let okResp = 200;
 	let httpCmd = {
@@ -419,7 +416,7 @@ function showOneStats(data)
 		}
 
 	ctx.stats = data;
-	setState(`${gbl.server}: Stats: ${item.name}`, { state: "stats", server: gbl.server, stats: item.name });
+	setState(`${gbl.pdns_server}: Stats: ${item.name}`, { state: "stats", server: gbl.pdns_server, stats: item.name });
 
 	let x = "<table width=100% border=0 cellspacing=1 cellpadding=0><tr>";
 	for (let i in item.value[0]) x += `<th>${i}</th>`;
@@ -456,7 +453,7 @@ function showStats(data)
 
 	ctx.stats = data;
 
-	setState(`${gbl.server}: Stats`, { state: "stats", server: gbl.server });
+	setState(`${gbl.pdns_server}: Stats`, { state: "stats", server: gbl.pdns_server });
 
 	let x = "<table width=100% border=0 cellspacing=1 cellpadding=0>";
 	data.forEach(i => {
@@ -684,8 +681,8 @@ function zoneMetaDetails(data)
 			return 0;
 			});
 
-	setState(`${gbl.server}: ${ctx.zone}, META Data`,
-		{ state: "meta", server: gbl.server, zone: ctx.zone, meta:true });
+	setState(`${gbl.pdns_server}: ${ctx.zone}, META Data`,
+		{ state: "meta", server: gbl.pdns_server, zone: ctx.zone, meta:true });
 	ctx.zoneMeta = data;
 
 	let x = "<table align=center width=60% border=0 cellspacing=1 cellpadding=0>";
@@ -1058,13 +1055,13 @@ function drawOneRecord(rrs)
 {
 	delete ctx.edit;
 
-	let x = `${gbl.server}: ${ctx.zone}: `;
+	let x = `${gbl.pdns_server}: ${ctx.zone}: `;
 	if ("showName" in ctx.rec)
 		x += ctx.rec.showName;
 	else
 		x += ctx.rec.name;
 
-	setState(`${x}/${ctx.rec.type}`, { state: "record", server: gbl.server, zone: ctx.zone, name:ctx.rec.name, type: ctx.rec.type });
+	setState(`${x}/${ctx.rec.type}`, { state: "record", server: gbl.pdns_server, zone: ctx.zone, name:ctx.rec.name, type: ctx.rec.type });
 
 	let idn_name = ctx.rec.name;
 	if (hasIDN(idn_name)) idn_name = toUnicode(idn_name);
@@ -1225,7 +1222,7 @@ function setNSEC3(delnsec3)
 {
 	let nsec3 = "1 0 5 ";
 	let nxtFn = function() {
-		gbl.params = { state: "keys", server: gbl.server, zone: ctx.zone, keys:true };
+		gbl.params = { state: "keys", server: gbl.pdns_server, zone: ctx.zone, keys:true };
 		gbl.state = gbl.params;
 		loadThisZone();
 		}
@@ -1575,7 +1572,7 @@ function showKeys(data)
 		})
 
 	ctx.zoneKeys = data;
-	setState(`${gbl.server}: ${ctx.zone}, DNSSEC Keys`, { state: "keys", server: gbl.server, zone: ctx.zone, keys:true });
+	setState(`${gbl.pdns_server}: ${ctx.zone}, DNSSEC Keys`, { state: "keys", server: gbl.pdns_server, zone: ctx.zone, keys:true });
 
 	let x = "<table width=100% border=0 cellspacing=0 cellpadding=0>";
 	x += "<tr><td width=100%><table width=100% border=0 cellspacing=1 cellpadding=0><colgroup>";
@@ -1957,7 +1954,7 @@ function zoneDetails(data)
 			}
 		}
 
-	setState(`${gbl.server}: ${ctx.zone}`, { state: "zone", server: gbl.server, zone: ctx.zone });
+	setState(`${gbl.pdns_server}: ${ctx.zone}`, { state: "zone", server: gbl.pdns_server, zone: ctx.zone });
 
 	let x = "<table width=100% border=0 cellspacing=0 cellpadding=0>"
 		+ "<tr><td width=100%><table width=100% border=0 cellspacing=0 cellpadding=0>"
@@ -2054,9 +2051,9 @@ function zoneDetailsLoad(zone)
 
 function searchLoadRecord(zone,name,type)
 {
-	gbl.param = { state: "record", server: gbl.server, zone: zone, name:name, type: type };
+	gbl.param = { state: "record", server: gbl.pdns_server, zone: zone, name:name, type: type };
 	gbl.state = gbl.param;
-	title = `${gbl.server}, Search results - ${name}:${type}`
+	title = `${gbl.pdns_server}, Search results - ${name}:${type}`
 	window.history.pushState(gbl.param,title,gbl.pathname);
 	zoneDetailsLoad(zone);
 }
@@ -2070,7 +2067,7 @@ function searchResults(data)
 		return;
 		}
 
-	setState(`${gbl.server}: Search Results`, { state: "search", server: gbl.server, search: ctx.searchTerm });
+	setState(`${gbl.pdns_server}: Search Results`, { state: "search", server: gbl.pdns_server, search: ctx.searchTerm });
 
 	ctx = { searchTerm: ctx.searchTerm }; topLine(); ctx = {};
 
@@ -2203,7 +2200,7 @@ function showTSIG(tsig)
 {
 	callApi(`tsigkeys/${tsig}`,data => {
 
-		setState(`${gbl.server}: TSIG ${data.id}`, { state: "tsigdata", server: gbl.server, tsig: data.id });
+		setState(`${gbl.pdns_server}: TSIG ${data.id}`, { state: "tsigdata", server: gbl.pdns_server, tsig: data.id });
 		ctx = {}; topLine();
 
 		let x = "<table style='margin-top: 50px;' align=center border=0 cellspacing=0 cellpadding=0>"
@@ -2251,7 +2248,7 @@ function showTsigList(data)
 
 	x += "</table></td><td>" + btn("addTSIG(true)","Add TSIG","Add a TSIG Key") + "</td></tr></table>";
 
-	setState(`${gbl.server}: TSIGs`, { state: "tsig", server: gbl.server, tsig: true });
+	setState(`${gbl.pdns_server}: TSIGs`, { state: "tsig", server: gbl.pdns_server, tsig: true });
 	ctx = {}; topLine();
 
 	gbl.bot.innerHTML = gbl.sp + x;
@@ -2360,7 +2357,7 @@ function zoneListDetails(data)
 		if ("zone" in gbl.param) return zoneDetailsLoad(gbl.param.zone);
 		}
 
-	setState(`${gbl.server}: Zone List`, { state: "zonelist", server: gbl.server });
+	setState(`${gbl.pdns_server}: Zone List`, { state: "zonelist", server: gbl.pdns_server });
 
 	let x = "<table border=0 cellspacing=0 cellpadding=0 width=100%><colgroup><col width=100%/><col/></colgroup>"
 	x += "<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0>";
@@ -2473,8 +2470,8 @@ function topLine()
 		+ `<font size=+1><a title='Open this page in a new window' target=_blank href='${window.origin}${gbl.pathname}?`;
 
 	let x = `'>${gbl.page}</a></font></td><td>`
-		+ btn("goLogin()",gbl.server,"Change server")
-		+ btn("zoneList()","Zones",`Reload the list of zones at ${gbl.server}`);
+		+ btn("goLogin()",gbl.pdns_server,"Change server")
+		+ btn("zoneList()","Zones",`Reload the list of zones at ${gbl.pdns_server}`);
 
 	if ((gbl.state.state == "tsig")||(gbl.state.state == "tsigdata"))
 		x += btn("loadTsigList()","TSIGs","Show the list of TSIGs");
@@ -2530,23 +2527,13 @@ function topLine()
 function loadCookies()
 {
 	let ckobj = {}
-	let cookies = document.cookie.split(";");
-	for(let i in cookies) {
-		ck = cookies[i];
-		while (ck.charAt(0) == ' ') ck = ck.substring(1);
-
-		if ((idx = ck.indexOf("=")) >= 0) {
-			let itm = ck.substr(0,idx);
-			if (itm in pdnsCookies) {
-				try { ckobj[itm] = atob(ck.substr(idx+1)); } catch(e) {}
-				}
-			}
-		}
+	for(let i of ["pdns_server","pdns_with_https","pdns_fast_zone_list"])
+		ckobj[i] = window.localStorage.getItem(i);
 
 	let f = document.loginForm;
-	if ("pdns_server" in ckobj) f.server.value = ckobj["pdns_server"];
-	if ("pdns_with_https" in ckobj) f.with_https.checked = (ckobj["pdns_with_https"] == "true");
-	if ("pdns_fast_zone_list" in ckobj) f.fast_zone_list.checked = (ckobj["pdns_fast_zone_list"] == "true");
+	if (ckobj.pdns_server) f.server.value = ckobj["pdns_server"];
+	if (ckobj.pdns_with_https) f.with_https.checked = (ckobj["pdns_with_https"] == "true");
+	if (ckobj.pdns_fast_zone_list) f.fast_zone_list.checked = (ckobj["pdns_fast_zone_list"] == "true");
 	document.loginForm.theme.value = gbl.theme;
 }
 
@@ -2559,7 +2546,7 @@ function startUp()
 	let f = document.loginForm;
 	if (f.server.value == "") f.server.value = window.location.host;
 	f.with_https.checked = (window.location.protocol == "https:");
-	f.fast_zone_list.checked = gbl.fast_zone_list;
+	f.fast_zone_list.checked = gbl.pdns_fast_zone_list;
 
 	loadCookies()
 
@@ -2568,7 +2555,7 @@ function startUp()
 
 		gbl.param = e.state;
 		if ("server" in gbl.param) {
-			gbl.server = gbl.param.server;
+			gbl.pdns_server = gbl.param.server;
 			zoneList();
 			return true;
 			}
@@ -2591,7 +2578,7 @@ function startUp()
 		gbl.param = JSON.parse(atob(window.location.search.substr(1)));
 		if ("server" in gbl.param) {
 			gbl.state = gbl.param;
-			gbl.server = gbl.param.server;
+			gbl.pdns_server = gbl.param.server;
 			zoneList();
 			}
 		}
@@ -2606,27 +2593,16 @@ function startUp()
 function initialLogin()
 {
 	let f = document.loginForm;
-	gbl.server = f.server.value;
+	gbl.pdns_server = f.server.value;
 	gbl.apikey = f.apikey.value;
-	gbl.with_https = f.with_https.checked;
-	gbl.fast_zone_list = f.fast_zone_list.checked;
+	gbl.pdns_with_https = f.with_https.checked;
+	gbl.pdns_fast_zone_list = f.fast_zone_list.checked;
 
-	gbl.pdns_server = gbl.server;
-	gbl.pdns_with_https = gbl.with_https;
-	gbl.pdns_fast_zone_list = gbl.fast_zone_list;
+    for(let i of ["pdns_server","pdns_with_https","pdns_fast_zone_list"]) {
+		window.localStorage.setItem(i,gbl[i]);
+		}
 
 	if (gbl.pdns_fast_zone_list) gbl.zone_list = "zones?dnssec=false"; else gbl.zone_list="zones";
-
-	let milliDays = 30 * 86400000; // 30 days in milliseconds
-	let d = new Date();
-	d.setTime(d.getTime() + milliDays);
-	let expires = "; samesite=strict; expires="+ d.toUTCString();
-
-	for(let i in pdnsCookies)
-		document.cookie = i + "= ; samesite=strict; expires = Thu, 01 Jan 1970 00:00:00 GMT"
-
-	for(let i in pdnsCookies)
-		document.cookie = i + "=" + btoa(gbl[i]) + expires;
 
 	zoneList();
 

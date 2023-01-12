@@ -1,1 +1,2 @@
-kill $(ps ax | awk '/[w]sgi_checker.sock/ { print $1 }' | sort -n | head -1)
+kill $(ps ax | awk '/[w]sgi_webui.sock/ { print $1 }' | sort -n | head -1)
+kill $(ps ax | awk '/[w]sgi_admin.sock/ { print $1 }' | sort -n | head -1)
