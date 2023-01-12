@@ -1133,7 +1133,7 @@ function click_add_payment()
 		data[i] = e.value;
 		}
 
-	callApi("payments/validate",(ok,reply) => {
+	callApi("payments/store",(ok,reply) => {
 		if (ok) return payment_methods(true);
 		def_errMsg("Error adding this payment",reply,"add_pay_div");
 		}, { json: data })

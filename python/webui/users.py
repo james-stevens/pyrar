@@ -19,6 +19,7 @@ from mailer import spool_email
 
 USER_REQUIRED = ["email", "password"]
 
+
 def event_log(req, more_event_items):
     event_db = misc.where_event_log()
     event_db.update(req.base_event)
@@ -256,6 +257,7 @@ def reset_users_password(req):
 
 class Empty:
     pass
+
 
 if __name__ == "__main__":
     sql.connect("webui")

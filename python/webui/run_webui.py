@@ -237,7 +237,7 @@ def payments_delete():
     return req.response(True)
 
 
-@application.route('/pyrar/v1.0/payments/validate', methods=['POST'])
+@application.route('/pyrar/v1.0/payments/store', methods=['POST'])
 def payments_validate():
     req = WebuiReq()
     if not req.is_logged_in:
@@ -487,7 +487,8 @@ def users_reset_password():
         return req.abort("No JSON posted")
     if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
         return req.abort("Missing data")
-    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
+    if req.post_js["password"] != req.post_js["confirm"] or len(
+            req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
         return req.abort("Invalid data")
 
     if not users.reset_users_password(req):

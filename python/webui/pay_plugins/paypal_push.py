@@ -15,7 +15,7 @@ def paypal_push_html(user_id):
         <tr><td style='white-space: normal;' colspan=2>PayPal Push payment means you can send credits into
         your account at any time, but we can not request money from your PayPal account.
         We will have to rely on you to send money.<P>
-        If you enable automatic renewal on any of your domains, 
+        If you enable automatic renewal on any of your domains,
         and you have verified your account email address, we will send an email to your account
         email address to tell you when you need to send money.<P>
         Money <b>must</b> be sent in """ + currency["desc"] + """

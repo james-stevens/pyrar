@@ -22,7 +22,7 @@ def response(code, data):
 
 
 def json_abort(message):
-    return response(499,{"error":message})
+    return response(499, {"error": message})
 
 
 def find_best_index(idxes):
@@ -552,7 +552,7 @@ def get_table_row(table):
     if table not in schema:
         json_abort(f"Table '{table}' does not exist")
 
-    sent=None
+    sent = None
     if flask.request.json is not None:
         sent = flask.request.json
     if sent is None and flask.request.method == "POST":
