@@ -2,6 +2,7 @@
 # (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import sys
 import os
 import json
 import datetime
@@ -22,8 +23,26 @@ REQUIRE_FORMATTING = ["price_paid", "acct_current_balance"]
 
 
 def format_currency(number, currency):
-    fmt = currency["symbol"] + "{:,." + str(currency["decimal"]) + "f}"
-    return fmt.format(number / currency["pow10"])
+    num = number
+    pfx = currency["symbol"]
+    if num < 0:
+        pfx += "-"
+        num *= -1
+    num = str(num)
+    places = currency["decimal"]
+    if len(num) < (places+1):
+        num = ("000000000000000"+num)[(places+1)*-1:]
+    neg_places = -1*places
+    start = num[:neg_places]
+    use_start = ""
+    while len(start) > 3:
+        use_start += currency["separator"][0]+start[-3:]
+        start = start[:-3]
+    if len(start) > 0:
+        use_start = start+use_start
+
+    return pfx+use_start+currency["separator"][1]+num[neg_places:]
+
 
 
 def load_records(which_message, request_list):
@@ -80,8 +99,24 @@ def spool(which_message, request_list):
     return True
 
 
+def debug_formatter():
+    def_cur = policy.policy("currency")
+    cur = {
+        "desc": "Etherium",
+        "iso": "ETH",
+        "separator": [",", "."],
+        "symbol": "\u039E",
+        "decimal": 6,
+        }
+
+    print(format_currency(int(sys.argv[1]),def_cur))
+    print(format_currency(int(sys.argv[1]),cur))
+    sys.exit(0)
+
+
 if __name__ == "__main__":
     log_init(with_debug=True)
+    # debug_formatter()
     sql.connect("engine")
     registry.start_up()
     # print("spool_email>>",spool_email("verify_email", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]))

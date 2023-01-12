@@ -156,15 +156,26 @@ function supported_tld(fqdn)
 	return (fqdn.substr(pos+1) in gbl.config.ok_tlds);
 }
 
+
+
 function format_amount(num)
 {
     let pfx = gbl.currency.symbol;
     if (num < 0) { pfx += "-"; num *= -1; }
+    num = num.toString();
+    if (num.length < (gbl.currency.decimal+1))
+		num = ("000000000000000"+num).slice((gbl.currency.decimal+1)*-1);
 
-    let dec = ("00000000"+String(num % gbl.currency.pow10)).slice(-1*gbl.currency.decimal)
-    let big = String(Math.trunc(num/gbl.currency.pow10));
-    big = big.replace(/(\d)(?=(\d{3})+(?!\d))/g, `$1${gbl.currency.separator[0]}`);
-    return pfx+big+gbl.currency.separator[1]+dec;
+	let neg_places = -1 * gbl.currency.decimal;
+	let use_start="";
+	let start = num.slice(0,neg_places);
+	while(start.length > 3) {
+		use_start += gbl.currency.separator[0]+start.slice(-3);
+		start = start.slice(0,-3);
+		}
+
+	if (start.length) use_start = start+use_start;
+	return pfx+use_start+gbl.currency.separator[1]+num.slice(neg_places);
 }
 
 

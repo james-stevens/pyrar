@@ -12,8 +12,7 @@ DEFAULT_CURRENCY = {
     "iso": "USD",
     "separator": [",", "."],
     "symbol": "$",
-    "decimal": 2,
-    "pow10": 100
+    "decimal": 2
 }
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
