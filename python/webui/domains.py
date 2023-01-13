@@ -34,7 +34,7 @@ class DomainName:
             if domain.find(",") >= 0:
                 self.process_list(domain.split(","))
             else:
-                self.process_string(domain)
+                self.process_list([domain])
 
         if isinstance(domain, list):
             self.process_list(domain)
@@ -52,22 +52,6 @@ class DomainName:
                     self.currency = self.registry["currency"]
                 else:
                     log(f"ERROR: Registry currency for '{self.registry['name']}' is not set up correctly")
-
-    def process_string(self, domain):
-        name = domain.lower()
-        if (err := validate.check_domain_name(name)) is None:
-            self.names = name
-        else:
-            self.err = err
-            self.names = None
-            return
-
-        self.registry = registry.tld_lib.reg_record_for_domain(name)
-        if self.registry["type"] == "epp":
-            self.client = registry.tld_lib.clients[self.registry["name"]]
-            self.xmlns = registry.make_xmlns(self.registry)
-        else:
-            self.client = None
 
     def process_list(self, domain):
         self.names = []

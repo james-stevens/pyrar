@@ -36,7 +36,7 @@ policy_defaults = {
     "default_ttl": 86400,
     "backend_retry_timeout": 300,
     "backend_retry_attempts": 3,
-    "max_renew_years": 10,
+    "renew_limit": 10,
     "max_basket_size": 10,
     "trans_per_page": 25,
     "orders_expire_hrs": int(6.5 * 24),

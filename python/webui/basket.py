@@ -64,6 +64,7 @@ def webui_basket(basket, req):
         return False, reply
 
     basket[:] = [order for order in basket if "paid-for" not in order]
+
     if len(basket) > 0:
         ok, reply = save_basket(req, whole_basket)
         if not ok:
@@ -80,7 +81,7 @@ def save_basket(req, whole_basket):
             continue
 
         order_db = order["order_db"]
-        if order_db["domain_id"] == -1:
+        if "domain_id" in ordeR_db and order_db["domain_id"] is None:
             ok, dom_db = make_blank_domain(order["domain"], user_db, misc.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
@@ -177,16 +178,16 @@ def paid_for_basket_item(req, order, user_db):
 
 def check_basket_item(basket_item):
     if len(basket_item) != len(MANDATORY_BASKET):
-        return False, "B1:Basket seems to be corrupt"
+        return False, "Basket seems to be corrupt"
     for prop in MANDATORY_BASKET:
         if prop not in basket_item:
-            return False, "A:Basket seems to be corrupt"
+            return False, "Basket seems to be corrupt"
     if (err := validate.check_domain_name(basket_item["domain"])) is not None:
         return False, err
     if not isinstance(basket_item["num_years"], int):
-        return False, "B2:Basket seems to be corrupt"
+        return False, "Basket seems to be corrupt"
     if basket_item["action"] not in misc.EPP_ACTIONS:
-        return False, "B3:Basket seems to be corrupt"
+        return False, "Basket seems to be corrupt"
 
     return True, None
 
@@ -204,6 +205,7 @@ def parse_basket(whole_basket):
             continue
         ok, reply = price_order_item(order, user_db)
         if not ok:
+            log(reply)
             order["failed"] = "Price failed"
         else:
             order["prices"] = reply
@@ -236,8 +238,9 @@ def price_order_item(order, user_db):
     if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
         return False, f"No plugin for this Registrar: {domobj.registry['name']}"
 
-    ok, prices = plugin_func(domobj, order["num_years"], [order["action"]], user_db)
+    ok, prices = plugin_func(domobj, order["num_years"], [order["action"]])
     if not ok or prices is None or len(prices) != 1:
+        print(">>>",prices)
         return False, "Price check failed"
 
     if order["action"] not in prices[0]:
@@ -257,21 +260,24 @@ def price_order_item(order, user_db):
 
 def get_order_domain_id(order, user_db):
     ok, dom_db = sql.sql_select_one("domains", {"name": order["domain"]})
-    if not ok:
-        return False, f"Domain database lookup error: {order['domain']}"
+    if not ok or not dom_db:
+        return False, None
 
     order["dom_db"] = dom_db
 
     if order["action"] == "transfer":
         if dom_db["user_id"] == user_db["user_id"]:
             return False, "Domain is already yours: {order['domain']}/{order['action']}"
-    elif order["action"] == ["recover", "renew"]:
+    elif order["action"] in ["recover", "renew"]:
         if dom_db["user_id"] != user_db["user_id"]:
             return False, f"{dom_db['name']} is not your domain ({order['action']})"
     elif order["action"] == "create":
         if len(dom_db) >= 1:
             return False, "Domain already exists: {order['domain']}/{order['action']}"
         return True, -1
+
+    if not registry.tld_lib.valid_expiry_limit(dom_db,order["num_years"]):
+        return False, f"{dom_db['name']} renewal of {order['num_years']} years is too much"
 
     if "domain_id" in dom_db:
         return True, dom_db["domain_id"]
@@ -281,8 +287,8 @@ def get_order_domain_id(order, user_db):
 
 def make_order_record(site_currency, order, user_db):
     ok, order_domain_id = get_order_domain_id(order, user_db)
-    if not ok:
-        return False, "Failed to find/reserve domain"
+    if not ok and order_domain_id:
+        return False, order_domain_id
 
     if "prices" not in order:
         return False, "Failed to verify price"
@@ -304,8 +310,12 @@ def make_order_record(site_currency, order, user_db):
         "amended_dt": now
     }
 
+class Empty:
+    pass
 
 def run_test(which):
+    req = Empty
+    req.user_id = 10450
     if which != 1:
         ok, reply = webui_basket([{
             "domain": "xn--dp8h.xn--dp8h",
@@ -327,12 +337,13 @@ def run_test(which):
             "num_years": 1,
             "cost": "2000",
             "action": "create"
-        }], 10450)
+        }], req)
     else:
-        ok, reply = webui_basket([{"domain": "teams.zz", "num_years": 1, "cost": 1100, "action": "create"}], 10450)
+        ok, reply = webui_basket([{"domain": "ty.zz", "num_years": 1, "cost": 1100, "action": "create"}], req)
 
     print(ok, json.dumps(reply, indent=3))
     sys.exit(0)
+
 
 
 def main():

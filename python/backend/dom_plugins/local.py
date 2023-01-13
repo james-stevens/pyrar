@@ -151,7 +151,7 @@ def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"]):
     ret_doms = []
     add_dom = {"num_years": num_years, "avail": True}
     for qry in qry_type:
-        add_dom[qry] = 0
+        add_dom[qry] = None
 
     for dom in domobj.names:
         add_dom["name"] = dom

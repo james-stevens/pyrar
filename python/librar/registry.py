@@ -130,7 +130,7 @@ class ZoneLib:
 
         self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
-            for param in ["max_renew_years", "expire_recover_limit", "orders_expire_hrs"]:
+            for param in ["renew_limit", "expire_recover_limit", "orders_expire_hrs"]:
                 if param not in reg_data:
                     reg_data[param] = policy.policy(param)
 
@@ -140,6 +140,8 @@ class ZoneLib:
 
         for __, zone_rec in self.zone_data.items():
             zone_rec["reg_data"] = self.registry[zone_rec["registry"]]
+            if "renew_limit" not in zone_rec or not zone_rec["renew_limit"]:
+                zone_rec["renew_limit"] = zone_rec["reg_data"]["renew_limit"]
 
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
         self.sort_data_list(new_list, is_tld=True)
@@ -173,6 +175,31 @@ class ZoneLib:
         for dom in the_list:
             if "priority" in dom:
                 del dom["priority"]
+
+    def valid_expiry_limit(self, dom_db, num_years):
+        if not sql.has_data(dom_db,["name","expiry_dt"]):
+            return False
+        if (tld := self.zone_rec_of_name(dom_db['name'])) is None:
+            return False
+
+        renew_limit = policy.policy("renew_limit")
+        if "renew_limit" in tld:
+            renew_limit = tld["renew_limit"]
+        elif "renew_limit" in tld["reg_data"]:
+            renew_limit = tld["reg_data"]["renew_limit"]
+
+        limit_dt = sql.date_add(sql.now(),years=renew_limit)
+        new_expiry_dt = sql.date_add(dom_db["expiry_dt"],years=num_years)
+
+        if new_expiry_dt <= limit_dt:
+            return True
+
+        return False
+
+    def zone_rec_of_name(self, name):
+        if (tld := self.tld_of_name(name)) is None:
+            return None
+        return self.zone_data[tld]
 
     def tld_of_name(self, name):
         if (idx := name.find(".")) >= 0:
@@ -263,7 +290,7 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     else:
         our_price = float(factor)
 
-    if dom[action] is None:
+    if dom[action] is None or dom[action] == 0:
         our_price *= float(num_years)
 
     site_currency = policy.policy("currency")
@@ -271,7 +298,7 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     our_price = round(float(our_price), 0)
 
     if retain_reg_price:
-        regs_price *= POW10[site_currency["pow10"]]
+        regs_price *= POW10[site_currency["decimal"]]
         regs_price = round(float(regs_price), 0)
         dom["reg_" + action] = int(regs_price)
 
@@ -291,10 +318,14 @@ if __name__ == "__main__":
     sql.connect("webui")
     start_up()
 
+    dom_data = [ {"name":"tiny.zz","renew":None} ]
+    tld_lib.multiply_values(dom_data,12)
+    print(dom_data)
+
     # print(tld_lib.registry)
     # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
-    print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
+    # print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
     # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     # print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
     # print("ZONE_FROM_DB", json.dumps(tld_lib.zones_from_db, indent=3))

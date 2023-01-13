@@ -36,7 +36,7 @@
 	"syslog_server" : null,
 
 	"dns_servers": "ns1.dns.com,ns2.dns.com",
-	"max_renew_years": 10,
+	"renew_limit": 10,
 	"max_basket_size": 5,
 
 	"epp_retry_attempts": 3,
