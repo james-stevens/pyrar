@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions to handle domains for the UI rest/api """
 
 import re
 import base64
@@ -13,13 +14,11 @@ from librar import mysql as sql
 from librar import sigprocs
 from librar import misc
 
-from actions import creator
-
-from webui import users
-
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend.dom_plugins import *
+
+from webui import users
 
 
 class DomainName:
@@ -93,6 +92,7 @@ class DomainName:
 
 
 def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
+    """ get retail prices for domains in {domobj} """
     if qry_type is None:
         qry_type = ["create", "renew"]
 
@@ -110,10 +110,6 @@ def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
     registry.tld_lib.sort_data_list(ret_js, is_tld=False)
 
     return True, ret_js
-
-
-def close_epp_sess():
-    return
 
 
 def check_domain_is_mine(user_id, domain, require_live):
@@ -146,27 +142,13 @@ def webui_update_domain(req, post_dom):
     if "auto_renew" in post_dom and isinstance(post_dom["auto_renew"], bool):
         update_cols["auto_renew"] = post_dom["auto_renew"]
 
-    if "ns" in post_dom and post_dom["ns"] != dom_db["ns"]:
-        if not sql.has_data(post_dom, "ns"):
-            update_cols["ns"] = ""
-        else:
-            new_ns = post_dom["ns"].lower().split(",")
-            new_ns.sort()
-            for each_ns in new_ns:
-                if not validate.is_valid_fqdn(each_ns):
-                    return False, "Invalid name server record"
-            update_cols["ns"] = ",".join(new_ns)
+    ok, reply = check_update_ns(post_dom, dom_db, update_cols)
+    if not ok:
+        return ok, reply
 
-    if "ds" in post_dom and post_dom["ds"] != dom_db["ds"]:
-        if not sql.has_data(post_dom, "ds"):
-            update_cols["ds"] = ""
-        else:
-            new_ds = post_dom["ds"].upper().split(",")
-            new_ds.sort()
-            for each_ds in new_ds:
-                if not validate.is_valid_ds(validate.frag_ds(each_ds)):
-                    return False, "Invalid DS record"
-            update_cols["ds"] = ",".join(new_ds)
+    ok, reply = check_update_ds(post_dom, dom_db, update_cols)
+    if not ok:
+        return ok, reply
 
     ok = sql.sql_update_one("domains", update_cols, {"domain_id": post_dom["domain_id"], "user_id": req.user_id})
 
@@ -178,6 +160,40 @@ def webui_update_domain(req, post_dom):
 
     domain_backend_update(dom_db)
     return True, update_cols
+
+
+def check_update_ns(post_dom, dom_db, update_cols):
+    if "ns" not in post_dom or post_dom["ns"] == dom_db["ns"]:
+        return True, None
+
+    if not sql.has_data(post_dom, "ns"):
+        update_cols["ns"] = ""
+        return True, None
+
+    new_ns = post_dom["ns"].lower().split(",")
+    for each_ns in new_ns:
+        if not validate.is_valid_fqdn(each_ns):
+            return False, "Invalid name server record"
+    new_ns.sort()
+    update_cols["ns"] = ",".join(new_ns)
+    return True, None
+
+
+def check_update_ds(post_dom, dom_db, update_cols):
+    if "ds" not in post_dom or post_dom["ds"] == dom_db["ds"]:
+        return True, None
+
+    if not sql.has_data(post_dom, "ds"):
+        update_cols["ds"] = ""
+        return True, None
+
+    new_ds = post_dom["ds"].upper().split(",")
+    for each_ds in new_ds:
+        if not validate.is_valid_ds(validate.frag_ds(each_ds)):
+            return False, "Invalid DS record"
+    new_ds.sort()
+    update_cols["ds"] = ",".join(new_ds)
+    return True, None
 
 
 def domain_backend_update(dom_db):

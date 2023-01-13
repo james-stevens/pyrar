@@ -792,4 +792,3 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     WANT_REFERRER_CHECK = False
     application.run()
-    domains.close_epp_sess()

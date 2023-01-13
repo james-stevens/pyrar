@@ -52,4 +52,3 @@ if __name__ == "__main__":
         debug_one_domain(x)
     else:
         debug_one_domain("tiny.for.men")
-    domains.close_epp_sess()

@@ -11,6 +11,7 @@ import sys
 from librar import mysql as sql
 from librar import validate
 from librar import passwd
+from librar import misc
 from librar.policy import this_policy as policy
 from librar.log import log, debug, init as log_init
 from librar import hashstr
@@ -149,7 +150,7 @@ def login(data, user_agent):
         return False, None
 
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return False, None
 
     if not check_password(user_db["user_id"], data, user_db):
@@ -206,7 +207,7 @@ def verify_email(user_id, hash_sent):
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
-    hash_found = hashstr.hash_confirm(user_db["created_dt"] + ":" + user_db["email"])
+    hash_found = hashstr.make_hash(user_db["created_dt"] + ":" + user_db["email"])
     if hash_found == hash_sent:
         return sql.sql_update_one("users", {
             "email_verified": True,
@@ -221,7 +222,7 @@ def request_password_reset(req):
     if not validate.is_valid_email(email) or not validate.is_valid_pin(pin_num):
         return False
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": email})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return None
 
     send_hash = make_session_code(user_db["user_id"])[:30]
@@ -242,7 +243,7 @@ def reset_users_password(req):
 
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "password_reset": store_hash})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return False
 
     if not sql.sql_update_one("users", {
@@ -255,24 +256,23 @@ def reset_users_password(req):
     return True
 
 
-class Empty:
-    pass
-
+# class Empty:
+#     pass
 
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
 
-    req = Empty()
-    req.post_js = {}
-    req.post_js["email"] = "dan@jrcs.net"
-    req.post_js["pin"] = "1234"
-    send_hash = request_password_reset(req)
-    print(">>> Ask-RESET", send_hash)
-    #print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
+    # req = Empty()
+    # req.post_js = {}
+    # req.post_js["email"] = "dan@jrcs.net"
+    # req.post_js["pin"] = "1234"
+    # send_hash = request_password_reset(req)
+    # print(">>> Ask-RESET", send_hash)
+    # print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
 
     sys.exit(0)
-    # login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
+    login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
     # debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
