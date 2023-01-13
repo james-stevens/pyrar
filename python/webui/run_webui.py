@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" module to run the rest/api for user's site web/ui """
 
 import inspect
 import flask
@@ -14,16 +15,16 @@ from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
+from mailer import spool_email
+
 from webui import users
 from webui import domains
 from webui import basket
-from mailer import spool_email
-
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
 
-want_referrer_check = True
+WANT_REFERRER_CHECK = True
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -70,6 +71,7 @@ class WebuiReq:
         self.is_logged_in = (self.user_id is not None and self.sess_code is not None)
 
     def parse_user_data(self, logged_in, check_sess_data):
+        """ set up session properties """
         if not logged_in or "session" not in check_sess_data:
             return
 
@@ -79,26 +81,29 @@ class WebuiReq:
         debug(f"Logged in as {self.user_id}")
 
     def set_base_event(self):
+        """ set up properties common to all events, for logging events """
         ip_addr = flask.request.remote_addr
         if "x-forwaded-for" in self.headers:
             ip_addr = self.headers["x-forwaded-for"]
         return {"from_where": ip_addr, "user_id": self.user_id, "who_did_it": "webui"}
 
     def abort(self, data):
+        """ return error code to caller """
         return self.response({"error": data}, HTML_CODE_ERR)
 
     def secure_user_data(self):
+        """ remove data columns the user shouldnt see """
         if self.user_data is None:
             return
-        for table in REMOVE_TO_SECURE:
+        for table, remove_cols in REMOVE_TO_SECURE.items():
             if table in self.user_data and isinstance(self.user_data[table], dict):
-                for column in REMOVE_TO_SECURE[table]:
+                for column in remove_cols:
                     if column in self.user_data[table]:
                         del self.user_data[table][column]
 
     def response(self, data, code=HTML_CODE_OK):
+        """ return OK response & data to caller """
         self.secure_user_data()
-
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
         if self.sess_code is not None:
@@ -106,6 +111,7 @@ class WebuiReq:
         return resp
 
     def event(self, data):
+        """ log an event """
         context = inspect.stack()[1]
         data["program"] = context.filename.split("/")[-1]
         data["function"] = context.function
@@ -119,22 +125,27 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if want_referrer_check and policy.policy(
+    if WANT_REFERRER_CHECK and policy.policy(
             "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
         log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
+    return None
 
 
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
+    if (payment_methods := policy.policy("payment_methods")) is None:
+        payment_methods = list(pay_handler.pay_plugins)
     return req.response({
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
         "status": misc.DOMAIN_STATUS,
-        "payments": {pay: pay_data["desc"]
-                     for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data},
+        "payments": {
+            pay: pay_handler.pay_plugins[pay]["desc"]
+            for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
+        },
         "policy": policy.data()
     })
 
@@ -255,7 +266,7 @@ def payments_validate():
 
     req.post_js["created_dt"] = None
     req.post_js["amended_dt"] = None
-    ok, reply = sql.sql_insert("payments", req.post_js)
+    ok, __ = sql.sql_insert("payments", req.post_js)
     if not ok:
         return req.abort("Adding payments data failed")
 
@@ -581,6 +592,11 @@ def find_best_ds(key_data):
             for ds_rr in key["ds"]:
                 if ds_rr.find(" 2 ") >= 0:
                     return ds_rr
+                if ds_rr.find(" 3 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 1 ") >= 0:
+                    return ds_rr
+    return None
 
 
 def pdns_drop_zone(req, dom_db):
@@ -590,6 +606,7 @@ def pdns_drop_zone(req, dom_db):
 
 
 def check_rr_data(dom_db, add_rr):
+    """ Validate an rr-set sent by user """
     if "rr" not in add_rr:
         log("No `rr` property")
         return False
@@ -603,21 +620,22 @@ def check_rr_data(dom_db, add_rr):
         log("Invalid host name")
         return False
     if not validate.valid_rr_type(add_rr["rr"]["type"]):
-        log(f"Invalid RR type")
+        log("Invalid RR type")
         return False
     if not isinstance(add_rr["rr"]["ttl"], int):
-        log(f"TTL is not integer")
+        log("TTL is not integer")
         return False
 
     if len(add_rr["rr"]["name"]) > len(
             dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
-        log(f"Bad name suffix")
+        log("Bad name suffix")
         return False
 
     return True
 
 
 def pdns_update_rrs(req, dom_db):
+    """ complete task of updating rr-set """
     if not check_rr_data(dom_db, req.post_js):
         return req.abort("RR data missing or invalid")
 
@@ -630,45 +648,54 @@ def pdns_update_rrs(req, dom_db):
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
 def domain_dns_update():
+    """ Update an RR-set in P/DNS """
     return pdns_action(pdns_update_rrs)
 
 
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
+    """ Drop a domain & all its data in P/DNS """
     return pdns_action(pdns_drop_zone)
 
 
 @application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
 def domain_dns_unsign():
+    """ Remove DNSSEC from a domain in P/DNS """
     return pdns_action(pdns_unsign_zone)
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
 def domain_dns_sign():
+    """ Sign a domain in P/DNS """
     return pdns_action(pdns_sign_zone)
 
 
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
+    """ load domain's DNS data from P/DNS """
     return pdns_action(pdns_get_data)
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
+    """ gift a domain to another user """
     return run_user_domain_task(domains.webui_gift_domain, "Gift")
 
 
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
+    """ update domain details """
     return run_user_domain_task(domains.webui_update_domain, "Update")
 
 
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
+    """ set domain authcode """
     return run_user_domain_task(domains.webui_set_auth_code, "setAuth")
 
 
 def run_user_domain_task(domain_function, func_name):
+    """ start a {domain_function} & complete it by running {func_name}() """
     req = WebuiReq()
     if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -701,6 +728,7 @@ def run_user_domain_task(domain_function, func_name):
 
 
 def get_dom_data_items(post_js):
+    """ read domain check sent by the user, supporting GET/POST & JSON """
     num_years = 1
     qry_type = ["create", "renew"]
 
@@ -741,6 +769,7 @@ def get_dom_data_items(post_js):
 
 @application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
+    """ check the price of a domain or list of domains """
     req = WebuiReq()
     dom, num_years, qry_type = get_dom_data_items(req.post_js)
     if dom is None:
@@ -761,6 +790,6 @@ def rest_domain_price():
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    want_referrer_check = False
+    WANT_REFERRER_CHECK = False
     application.run()
     domains.close_epp_sess()
