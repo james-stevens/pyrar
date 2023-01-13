@@ -230,6 +230,9 @@ def request_password_reset(req):
     if not sql.sql_update_one("users", {"password_reset": store_hash}, {"user_id": user_db["user_id"]}):
         return None
 
+    event_log(req,{"event_type":"password/request","user_id": user_db["user_id"],
+        "notes":f"Password reset requested for '{email}'"})
+
     spool_email.spool("reset_request", [["users", {"user_id": user_db["user_id"]}], [None, {"reset_code": send_hash}]])
     return send_hash
 
@@ -251,6 +254,9 @@ def reset_users_password(req):
             "password_reset": None
     }, {"user_id": user_db["user_id"]}):
         return False
+
+    event_log(req,{"event_type":"password/reset","user_id": user_db["user_id"],
+        "notes":f"User password reset using matching PIN & code"})
 
     spool_email.spool("password_reset", [["users", {"user_id": user_db["user_id"]}]])
     return True
