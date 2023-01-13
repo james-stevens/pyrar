@@ -172,6 +172,9 @@ def return_exec():
     return affected_rows, lastrowid
 
 
+def sql_close():
+    cnx.close()
+
 def sql_exec(sql):
     return run_sql(sql, return_exec)
 

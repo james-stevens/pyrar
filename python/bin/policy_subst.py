@@ -1,8 +1,9 @@
 #! /usr/bin/python3
+# (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+""" substitute policy values in all files in `${BASE}/policy_subst` """
 
 import os
-import sys
-import json
 import jinja2
 
 from librar import policy
@@ -13,7 +14,7 @@ SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"
 
 merge_data = {"logins": fileloader.load_file_json(misc.LOGINS_JSON)}
-with open("/run/pdns_api_key", "r") as fd:
+with open("/run/pdns_api_key", "r", encoding="UTF-8") as fd:
     merge_data["api_key"] = fd.readline().strip()
 
 merge_data["policy"] = policy.policy_defaults
@@ -28,5 +29,5 @@ for file in os.listdir(SRC_DIR):
         dst_path = os.path.join(DEST_DIR, file)
         template = environment.get_template(file)
         content = template.render(**merge_data)
-        with open(dst_path, "w") as fd:
+        with open(dst_path, "w", encoding="UTF-8") as fd:
             fd.write(content)

@@ -12,7 +12,6 @@ import smtplib
 import argparse
 
 from librar import mysql as sql
-from librar import flat
 from librar import registry
 from librar import policy
 from librar.log import log, debug, init as log_init

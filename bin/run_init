@@ -17,6 +17,8 @@ chmod 400 /run/pdns_api_key
 ${BASE}/python/bin/policy_subst.py
 . /run/policy_subst/env.inc
 
+${BASE}/python/bin/fix_db_schema.py
+
 cp /run/policy_subst/main.cf /etc/postfix/main.cf
 chown root: /etc/postfix/main.cf
 chmod 600 /etc/postfix/main.cf

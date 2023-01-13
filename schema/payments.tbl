@@ -14,6 +14,7 @@ sqlsh "CREATE TABLE payments (
     provider_tag	varchar(100) not null,
     single_use		boolean not null default 0,
     can_pull		boolean not null default 0,
+    verified		boolean not null default 0,
 
 	created_dt      datetime not null,
 	amended_dt      datetime not null,
