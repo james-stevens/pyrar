@@ -22,6 +22,7 @@ from webui import users
 
 
 class DomainName:
+    """ validate domain names requested by users """
     def __init__(self, domain):
         self.names = None
         self.err = None
@@ -64,9 +65,9 @@ class DomainName:
         self.registry = registry.tld_lib.reg_record_for_domain(name)
         if self.registry["type"] == "epp":
             self.client = registry.tld_lib.clients[self.registry["name"]]
+            self.xmlns = registry.make_xmlns(self.registry)
         else:
             self.client = None
-        self.xmlns = registry.make_xmlns(self.registry)
 
     def process_list(self, domain):
         self.names = []
@@ -100,15 +101,30 @@ def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
         return False, "Registrar not supported"
 
     if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
-        return False, "No plugin for this Registrar"
+        return False, f"No plugin for this Registrar '{domobj.registry['name']}/{domobj.registry['type']}'"
 
-    ok, ret_js = plugin_func(domobj, num_years, qry_type, user_id)
+    ok, ret_js = plugin_func(domobj, num_years, qry_type)
     if not ok or ret_js is None:
         return False, "Price check failed"
 
-    registry.tld_lib.multiply_values(ret_js, num_years)
-    registry.tld_lib.sort_data_list(ret_js, is_tld=False)
+    ok, local_doms = sql.sql_select("domains", {"name": domobj.names})
+    if not ok:
+        return False, "Unexpected database error"
 
+    dom_dict = { dom["name"]:dom for dom in ret_js }
+    for dom_db in local_doms:
+        this_dom = dom_dict[dom_db["name"]]
+        this_dom["avail"] = False
+        if dom_db["user_id"] == user_id:
+            this_dom["yours"] = True
+        this_dom["reason"] = "Already registered"
+        if sql.has_data(dom_db, "for_sale_msg"):
+            this_dom["avail"] = True
+            this_dom["for_sale_msg"] = dom_db["for_sale_msg"]
+        if "create" in this_dom:
+            del this_dom["create"]
+
+    registry.tld_lib.multiply_values(ret_js, num_years)
     return True, ret_js
 
 

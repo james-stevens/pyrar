@@ -309,7 +309,7 @@ def http_price_domains(domobj, years, qry_type):
     return 400, "Unexpected Error"
 
 
-def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
+def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"]):
     ok, out_js = http_price_domains(domobj, num_years, qry_type)
     if ok != 200:
         return False, out_js
@@ -319,14 +319,6 @@ def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id
 
     if not code == 1000:
         return False, ret_js
-
-    for item in ret_js:
-        if "avail" in item and not item["avail"]:
-            ok, reply = sql.sql_select_one("domains", {"name": item["name"]})
-            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg")
-                    and (user_id is None or user_id != reply["user_id"])):
-                for i in ["user_id", "for_sale_msg"]:
-                    item[i] = reply[i]
 
     return True, ret_js
 

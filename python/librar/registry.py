@@ -18,6 +18,8 @@ EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
 EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
 EPP_PORTS_LIST = "/run/regs_ports"
 
+POW10 = [ 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000 ]
+
 SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
 
 DEFAULT_XMLNS = {
@@ -240,7 +242,7 @@ class ZoneLib:
                     continue
 
                 if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    if action in ["transfer", "restore"] and dom[action] is None:
+                    if action in ["transfer", "restore"] and dom[action] is None or dom[action] == 0:
                         factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
                 if factor is None:
@@ -265,11 +267,11 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
         our_price *= float(num_years)
 
     site_currency = policy.policy("currency")
-    our_price *= site_currency["pow10"]
+    our_price *= POW10[site_currency["decimal"]]
     our_price = round(float(our_price), 0)
 
     if retain_reg_price:
-        regs_price *= site_currency["pow10"]
+        regs_price *= POW10[site_currency["pow10"]]
         regs_price = round(float(regs_price), 0)
         dom["reg_" + action] = int(regs_price)
 
