@@ -17,6 +17,7 @@ class Domain:
         self.name = None
         self.registry = None
         self.tld = None
+        self.tld_rec = None
         self.dom_db = None
 
     def set_name(self, name):
@@ -24,10 +25,11 @@ class Domain:
         name = name.lower()
         if not validate.is_valid_fqdn(name):
             return False, "Invalid domain name"
-        if (tld := registry.tld_lib.tld_of_name(name)) is None:
+        if (tld := registry.tld_lib.tld_of_name(name)) is None or tld not in registry.tld_lib.zone_data:
             return False, "TLD not supported"
         self.tld = tld
-        self.registry = registry.tld_lib.zone_data[self.tld]["reg_data"]
+        self.tld_rec = registry.tld_lib.zone_data[self.tld]
+        self.registry = self.tld_rec["reg_data"]
         self.name = name
         return True, True
 
@@ -46,6 +48,24 @@ class Domain:
         self.dom_db = reply
         return True
 
+    def valid_expiry_limit(self, num_years):
+        renew_limit = policy.policy("renew_limit")
+        if self.dom_db is None and not self.load_record():
+            return num_years <= renew_limit
+
+        if not sql.has_data(self.dom_db, ["name", "expiry_dt"]):
+            return False
+
+        if "renew_limit" in self.tld_rec:
+            renew_limit = self.tld_rec["renew_limit"]
+        elif "renew_limit" in self.registry:
+            renew_limit = self.registry["renew_limit"]
+
+        limit_dt = sql.date_add(sql.now(), years=renew_limit)
+        new_expiry_dt = sql.date_add(self.dom_db["expiry_dt"], years=num_years)
+
+        return new_expiry_dt <= limit_dt
+
 
 class DomainList:
     """ validate domain list requested by users """
@@ -63,6 +83,8 @@ class DomainList:
             else:
                 ok, reply = self.process_list([dom_list])
         elif isinstance(dom_list, list):
+            if len(dom_list) <= 0:
+                return False, "Empty list"
             ok, reply = self.process_list(dom_list)
         else:
             ok = False
@@ -106,6 +128,8 @@ if __name__ == "__main__":
     my_dom = Domain()
     print("ONE:DOMS>>>", my_dom.set_name(sys.argv[1]), my_dom.registry)
     print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
+    print("EXP>>>>",my_dom.valid_expiry_limit(5),my_dom.valid_expiry_limit(15))
+
     my_doms = DomainList()
     print("LIST>>>", my_doms.set_list(sys.argv[1:]))
     my_doms.load_all()

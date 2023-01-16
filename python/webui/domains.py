@@ -46,10 +46,17 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
     dom_dict = {dom["name"]: dom for dom in ret_js}
 
     for name, domobj in domlist.domobjs.items():
+        this_dom = dom_dict[name]
+
+        if not domobj.valid_expiry_limit(num_years):
+            for action in misc.EPP_ACTIONS:
+                if action in this_dom:
+                    del this_dom[action]
+                    this_dom[action+":fail"] = "Renew limit exceeded"
+
         if domobj.dom_db is None:
             continue
 
-        this_dom = dom_dict[name]
         this_dom["avail"] = False
         if domobj.dom_db["user_id"] == user_id:
             this_dom["yours"] = True
@@ -211,4 +218,4 @@ if __name__ == "__main__":
     registry.start_up()
     domlist = domobj.DomainList()
     domlist.set_list(sys.argv[1:])
-    print(json.dumps(get_domain_prices(domlist, 1, ["create", "renew"], 10450), indent=3))
+    print(json.dumps(get_domain_prices(domlist, 11, ["create", "renew"], 10450), indent=3))

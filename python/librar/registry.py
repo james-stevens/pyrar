@@ -178,26 +178,6 @@ class ZoneLib:
             if "priority" in dom:
                 del dom["priority"]
 
-    def valid_expiry_limit(self, dom_db, num_years):
-        if not sql.has_data(dom_db, ["name", "expiry_dt"]):
-            return False
-        if (tld := self.zone_rec_of_name(dom_db['name'])) is None:
-            return False
-
-        renew_limit = policy.policy("renew_limit")
-        if "renew_limit" in tld:
-            renew_limit = tld["renew_limit"]
-        elif "renew_limit" in tld["reg_data"]:
-            renew_limit = tld["reg_data"]["renew_limit"]
-
-        limit_dt = sql.date_add(sql.now(), years=renew_limit)
-        new_expiry_dt = sql.date_add(dom_db["expiry_dt"], years=num_years)
-
-        if new_expiry_dt <= limit_dt:
-            return True
-
-        return False
-
     def zone_rec_of_name(self, name):
         if (tld := self.tld_of_name(name)) is None:
             return None

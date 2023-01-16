@@ -231,18 +231,21 @@ def parse_basket(whole_basket):
 
 
 def price_order_item(order, user_db):
-    dom = domobj.DomainList()
-    ok, reply = dom.set_list(order["domain"])
+    doms = domobj.DomainList()
+    ok, reply = doms.set_list(order["domain"])
     if not ok:
         return False, reply if reply is not None else "Invalid domain name"
 
-    if not dom.registry or "type" not in dom.registry or "name" not in dom.registry:
+    if not doms.registry or "type" not in doms.registry or "name" not in doms.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := dom_handler.run(dom.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar: {dom.registry['name']}"
+    if not doms.domobjs[order["domain"]].valid_expiry_limit(order["num_years"]):
+        return False, "Expiry limit exceeded"
 
-    ok, prices = plugin_func(dom, order["num_years"], [order["action"]])
+    if (plugin_func := dom_handler.run(doms.registry["type"], "dom/price")) is None:
+        return False, f"No plugin for this Registrar: {doms.registry['name']}"
+
+    ok, prices = plugin_func(doms, order["num_years"], [order["action"]])
     if not ok or prices is None or len(prices) != 1:
         return False, "Price check failed"
 
@@ -256,7 +259,7 @@ def price_order_item(order, user_db):
     if "reg_" + order["action"] not in prices:
         return False, f"Error in json prices for: {order['domain']}/{order['action']}"
 
-    prices["currency"] = dom.currency["iso"]
+    prices["currency"] = doms.currency["iso"]
 
     return True, prices
 
@@ -278,9 +281,6 @@ def get_order_domain_id(order, user_db):
         if len(dom_db) >= 1:
             return False, "Domain already exists: {order['domain']}/{order['action']}"
         return True, -1
-
-    if not registry.tld_lib.valid_expiry_limit(dom_db, order["num_years"]):
-        return False, f"{dom_db['name']} renewal of {order['num_years']} years is too much"
 
     if "domain_id" in dom_db:
         return True, dom_db["domain_id"]
