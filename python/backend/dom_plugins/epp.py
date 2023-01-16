@@ -142,6 +142,7 @@ def domain_request_transfer(bke_job, dom_db):
         update_cols["expiry_dt"] = xml_dom["expiry_dt"]
         update_cols["status_id"] = misc.STATUS_LIVE
         sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
+        spool_email.spool("domain_transferred",[["domains",{"domain_id":post_dom["domain_id"]}],["users",{"user_id":dom_db["user_id"]}]])
 
     return True
 
