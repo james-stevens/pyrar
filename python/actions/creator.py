@@ -7,7 +7,7 @@ import json
 import inspect
 
 from librar import mysql as sql
-from librar import misc
+from librar import static_data
 from librar import registry
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -61,7 +61,7 @@ def recreate_domain_actions(dom_db):
     return True
 
 
-action_fns = {misc.STATUS_LIVE: domain_actions_live, misc.STATUS_WAITING_PAYMENT: domain_actions_pending_order}
+action_fns = {static_data.STATUS_LIVE: domain_actions_live, static_data.STATUS_WAITING_PAYMENT: domain_actions_pending_order}
 
 if __name__ == "__main__":
     log_init(with_debug=True)

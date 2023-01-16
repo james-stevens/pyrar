@@ -8,6 +8,7 @@ import json
 from librar.log import log, debug, init as log_init
 from librar import validate
 from librar import misc
+from librar import static_data
 from librar import registry
 from librar import accounts
 from librar import sales
@@ -85,7 +86,7 @@ def save_basket(req, whole_basket):
 
         order_db = order["order_db"]
         if "domain_id" in ordeR_db and order_db["domain_id"] is None:
-            ok, dom_db = make_blank_domain(order["domain"], user_db, misc.STATUS_WAITING_PAYMENT)
+            ok, dom_db = make_blank_domain(order["domain"], user_db, static_data.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
             order_db["domain_id"] = dom_db["domain_id"]
@@ -157,13 +158,13 @@ def paid_for_basket_item(req, order, user_db):
     user_db["acct_current_balance"] -= order_db["price_paid"]
 
     if order_db['order_type'] == "dom/transfer":
-        ok, dom_db = make_blank_domain(order['domain'], user_db, misc.STATUS_TRANS_QUEUED)
+        ok, dom_db = make_blank_domain(order['domain'], user_db, static_data.STATUS_TRANS_QUEUED)
         if not ok:
             return False
         order_db["domain_id"] = dom_db["domain_id"]
         order["dom_db"] = dom_db
     elif order_db['order_type'] == "dom/create":
-        ok, dom_db = make_blank_domain(order['domain'], user_db, misc.STATUS_LIVE)
+        ok, dom_db = make_blank_domain(order['domain'], user_db, static_data.STATUS_LIVE)
         if not ok:
             return False
         order_db["domain_id"] = dom_db["domain_id"]
@@ -189,7 +190,7 @@ def check_basket_item(basket_item):
         return False, err
     if not isinstance(basket_item["num_years"], int):
         return False, "Basket seems to be corrupt"
-    if basket_item["action"] not in misc.EPP_ACTIONS:
+    if basket_item["action"] not in static_data.EPP_ACTIONS:
         return False, "Basket seems to be corrupt"
 
     return True, None

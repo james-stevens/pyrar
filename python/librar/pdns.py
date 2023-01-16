@@ -12,10 +12,11 @@ import dns.name
 
 from librar.log import log
 from librar import misc
+from librar import static_data
 from librar.policy import this_policy as policy
 
 client = None
-headers = misc.HEADER
+headers = static_data.HEADER
 headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
 PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"

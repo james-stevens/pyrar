@@ -7,7 +7,7 @@ import json
 import random
 import requests
 
-from librar import misc
+from librar import static_data
 from librar import fileloader
 from librar import mysql as sql
 from librar.log import log, debug, init as log_init
@@ -23,6 +23,7 @@ POW10 = [
 ]
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
+MANDATORY_REGS_ITEMS = ["locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs"]
 
 DEFAULT_XMLNS = {
     "contact": "urn:ietf:params:xml:ns:contact-1.0",
@@ -132,7 +133,7 @@ class ZoneLib:
 
         self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
-            for param in ["renew_limit", "expire_recover_limit", "orders_expire_hrs"]:
+            for param in MANDATORY_REGS_ITEMS:
                 if param not in reg_data:
                     reg_data[param] = policy.policy(param)
 
@@ -162,6 +163,7 @@ class ZoneLib:
 
     def regs_send(self):
         regs_to_send = {}
+        items_to_send = SEND_REGS_ITEMS+MANDATORY_REGS_ITEMS
         for registry, reg_data in self.registry.items():
             regs_to_send[registry] = {item: reg_data[item] for item in SEND_REGS_ITEMS if item in reg_data}
         return regs_to_send
@@ -246,7 +248,7 @@ class ZoneLib:
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for action in misc.EPP_ACTIONS:
+            for action in static_data.EPP_ACTIONS:
                 if action not in dom:
                     continue
 

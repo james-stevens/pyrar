@@ -16,14 +16,14 @@ from librar import mysql as sql
 from librar import sigprocs
 from librar import misc
 from librar import domobj
+from librar import static_data
+from librar import hashstr
 
 from mailer import spool_email
 
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend.dom_plugins import *
-
-from webui import users
 
 
 def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
@@ -49,7 +49,7 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
         this_dom = dom_dict[name]
 
         if not domobj.valid_expiry_limit(num_years):
-            for action in misc.EPP_ACTIONS:
+            for action in static_data.EPP_ACTIONS:
                 if action in this_dom:
                     del this_dom[action]
                     this_dom[action+":fail"] = "Renew limit exceeded"
@@ -85,7 +85,7 @@ def check_domain_is_mine(user_id, domain, require_live):
     if not ok or not dom_db or len(dom_db) <= 0:
         return False, "Domain not found or not yours"
 
-    if require_live and dom_db["status_id"] not in misc.LIVE_STATUS:
+    if require_live and dom_db["status_id"] not in static_data.LIVE_STATUS:
         return False, "Not live yet"
 
     return True, dom_db
@@ -114,7 +114,7 @@ def webui_update_domain(req, post_dom):
     if not ok:
         return False, "Domain update failed"
 
-    if dom_db["status_id"] not in misc.LIVE_STATUS:
+    if dom_db["status_id"] not in static_data.LIVE_STATUS:
         return True, update_cols
 
     domain_backend_update(dom_db)
@@ -173,8 +173,7 @@ def webui_set_auth_code(req, post_dom):
     if not ok:
         return False, msg
 
-    auth_code = users.make_session_key(f"{post_dom['name']}.{post_dom['domain_id']}", req.sess_code)
-    auth_code = re.sub('[+/=]', '', auth_code)[:15]
+    auth_code = hashstr.make_hash(f"{post_dom['name']}.{post_dom['domain_id']}.{req.sess_code}", 15)
 
     bke_job = {
         "domain_id": post_dom["domain_id"],

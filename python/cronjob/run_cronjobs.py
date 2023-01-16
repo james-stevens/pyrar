@@ -9,6 +9,12 @@ from librar.log import init as log_init
 from librar.policy import this_policy as policy
 
 
+def remove_old_one_time_payment_keys():
+    tout = "7 day"
+    query = f"delete from payments where single_use and amended_dt < date_sub(now(), interval {tout})"
+    return sql.sql_exec(query)
+
+
 def clear_old_session_keys():
     tout = policy.policy('session_timeout') * 2
     query = f"delete from session_keys where amended_dt < date_sub(now(), interval {tout} minute)"
@@ -24,6 +30,7 @@ def cancel_unpaid_orders():
 def run_all_jobs():
     clear_old_session_keys()
     cancel_unpaid_orders()
+    remove_old_one_time_payment_keys()
 
 
 if __name__ == "__main__":

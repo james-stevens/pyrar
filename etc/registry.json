@@ -4,7 +4,8 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"prices" : { "default": "x2" },
-		"type": "epp"
+		"type": "epp",
+		"locks": [ "UpdateProhibited","DeleteProhibited"]
 		},
 
 	"extra": {
@@ -12,11 +13,13 @@
 		"sessions": 3,
 		"max_checks": 10,
 		"prices" : { "default": "x2" },
-		"type": "epp"
+		"type": "epp",
+		"locks": [ "UpdateProhibited","DeleteProhibited"]
 		},
 
 	"local": {
 		"type": "local",
-		"prices": { "new": 20.00, "renew": 20.00 }
+		"prices": { "new": 20.00, "renew": 20.00 },
+		"locks": ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
 		}
 }

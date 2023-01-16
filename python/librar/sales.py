@@ -72,7 +72,7 @@ def sold_item(trans_id, order_db, dom_db, user_db):
         }],
         ["users", {
             "user_id": dom_db["user_id"]
-        }],
+        }]
     ])
 
     return ok, row_id

@@ -2308,6 +2308,11 @@ function one_domain_html(idx)
 	x += `<tr title="${dom.name}"><td class=promptCell>Name :</td><td class=dataCell>${dom.display_name}${puny}</td></tr>`;
 	x += `<tr><td class=promptCell>Is Live :</td><td class=dataCell>${tick_cross(dom.is_live)}</td></tr>`;
 	x += `<tr><td class=promptCell>Status :</td><td class=dataCell>${dom.status_desc}</td></tr>`;
+
+	locks = "None";
+	if (dom.client_locks) locks = dom.client_locks;
+	x += `<tr><td class=promptCell>Locks :</td><td class=dataCell>${locks}</td></tr>`;
+
 	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
 	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;

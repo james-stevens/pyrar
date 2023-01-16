@@ -11,6 +11,7 @@ from librar import misc
 from librar import validate
 from librar import passwd
 from librar import pdns
+from librar import static_data
 from librar import domobj
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
@@ -141,8 +142,9 @@ def get_config():
     return req.response({
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
+        "dom_flags": static_data.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
-        "status": misc.DOMAIN_STATUS,
+        "status": static_data.DOMAIN_STATUS,
         "payments": {
             pay: pay_handler.pay_plugins[pay]["desc"]
             for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
@@ -205,7 +207,7 @@ def orders_cancel():
         sql.sql_delete_one("domains", {
             "domain_id": order_db["domain_id"],
             "user_id": req.user_id,
-            "status_id": misc.STATUS_WAITING_PAYMENT
+            "status_id": static_data.STATUS_WAITING_PAYMENT
         })
 
     req.event(event_db)
@@ -334,9 +336,9 @@ def users_domains():
 
     now = sql.now()
     for dom_db in doms_db:
-        if dom_db["status_id"] == misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
-            dom_db["status_id"] = misc.STATUS_EXPIRED
-        dom_db["is_live"] = dom_db["status_id"] in misc.LIVE_STATUS
+        if dom_db["status_id"] == static_data.LIVE_STATUS and dom_db["expiry_dt"] <= now:
+            dom_db["status_id"] = static_data.STATUS_EXPIRED
+        dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
 
     req.user_data["domains"] = doms_db
 

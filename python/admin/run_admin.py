@@ -7,6 +7,7 @@ import flask
 
 from librar.log import log, debug, init as log_init
 from librar import mysql as sql
+from librar import static_data
 from admin import load_schema
 
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
@@ -591,7 +592,7 @@ def get_config():
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "zones": registry.tld_lib.return_zone_list(),
-        "status": misc.DOMAIN_STATUS,
+        "status": static_data.DOMAIN_STATUS,
         "payments": {pay: pay_data["desc"]
                      for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data},
         "policy": policy.data()

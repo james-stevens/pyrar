@@ -7,6 +7,7 @@ import sys
 
 from librar import mysql as sql
 from librar import registry
+from librar import static_data
 from librar import validate
 from librar.policy import this_policy as policy
 
@@ -19,6 +20,8 @@ class Domain:
         self.tld = None
         self.tld_rec = None
         self.dom_db = None
+        self.locks = None
+        self.permitted_locks = None
 
     def set_name(self, name):
         """ check the name is valid & find its registry """
@@ -30,6 +33,9 @@ class Domain:
         self.tld = tld
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
+        self.permitted_locks = static_data.CLIENT_DOM_FLAGS
+        if "locks" in self.registry:
+            self.permitted_locks = self.registry["locks"]
         self.name = name
         return True, True
 
@@ -46,6 +52,9 @@ class Domain:
         if not ok or not reply or len(reply) <= 0:
             return False
         self.dom_db = reply
+        self.locks = {}
+        if self.dom_db["client_locks"] is not None and self.dom_db["client_locks"].find(",") >= 0:
+            self.locks = { lock:True for lock in self.dom_db["client_locks"].split(",") }
         return True
 
     def valid_expiry_limit(self, num_years):
@@ -128,6 +137,7 @@ if __name__ == "__main__":
     print("ONE:DOMS>>>", my_dom.set_name(sys.argv[1]), my_dom.registry)
     print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
     print("EXP>>>>",my_dom.valid_expiry_limit(5),my_dom.valid_expiry_limit(15))
+    print("LOCKS>>>>",my_dom.locks)
 
     my_doms = DomainList()
     print("LIST>>>", my_doms.set_list(sys.argv[1:]))

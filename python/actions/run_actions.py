@@ -7,7 +7,7 @@ import argparse
 import inspect
 
 from librar import mysql as sql
-from librar import misc
+from librar import static_data
 from librar import sigprocs
 from librar import registry
 from librar.log import log, debug, init as log_init
@@ -53,7 +53,7 @@ def make_backend_job(job_type, dom_db):
 
 
 def flag_expired_domain(act_db, dom_db):
-    sql.sql_update_one("domains", {"status_id": misc.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
+    sql.sql_update_one("domains", {"status_id": static_data.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
     return make_backend_job("dom/expired", dom_db)
 
 
@@ -69,7 +69,7 @@ def delete_domain(act_db, dom_db):
 
     ok_pdns = pdns.delete_zone(dom_db["name"])
 
-    if dom_db["status_id"] == misc.STATUS_WAITING_PAYMENT:
+    if dom_db["status_id"] == static_data.STATUS_WAITING_PAYMENT:
         del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
         del_dom_db["deleted_dt"] = None
         sql.sql_insert("deleted_domains", del_dom_db)

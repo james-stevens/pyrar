@@ -1,16 +1,17 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+
 import os
+
+from librar import static_data
 from librar import fileloader
 import librar.log as log
 
-WEBUI_POLICY = os.environ["BASE"] + "/etc/policy.json"
-
-DEFAULT_CURRENCY = {"desc": "US Dollars", "iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2}
-DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
 policy_defaults = {
+    "locks": static_data.CLIENT_DOM_FLAGS,
+    "orders_expire_days": 7,
     "strict_idna2008": False,
     "strict_referrer": True,
     "pdns_log_facility": 0,
@@ -25,14 +26,14 @@ policy_defaults = {
     "session_timeout": 60,
     "webui_sessions": 5,
     "admin_sessions": 3,
-    "currency": DEFAULT_CURRENCY,
+    "currency": static_data.DEFAULT_CURRENCY,
     "facility_epp_api": "local0",
     "log_epp_api": True,
     "business_name": "Registry",
     "dnssec_algorithm": "ecdsa256",
     "dnssec_ksk_bits": 256,
     "dnssec_zsk_bits": 256,
-    "dns_servers": DEFAULT_NS,
+    "dns_servers": static_data.DEFAULT_NS,
     "catalog_zone": "pyrar.localhost",
     "default_ttl": 86400,
     "backend_retry_timeout": 300,
@@ -50,7 +51,7 @@ policy_defaults = {
 class Policy:
     def __init__(self):
         self.file = None
-        self.file = fileloader.FileLoader(WEBUI_POLICY)
+        self.file = fileloader.FileLoader(static_data.POLICY_FILE)
 
     def policy(self, name, default_value=None):
         our_policy = self.file.data()

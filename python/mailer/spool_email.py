@@ -80,6 +80,9 @@ def load_records(which_message, request_list):
 
         return_data[tag] = reply
 
+    if "domain" in return_data and "sale" in return_data and "expiry_dt" in return_data["domain"] and "num_years" in return_data["sale"]:
+        return_data["domain"]["new_expiry_dt"] = sql.date_add(return_data["domain"]["expiry_dt"],years=int(return_data["sale"]["num_years"]))
+
     return return_data
 
 

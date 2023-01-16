@@ -14,6 +14,7 @@ from librar import misc
 from librar import validate
 from librar import parse_dom_resp
 from librar import parsexml
+from librar import static_data
 from backend import whois_priv
 from backend import dom_req_xml
 from backend import xmlapi
@@ -27,7 +28,7 @@ DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 def run_epp_request(this_reg, post_json):
     try:
         client = registry.tld_lib.clients[this_reg["name"]]
-        resp = client.post(this_reg["url"], json=post_json, headers=misc.HEADER)
+        resp = client.post(this_reg["url"], json=post_json, headers=static_data.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
             log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}")
             return None
@@ -110,7 +111,7 @@ def domain_renew(bke_job, dom_db):
 
 
 def transfer_failed(domain_id):
-    sql.sql_update_one("domains", {"status_id": misc.STATUE_TRANS_FAIL}, {"domain_id": domain_id})
+    sql.sql_update_one("domains", {"status_id": static_data.STATUE_TRANS_FAIL}, {"domain_id": domain_id})
     return False
 
 
@@ -140,7 +141,7 @@ def domain_request_transfer(bke_job, dom_db):
     if xml_code == 1000:
         xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "trn")
         update_cols["expiry_dt"] = xml_dom["expiry_dt"]
-        update_cols["status_id"] = misc.STATUS_LIVE
+        update_cols["status_id"] = static_data.STATUS_LIVE
         sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
         spool_email.spool("domain_transferred",[["domains",{"domain_id":post_dom["domain_id"]}],["users",{"user_id":dom_db["user_id"]}]])
 
@@ -170,7 +171,7 @@ def domain_create(bke_job, dom_db):
     xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "cre")
 
     sql.sql_update_one("domains", {
-        "status_id": misc.STATUS_LIVE,
+        "status_id": static_data.STATUS_LIVE,
         "reg_create_dt": xml_dom["created_dt"],
         "expiry_dt": xml_dom["expiry_dt"]
     }, {"domain_id": dom_db["domain_id"]})
@@ -293,7 +294,7 @@ def http_price_domains(domlist, years, qry_type):
         return 400, "Unsupported TLD"
 
     xml = xml_check_with_fees(domlist, years, qry_type)
-    resp = domlist.client.post(domlist.registry["url"], json=xml, headers=misc.HEADER)
+    resp = domlist.client.post(domlist.registry["url"], json=xml, headers=static_data.HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"
