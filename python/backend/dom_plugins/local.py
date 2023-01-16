@@ -146,16 +146,16 @@ def my_hello(__):
     return "LOCAL: Hello"
 
 
-def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"]):
+def local_domain_prices(domlist, num_years=1, qry_type=["create", "renew"]):
     """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
     ret_doms = []
-    add_dom = {"num_years": num_years, "avail": True}
-    for qry in qry_type:
-        add_dom[qry] = None
+    for dom in domlist.domobjs:
+        add_dom = {"num_years": num_years, "avail": True}
+        for qry in qry_type:
+            add_dom[qry] = None
 
-    for dom in domobj.names:
         add_dom["name"] = dom
-        ret_doms.append(add_dom.copy())
+        ret_doms.append(add_dom)
 
     return True, ret_doms
 

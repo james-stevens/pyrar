@@ -3,6 +3,8 @@
 # Alternative license arrangements possible, contact me for more information
 """ functions to handle domains for the UI rest/api """
 
+import sys
+import json
 import re
 import base64
 
@@ -13,6 +15,7 @@ from librar.log import log
 from librar import mysql as sql
 from librar import sigprocs
 from librar import misc
+from librar import domobj
 
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -21,90 +24,37 @@ from backend.dom_plugins import *
 from webui import users
 
 
-class DomainName:
-    """ validate domain names requested by users """
-    def __init__(self, domain):
-        self.names = None
-        self.err = None
-        self.registry = None
-        self.client = None
-        self.currency = policy.policy("currency")
-
-        if isinstance(domain, str):
-            if domain.find(",") >= 0:
-                self.process_list(domain.split(","))
-            else:
-                self.process_list([domain])
-
-        if isinstance(domain, list):
-            self.process_list(domain)
-
-        if self.err:
-            log(f"FAILED to process: {domain}")
-            return
-
-        if self.registry is None:
-            self.err = "TLD not supported"
-            self.names = None
-        else:
-            if "currency" in self.registry:
-                if validate.valid_currency(self.currency):
-                    self.currency = self.registry["currency"]
-                else:
-                    log(f"ERROR: Registry currency for '{self.registry['name']}' is not set up correctly")
-
-    def process_list(self, domain):
-        self.names = []
-        for dom in domain:
-            name = dom.lower()
-            if (err := validate.check_domain_name(name)) is not None:
-                self.err = err
-                self.names = None
-                return
-
-            self.names.append(name)
-            regs = registry.tld_lib.reg_record_for_domain(name)
-            if self.registry is None:
-                self.registry = regs
-                if self.registry["name"] in registry.tld_lib.clients:
-                    self.client = registry.tld_lib.clients[self.registry["name"]]
-                    self.xmlns = registry.make_xmlns(self.registry)
-            else:
-                if regs != self.registry:
-                    self.err = "ERROR: Split registry request"
-                    self.names = None
-                    return
-
-
-def get_domain_prices(domobj, num_years=1, qry_type=None, user_id=None):
-    """ get retail prices for domains in {domobj} """
+def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
+    """ get retail prices for Domains in {domlist} """
     if qry_type is None:
         qry_type = ["create", "renew"]
 
-    if not domobj.registry or "type" not in domobj.registry:
+    if not domlist.registry or "type" not in domlist.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar '{domobj.registry['name']}/{domobj.registry['type']}'"
+    if (plugin_func := dom_handler.run(domlist.registry["type"], "dom/price")) is None:
+        return False, f"No plugin for this Registrar '{domlist.registry['name']}/{domlist.registry['type']}'"
 
-    ok, ret_js = plugin_func(domobj, num_years, qry_type)
+    ok, ret_js = plugin_func(domlist, num_years, qry_type)
     if not ok or ret_js is None:
         return False, "Price check failed"
 
-    ok, local_doms = sql.sql_select("domains", {"name": domobj.names})
-    if not ok:
-        return False, "Unexpected database error"
-
+    domlist.load_all()
+    local_doms = { name:domobj.dom_db for name, domobj in domlist.domobjs.items() if domobj.dom_db is not None }
     dom_dict = { dom["name"]:dom for dom in ret_js }
-    for dom_db in local_doms:
-        this_dom = dom_dict[dom_db["name"]]
+
+    for name, domobj in domlist.domobjs.items():
+        if domobj.dom_db is None:
+            continue
+
+        this_dom = dom_dict[name]
         this_dom["avail"] = False
-        if dom_db["user_id"] == user_id:
+        if domobj.dom_db["user_id"] == user_id:
             this_dom["yours"] = True
         this_dom["reason"] = "Already registered"
-        if sql.has_data(dom_db, "for_sale_msg"):
+        if sql.has_data(domobj.dom_db, "for_sale_msg"):
             this_dom["avail"] = True
-            this_dom["for_sale_msg"] = dom_db["for_sale_msg"]
+            this_dom["for_sale_msg"] = domobj.dom_db["for_sale_msg"]
         if "create" in this_dom:
             del this_dom["create"]
 
@@ -251,3 +201,11 @@ def webui_gift_domain(req, post_dom):
         return False, "Gifting domain failed"
 
     return ok, {"new_user_id": user_db["user_id"]}
+
+
+if __name__ == "__main__":
+    sql.connect("webui")
+    registry.start_up()
+    domlist = domobj.DomainList()
+    domlist.set_list(sys.argv[1:])
+    print(json.dumps(get_domain_prices(domlist,1,["create","renew"],10450),indent=3))

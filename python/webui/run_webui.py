@@ -775,12 +775,13 @@ def rest_domain_price():
     if dom is None:
         return req.abort(num_years)
 
-    dom_obj = domains.DomainName(dom)
+    domlist = domobj.DomainList()
+    ok,reply = domlist.set_list(dom)
 
-    if dom_obj.names is None:
-        return req.abort(dom_obj.err if dom_obj.err is not None else "Invalid domain name")
+    if not ok or not reply:
+        return req.abort(reply if reply is not None else "Invalid domain name")
 
-    ok, reply = domains.get_domain_prices(dom_obj, num_years, qry_type, req.user_id)
+    ok, reply = domains.get_domain_prices(domlist, num_years, qry_type, req.user_id)
     if ok:
         return req.response(reply)
 

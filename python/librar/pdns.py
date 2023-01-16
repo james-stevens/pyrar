@@ -3,7 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 import os
-import httpx
+import requests
 import json
 import time
 import secrets
@@ -23,7 +23,8 @@ PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 
 def start_up():
     global client
-    client = httpx.Client(headers=headers)
+    client = requests.Session()
+    client.headers.update(headers)
 
     catalog_zone = policy.policy("catalog_zone")
     if not zone_exists(catalog_zone):
@@ -192,8 +193,8 @@ def run_cmds(post_json):
     ret = True
     for req in post_json:
         json_data = req["data"] if "data" in req else None
-        request = client.build_request(req["cmd"],req["url"],json=json_data)
-        response = client.send(request)
+        request = Request(req["cmd"],req["url"],json=json_data)
+        response = client.send(req.prepare())
         ret = ret and response.status_code >= 200 and response.status_code <= 299
     return ret
 
@@ -276,17 +277,17 @@ def update_rrs(zone,rrs):
 
 if __name__ == "__main__":
     start_up()
-    name="crazy.zz"
-    print(unsign_zone(name))
+    name="pant.to.glass"
+    # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))
     # print("CREATE>>>>",json.dumps(create_zone(name, False),indent=3))
-    # print("KEYS>>>>",load_zone_keys(name))
+    print("KEYS>>>>",load_zone_keys(name))
     # print("EXISTS>>>>",zone_exists(name))
     # print("DELETE>>>>",json.dumps(delete_zone(name)))
-    # print("EXISTS>>>>",zone_exists(name))
+    print("EXISTS>>>>",zone_exists(name))
     # print("KEYS>>>>",load_zone_keys(name))
-    # print(json.dumps(load_zone(name),indent=3))
+    print("ZONE>>>>",json.dumps(load_zone(name)))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))
     # print(json.dumps(create_zone("mine", True),indent=3))

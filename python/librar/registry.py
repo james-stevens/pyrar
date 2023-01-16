@@ -5,7 +5,7 @@
 import os
 import json
 import random
-import httpx
+import requests
 
 from librar import misc
 from librar import fileloader
@@ -152,7 +152,7 @@ class ZoneLib:
             if reg_data["type"] == "epp":
                 is_epp[name] = True
                 if name not in self.clients:
-                    self.clients[name] = httpx.Client()
+                    self.clients[name] = requests.Session()
         for reg in list(self.clients):
             if reg not in is_epp:
                 self.clients[reg].close()

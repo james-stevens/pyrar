@@ -5,11 +5,10 @@
 import sys
 import json
 import base64
-import httpx
 
 from librar import mysql as sql
 from librar import registry
-from librar.log import log
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import misc
 from librar import validate
@@ -367,3 +366,13 @@ dom_handler.add_plugin(
         "dom/expired": domain_expired,
         "dom/price": epp_domain_prices
     })
+
+
+if __name__ == "__main__":
+    log_init(with_debug=True)
+    if not sql.connect("engine"):
+        print("ABORT")
+        sys.exit(1)
+    registry.start_up()
+    start_up_check()
+    print(json.dumps(domain_info(None,{"name":"pant.to.glass"}),indent=3))

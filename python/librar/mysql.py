@@ -274,8 +274,11 @@ def connect(login):
     elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
         my_login = mysql_json[login]["username"]
         my_password = mysql_json[login]["password"]
+    else:
+        log(f"ERROR: Could not find MySQL password for user {login}")
+        return False
 
-    if my_password is None:
+    if my_login is None or my_password is None:
         log(f"ERROR: Could not find MySQL password for user {login}")
         return False
 
