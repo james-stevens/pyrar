@@ -57,6 +57,9 @@ def webui_basket(basket, req):
     if not ok:
         return False, user_db
 
+    if user_db["acct_on_hold"]:
+        return False, "Account is on hold"
+
     whole_basket = {"basket": basket, "user_db": user_db}
 
     ok, reply = capture_basket(req, whole_basket)

@@ -6,6 +6,8 @@ import os
 import inspect
 import idna
 
+from librar.policy import this_policy as policy
+
 LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
 
 HEXLIB = "0123456789ABCDEF"

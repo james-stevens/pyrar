@@ -65,6 +65,7 @@ def load_records(which_message, request_list):
 
         if table == "users":
             if not reply["email_verified"] and which_message != "verify_email":
+                log(f"User {reply['email']} has not verified their email")
                 return None
             reply["hash_confirm"] = hashstr.make_hash(reply["created_dt"] + ":" + reply["email"])
 

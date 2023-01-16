@@ -17,6 +17,8 @@ from librar import sigprocs
 from librar import misc
 from librar import domobj
 
+from mailer import spool_email
+
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend.dom_plugins import *
@@ -73,7 +75,7 @@ def check_domain_is_mine(user_id, domain, require_live):
         "user_id": int(user_id)
     })
 
-    if not ok:
+    if not ok or not dom_db or len(dom_db) <= 0:
         return False, "Domain not found or not yours"
 
     if require_live and dom_db["status_id"] not in misc.LIVE_STATUS:
@@ -200,6 +202,7 @@ def webui_gift_domain(req, post_dom):
     if not ok:
         return False, "Gifting domain failed"
 
+    spool_email.spool("gifted_domain",[["domains",{"domain_id":post_dom["domain_id"]}],["users",{"user_id":user_db["user_id"]}]])
     return ok, {"new_user_id": user_db["user_id"]}
 
 

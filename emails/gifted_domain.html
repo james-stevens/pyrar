@@ -1,0 +1,21 @@
+{% include "start.inc" %}
+Subject: You just received a gift of the domain {{domain.display_name}} ({{domain.name}})
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+You have just been gifted the domain {{domain.display_name}} ({{domain.name}})
+<P>
+
+<table style="margin-left: 100px">
+<tr><Td class=promptCell>Domain Name :</td><td class=dataCell>{{domain.display_name}} ({{domain.name}})</td></tr>
+<tr><Td class=promptCell>Expiry Date :</td><td class=dataCell>{{domain.expiry_dt.split()[0]}}</td></tr>
+</table>
+
+
+{% include "end.html" %}
+</body></html>
