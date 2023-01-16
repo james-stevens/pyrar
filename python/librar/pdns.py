@@ -193,8 +193,8 @@ def run_cmds(post_json):
     ret = True
     for req in post_json:
         json_data = req["data"] if "data" in req else None
-        request = Request(req["cmd"],req["url"],json=json_data)
-        response = client.send(req.prepare())
+        request = requests.Request(req["cmd"],req["url"],json=json_data,headers=headers)
+        response = client.send(request.prepare())
         ret = ret and response.status_code >= 200 and response.status_code <= 299
     return ret
 
