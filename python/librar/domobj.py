@@ -50,20 +50,19 @@ class Domain:
 
     def valid_expiry_limit(self, num_years):
         renew_limit = policy.policy("renew_limit")
-        if self.dom_db is None and not self.load_record():
-            return num_years <= renew_limit
-
-        if not sql.has_data(self.dom_db, ["name", "expiry_dt"]):
-            return False
-
         if "renew_limit" in self.tld_rec:
             renew_limit = self.tld_rec["renew_limit"]
         elif "renew_limit" in self.registry:
             renew_limit = self.registry["renew_limit"]
 
+        if self.dom_db is None and not self.load_record():
+            return num_years <= renew_limit
+
+        if not sql.has_data(self.dom_db, ["name", "expiry_dt"]):
+            return num_years <= renew_limit
+
         limit_dt = sql.date_add(sql.now(), years=renew_limit)
         new_expiry_dt = sql.date_add(self.dom_db["expiry_dt"], years=num_years)
-
         return new_expiry_dt <= limit_dt
 
 
