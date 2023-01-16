@@ -11,6 +11,7 @@ DEFAULT_CURRENCY = {"desc": "US Dollars", "iso": "USD", "separator": [",", "."],
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
 policy_defaults = {
+    "strict_idna2008": False,
     "strict_referrer": True,
     "pdns_log_facility": 0,
     "pdns_log_level": 5,

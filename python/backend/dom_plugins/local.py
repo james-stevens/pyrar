@@ -160,7 +160,6 @@ def local_domain_prices(domlist, num_years=1, qry_type=["create", "renew"]):
     return True, ret_doms
 
 
-
 dom_handler.add_plugin(
     "local", {
         "hello": my_hello,

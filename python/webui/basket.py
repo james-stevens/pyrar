@@ -276,7 +276,7 @@ def get_order_domain_id(order, user_db):
             return False, "Domain already exists: {order['domain']}/{order['action']}"
         return True, -1
 
-    if not registry.tld_lib.valid_expiry_limit(dom_db,order["num_years"]):
+    if not registry.tld_lib.valid_expiry_limit(dom_db, order["num_years"]):
         return False, f"{dom_db['name']} renewal of {order['num_years']} years is too much"
 
     if "domain_id" in dom_db:
@@ -310,8 +310,10 @@ def make_order_record(site_currency, order, user_db):
         "amended_dt": now
     }
 
+
 class Empty:
     pass
+
 
 def run_test(which):
     req = Empty
@@ -343,7 +345,6 @@ def run_test(which):
 
     print(ok, json.dumps(reply, indent=3))
     sys.exit(0)
-
 
 
 def main():

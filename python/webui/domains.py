@@ -40,8 +40,8 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
         return False, "Price check failed"
 
     domlist.load_all()
-    local_doms = { name:domobj.dom_db for name, domobj in domlist.domobjs.items() if domobj.dom_db is not None }
-    dom_dict = { dom["name"]:dom for dom in ret_js }
+    local_doms = {name: domobj.dom_db for name, domobj in domlist.domobjs.items() if domobj.dom_db is not None}
+    dom_dict = {dom["name"]: dom for dom in ret_js}
 
     for name, domobj in domlist.domobjs.items():
         if domobj.dom_db is None:
@@ -208,4 +208,4 @@ if __name__ == "__main__":
     registry.start_up()
     domlist = domobj.DomainList()
     domlist.set_list(sys.argv[1:])
-    print(json.dumps(get_domain_prices(domlist,1,["create","renew"],10450),indent=3))
+    print(json.dumps(get_domain_prices(domlist, 1, ["create", "renew"], 10450), indent=3))

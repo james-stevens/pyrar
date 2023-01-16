@@ -58,7 +58,7 @@ def check_num_years(bke_job):
     job_id = bke_job["backend_id"]
     if not check_have_data(job_id, bke_job, ["num_years"]):
         return None
-    if not isinstance(bke_job["num_years"],int):
+    if not isinstance(bke_job["num_years"], int):
         return None
     years = int(bke_job["num_years"])
     if years < 1 or years > policy.policy("renew_limit"):

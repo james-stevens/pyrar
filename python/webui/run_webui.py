@@ -542,7 +542,7 @@ def pdns_action(func):
     ok, reply = dom.set_name(req.post_js["name"])
 
     if not ok:
-    	return req.abort(reply)
+        return req.abort(reply)
     dom.load_record(req.user_id)
     if dom.dom_db is None:
         return req.abort("Domain not found or not yours")
@@ -782,7 +782,7 @@ def rest_domain_price():
         return req.abort(num_years)
 
     domlist = domobj.DomainList()
-    ok,reply = domlist.set_list(dom)
+    ok, reply = domlist.set_list(dom)
 
     if not ok or not reply:
         return req.abort(reply if reply is not None else "Invalid domain name")

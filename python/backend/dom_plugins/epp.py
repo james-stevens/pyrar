@@ -328,7 +328,7 @@ def xml_check_with_fees(domlist, years, qry_type):
         "check": {
             "domain:check": {
                 "@xmlns:domain": domlist.xmlns["domain"],
-                "domain:name": [dom for dom in domlist.domobjs ]
+                "domain:name": [dom for dom in domlist.domobjs]
             }
         },
         "extension": {
@@ -367,7 +367,6 @@ dom_handler.add_plugin(
         "dom/price": epp_domain_prices
     })
 
-
 if __name__ == "__main__":
     log_init(with_debug=True)
     if not sql.connect("engine"):
@@ -375,4 +374,4 @@ if __name__ == "__main__":
         sys.exit(1)
     registry.start_up()
     start_up_check()
-    print(json.dumps(domain_info(None,{"name":"pant.to.glass"}),indent=3))
+    print(json.dumps(domain_info(None, {"name": "pant.to.glass"}), indent=3))

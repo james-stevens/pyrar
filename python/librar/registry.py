@@ -18,7 +18,9 @@ EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
 EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
 EPP_PORTS_LIST = "/run/regs_ports"
 
-POW10 = [ 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000 ]
+POW10 = [
+    1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000
+]
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
 
@@ -177,7 +179,7 @@ class ZoneLib:
                 del dom["priority"]
 
     def valid_expiry_limit(self, dom_db, num_years):
-        if not sql.has_data(dom_db,["name","expiry_dt"]):
+        if not sql.has_data(dom_db, ["name", "expiry_dt"]):
             return False
         if (tld := self.zone_rec_of_name(dom_db['name'])) is None:
             return False
@@ -188,8 +190,8 @@ class ZoneLib:
         elif "renew_limit" in tld["reg_data"]:
             renew_limit = tld["reg_data"]["renew_limit"]
 
-        limit_dt = sql.date_add(sql.now(),years=renew_limit)
-        new_expiry_dt = sql.date_add(dom_db["expiry_dt"],years=num_years)
+        limit_dt = sql.date_add(sql.now(), years=renew_limit)
+        new_expiry_dt = sql.date_add(dom_db["expiry_dt"], years=num_years)
 
         if new_expiry_dt <= limit_dt:
             return True
@@ -318,8 +320,8 @@ if __name__ == "__main__":
     sql.connect("webui")
     start_up()
 
-    dom_data = [ {"name":"tiny.zz","renew":None} ]
-    tld_lib.multiply_values(dom_data,12)
+    dom_data = [{"name": "tiny.zz", "renew": None}]
+    tld_lib.multiply_values(dom_data, 12)
     print(dom_data)
 
     # print(tld_lib.registry)

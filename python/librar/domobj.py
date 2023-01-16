@@ -19,7 +19,7 @@ class Domain:
         self.tld = None
         self.dom_db = None
 
-    def set_name(self,name):
+    def set_name(self, name):
         """ check the name is valid & find its registry """
         name = name.lower()
         if not validate.is_valid_fqdn(name):
@@ -31,16 +31,16 @@ class Domain:
         self.name = name
         return True, True
 
-    def load_record(self,user_id = None):
+    def load_record(self, user_id=None):
         """ load the domain from the database """
         if self.name is None or self.registry is None or self.tld is None:
             return False
         self.dom_db = None
-        where = {"name":self.name}
+        where = {"name": self.name}
         if user_id is not None:
             where["user_id"] = user_id
 
-        ok, reply = sql.sql_select_one("domains",where)
+        ok, reply = sql.sql_select_one("domains", where)
         if not ok or not reply or len(reply) <= 0:
             return False
         self.dom_db = reply
@@ -56,7 +56,7 @@ class DomainList:
         self.xmlns = None
         self.client = None
 
-    def set_list(self,dom_list):
+    def set_list(self, dom_list):
         if isinstance(dom_list, str):
             if dom_list.find(",") >= 0:
                 ok, reply = self.process_list(dom_list.split(","))
@@ -92,7 +92,7 @@ class DomainList:
             self.domobjs[this_domobj.name] = this_domobj
         return True, True
 
-    def load_all(self,user_id = None):
+    def load_all(self, user_id=None):
         if self.domobjs is None:
             return False
         for __, this_domobj in self.domobjs.items():
@@ -104,10 +104,10 @@ if __name__ == "__main__":
     sql.connect("webui")
     registry.start_up()
     my_dom = Domain()
-    print("ONE:DOMS>>>",my_dom.set_name(sys.argv[1]),my_dom.registry)
-    print("LOADDB>>>",my_dom.load_record(),my_dom.dom_db)
+    print("ONE:DOMS>>>", my_dom.set_name(sys.argv[1]), my_dom.registry)
+    print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
     my_doms = DomainList()
-    print("LIST>>>",my_doms.set_list(sys.argv[1:]))
+    print("LIST>>>", my_doms.set_list(sys.argv[1:]))
     my_doms.load_all()
     for d, domobj in my_doms.domobjs.items():
-        print(d,domobj.name,domobj.dom_db)
+        print(d, domobj.name, domobj.dom_db)
