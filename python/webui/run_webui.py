@@ -11,6 +11,7 @@ from librar import misc
 from librar import validate
 from librar import passwd
 from librar import pdns
+from librar import domobj
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -531,17 +532,22 @@ def users_register():
 
 def pdns_action(func):
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name") or not validate.is_valid_fqdn(req.post_js["name"]):
+    if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ok, dom_db = sql.sql_select_one("domains", {"name": req.post_js["name"], "user_id": req.user_id})
+    dom = domobj.Domain()
+    ok, reply = dom.set_name(req.post_js["name"])
+
     if not ok:
+    	return req.abort(reply)
+    dom.load_record(req.user_id)
+    if dom.dom_db is None:
         return req.abort("Domain not found or not yours")
 
-    return func(req, dom_db)
+    return func(req, dom.dom_db)
 
 
 def pdns_get_data(req, dom_db):

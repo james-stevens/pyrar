@@ -13,11 +13,11 @@ from librar import accounts
 from librar import sales
 from librar import mysql as sql
 from librar.policy import this_policy as policy
+from librar import domobj
 
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend.dom_plugins import *
-from webui import domains
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
@@ -228,19 +228,19 @@ def parse_basket(whole_basket):
 
 
 def price_order_item(order, user_db):
-    domobj = domains.DomainName(order["domain"])
-    if domobj.names is None:
-        return False, domobj.err if domobj.err is not None else "Invalid domain name"
+    dom = domobj.DomainList()
+    ok, reply = dom.set_list(order["domain"])
+    if not ok:
+        return False, reply if reply is not None else "Invalid domain name"
 
-    if not domobj.registry or "type" not in domobj.registry or "name" not in domobj.registry:
+    if not dom.registry or "type" not in dom.registry or "name" not in dom.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := dom_handler.run(domobj.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar: {domobj.registry['name']}"
+    if (plugin_func := dom_handler.run(dom.registry["type"], "dom/price")) is None:
+        return False, f"No plugin for this Registrar: {dom.registry['name']}"
 
-    ok, prices = plugin_func(domobj, order["num_years"], [order["action"]])
+    ok, prices = plugin_func(dom, order["num_years"], [order["action"]])
     if not ok or prices is None or len(prices) != 1:
-        print(">>>",prices)
         return False, "Price check failed"
 
     if order["action"] not in prices[0]:
@@ -253,7 +253,7 @@ def price_order_item(order, user_db):
     if "reg_" + order["action"] not in prices:
         return False, f"Error in json prices for: {order['domain']}/{order['action']}"
 
-    prices["currency"] = domobj.currency["iso"]
+    prices["currency"] = dom.currency["iso"]
 
     return True, prices
 

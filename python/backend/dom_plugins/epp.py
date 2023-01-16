@@ -286,13 +286,13 @@ def my_hello(__):
     return "EPP: Hello"
 
 
-def http_price_domains(domobj, years, qry_type):
+def http_price_domains(domlist, years, qry_type):
 
-    if domobj.registry is None or "url" not in domobj.registry:
+    if domlist.registry is None or "url" not in domlist.registry:
         return 400, "Unsupported TLD"
 
-    xml = xml_check_with_fees(domobj, years, qry_type)
-    resp = domobj.client.post(domobj.registry["url"], json=xml, headers=misc.HEADER)
+    xml = xml_check_with_fees(domlist, years, qry_type)
+    resp = domlist.client.post(domlist.registry["url"], json=xml, headers=misc.HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"
@@ -308,8 +308,8 @@ def http_price_domains(domobj, years, qry_type):
     return 400, "Unexpected Error"
 
 
-def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"]):
-    ok, out_js = http_price_domains(domobj, num_years, qry_type)
+def epp_domain_prices(domlist, num_years=1, qry_type=["create", "renew"]):
+    ok, out_js = http_price_domains(domlist, num_years, qry_type)
     if ok != 200:
         return False, out_js
 
@@ -322,19 +322,19 @@ def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"]):
     return True, ret_js
 
 
-def xml_check_with_fees(domobj, years, qry_type):
+def xml_check_with_fees(domlist, years, qry_type):
     fees_extra = [fees_one(name, years) for name in qry_type]
     return {
         "check": {
             "domain:check": {
-                "@xmlns:domain": domobj.xmlns["domain"],
-                "domain:name": domobj.names
+                "@xmlns:domain": domlist.xmlns["domain"],
+                "domain:name": [dom for dom in domlist.domobjs ]
             }
         },
         "extension": {
             "fee:check": {
-                "@xmlns:fee": domobj.xmlns["fee"],
-                "fee:currency": domobj.currency["iso"],
+                "@xmlns:fee": domlist.xmlns["fee"],
+                "fee:currency": domlist.currency["iso"],
                 "fee:command": fees_extra
             }
         }

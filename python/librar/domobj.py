@@ -8,6 +8,8 @@ import sys
 from librar import mysql as sql
 from librar import registry
 from librar import validate
+from librar.policy import this_policy as policy
+
 
 class Domain:
     """ domain handler """
@@ -15,29 +17,30 @@ class Domain:
         self.name = None
         self.registry = None
         self.tld = None
-        self.xmlns = None
         self.dom_db = None
 
     def set_name(self,name):
         """ check the name is valid & find its registry """
         name = name.lower()
-        if (err := validate.check_domain_name(name)) is not None:
-            return False, err
+        if not validate.is_valid_fqdn(name):
+            return False, "Invalid domain name"
         if (tld := registry.tld_lib.tld_of_name(name)) is None:
             return False, "TLD not supported"
         self.tld = tld
         self.registry = registry.tld_lib.zone_data[self.tld]["reg_data"]
-        if self.registry["type"] == "epp":
-            self.xmlns = registry.make_xmlns(self.registry)
         self.name = name
         return True, True
 
-    def load_record(self):
+    def load_record(self,user_id = None):
         """ load the domain from the database """
         if self.name is None or self.registry is None or self.tld is None:
             return False
         self.dom_db = None
-        ok, reply = sql.sql_select_one("domains",{"name":self.name})
+        where = {"name":self.name}
+        if user_id is not None:
+            where["user_id"] = user_id
+
+        ok, reply = sql.sql_select_one("domains",where)
         if not ok or not reply or len(reply) <= 0:
             return False
         self.dom_db = reply
@@ -49,6 +52,9 @@ class DomainList:
     def __init__(self):
         self.domobjs = None
         self.registry = None
+        self.currency = None
+        self.xmlns = None
+        self.client = None
 
     def set_list(self,dom_list):
         if isinstance(dom_list, str):
@@ -65,6 +71,10 @@ class DomainList:
         if not ok:
             return False, reply
 
+        self.currency = self.registry["currency"] if "currency" in self.registry else policy.policy("currency")
+        if self.registry["type"] == "epp":
+            self.xmlns = registry.make_xmlns(self.registry)
+            self.client = registry.tld_lib.clients[self.registry["name"]]
         return True, True
 
     def process_list(self, dom_list):
@@ -82,11 +92,11 @@ class DomainList:
             self.domobjs[this_domobj.name] = this_domobj
         return True, True
 
-    def load_all(self):
+    def load_all(self,user_id = None):
         if self.domobjs is None:
             return False
         for __, this_domobj in self.domobjs.items():
-            this_domobj.load_record()
+            this_domobj.load_record(user_id)
         return True
 
 
