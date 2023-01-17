@@ -592,6 +592,12 @@
             "type": "int",
             "null": false,
             "default": 0
+         },
+         "verified": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false,
+            "default": 0
          }
       },
       "indexes": {
@@ -952,6 +958,12 @@
          "by_login": {
             "columns": [
                "email"
+            ],
+            "unique": true
+         },
+         "by_pass_rst": {
+            "columns": [
+               "password_reset"
             ],
             "unique": true
          }

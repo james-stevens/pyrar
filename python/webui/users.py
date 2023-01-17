@@ -11,6 +11,7 @@ import sys
 from librar import mysql as sql
 from librar import validate
 from librar import passwd
+from librar import misc
 from librar.policy import this_policy as policy
 from librar.log import log, debug, init as log_init
 from librar import hashstr
@@ -19,6 +20,7 @@ from mailer import spool_email
 
 USER_REQUIRED = ["email", "password"]
 
+
 def event_log(req, more_event_items):
     event_db = misc.where_event_log()
     event_db.update(req.base_event)
@@ -26,28 +28,12 @@ def event_log(req, more_event_items):
     sql.sql_insert("events", event_db)
 
 
-def make_session_code(user_id):
-    hsh = hashlib.sha256()
-    hsh.update(secrets.token_bytes(500))
-    hsh.update(str(user_id).encode("utf-8"))
-    hsh.update(str(os.getpid()).encode("utf-8"))
-    hsh.update(str(time.time()).encode("utf-8"))
-    return base64.b64encode(hsh.digest()).decode("utf-8")
-
-
-def make_session_key(session_code, user_agent):
-    hsh = hashlib.sha256()
-    hsh.update(session_code.encode("utf-8"))
-    hsh.update(user_agent.encode("utf-8"))
-    return base64.b64encode(hsh.digest()).decode("utf-8")
-
-
 def start_session(user_db, user_agent):
     user_id = user_db['user_id']
     sql.sql_delete_one("session_keys", {"user_id": user_id})
 
-    ses_code = make_session_code(user_id)
-    sess_data = {"session_key": make_session_key(ses_code, user_agent), "user_id": user_id, "created_dt": None}
+    ses_code = hashstr.make_session_code(user_id)
+    sess_data = {"session_key": hashstr.make_session_key(ses_code, user_agent), "user_id": user_id, "created_dt": None}
 
     ok, __ = sql.sql_insert("session_keys", sess_data)
     if not ok:
@@ -110,7 +96,7 @@ def check_session(ses_code, user_agent):
     if not validate.is_valid_ses_code(ses_code):
         return False, None
 
-    key = make_session_key(ses_code, user_agent)
+    key = hashstr.make_session_key(ses_code, user_agent)
     tout = policy.policy('session_timeout')
     ok, data = sql.sql_select_one("session_keys", {"session_key": key},
                                   f"date_add(amended_dt, interval {tout} minute) > now() 'ok',user_id")
@@ -129,7 +115,7 @@ def check_session(ses_code, user_agent):
 
 def logout(ses_code, user_id, user_agent):
     ok = sql.sql_delete_one("session_keys", {
-        "session_key": make_session_key(ses_code, user_agent),
+        "session_key": hashstr.make_session_key(ses_code, user_agent),
         "user_id": user_id
     })
     if not ok:
@@ -148,7 +134,7 @@ def login(data, user_agent):
         return False, None
 
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": data["email"]})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return False, None
 
     if not check_password(user_db["user_id"], data, user_db):
@@ -205,7 +191,7 @@ def verify_email(user_id, hash_sent):
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
-    hash_found = hashstr.hash_confirm(user_db["created_dt"] + ":" + user_db["email"])
+    hash_found = hashstr.make_hash(user_db["created_dt"] + ":" + user_db["email"])
     if hash_found == hash_sent:
         return sql.sql_update_one("users", {
             "email_verified": True,
@@ -220,13 +206,20 @@ def request_password_reset(req):
     if not validate.is_valid_email(email) or not validate.is_valid_pin(pin_num):
         return False
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "email": email})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return None
 
-    send_hash = make_session_code(user_db["user_id"])[:30]
+    send_hash = hashstr.make_session_code(user_db["user_id"])[:30]
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     if not sql.sql_update_one("users", {"password_reset": store_hash}, {"user_id": user_db["user_id"]}):
         return None
+
+    event_log(
+        req, {
+            "event_type": "password/request",
+            "user_id": user_db["user_id"],
+            "notes": f"Password reset requested for '{email}'"
+        })
 
     spool_email.spool("reset_request", [["users", {"user_id": user_db["user_id"]}], [None, {"reset_code": send_hash}]])
     return send_hash
@@ -241,7 +234,7 @@ def reset_users_password(req):
 
     store_hash = hashstr.make_hash(f"{send_hash}:{pin_num}", 30)
     ok, user_db = sql.sql_select_one("users", {"account_closed": 0, "password_reset": store_hash})
-    if not ok or not len(user_db):
+    if not ok or not user_db:
         return False
 
     if not sql.sql_update_one("users", {
@@ -250,32 +243,39 @@ def reset_users_password(req):
     }, {"user_id": user_db["user_id"]}):
         return False
 
+    event_log(
+        req, {
+            "event_type": "password/reset",
+            "user_id": user_db["user_id"],
+            "notes": f"User password reset using matching PIN & code"
+        })
+
     spool_email.spool("password_reset", [["users", {"user_id": user_db["user_id"]}]])
     return True
 
 
-class Empty:
-    pass
+# class Empty:
+#     pass
 
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
 
-    req = Empty()
-    req.post_js = {}
-    req.post_js["email"] = "dan@jrcs.net"
-    req.post_js["pin"] = "1234"
-    send_hash = request_password_reset(req)
-    print(">>> Ask-RESET", send_hash)
-    #print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
+    # req = Empty()
+    # req.post_js = {}
+    # req.post_js["email"] = "dan@jrcs.net"
+    # req.post_js["pin"] = "1234"
+    # send_hash = request_password_reset(req)
+    # print(">>> Ask-RESET", send_hash)
+    # print(">>>  Do-RESET", reset_users_password(send_hash, 1234, "aa"))
 
     sys.exit(0)
-    # login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
+    login_ok, login_data = login({"email": "flip@flop.com", "password": "aa"}, "curl/7.83.1")
     # debug(">>> LOGIN " + str(login_ok) + "/" + str(login_data))
     # print(register({"email":"james@jrcs.net","password":"my_password"}))
     # print(register({"e-mail":"james@jrcs.net","password":"my_password"}))
-    # print(make_session_code(100))
-    # print(make_session_key("fred", "Windows"))
+    # print(hashstr.make_session_code(100))
+    # print(hashstr.make_session_key("fred", "Windows"))
     debug(">>>>SELECT " +
           str(sql.sql_select("session_keys", "1=1", "date_add(amended_dt, interval 60 minute) > now() 'ok',user_id")))
     debug(">>>> " + str(login_data["session"]))

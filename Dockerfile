@@ -10,8 +10,8 @@ RUN apk add nginx curl
 
 RUN apk add python3 jq py-pip
 RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
-RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-tzdata py3-yaml
-RUN pip install apscheduler httpx
+RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml py3-requests
+RUN pip install apscheduler
 
 RUN apk add postfix
 COPY conf/aliases /etc/postfix/aliases

@@ -4,29 +4,10 @@
 
 import inspect
 
-from librar.log import log, init as log_init
+from librar.log import log
 from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import validate
-
-
-def do_domain_update(job_id, name, dom_db, epp_info):
-    this_reg, url = registry.tld_lib.reg_record_for_domain(name)
-    ns_list, ds_list = get_domain_lists(dom_db)
-    if not check_dom_data(job_id, name, ns_list, ds_list):
-        return None
-
-    add_ns = [item for item in ns_list if item not in epp_info["ns"]]
-    del_ns = [item for item in epp_info["ns"] if item not in ns_list]
-
-    add_ds = [ds_data for ds_data in ds_list if not ds_in_list(ds_data, epp_info["ds"])]
-    del_ds = [ds_data for ds_data in epp_info["ds"] if not ds_in_list(ds_data, ds_list)]
-
-    if (len(add_ns + del_ns + add_ds + del_ds)) <= 0:
-        return True
-
-    if len(add_ns) > 0:
-        run_host_create(job_id, this_reg, url, add_ns)
 
 
 def event_log(notes, bke_job):
@@ -58,8 +39,10 @@ def check_num_years(bke_job):
     job_id = bke_job["backend_id"]
     if not check_have_data(job_id, bke_job, ["num_years"]):
         return None
+    if not isinstance(bke_job["num_years"], int):
+        return None
     years = int(bke_job["num_years"])
-    if years < 1 or years > policy.policy("max_renew_years"):
+    if years < 1 or years > policy.policy("renew_limit"):
         log(f"BKE-{job_id} num_years failed validation")
         return None
     return years
@@ -80,7 +63,7 @@ def get_domain_lists(dom_db):
 def get_dom_from_db(bke_job):
     job_id = bke_job["backend_id"]
     if not check_have_data(job_id, bke_job, ["domain_id"]):
-        log(f"BKE-{job_id}: DOM-'{domain_id}' missing or invalid")
+        log(f"BKE-{job_id}: 'domain_id' missing or invalid")
         return None
 
     domain_id = bke_job["domain_id"]
@@ -99,3 +82,26 @@ def get_dom_from_db(bke_job):
         return None
 
     return dom_db
+
+
+def check_dom_data(job_id, domain, ns_list, ds_list):
+    """ Validate the data passed """
+    if validate.check_domain_name(domain) is not None:
+        log(f"EPP-{job_id} Check: '{domain}' failed validation")
+        return False
+
+    if len(ns_list) <= 0:
+        log(f"EPP-{job_id} Check: No NS given for '{domain}'")
+        return False
+
+    for item in ns_list:
+        if not validate.is_valid_fqdn(item):
+            log(f"EPP-{job_id} '{domain}' NS '{item}' failed validation")
+            return False
+
+    for item in ds_list:
+        if not validate.is_valid_ds(item):
+            log(f"EPP-{job_id} '{domain}' DS '{item}' failed validation")
+            return False
+
+    return True

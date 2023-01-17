@@ -4,16 +4,16 @@
 
 import base64
 
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
-from librar import misc
+from librar import static_data
 from librar import passwd
 
-from backend import dom_handler
 from backend import shared
+from backend import dom_handler
 
 
 def tld_pdns_check(name):
@@ -27,8 +27,7 @@ def tld_pdns_check(name):
 
 
 def domain_delete(bke_job, dom_db):
-    ok_remove = remove_parent_records(bke_job, dom_db)
-    return ok_remove and ok_delete and ok
+    return remove_parent_records(bke_job, dom_db)
 
 
 def remove_parent_records(bke_job, dom_db):
@@ -45,6 +44,7 @@ def remove_parent_records(bke_job, dom_db):
     ok_ns, __ = pdns.update_rrs(tld, {"name": name, "type": "NS", "data": []})
     ok_ds, __ = pdns.update_rrs(tld, {"name": name, "type": "DS", "data": []})
 
+    # CODE
     # need code to remove glue records, when supported
 
     return ok_ns and ok_ds and ok_a and ok_aaaa
@@ -55,9 +55,28 @@ def domain_expired(bke_job, dom_db):
 
 
 def domain_create(bke_job, dom_db):
-    ok_add = add_yrs(bke_job, dom_db)
-    ok_updt = domain_update_from_db(bke_job, dom_db)
-    return ok_add and ok_updt
+    if (years := shared.check_num_years(bke_job)) is None:
+        return False
+
+    log(f"domain_create: {dom_db['name']}, {dom_db['expiry_dt']} yrs={years}")
+    if (years := shared.check_num_years(bke_job)) is None:
+        return False
+    if (ok_add := add_yrs(years, dom_db, "created_dt")):
+        create_update_request(bke_job)
+    return ok_add
+
+
+def create_update_request(bke_job):
+    new_bke = {
+        "domain_id": bke_job["domain_id"],
+        "user_id": bke_job["user_id"],
+        "execute_dt": sql.now(),
+        "created_dt": None,
+        "amended_dt": None,
+        "job_type": "dom/update",
+        "failures": 0
+    }
+    sql.sql_insert("backend", new_bke)
 
 
 def start_up_check():
@@ -98,14 +117,12 @@ def domain_update_from_db(bke_job, dom_db):
 
 def domain_request_transfer(bke_job, dom_db):
     if not sql.has_data(bke_job, "authcode") or not sql.has_data(dom_db, "authcode"):
-        debug(f"Missing field")
         return None
 
     if dom_db["user_id"] == bke_job["user_id"]:
         return True
 
     if not passwd.compare(dom_db["authcode"], bke_job["authcode"]):
-        debug(f"passwords do not match {dom_db['authcode']} {enc_pass}")
         return None
 
     return sql.sql_update_one("domains", {
@@ -114,26 +131,36 @@ def domain_request_transfer(bke_job, dom_db):
     }, {"domain_id": dom_db["domain_id"]})
 
 
-def add_yrs(bke_job, dom_db):
+def add_yrs(years, dom_db, start_date="expiry_dt"):
+    log(f"Adding {years} yrs to '{dom_db['name']}'/{start_date}")
     values = [
-        f"expiry_dt = date_add(expiry_dt,interval {bke_job['num_years']} year)",
-        f"status_id = if (expiry_dt > now(),{misc.STATUS_LIVE},{misc.STATUS_EXPIRED})", "amended_dt = now()"
+        f"expiry_dt = date_add({start_date},interval {years} year)",
+        f"status_id = if (expiry_dt > now(),{static_data.STATUS_LIVE},{static_data.STATUS_EXPIRED})",
+        "amended_dt = now()"
     ]
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 
 
 def domain_renew(bke_job, dom_db):
-    return add_yrs(bke_job, dom_db)
+    if (years := shared.check_num_years(bke_job)) is None:
+        return False
+    return add_yrs(years, dom_db)
 
 
 def domain_recover(bke_job, dom_db):
-    ok_add = add_yrs(bke_job, dom_db)
-    ok_updt = domain_update_from_db(bke_job, dom_db)
-    return ok_add and ok_updt
+    if (years := shared.check_num_years(bke_job)) is None:
+        return False
+    if (ok_add := add_yrs(years, dom_db)):
+        create_update_request(bke_job)
+    return ok_add
 
 
+# pylint: disable=unused-argument
 def domain_info(bke_job, dom_db):
     return dom_db
+
+
+# pylint: enable=unused-argument
 
 
 def set_authcode(bke_job, dom_db):
@@ -145,32 +172,29 @@ def my_hello(__):
     return "LOCAL: Hello"
 
 
-def local_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
-    ok, reply = sql.sql_select("domains", {"name": domobj.names})
-    if not ok:
-        return False, "Unexpected database error"
+# pylint: disable=unused-argument
+def domain_update_flags(bke_job, dom_db):
+    """ nothing to do for `local` """
+    return True
 
-    doms_db = {dom["name"]: dom for dom in reply}
-    ret_js = []
-    for dom in domobj.names if isinstance(domobj.names, list) else [domobj.names]:
-        add_dom = {"num_years": num_years, "name": dom, "avail": False}
-        for qt in qry_type:
-            add_dom[qt] = None
 
-        if dom not in doms_db:
-            add_dom["avail"] = True
-        else:
-            this_dom = doms_db[dom]
-            if this_dom["user_id"] == user_id:
-                add_dom["yours"] = True
-            add_dom["reason"] = "Already registered"
-            if sql.has_data(this_dom, "for_sale_msg"):
-                add_dom["avail"] = True
-                add_dom["for_sale_msg"] = this_dom["for_sale_msg"]
+# pylint: enable=unused-argument
 
-        ret_js.append(add_dom)
 
-    return True, ret_js
+def local_domain_prices(domlist, num_years=1, qry_type=None):
+    """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
+    if qry_type is None:
+        qry_type = ["create", "renew"]
+    ret_doms = []
+    for dom in domlist.domobjs:
+        add_dom = {"num_years": num_years, "avail": True}
+        for qry in qry_type:
+            add_dom[qry] = None
+
+        add_dom["name"] = dom
+        ret_doms.append(add_dom)
+
+    return True, ret_doms
 
 
 dom_handler.add_plugin(
@@ -186,6 +210,7 @@ dom_handler.add_plugin(
         "dom/expired": domain_expired,
         "dom/info": domain_info,
         "dom/recover": domain_recover,
+        "dom/flags": domain_update_flags,
         "dom/price": local_domain_prices
     })
 

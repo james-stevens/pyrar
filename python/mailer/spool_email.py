@@ -30,19 +30,18 @@ def format_currency(number, currency):
         num *= -1
     num = str(num)
     places = currency["decimal"]
-    if len(num) < (places+1):
-        num = ("000000000000000"+num)[(places+1)*-1:]
-    neg_places = -1*places
+    if len(num) < (places + 1):
+        num = ("000000000000000" + num)[(places + 1) * -1:]
+    neg_places = -1 * places
     start = num[:neg_places]
     use_start = ""
     while len(start) > 3:
-        use_start += currency["separator"][0]+start[-3:]
+        use_start += currency["separator"][0] + start[-3:]
         start = start[:-3]
     if len(start) > 0:
-        use_start = start+use_start
+        use_start = start + use_start
 
-    return pfx+use_start+currency["separator"][1]+num[neg_places:]
-
+    return pfx + use_start + currency["separator"][1] + num[neg_places:]
 
 
 def load_records(which_message, request_list):
@@ -66,6 +65,7 @@ def load_records(which_message, request_list):
 
         if table == "users":
             if not reply["email_verified"] and which_message != "verify_email":
+                log(f"User {reply['email']} has not verified their email")
                 return None
             reply["hash_confirm"] = hashstr.make_hash(reply["created_dt"] + ":" + reply["email"])
 
@@ -79,6 +79,11 @@ def load_records(which_message, request_list):
             return_data["registry"] = registry.tld_lib.reg_record_for_domain(reply["name"])
 
         return_data[tag] = reply
+
+    if "domain" in return_data and "sale" in return_data and "expiry_dt" in return_data[
+            "domain"] and "num_years" in return_data["sale"]:
+        return_data["domain"]["new_expiry_dt"] = sql.date_add(return_data["domain"]["expiry_dt"],
+                                                              years=int(return_data["sale"]["num_years"]))
 
     return return_data
 
@@ -107,10 +112,10 @@ def debug_formatter():
         "separator": [",", "."],
         "symbol": "\u039E",
         "decimal": 6,
-        }
+    }
 
-    print(format_currency(int(sys.argv[1]),def_cur))
-    print(format_currency(int(sys.argv[1]),cur))
+    print(format_currency(int(sys.argv[1]), def_cur))
+    print(format_currency(int(sys.argv[1]), cur))
     sys.exit(0)
 
 
@@ -119,7 +124,8 @@ if __name__ == "__main__":
     # debug_formatter()
     sql.connect("engine")
     registry.start_up()
-    # print("spool_email>>",spool_email("verify_email", [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]))
+    query = [["domains", {"name": "xn--e28h.xn--dp8h"}], ["users", {"email": "dan@jrcs.net"}]]
+    # print("spool_email>>",spool_email("verify_email", query))
     spool("receipt", [[None, {
         "some-data": "value"
     }], ["sales", {

@@ -6,33 +6,8 @@ import os
 import inspect
 import idna
 
-LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
-
-HEXLIB = "0123456789ABCDEF"
-HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
-
-CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
-EPP_ACTIONS = ["create", "renew", "transfer", "restore"]
-
-STATUS_LIVE = 1
-STATUS_WAITING_PAYMENT = 10
-STATUS_WAITING_PROCESSING = 11
-STATUS_EXPIRED = 20
-STATUS_TRANS_QUEUED = 100
-STATUS_TRANS_REQ = 101
-STATUS_TRANS_FAIL = 120
-
-LIVE_STATUS = {1: True}
-
-DOMAIN_STATUS = {
-    1: "Live",
-    10: "Awating Payment",
-    11: "Processing",
-    20: "Expired",
-    100: "Transfer Queued",
-    101: "Transfer Requested",
-    120: "Transfer Failed"
-}
+from librar.policy import this_policy as policy
+from librar import static_data
 
 
 def where_event_log():
@@ -50,11 +25,13 @@ def ashex(line):
         line = line.encode("utf-8")
     ret = ""
     for asc in line:
-        ret += HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
+        ret += static_data.HEXLIB[asc >> 4] + static_data.HEXLIB[asc & 0xf]
     return ret
 
 
-def puny_to_utf8(name, strict_idna_2008=False):
+def puny_to_utf8(name, strict_idna_2008=None):
+    if strict_idna_2008 is None:
+        strict_idna_2008 = policy.policy("strict_idna2008")
     try:
         idn = idna.decode(name)
         return idn

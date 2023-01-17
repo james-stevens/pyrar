@@ -9,6 +9,7 @@ import re
 
 from librar import registry
 from librar import misc
+from librar import static_data
 
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
@@ -193,7 +194,7 @@ def is_valid_ds(ds_rec):
         return False
 
     for ch in ds_rec["digest"]:
-        if ch not in misc.HEXLIB:
+        if ch not in static_data.HEXLIB:
             return False
 
     if VALID_DS_LEN[ints["digestType"]] != len(ds_rec["digest"]):

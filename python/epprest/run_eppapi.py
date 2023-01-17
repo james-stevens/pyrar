@@ -18,9 +18,9 @@ from pytz import utc
 
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
+from librar import static_data
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
-LOGINS_FILE = os.environ["BASE"] + "/etc/logins.json"
 
 application = flask.Flask("EPP/REST/API")
 conn = None
@@ -34,15 +34,15 @@ NETWORK_BYTE_ORDER = "big"
 if "PYRAR_REGISTRY" not in os.environ:
     raise ValueError("No `PYRAR_REGISTRY` specified")
 
-if not os.path.isfile(LOGINS_FILE):
-    raise ValueError(f"Logins file `{LOGINS_FILE}` is missing")
+if not os.path.isfile(static_data.LOGINS_FILE):
+    raise ValueError(f"Logins file `{static_data.LOGINS_FILE}` is missing")
 
-with open(LOGINS_FILE, "r") as fd:
+with open(static_data.LOGINS_FILE, "r") as fd:
     logins = json.load(fd)
 
 this_reg = os.environ["PYRAR_REGISTRY"]
 if this_reg not in logins:
-    raise ValueError(f"Registry '{this_reg}' not in '{LOGINS_FILE}'")
+    raise ValueError(f"Registry '{this_reg}' not in '{static_data.LOGINS_FILE}'")
 
 this_login = logins[this_reg]
 for item in ["username", "password", "server"]:

@@ -37,7 +37,8 @@ sqlsh "CREATE TABLE users (
 	amended_dt				datetime,
 
 	primary key by_id (user_id),
-	unique key by_login(email)
+	unique key by_login(email),
+	unique key by_pass_rst(password_reset)
 	) ${utf8}"
 
 sqlsh "ALTER TABLE users AUTO_INCREMENT = 10450"

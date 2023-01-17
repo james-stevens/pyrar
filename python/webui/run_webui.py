@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" module to run the rest/api for user's site web/ui """
 
 import inspect
 import flask
@@ -10,20 +11,22 @@ from librar import misc
 from librar import validate
 from librar import passwd
 from librar import pdns
+from librar import static_data
+from librar import domobj
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
+from mailer import spool_email
+
 from webui import users
 from webui import domains
 from webui import basket
-from mailer import spool_email
-
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
 
-want_referrer_check = True
+WANT_REFERRER_CHECK = True
 
 HTML_CODE_ERR = 499
 HTML_CODE_OK = 200
@@ -70,6 +73,7 @@ class WebuiReq:
         self.is_logged_in = (self.user_id is not None and self.sess_code is not None)
 
     def parse_user_data(self, logged_in, check_sess_data):
+        """ set up session properties """
         if not logged_in or "session" not in check_sess_data:
             return
 
@@ -79,26 +83,29 @@ class WebuiReq:
         debug(f"Logged in as {self.user_id}")
 
     def set_base_event(self):
+        """ set up properties common to all events, for logging events """
         ip_addr = flask.request.remote_addr
         if "x-forwaded-for" in self.headers:
             ip_addr = self.headers["x-forwaded-for"]
         return {"from_where": ip_addr, "user_id": self.user_id, "who_did_it": "webui"}
 
     def abort(self, data):
+        """ return error code to caller """
         return self.response({"error": data}, HTML_CODE_ERR)
 
     def secure_user_data(self):
+        """ remove data columns the user shouldnt see """
         if self.user_data is None:
             return
-        for table in REMOVE_TO_SECURE:
+        for table, remove_cols in REMOVE_TO_SECURE.items():
             if table in self.user_data and isinstance(self.user_data[table], dict):
-                for column in REMOVE_TO_SECURE[table]:
+                for column in remove_cols:
                     if column in self.user_data[table]:
                         del self.user_data[table][column]
 
     def response(self, data, code=HTML_CODE_OK):
+        """ return OK response & data to caller """
         self.secure_user_data()
-
         resp = flask.make_response(flask.jsonify(data), code)
         resp.charset = 'utf-8'
         if self.sess_code is not None:
@@ -106,6 +113,7 @@ class WebuiReq:
         return resp
 
     def event(self, data):
+        """ log an event """
         context = inspect.stack()[1]
         data["program"] = context.filename.split("/")[-1]
         data["function"] = context.function
@@ -119,22 +127,28 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if want_referrer_check and policy.policy(
+    if WANT_REFERRER_CHECK and policy.policy(
             "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
         log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
+    return None
 
 
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
+    if (payment_methods := policy.policy("payment_methods")) is None:
+        payment_methods = list(pay_handler.pay_plugins)
     return req.response({
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
+        "dom_flags": static_data.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
-        "status": misc.DOMAIN_STATUS,
-        "payments": {pay: pay_data["desc"]
-                     for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data},
+        "status": static_data.DOMAIN_STATUS,
+        "payments": {
+            pay: pay_handler.pay_plugins[pay]["desc"]
+            for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
+        },
         "policy": policy.data()
     })
 
@@ -170,30 +184,29 @@ def orders_cancel():
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": int(req.post_js["order_item_id"])}
-    ok, order_db = sql.sql_select_one("orders", where)
-    if not ok:
+    if not (reply := sql.sql_select_one("orders", where))[0]:
         return req.abort(order_db)
-    if len(order_db) <= 0:
+    order_db = reply[1]
+    if not order_db or len(order_db) <= 0:
         return req.abort("Order not found")
 
     event_db = {"event_type": "order/cancel"}
     dom_name = f"DOM-{order_db['domain_id']}"
-    ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id})
-    if ok:
+    if (reply := sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id}))[0]:
+        dom_db = reply[1]
         event_db["domain_id"] = dom_db["domain_id"]
         dom_name = dom_db['name']
 
     event_db["notes"] = f"Cancel Order: {dom_name} order for {order_db['order_type']} for {order_db['num_years']}"
 
-    ok = sql.sql_delete_one("orders", where)
-    if not ok:
+    if not sql.sql_delete_one("orders", where):
         return req.abort("Order not found")
 
     if order_db["order_type"] == "dom/create":
         sql.sql_delete_one("domains", {
             "domain_id": order_db["domain_id"],
             "user_id": req.user_id,
-            "status_id": misc.STATUS_WAITING_PAYMENT
+            "status_id": static_data.STATUS_WAITING_PAYMENT
         })
 
     req.event(event_db)
@@ -231,13 +244,12 @@ def payments_delete():
     if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
         return req.abort("Missing or invalid payment method data")
     req.post_js["user_id"] = req.user_id
-    ok = sql.sql_delete_one("payments", req.post_js)
-    if not ok:
+    if not sql.sql_delete_one("payments", req.post_js):
         return req.abort("Failed to remove payment method")
     return req.response(True)
 
 
-@application.route('/pyrar/v1.0/payments/validate', methods=['POST'])
+@application.route('/pyrar/v1.0/payments/store', methods=['POST'])
 def payments_validate():
     req = WebuiReq()
     if not req.is_logged_in:
@@ -249,13 +261,12 @@ def payments_validate():
         return req.abort("Missing or invalid payment method data")
 
     req.post_js["user_id"] = req.user_id
-    ok = plugin_func(req.post_js)
-    if not ok:
+    if not plugin_func(req.post_js):
         return req.abort("Failed validation")
 
     req.post_js["created_dt"] = None
     req.post_js["amended_dt"] = None
-    ok, reply = sql.sql_insert("payments", req.post_js)
+    ok, __ = sql.sql_insert("payments", req.post_js)
     if not ok:
         return req.abort("Adding payments data failed")
 
@@ -316,17 +327,16 @@ def users_domains():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, doms_db = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
-    if ret is None:
+    if not (reply := sql.sql_select("domains", {"user_id": req.user_id}, order_by="name"))[0]:
         return req.abort("Failed to load domains")
 
-    now = sql.now()
-    for dom_db in doms_db:
-        if dom_db["status_id"] == misc.LIVE_STATUS and dom_db["expiry_dt"] <= now:
-            dom_db["status_id"] = misc.STATUS_EXPIRED
-        dom_db["is_live"] = dom_db["status_id"] in misc.LIVE_STATUS
+    for dom_db in reply[1]:
+        dom = domobj.Domain()
+        dom.set_name(dom_db["name"])
+        dom_db["registry"] = dom.registry["name"]
+        dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
 
-    req.user_data["domains"] = doms_db
+    req.user_data["domains"] = reply[1]
 
     return req.response(req.user_data)
 
@@ -358,12 +368,13 @@ def users_close():
     if not users.check_password(req.user_id, req.post_js):
         return req.abort("Password match failed")
 
-    ok = sql.sql_update_one(
-        "users",
-        "account_closed=1,email=concat(user_id,':',email),password=concat('CLOSED:',password),amended_dt=now()",
-        {"user_id": req.user_id})
-
-    if not ok:
+    where = {
+        "account_closed": 1,
+        "email": concat(user_id, ':', email),
+        "password": concat('CLOSED:', password),
+        "amended_dt": now()
+    }
+    if not sql.sql_update_one("users", ",".join(where), {"user_id": req.user_id}):
         return req.abort("Close account failed")
 
     sql.sql_delete_one("session_keys", {"user_id": req.user_id})
@@ -383,12 +394,10 @@ def users_password():
         return req.abort("Password match failed")
 
     new_pass = passwd.crypt(req.post_js["new_password"])
-    ok = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
+    if not sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id}):
+        return req.abort("Failed")
 
-    if not ok:
-        return req.response("OK")
-
-    return req.abort("Failed")
+    return req.response("OK")
 
 
 @application.route('/pyrar/v1.0/users/details', methods=['GET'])
@@ -487,7 +496,8 @@ def users_reset_password():
         return req.abort("No JSON posted")
     if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
         return req.abort("Missing data")
-    if req.post_js["password"] != req.post_js["confirm"] or len(req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
+    if req.post_js["password"] != req.post_js["confirm"] or len(
+            req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
         return req.abort("Invalid data")
 
     if not users.reset_users_password(req):
@@ -519,17 +529,22 @@ def users_register():
 
 def pdns_action(func):
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name") or not validate.is_valid_fqdn(req.post_js["name"]):
+    if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ok, dom_db = sql.sql_select_one("domains", {"name": req.post_js["name"], "user_id": req.user_id})
+    dom = domobj.Domain()
+    ok, reply = dom.set_name(req.post_js["name"])
+
     if not ok:
+        return req.abort(reply)
+    dom.load_record(req.user_id)
+    if dom.dom_db is None:
         return req.abort("Domain not found or not yours")
 
-    return func(req, dom_db)
+    return func(req, dom.dom_db)
 
 
 def pdns_get_data(req, dom_db):
@@ -580,6 +595,11 @@ def find_best_ds(key_data):
             for ds_rr in key["ds"]:
                 if ds_rr.find(" 2 ") >= 0:
                     return ds_rr
+                if ds_rr.find(" 3 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 1 ") >= 0:
+                    return ds_rr
+    return None
 
 
 def pdns_drop_zone(req, dom_db):
@@ -589,6 +609,7 @@ def pdns_drop_zone(req, dom_db):
 
 
 def check_rr_data(dom_db, add_rr):
+    """ Validate an rr-set sent by user """
     if "rr" not in add_rr:
         log("No `rr` property")
         return False
@@ -602,21 +623,22 @@ def check_rr_data(dom_db, add_rr):
         log("Invalid host name")
         return False
     if not validate.valid_rr_type(add_rr["rr"]["type"]):
-        log(f"Invalid RR type")
+        log("Invalid RR type")
         return False
     if not isinstance(add_rr["rr"]["ttl"], int):
-        log(f"TTL is not integer")
+        log("TTL is not integer")
         return False
 
     if len(add_rr["rr"]["name"]) > len(
             dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
-        log(f"Bad name suffix")
+        log("Bad name suffix")
         return False
 
     return True
 
 
 def pdns_update_rrs(req, dom_db):
+    """ complete task of updating rr-set """
     if not check_rr_data(dom_db, req.post_js):
         return req.abort("RR data missing or invalid")
 
@@ -629,45 +651,60 @@ def pdns_update_rrs(req, dom_db):
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
 def domain_dns_update():
+    """ Update an RR-set in P/DNS """
     return pdns_action(pdns_update_rrs)
 
 
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
+    """ Drop a domain & all its data in P/DNS """
     return pdns_action(pdns_drop_zone)
 
 
 @application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
 def domain_dns_unsign():
+    """ Remove DNSSEC from a domain in P/DNS """
     return pdns_action(pdns_unsign_zone)
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
 def domain_dns_sign():
+    """ Sign a domain in P/DNS """
     return pdns_action(pdns_sign_zone)
 
 
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
+    """ load domain's DNS data from P/DNS """
     return pdns_action(pdns_get_data)
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
+    """ gift a domain to another user """
     return run_user_domain_task(domains.webui_gift_domain, "Gift")
+
+
+@application.route('/pyrar/v1.0/domain/flags', methods=['POST'])
+def domain_flags():
+    """ update domain flags """
+    return run_user_domain_task(domains.webui_update_domains_flags, "Flags")
 
 
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
+    """ update domain details """
     return run_user_domain_task(domains.webui_update_domain, "Update")
 
 
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
+    """ set domain authcode """
     return run_user_domain_task(domains.webui_set_auth_code, "setAuth")
 
 
 def run_user_domain_task(domain_function, func_name):
+    """ start a {domain_function} & complete it by running {func_name}() """
     req = WebuiReq()
     if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -675,7 +712,7 @@ def run_user_domain_task(domain_function, func_name):
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ok, reply = domain_function(req, req.post_js)
+    ok, reply = domain_function(req)
 
     if not ok:
         return req.abort(reply)
@@ -700,6 +737,7 @@ def run_user_domain_task(domain_function, func_name):
 
 
 def get_dom_data_items(post_js):
+    """ read domain check sent by the user, supporting GET/POST & JSON """
     num_years = 1
     qry_type = ["create", "renew"]
 
@@ -740,17 +778,19 @@ def get_dom_data_items(post_js):
 
 @application.route('/pyrar/v1.0/domain/check', methods=['POST', 'GET'])
 def rest_domain_price():
+    """ check the price of a domain or list of domains """
     req = WebuiReq()
     dom, num_years, qry_type = get_dom_data_items(req.post_js)
     if dom is None:
         return req.abort(num_years)
 
-    dom_obj = domains.DomainName(dom)
+    domlist = domobj.DomainList()
+    ok, reply = domlist.set_list(dom)
 
-    if dom_obj.names is None:
-        return req.abort(dom_obj.err if dom_obj.err is not None else "Invalid domain name")
+    if not ok or not reply:
+        return req.abort(reply if reply is not None else "Invalid domain name")
 
-    ok, reply = domains.get_domain_prices(dom_obj, num_years, qry_type, req.user_id)
+    ok, reply = domains.get_domain_prices(domlist, num_years, qry_type, req.user_id)
     if ok:
         return req.response(reply)
 
@@ -760,6 +800,5 @@ def rest_domain_price():
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    want_referrer_check = False
+    WANT_REFERRER_CHECK = False
     application.run()
-    domains.close_epp_sess()

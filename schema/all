@@ -34,4 +34,4 @@ ${cmd} 'purge binary logs before now()'
 
 ./dump
 
-${BASE}/python/bin/make_json_schema
+${BASE}/python/bin/fix_db_schema.py -C

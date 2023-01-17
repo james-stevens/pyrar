@@ -5,7 +5,7 @@
 
 import json
 
-from librar import misc
+from librar import static_data
 from backend import xmlapi
 
 WHOIS_PRIVACY_ID = "whoisPrivacy"
@@ -49,7 +49,7 @@ whois_privacy_contact = {
 
 def check_privacy_exists(client, url):
     """ check EPP rest/api for {client} at {url} has whois-privacy contact """
-    resp = client.post(url, json=whois_privacy_info, headers=misc.HEADER)
+    resp = client.post(url, json=whois_privacy_info, headers=static_data.HEADER)
     if resp.status_code < 200 or resp.status_code > 299:
         return False
 
@@ -57,7 +57,7 @@ def check_privacy_exists(client, url):
     if xmlapi.xmlcode(reply) == 1000:
         return True
 
-    resp = client.post(url, json=whois_privacy_contact, headers=misc.HEADER)
+    resp = client.post(url, json=whois_privacy_contact, headers=static_data.HEADER)
     if resp.status_code < 200 or resp.status_code > 299:
         return False
 

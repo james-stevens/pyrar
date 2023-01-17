@@ -1,20 +1,22 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" bacnend call backs to run requests to an EPP registry """
 
 import sys
 import json
 import base64
-import httpx
+import requests
 
 from librar import mysql as sql
 from librar import registry
-from librar.log import log
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
-from librar import misc
 from librar import validate
 from librar import parse_dom_resp
 from librar import parsexml
+from librar import static_data
+from mailer import spool_email
 from backend import whois_priv
 from backend import dom_req_xml
 from backend import xmlapi
@@ -26,21 +28,23 @@ DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
 
 def run_epp_request(this_reg, post_json):
+    """ run EPP request to EPP service {this_reg} using {post_json} """
     try:
         client = registry.tld_lib.clients[this_reg["name"]]
-        resp = client.post(this_reg["url"], json=post_json, headers=misc.HEADER)
+        resp = client.post(this_reg["url"], json=post_json, headers=static_data.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
             log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}")
             return None
         ret = json.loads(resp.content)
         return ret
-    except Exception as exc:
+    except (requests.exceptions.RequestException, ValueError) as exc:
         log(f"ERROR: XML Request registry '{this_reg['name']}': {exc}")
         return None
     return None
 
 
 def start_up_check():
+    """ checks that need to be run before this service can be used """
     for name, reg in registry.tld_lib.registry.items():
         if reg["type"] != "epp":
             continue
@@ -56,29 +60,8 @@ def start_up_check():
             sys.exit(1)
 
 
-def check_dom_data(job_id, domain, ns_list, ds_list):
-    if validate.check_domain_name(domain) is not None:
-        log(f"EPP-{job_id} Check: '{domain}' failed validation")
-        return False
-
-    if len(ns_list) <= 0:
-        log(f"EPP-{job_id} Check: No NS given for '{domain}'")
-        return False
-
-    for item in ns_list:
-        if not validate.is_valid_fqdn(item):
-            log(f"EPP-{job_id} '{domain}' NS '{item}' failed validation")
-            return False
-
-    for item in ds_list:
-        if not validate.is_valid_ds(item):
-            log(f"EPP-{job_id} '{domain}' DS '{item}' failed validation")
-            return False
-
-    return True
-
-
 def ds_in_list(ds_data, ds_list):
+    """ True if DS record {ds_data} is in the list {ds_list} """
     for ds_item in ds_list:
         if (ds_item["keyTag"] == ds_data["keyTag"] and ds_item["alg"] == ds_data["alg"]
                 and ds_item["digestType"] == ds_data["digestType"] and ds_item["digest"] == ds_data["digest"]):
@@ -87,6 +70,7 @@ def ds_in_list(ds_data, ds_list):
 
 
 def domain_renew(bke_job, dom_db):
+    """ Renew a domain at an EPP registry """
     name = dom_db["name"]
     job_id = bke_job["backend_id"]
 
@@ -111,7 +95,8 @@ def domain_renew(bke_job, dom_db):
 
 
 def transfer_failed(domain_id):
-    sql.sql_update_one("domains", {"status_id": misc.STATUE_TRANS_FAIL}, {"domain_id": domain_id})
+    """ change domain status to show a transfer failed """
+    sql.sql_update_one("domains", {"status_id": static_data.STATUS_TRANS_FAIL}, {"domain_id": domain_id})
     return False
 
 
@@ -138,11 +123,16 @@ def domain_request_transfer(bke_job, dom_db):
         return False
 
     update_cols = {}
-    if xml_code == 1000:
+    if xmlapi.xmlcode(xml) == 1000:
         xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "trn")
         update_cols["expiry_dt"] = xml_dom["expiry_dt"]
-        update_cols["status_id"] = misc.STATUS_LIVE
+        update_cols["status_id"] = static_data.STATUS_LIVE
         sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
+        spool_email.spool("domain_transferred", [["domains", {
+            "domain_id": dom_db["domain_id"]
+        }], ["users", {
+            "user_id": dom_db["user_id"]
+        }]])
 
     return True
 
@@ -152,7 +142,7 @@ def domain_create(bke_job, dom_db):
     job_id = bke_job["backend_id"]
 
     ns_list, ds_list = shared.get_domain_lists(dom_db)
-    if not check_dom_data(job_id, name, ns_list, ds_list):
+    if not shared.check_dom_data(job_id, name, ns_list, ds_list):
         log(f"EPP-{job_id} Domain data failed validation")
         return None
 
@@ -161,7 +151,7 @@ def domain_create(bke_job, dom_db):
 
     this_reg = registry.tld_lib.reg_record_for_domain(name)
     if len(ns_list) > 0:
-        run_host_create(job_id, this_reg, ns_list)
+        run_host_create(this_reg, ns_list)
 
     xml = run_epp_request(this_reg, dom_req_xml.domain_create(name, ns_list, ds_list, years))
     if not xml_check_code(job_id, "create", xml):
@@ -170,7 +160,7 @@ def domain_create(bke_job, dom_db):
     xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "cre")
 
     sql.sql_update_one("domains", {
-        "status_id": misc.STATUS_LIVE,
+        "status_id": static_data.STATUS_LIVE,
         "reg_create_dt": xml_dom["created_dt"],
         "expiry_dt": xml_dom["expiry_dt"]
     }, {"domain_id": dom_db["domain_id"]})
@@ -178,14 +168,17 @@ def domain_create(bke_job, dom_db):
     return True
 
 
+# pylint: disable=unused-argument
 def domain_info(bke_job, dom_db):
-
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     ret = run_epp_request(this_reg, dom_req_xml.domain_info(dom_db["name"]))
 
     if xmlapi.xmlcode(ret) == 1000:
         return parse_dom_resp.parse_domain_info_xml(ret, "inf")
     return False
+
+
+# pylint: enable=unused-argument
 
 
 def epp_get_domain_info(job_id, domain_name):
@@ -219,6 +212,28 @@ def set_authcode(bke_job, dom_db):
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
+def domain_update_flags(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
+    name = dom_db["name"]
+    if (epp_info := epp_get_domain_info(job_id, name)) is None:
+        return False
+
+    client_locks = {}
+    if sql.has_data(dom_db, "client_locks"):
+        client_locks = ["client" + lock for lock in dom_db["client_locks"].split(",")]
+
+    add_flags = [item for item in client_locks if item not in epp_info["status"] and item != "ok"]
+    del_flags = [item for item in epp_info["status"] if item not in client_locks and item != "ok"]
+
+    if len(add_flags) == 0 and len(del_flags) == 0:
+        return True
+
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
+    update_xml = dom_req_xml.domain_update_flags(name, add_flags, del_flags)
+
+    return xml_check_code(job_id, "update", run_epp_request(this_reg, update_xml))
+
+
 def domain_update_from_db(bke_job, dom_db):
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
@@ -228,7 +243,7 @@ def domain_update_from_db(bke_job, dom_db):
     return do_domain_update(job_id, name, dom_db, epp_info)
 
 
-def run_host_create(job_id, this_reg, host_list):
+def run_host_create(this_reg, host_list):
     for host in host_list:
         run_epp_request(this_reg, dom_req_xml.host_add(host))
 
@@ -239,7 +254,7 @@ def do_domain_update(job_id, name, dom_db, epp_info):
         return None
 
     ns_list, ds_list = shared.get_domain_lists(dom_db)
-    if not check_dom_data(job_id, name, ns_list, ds_list):
+    if not shared.check_dom_data(job_id, name, ns_list, ds_list):
         return None
 
     add_ns = [item for item in ns_list if item not in epp_info["ns"]]
@@ -252,7 +267,7 @@ def do_domain_update(job_id, name, dom_db, epp_info):
         return True
 
     if len(add_ns) > 0:
-        run_host_create(job_id, this_reg, add_ns)
+        run_host_create(this_reg, add_ns)
 
     if not sql.has_data(dom_db, "reg_create_dt") or dom_db["reg_create_dt"] != epp_info["created_dt"]:
         sql.sql_update_one("domains", {"reg_create_dt": epp_info["created_dt"]}, {"domain_id": dom_db["domain_id"]})
@@ -273,6 +288,7 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
+# pylint: disable=unused-argument
 def domain_expired(bke_job, dom_db):
     # Probably nothing to do for EPP
     return True
@@ -283,17 +299,20 @@ def domain_delete(bke_job, dom_db):
     return True
 
 
+# pylint: enable=unused-argument
+
+
 def my_hello(__):
     return "EPP: Hello"
 
 
-def http_price_domains(domobj, years, qry_type):
+def http_price_domains(domlist, years, qry_type):
 
-    if domobj.registry is None or "url" not in domobj.registry:
+    if domlist.registry is None or "url" not in domlist.registry:
         return 400, "Unsupported TLD"
 
-    xml = xml_check_with_fees(domobj, years, qry_type)
-    resp = domobj.client.post(domobj.registry["url"], json=xml, headers=misc.HEADER)
+    xml = xml_check_with_fees(domlist, years, qry_type)
+    resp = domlist.client.post(domlist.registry["url"], json=xml, headers=static_data.HEADER)
 
     if resp.status_code < 200 or resp.status_code > 299:
         return 400, "Invalid HTTP Response from parent"
@@ -309,8 +328,10 @@ def http_price_domains(domobj, years, qry_type):
     return 400, "Unexpected Error"
 
 
-def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id=None):
-    ok, out_js = http_price_domains(domobj, num_years, qry_type)
+def epp_domain_prices(domlist, num_years=1, qry_type=None):
+    if qry_type is None:
+        qry_type = ["create", "renew"]
+    ok, out_js = http_price_domains(domlist, num_years, qry_type)
     if ok != 200:
         return False, out_js
 
@@ -320,30 +341,22 @@ def epp_domain_prices(domobj, num_years=1, qry_type=["create", "renew"], user_id
     if not code == 1000:
         return False, ret_js
 
-    for item in ret_js:
-        if "avail" in item and not item["avail"]:
-            ok, reply = sql.sql_select_one("domains", {"name": item["name"]})
-            if (ok and len(reply) > 0 and sql.has_data(reply, "for_sale_msg")
-                    and (user_id is None or user_id != reply["user_id"])):
-                for i in ["user_id", "for_sale_msg"]:
-                    item[i] = reply[i]
-
     return True, ret_js
 
 
-def xml_check_with_fees(domobj, years, qry_type):
+def xml_check_with_fees(domlist, years, qry_type):
     fees_extra = [fees_one(name, years) for name in qry_type]
     return {
         "check": {
             "domain:check": {
-                "@xmlns:domain": domobj.xmlns["domain"],
-                "domain:name": domobj.names
+                "@xmlns:domain": domlist.xmlns["domain"],
+                "domain:name": list(domlist.domobjs)
             }
         },
         "extension": {
             "fee:check": {
-                "@xmlns:fee": domobj.xmlns["fee"],
-                "fee:currency": domobj.currency["iso"],
+                "@xmlns:fee": domlist.xmlns["fee"],
+                "fee:currency": domlist.currency["iso"],
                 "fee:command": fees_extra
             }
         }
@@ -373,5 +386,16 @@ dom_handler.add_plugin(
         "dom/delete": domain_delete,
         "dom/recover": domain_renew,
         "dom/expired": domain_expired,
+        "dom/flags": domain_update_flags,
         "dom/price": epp_domain_prices
     })
+
+if __name__ == "__main__":
+    log_init(with_debug=True)
+    if not sql.connect("engine"):
+        print("ABORT")
+        sys.exit(1)
+    registry.start_up()
+    start_up_check()
+    # print(json.dumps(domain_info(None, {"name": "pant.to.glass"}), indent=3))
+    print(domain_update_flags({"backend_id": 999}, {"name": "pant.to.glass", "client_locks": None}))

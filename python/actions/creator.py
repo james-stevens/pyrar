@@ -7,7 +7,7 @@ import json
 import inspect
 
 from librar import mysql as sql
-from librar import misc
+from librar import static_data
 from librar import registry
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -43,7 +43,7 @@ def recreate_domain_actions(dom_db):
         "line_num": where.lineno,
         "when_dt": None,
         "event_type": "actions/recreate",
-        "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt']}",
+        "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt'].split()[0]}",
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "who_did_it": "sales",
@@ -61,7 +61,10 @@ def recreate_domain_actions(dom_db):
     return True
 
 
-action_fns = {misc.STATUS_LIVE: domain_actions_live, misc.STATUS_WAITING_PAYMENT: domain_actions_pending_order}
+action_fns = {
+    static_data.STATUS_LIVE: domain_actions_live,
+    static_data.STATUS_WAITING_PAYMENT: domain_actions_pending_order
+}
 
 if __name__ == "__main__":
     log_init(with_debug=True)

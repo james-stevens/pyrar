@@ -23,9 +23,9 @@ def host_add(hostname, ip_addrs=None):
         ip_list = ip_addrs if isinstance(ip_addrs, list) else ip_addrs.split(",")
         host_xml["create"]["host:create"]["host:addr"] = []
         host_addr = host_xml["create"]["host:create"]["host:addr"]
-        for ip in ip_list:
-            ip_ver = "v6" if ip.find(":") >= 0 else "v4"
-            host_addr.append({"@ip": ip_ver, "#text": ip})
+        for ip_addr in ip_list:
+            ip_ver = "v6" if ip_addr.find(":") >= 0 else "v4"
+            host_addr.append({"@ip": ip_ver, "#text": ip_addr})
     return host_xml
 
 
@@ -134,6 +134,19 @@ def domain_set_authcode(domain, authcode):
             }
         }
     }
+
+
+def domain_update_flags(domain, add_flags, del_flags):
+
+    update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}
+
+    if len(add_flags) > 0:
+        update_data["domain:add"] = {"domain:status": [{"@s": flag} for flag in add_flags]}
+
+    if len(del_flags) > 0:
+        update_data["domain:rem"] = {"domain:status": [{"@s": flag} for flag in del_flags]}
+
+    return {"update": {"domain:update": update_data}}
 
 
 def domain_update(domain, add_ns, del_ns, add_ds, del_ds):

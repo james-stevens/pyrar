@@ -5,20 +5,16 @@
 import os
 import json
 import random
-import httpx
+import requests
 
-from librar import misc
+from librar import static_data
 from librar import fileloader
 from librar import mysql as sql
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
-EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
-EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
-EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
-EPP_PORTS_LIST = "/run/regs_ports"
-
-SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
+SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
+MANDATORY_REGS_ITEMS = ["locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs"]
 
 DEFAULT_XMLNS = {
     "contact": "urn:ietf:params:xml:ns:contact-1.0",
@@ -82,9 +78,9 @@ class ZoneLib:
 
         self.last_zone_table = None
         self.check_zone_table()
-        self.logins_file = fileloader.FileLoader(EPP_LOGINS)
-        self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
-        self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
+        self.logins_file = fileloader.FileLoader(static_data.LOGINS_FILE)
+        self.regs_file = fileloader.FileLoader(static_data.REGISTRY_FILE)
+        self.priority_file = fileloader.FileLoader(static_data.PRIORITY_FILE)
 
         self.process_json()
 
@@ -120,7 +116,7 @@ class ZoneLib:
             self.process_json()
 
     def process_json(self):
-        with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
+        with open(static_data.PORTS_LIST_FILE, "r", encoding="UTF-8") as fd:
             port_lines = [line.split() for line in fd.readlines()]
         ports = {p[0]: int(p[1]) for p in port_lines}
 
@@ -128,7 +124,7 @@ class ZoneLib:
 
         self.registry = self.regs_file.json
         for registry, reg_data in self.registry.items():
-            for param in ["max_renew_years", "expire_recover_limit", "orders_expire_hrs"]:
+            for param in MANDATORY_REGS_ITEMS:
                 if param not in reg_data:
                     reg_data[param] = policy.policy(param)
 
@@ -138,6 +134,8 @@ class ZoneLib:
 
         for __, zone_rec in self.zone_data.items():
             zone_rec["reg_data"] = self.registry[zone_rec["registry"]]
+            if "renew_limit" not in zone_rec or not zone_rec["renew_limit"]:
+                zone_rec["renew_limit"] = zone_rec["reg_data"]["renew_limit"]
 
         new_list = [{"name": dom, "priority": self.tld_priority(dom, is_tld=True)} for dom in self.zone_data]
         self.sort_data_list(new_list, is_tld=True)
@@ -148,7 +146,7 @@ class ZoneLib:
             if reg_data["type"] == "epp":
                 is_epp[name] = True
                 if name not in self.clients:
-                    self.clients[name] = httpx.Client()
+                    self.clients[name] = requests.Session()
         for reg in list(self.clients):
             if reg not in is_epp:
                 self.clients[reg].close()
@@ -171,6 +169,11 @@ class ZoneLib:
         for dom in the_list:
             if "priority" in dom:
                 del dom["priority"]
+
+    def zone_rec_of_name(self, name):
+        if (tld := self.tld_of_name(name)) is None:
+            return None
+        return self.zone_data[tld]
 
     def tld_of_name(self, name):
         if (idx := name.find(".")) >= 0:
@@ -235,12 +238,12 @@ class ZoneLib:
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for action in misc.EPP_ACTIONS:
+            for action in static_data.EPP_ACTIONS:
                 if action not in dom:
                     continue
 
                 if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    if action in ["transfer", "restore"] and dom[action] is None:
+                    if action in ["transfer", "restore"] and dom[action] is None or dom[action] == 0:
                         factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
                 if factor is None:
@@ -261,15 +264,15 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     else:
         our_price = float(factor)
 
-    if dom[action] is None:
+    if dom[action] is None or dom[action] == 0:
         our_price *= float(num_years)
 
     site_currency = policy.policy("currency")
-    our_price *= site_currency["pow10"]
+    our_price *= static_data.POW10[site_currency["decimal"]]
     our_price = round(float(our_price), 0)
 
     if retain_reg_price:
-        regs_price *= site_currency["pow10"]
+        regs_price *= static_data.POW10[site_currency["decimal"]]
         regs_price = round(float(regs_price), 0)
         dom["reg_" + action] = int(regs_price)
 
@@ -289,10 +292,14 @@ if __name__ == "__main__":
     sql.connect("webui")
     start_up()
 
+    dom_data = [{"name": "tiny.zz", "renew": None}]
+    tld_lib.multiply_values(dom_data, 12)
+    print(dom_data)
+
     # print(tld_lib.registry)
     # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
-    print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
+    # print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
     # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))
     # print("ZONE_SEND", json.dumps(tld_lib.regs_send(), indent=3))
     # print("ZONE_FROM_DB", json.dumps(tld_lib.zones_from_db, indent=3))

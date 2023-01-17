@@ -59,7 +59,7 @@ def run_backend_item(bke_job):
 
     if sql.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer":
         if bke_job["user_id"] != dom_db["user_id"]:
-            log(f"EPP-{job_id}: Domain '{dom_db['name']}' is not owned by '{bke_job['user_id']}'")
+            log(f"BKE-{job_id}: Domain '{dom_db['name']}' is not owned by '{bke_job['user_id']}'")
             return job_abort(bke_job)
 
     reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
@@ -67,12 +67,12 @@ def run_backend_item(bke_job):
         return job_abort(bke_job)
 
     if (plugin_func := dom_handler.run(reg["type"], bke_job["job_type"])) is None:
-        log(f"EPP-{job_id}: Missing or invalid job_type for '{reg['type']}'")
+        log(f"BKE-{job_id}: Missing or invalid job_type for '{reg['type']}'")
         return job_abort(bke_job)
 
     job_run = plugin_func(bke_job, dom_db)
 
-    notes = (f"{JOB_RESULT[job_run]}: EPP-{job_id} type '{reg['type']}:{bke_job['job_type']}' " +
+    notes = (f"{JOB_RESULT[job_run]}: BKE-{job_id} type '{reg['type']}:{bke_job['job_type']}' " +
              f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
              f"{policy.policy('backend_retry_attempts')}")
 
@@ -89,7 +89,7 @@ def run_backend_item(bke_job):
 
 
 def run_server():
-    log("EPP-SERVER RUNNING")
+    log("BACK-END SERVER RUNNING")
     signal_mtime = None
     while True:
         query = ("select * from backend where execute_dt <= now()" +
@@ -110,8 +110,10 @@ def start_up(is_live):
     sql.connect("engine")
     registry.start_up()
 
-    for __, funcs in dom_handler.backend_plugins.items():
-        if "start_up" in funcs:
+    all_regs = registry.tld_lib.regs_file.data()
+    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
+    for this_type, funcs in dom_handler.backend_plugins.items():
+        if this_type in have_types and "start_up" in funcs:
             funcs["start_up"]()
 
 
