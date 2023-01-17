@@ -61,7 +61,10 @@ def recreate_domain_actions(dom_db):
     return True
 
 
-action_fns = {static_data.STATUS_LIVE: domain_actions_live, static_data.STATUS_WAITING_PAYMENT: domain_actions_pending_order}
+action_fns = {
+    static_data.STATUS_LIVE: domain_actions_live,
+    static_data.STATUS_WAITING_PAYMENT: domain_actions_pending_order
+}
 
 if __name__ == "__main__":
     log_init(with_debug=True)

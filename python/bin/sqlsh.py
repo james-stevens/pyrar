@@ -18,6 +18,7 @@ args = parser.parse_args()
 
 logins = fileloader.load_file_json(static_data.LOGINS_FILE)
 
+
 def max_width(this_row):
     """ return width of widest column name """
     max_len = 0

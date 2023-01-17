@@ -9,7 +9,6 @@ from librar import static_data
 from librar import fileloader
 import librar.log as log
 
-
 policy_defaults = {
     "locks": static_data.CLIENT_DOM_FLAGS,
     "orders_expire_days": 7,
@@ -80,4 +79,4 @@ if __name__ == "__main__":
     print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
     print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
     print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
-    print(json.dumps(this_policy.data(),indent=3))
+    print(json.dumps(this_policy.data(), indent=3))

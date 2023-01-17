@@ -54,8 +54,8 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
             continue
 
         current_flags = {}
-        if sql.has_data(dom_db,"client_locks"):
-            current_flags = { flag:True for flag in dom_db["client_locks"].split(",") }
+        if sql.has_data(dom_db, "client_locks"):
+            current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
         if "RenewProhibited" in current_flags and "renew" in dom_price:
             del dom_price["renew"]
             dom_price["renew:fail"] = "Renewal blocked by flags"
@@ -156,7 +156,7 @@ def check_update_ds(post_dom, dom_db, update_cols):
     return True, None
 
 
-def domain_backend_update(dom_db,request_type="dom/update"):
+def domain_backend_update(dom_db, request_type="dom/update"):
     bke_job = {
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
@@ -175,8 +175,8 @@ def webui_set_auth_code(req):
     dom_db = reply[1]
 
     current_flags = {}
-    if sql.has_data(dom_db,"client_locks"):
-        current_flags = { flag:True for flag in dom_db["client_locks"].split(",") }
+    if sql.has_data(dom_db, "client_locks"):
+        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
     if "TransferProhibited" in current_flags:
         return False, "Gifting / Transfer blocked by flags"
 
@@ -203,8 +203,8 @@ def webui_gift_domain(req):
     dom_db = reply[1]
 
     current_flags = {}
-    if sql.has_data(dom_db,"client_locks"):
-        current_flags = { flag:True for flag in dom_db["client_locks"].split(",") }
+    if sql.has_data(dom_db, "client_locks"):
+        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
     if "TransferProhibited" in current_flags:
         return False, "Gifting / Transfer blocked by flags"
 
@@ -232,7 +232,8 @@ def webui_update_domains_flags(req):
         return False, reply[1]
     dom_db = reply[1]
 
-    if not (sql.has_data(req.post_js,["flag","state"]) and isinstance(req.post_js["state"],bool) and req.post_js["flag"] in static_data.CLIENT_DOM_FLAGS):
+    if not (sql.has_data(req.post_js, ["flag", "state"]) and isinstance(req.post_js["state"], bool)
+            and req.post_js["flag"] in static_data.CLIENT_DOM_FLAGS):
         return False, "Missing or invalid data"
 
     dom = domobj.Domain()
@@ -242,19 +243,20 @@ def webui_update_domains_flags(req):
         return False, f"Flag '{this_flag}' is not supported in this registry"
 
     current_flags = {}
-    if sql.has_data(dom_db,"client_locks"):
-        current_flags = { flag:True for flag in dom_db["client_locks"].split(",") }
+    if sql.has_data(dom_db, "client_locks"):
+        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
 
     current_flags[this_flag] = req.post_js["state"]
-    new_flags = ",".join([ flag for flag,flag_val in current_flags.items() if flag_val ])
+    new_flags = ",".join([flag for flag, flag_val in current_flags.items() if flag_val])
 
-    if not sql.sql_update_one("domains", {"client_locks":new_flags}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id}):
+    if not sql.sql_update_one("domains", {"client_locks": new_flags}, {
+            "domain_id": dom_db["domain_id"],
+            "user_id": req.user_id
+    }):
         return False, "Domain update failed"
 
-    domain_backend_update(dom_db,"dom/flags")
-    return True, {"client_locks":new_flags}
-
-
+    domain_backend_update(dom_db, "dom/flags")
+    return True, {"client_locks": new_flags}
 
 
 if __name__ == "__main__":

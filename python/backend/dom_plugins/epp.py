@@ -60,7 +60,6 @@ def start_up_check():
             sys.exit(1)
 
 
-
 def ds_in_list(ds_data, ds_list):
     """ True if DS record {ds_data} is in the list {ds_list} """
     for ds_item in ds_list:
@@ -177,6 +176,8 @@ def domain_info(bke_job, dom_db):
     if xmlapi.xmlcode(ret) == 1000:
         return parse_dom_resp.parse_domain_info_xml(ret, "inf")
     return False
+
+
 # pylint: enable=unused-argument
 
 
@@ -296,6 +297,8 @@ def domain_expired(bke_job, dom_db):
 def domain_delete(bke_job, dom_db):
     # Probably nothing to do for EPP
     return True
+
+
 # pylint: enable=unused-argument
 
 

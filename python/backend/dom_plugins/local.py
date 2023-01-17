@@ -158,6 +158,8 @@ def domain_recover(bke_job, dom_db):
 # pylint: disable=unused-argument
 def domain_info(bke_job, dom_db):
     return dom_db
+
+
 # pylint: enable=unused-argument
 
 
@@ -174,13 +176,15 @@ def my_hello(__):
 def domain_update_flags(bke_job, dom_db):
     """ nothing to do for `local` """
     return True
+
+
 # pylint: enable=unused-argument
 
 
 def local_domain_prices(domlist, num_years=1, qry_type=None):
     """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
     if qry_type is None:
-        qry_type=["create", "renew"]
+        qry_type = ["create", "renew"]
     ret_doms = []
     for dom in domlist.domobjs:
         add_dom = {"num_years": num_years, "avail": True}

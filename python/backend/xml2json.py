@@ -7,7 +7,7 @@ import json
 import sys
 import xmltodict
 
-with open(sys.argv[1],encoding='UTF-8') as fd:
+with open(sys.argv[1], encoding='UTF-8') as fd:
     js = xmltodict.parse(fd.read())
 
 if "epp" in js:

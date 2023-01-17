@@ -59,7 +59,7 @@ class Domain:
         self.dom_db = reply
         self.locks = {}
         if self.dom_db["client_locks"] is not None and self.dom_db["client_locks"].find(",") >= 0:
-            self.locks = { lock:True for lock in self.dom_db["client_locks"].split(",") }
+            self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
         return True
 
     def valid_expiry_limit(self, num_years):
@@ -141,8 +141,8 @@ if __name__ == "__main__":
     my_dom = Domain()
     print("ONE:DOMS>>>", my_dom.set_name(sys.argv[1]), my_dom.registry)
     print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
-    print("EXP>>>>",my_dom.valid_expiry_limit(5),my_dom.valid_expiry_limit(15))
-    print("LOCKS>>>>",my_dom.locks)
+    print("EXP>>>>", my_dom.valid_expiry_limit(5), my_dom.valid_expiry_limit(15))
+    print("LOCKS>>>>", my_dom.locks)
 
     my_doms = DomainList()
     print("LIST>>>", my_doms.set_list(sys.argv[1:]))

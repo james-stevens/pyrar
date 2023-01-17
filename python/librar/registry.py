@@ -13,7 +13,7 @@ from librar import mysql as sql
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
-SEND_REGS_ITEMS = ["max_checks", "desc", "type","locks","renew_limit"]
+SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
 MANDATORY_REGS_ITEMS = ["locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs"]
 
 DEFAULT_XMLNS = {

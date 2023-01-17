@@ -9,6 +9,7 @@ import idna
 from librar.policy import this_policy as policy
 from librar import static_data
 
+
 def where_event_log():
     where = inspect.stack()[2]
     return {

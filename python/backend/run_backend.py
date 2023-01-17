@@ -111,7 +111,7 @@ def start_up(is_live):
     registry.start_up()
 
     all_regs = registry.tld_lib.regs_file.data()
-    have_types = { reg_data["type"]:True for __, reg_data in all_regs.items() if "type" in reg_data }
+    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
     for this_type, funcs in dom_handler.backend_plugins.items():
         if this_type in have_types and "start_up" in funcs:
             funcs["start_up"]()
