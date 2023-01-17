@@ -184,23 +184,22 @@ def orders_cancel():
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": int(req.post_js["order_item_id"])}
-    ok, order_db = sql.sql_select_one("orders", where)
-    if not ok:
+    if not (reply := sql.sql_select_one("orders", where))[0]:
         return req.abort(order_db)
-    if len(order_db) <= 0:
+    order_db = reply[1]
+    if not order_db or len(order_db) <= 0:
         return req.abort("Order not found")
 
     event_db = {"event_type": "order/cancel"}
     dom_name = f"DOM-{order_db['domain_id']}"
-    ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id})
-    if ok:
+    if (reply := sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id}))[0]:
+        dom_db = reply[1]
         event_db["domain_id"] = dom_db["domain_id"]
         dom_name = dom_db['name']
 
     event_db["notes"] = f"Cancel Order: {dom_name} order for {order_db['order_type']} for {order_db['num_years']}"
 
-    ok = sql.sql_delete_one("orders", where)
-    if not ok:
+    if not sql.sql_delete_one("orders", where):
         return req.abort("Order not found")
 
     if order_db["order_type"] == "dom/create":
@@ -245,8 +244,7 @@ def payments_delete():
     if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
         return req.abort("Missing or invalid payment method data")
     req.post_js["user_id"] = req.user_id
-    ok = sql.sql_delete_one("payments", req.post_js)
-    if not ok:
+    if not sql.sql_delete_one("payments", req.post_js):
         return req.abort("Failed to remove payment method")
     return req.response(True)
 
@@ -263,8 +261,7 @@ def payments_validate():
         return req.abort("Missing or invalid payment method data")
 
     req.post_js["user_id"] = req.user_id
-    ok = plugin_func(req.post_js)
-    if not ok:
+    if not plugin_func(req.post_js):
         return req.abort("Failed validation")
 
     req.post_js["created_dt"] = None
@@ -372,12 +369,13 @@ def users_close():
     if not users.check_password(req.user_id, req.post_js):
         return req.abort("Password match failed")
 
-    ok = sql.sql_update_one(
-        "users",
-        "account_closed=1,email=concat(user_id,':',email),password=concat('CLOSED:',password),amended_dt=now()",
-        {"user_id": req.user_id})
-
-    if not ok:
+    where = {
+        "account_closed": 1,
+        "email": concat(user_id, ':', email),
+        "password": concat('CLOSED:', password),
+        "amended_dt": now()
+    }
+    if not sql.sql_update_one("users", ",".join(where), {"user_id": req.user_id}):
         return req.abort("Close account failed")
 
     sql.sql_delete_one("session_keys", {"user_id": req.user_id})
@@ -397,12 +395,10 @@ def users_password():
         return req.abort("Password match failed")
 
     new_pass = passwd.crypt(req.post_js["new_password"])
-    ok = sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id})
+    if not sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id}):
+        return req.abort("Failed")
 
-    if not ok:
-        return req.response("OK")
-
-    return req.abort("Failed")
+    return req.response("OK")
 
 
 @application.route('/pyrar/v1.0/users/details', methods=['GET'])
