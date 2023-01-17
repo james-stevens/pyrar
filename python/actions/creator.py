@@ -43,7 +43,7 @@ def recreate_domain_actions(dom_db):
         "line_num": where.lineno,
         "when_dt": None,
         "event_type": "actions/recreate",
-        "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt']}",
+        "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt'].split()[0]}",
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "who_did_it": "sales",

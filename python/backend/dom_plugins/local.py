@@ -57,9 +57,22 @@ def domain_expired(bke_job, dom_db):
 
 def domain_create(bke_job, dom_db):
     log(f"domain_create: {dom_db['name']}, {dom_db['expiry_dt']} yrs={bke_job['num_years']}")
-    ok_add = add_yrs(bke_job, dom_db)
-    ok_updt = domain_update_from_db(bke_job, dom_db)
-    return ok_add and ok_updt
+    if (ok_add := add_yrs(bke_job, dom_db, "created_dt")):
+        create_update_request(bke_job, dom_db)
+    return ok_add
+
+
+def create_update_request(bke_job, dom_db):
+    new_bke = {
+        "domain_id": bke_job["domain_id"],
+        "user_id": bke_job["user_id"],
+        "execute_dt": sql.now(),
+        "created_dt": None,
+        "amended_dt": None,
+        "job_type": "dom/update",
+        "failures": 0
+        }
+    sql.sql_insert("backend", new_bke)
 
 
 def start_up_check():
@@ -116,9 +129,10 @@ def domain_request_transfer(bke_job, dom_db):
     }, {"domain_id": dom_db["domain_id"]})
 
 
-def add_yrs(bke_job, dom_db):
+def add_yrs(bke_job, dom_db, start_date = "expiry_dt"):
+    log(f"Adding {bke_job['num_years']} yrs to '{dom_db['name']}'/{start_date}")
     values = [
-        f"expiry_dt = date_add(expiry_dt,interval {bke_job['num_years']} year)",
+        f"expiry_dt = date_add({start_date},interval {bke_job['num_years']} year)",
         f"status_id = if (expiry_dt > now(),{static_data.STATUS_LIVE},{static_data.STATUS_EXPIRED})", "amended_dt = now()"
     ]
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
@@ -129,9 +143,9 @@ def domain_renew(bke_job, dom_db):
 
 
 def domain_recover(bke_job, dom_db):
-    ok_add = add_yrs(bke_job, dom_db)
-    ok_updt = domain_update_from_db(bke_job, dom_db)
-    return ok_add and ok_updt
+    if (ok_add := add_yrs(bke_job, dom_db)):
+        create_update_request(bke_job, dom_db)
+    return ok_add
 
 
 def domain_info(bke_job, dom_db):
