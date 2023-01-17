@@ -52,6 +52,7 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
 
         if this_domobj.dom_db is None:
             continue
+        dom_db = this_domobj.dom_db
 
         current_flags = {}
         if sql.has_data(dom_db, "client_locks"):
@@ -61,13 +62,13 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
             dom_price["renew:fail"] = "Renewal blocked by flags"
 
         dom_price["avail"] = False
-        if this_domobj.dom_db["user_id"] == user_id:
+        if dom_db["user_id"] == user_id:
             dom_price["yours"] = True
         dom_price["reason"] = "Already registered"
 
-        if sql.has_data(this_domobj.dom_db, "for_sale_msg"):
+        if sql.has_data(dom_db, "for_sale_msg"):
             dom_price["avail"] = True
-            dom_price["for_sale_msg"] = this_domobj.dom_db["for_sale_msg"]
+            dom_price["for_sale_msg"] = dom_db["for_sale_msg"]
 
         if "create" in dom_price:
             del dom_price["create"]
