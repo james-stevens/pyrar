@@ -1,14 +1,13 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" converts the XML (EPP) file specified into JSON """
 
-# converts the XML file specified into JSON
-
-import xmltodict
 import json
 import sys
+import xmltodict
 
-with open(sys.argv[1]) as fd:
+with open(sys.argv[1],encoding='UTF-8') as fd:
     js = xmltodict.parse(fd.read())
 
 if "epp" in js:

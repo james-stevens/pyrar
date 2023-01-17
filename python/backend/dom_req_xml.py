@@ -23,9 +23,9 @@ def host_add(hostname, ip_addrs=None):
         ip_list = ip_addrs if isinstance(ip_addrs, list) else ip_addrs.split(",")
         host_xml["create"]["host:create"]["host:addr"] = []
         host_addr = host_xml["create"]["host:create"]["host:addr"]
-        for ip in ip_list:
-            ip_ver = "v6" if ip.find(":") >= 0 else "v4"
-            host_addr.append({"@ip": ip_ver, "#text": ip})
+        for ip_addr in ip_list:
+            ip_ver = "v6" if ip_addr.find(":") >= 0 else "v4"
+            host_addr.append({"@ip": ip_ver, "#text": ip_addr})
     return host_xml
 
 
