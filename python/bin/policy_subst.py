@@ -6,7 +6,7 @@
 import os
 import jinja2
 
-from librar import policy
+from librar.policy import this_policy as policy
 from librar import fileloader
 from librar import misc
 from librar import static_data
@@ -14,12 +14,9 @@ from librar import static_data
 SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"
 
-merge_data = {"logins": fileloader.load_file_json(static_data.LOGINS_FILE)}
+merge_data = {"logins": fileloader.load_file_json(static_data.LOGINS_FILE), "policy": policy.data()}
 with open("/run/pdns_api_key", "r", encoding="UTF-8") as fd:
     merge_data["api_key"] = fd.readline().strip()
-
-merge_data["policy"] = policy.policy_defaults
-merge_data["policy"].update(policy.this_policy.data())
 
 if not os.path.isdir(DEST_DIR):
     os.mkdir(DEST_DIR, mode=0o755)

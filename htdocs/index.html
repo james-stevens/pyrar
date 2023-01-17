@@ -715,6 +715,7 @@ function buy_one_name(domain,action,show_basket)
 			"action": action
 			};
 
+		let max_basket_size = policy("max_basket_size",10);
 		if (!("basket" in gbl)) { gbl.basket = [new_item]; }
 		else {
 			for(let item of gbl.basket) {
@@ -726,7 +727,7 @@ function buy_one_name(domain,action,show_basket)
 				}
 
 			if (!found_it) {
-				if (gbl.basket.length >= policy("max_basket_size",10)) {
+				if (gbl.basket.length >= max_basket_size) {
 					errMsg("Basket full, please checkout","basketPopup");
 					}
 				else gbl.basket.push(new_item);
@@ -737,7 +738,7 @@ function buy_one_name(domain,action,show_basket)
 		user_info();
 		clr_lazy_hide();
 
-		if (show_basket) {
+		if ((show_basket)&&(max_basket_size > 1)) {
 			elm.basketPopup.classList.add("show");
 			ctx.popup = { "timer": setTimeout(hidePopUp,2500), "name": "basketPopup" };
 		} else {

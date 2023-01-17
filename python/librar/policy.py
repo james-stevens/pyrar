@@ -3,6 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 import os
+import json
 
 from librar import static_data
 from librar import fileloader
@@ -50,22 +51,25 @@ policy_defaults = {
 
 class Policy:
     def __init__(self):
-        self.file = None
         self.file = fileloader.FileLoader(static_data.POLICY_FILE)
+        self.all_data = None
+        self.merge_policy_data()
+
+    def merge_policy_data(self):
+        self.all_data = policy_defaults.copy()
+        self.all_data.update(self.file.data())
+
+    def check_file(self):
+        if self.file.check_for_new():
+            self.merge_policy_data()
 
     def policy(self, name, default_value=None):
-        our_policy = self.file.data()
-        if name in our_policy:
-            return our_policy[name]
-        if name in policy_defaults:
-            return policy_defaults[name]
-        return default_value
-
-    def add_policy(self, key, value):
-        self.file.json[key] = value
+        self.check_file()
+        return self.all_data[name] if name in self.all_data else default_value
 
     def data(self):
-        return self.file.data()
+        self.check_file()
+        return self.all_data
 
 
 this_policy = Policy()
@@ -75,5 +79,5 @@ if __name__ == "__main__":
     print(">>>TEST>>>:", this_policy.policy("business_name"))
     print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
     print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
-    this_policy.add_policy("some_value", "THIS")
     print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
+    print(json.dumps(this_policy.data(),indent=3))
