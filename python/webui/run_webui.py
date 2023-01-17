@@ -327,17 +327,16 @@ def users_domains():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ret, doms_db = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
-    if ret is None:
+    if not (reply := sql.sql_select("domains", {"user_id": req.user_id}, order_by="name"))[0]:
         return req.abort("Failed to load domains")
 
-    now = sql.now()
-    for dom_db in doms_db:
-        if dom_db["status_id"] == static_data.LIVE_STATUS and dom_db["expiry_dt"] <= now:
-            dom_db["status_id"] = static_data.STATUS_EXPIRED
+    for dom_db in reply[1]:
+        dom = domobj.Domain()
+        dom.set_name(dom_db["name"])
+        dom_db["registry"] = dom.registry["name"]
         dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
 
-    req.user_data["domains"] = doms_db
+    req.user_data["domains"] = reply[1]
 
     return req.response(req.user_data)
 
@@ -686,6 +685,12 @@ def domain_gift():
     return run_user_domain_task(domains.webui_gift_domain, "Gift")
 
 
+@application.route('/pyrar/v1.0/domain/flags', methods=['POST'])
+def domain_flags():
+    """ update domain flags """
+    return run_user_domain_task(domains.webui_update_domains_flags, "Flags")
+
+
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
     """ update domain details """
@@ -707,7 +712,7 @@ def run_user_domain_task(domain_function, func_name):
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    ok, reply = domain_function(req, req.post_js)
+    ok, reply = domain_function(req)
 
     if not ok:
         return req.abort(reply)

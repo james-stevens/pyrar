@@ -220,6 +220,28 @@ def set_authcode(bke_job, dom_db):
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
+def domain_update_flags(bke_job, dom_db):
+    job_id = bke_job["backend_id"]
+    name = dom_db["name"]
+    if (epp_info := epp_get_domain_info(job_id, name)) is None:
+        return False
+
+    client_locks = {}
+    if sql.has_data(dom_db,"client_locks"):
+        client_locks = ["client"+lock for lock in dom_db["client_locks"].split(",")]
+
+    add_flags = [item for item in client_locks if item not in epp_info["status"] and item != "ok"]
+    del_flags = [item for item in epp_info["status"] if item not in client_locks and item != "ok"]
+
+    if len(add_flags) == 0 and len(del_flags) == 0:
+    	return True
+
+    this_reg = registry.tld_lib.reg_record_for_domain(name)
+    update_xml = dom_req_xml.domain_update_flags(name, add_flags,del_flags)
+
+    return xml_check_code(job_id, "update", run_epp_request(this_reg, update_xml))
+
+
 def domain_update_from_db(bke_job, dom_db):
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
@@ -366,6 +388,7 @@ dom_handler.add_plugin(
         "dom/delete": domain_delete,
         "dom/recover": domain_renew,
         "dom/expired": domain_expired,
+        "dom/flags": domain_update_flags,
         "dom/price": epp_domain_prices
     })
 
@@ -376,4 +399,5 @@ if __name__ == "__main__":
         sys.exit(1)
     registry.start_up()
     start_up_check()
-    print(json.dumps(domain_info(None, {"name": "pant.to.glass"}), indent=3))
+    #print(json.dumps(domain_info(None, {"name": "pant.to.glass"}), indent=3))
+    print(domain_update_flags({"backend_id":999},{"name":"pant.to.glass","client_locks":None}))

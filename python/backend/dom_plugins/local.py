@@ -161,6 +161,11 @@ def my_hello(__):
     return "LOCAL: Hello"
 
 
+def domain_update_flags():
+    """ nothing to do for `local` """
+    return True
+
+
 def local_domain_prices(domlist, num_years=1, qry_type=["create", "renew"]):
     """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
     ret_doms = []
@@ -188,6 +193,7 @@ dom_handler.add_plugin(
         "dom/expired": domain_expired,
         "dom/info": domain_info,
         "dom/recover": domain_recover,
+        "dom/flags": domain_update_flags,
         "dom/price": local_domain_prices
     })
 

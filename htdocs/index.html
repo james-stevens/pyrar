@@ -30,6 +30,7 @@ gbl = {
 	copy: "&#x2398",
 	credit: "&#x1F4B3;",
 	lock: "&#x1F512;",
+	unlock: "&#x1F513;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
@@ -1770,6 +1771,8 @@ function go_domain_settings(with_push,rest) { domain_settings(parseInt(rest[0]))
 function domain_settings(idx)
 {
 	let dom = ctx.domains[idx];
+	let have_locks = {};
+	if (dom.client_locks) { for(let i of dom.client_locks.split(",")) have_locks[i] = true }
 
 	let x="<table width=75% align=center border=0>";
 	x += `<tr><td title="${dom.name}" class=pageHeading>Domain Settings For - ${dom.display_name}</td></tr>`;
@@ -1785,35 +1788,73 @@ function domain_settings(idx)
 	if (dom.ns) {
 		x += "<tr><td class=promptCell>Name Servers : </td><td>";
 		ns = dom.ns.split(",").sort();
-		for(let i in ns)
-			x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>${ns[i]}<br>`;
+		for(let i in ns) {
+			if (!have_locks.UpdateProhibited)
+				x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+			x += `${ns[i]}<br>`;
+			}
 		x += "</td></tr>";
 		}
+
 	if (dom.ds) {
 		x += "<tr><td class=promptCell>DS Records : </td><td>";
 		ds = dom.ds.split(",").sort();
-		for(let i in ds)
-			x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>${ds[i]}<br>`;
+		for(let i in ds) {
+			if (!have_locks.UpdateProhibited)
+				x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+			x += `${ds[i]}<br>`;
+			}
 		x += "</td></tr>";
 		}
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
-	x += "<tr><td colspan=2><table width=100%>";
-	x += "<tr><td align=left>";
-	x += add_copy_btn(idx);
-	x += add_rec_type_btn("NS",idx,inside_ns);
-	x += add_rec_type_btn("DS",idx,inside_ds);
-	x += "</td><td align=right>"
 
-	if ("unsaved" in dom)
-		x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' id="saveButton" type=button class=myBtn value='Save'>`;
+	if (!have_locks.UpdateProhibited) {
+		x += "<tr><td colspan=2>";
+		x +=    "<table width=100%>";
+		x +=    "<tr><td align=left>";
+		x +=    add_copy_btn(idx);
+		x +=    add_rec_type_btn("NS",idx,inside_ns);
+		x +=    add_rec_type_btn("DS",idx,inside_ds);
+		x +=    "</td><td align=right>"
 
-	x += "</td></tr></table></td></tr>";
-	x += "</table></td></tr>";
+		if ("unsaved" in dom)
+			x += `&nbsp;<input style='width: 110px;' onClick='saveDomDetails(${idx});' id="saveButton" type=button class=myBtn value='Save'>`;
+
+		x +=    "</td></tr></table>";
+		}
+
+	x += "</td></tr></table>";
+	x += "</td></tr>";
+
+	if ((dom.registry in gbl.config.registry)&&(gbl.config.registry[dom.registry].locks)) {
+		let dom_reg = gbl.config.registry[dom.registry];
+		x += settings_header(`Domain Lock Flags`,false);
+		x += "<table id='flagsTable' border=0 width=100%><colgroup><col width=40%/><col width=60%/></colgroup>";
+		for(let i of dom_reg.locks) {
+			img = gbl.tick, flip_to = "Blocked";
+			if (have_locks[i]) { img = gbl.cross; flip_to = "Allowed"; }
+			x += `<tr><td style="padding-top: 5px;" class=promptCell>Can ${i.slice(0,-10)} : </td><td>${img}&nbsp;`
+			if ((!have_locks.UpdateProhibited)||(i=="UpdateProhibited"))
+				x += btn(`flip_flag(${idx},'${i}',${(!(have_locks[i]))})`,"Change to "+flip_to,"Set this flag to "+flip_to,150);
+			x += "</td></tr>";
+			}
+		x += "</table></td></tr>";
+		}
 
 	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
 	size_one_space();
 }
 
+
+function flip_flag(idx,flag_name,switch_to)
+{
+	let dom = ctx.domains[idx];
+	callApi("domain/flags",(ok,reply) => {
+		if (!ok) return def_errMsg("Change domain flag failed",reply,"flagsTable");
+		if ("client_locks" in reply) dom.client_locks = reply.client_locks;
+		domain_settings(idx);
+		},{json:{"domain_id":dom.domain_id,"name":dom.name,"flag":flag_name,"state":switch_to}});
+}
 
 
 function giftDomain(idx)
@@ -2284,6 +2325,9 @@ function rr_locked(idx,i,c) { return errMsg("That record is locked",`rrs_${i}_${
 function one_domain_html(idx)
 {
 	let dom = ctx.domains[idx];
+	let have_locks = {};
+	if (dom.client_locks) { for(let i of dom.client_locks.split(",")) have_locks[i] = true }
+
 	let auto_renew = gbl.cross;
 	if (dom.auto_renew) auto_renew = gbl.tick;
 
@@ -2291,10 +2335,10 @@ function one_domain_html(idx)
 
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
-	if (dom.status_id in {1:true,20:true})
+	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
-	if (dom.is_live)
+	if ((dom.is_live)&&(!have_locks.TransferProhibited))
 		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {

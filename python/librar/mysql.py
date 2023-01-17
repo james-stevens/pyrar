@@ -10,13 +10,13 @@ from dateutil.relativedelta import relativedelta
 
 from librar import fileloader
 from librar import misc
+from librar import static_data
 from librar.log import log, debug, init as log_init
 
 from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
-LOGINS_JSON = os.environ["BASE"] + "/etc/logins.json"
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
 AUTO_CREATED_AMENDED_DT = [
     "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
@@ -27,7 +27,7 @@ my_login = None
 my_password = None
 my_database = None
 
-logins = fileloader.FileLoader(LOGINS_JSON)
+logins = fileloader.FileLoader(static_data.LOGINS_FILE)
 
 
 def convert_string(data):
@@ -83,7 +83,7 @@ def has_data(row, col):
         for item in col:
             all_ok = all_ok and has_data(row, item)
         return all_ok
-    return (row is not None and col in row and row[col] is not None and row[col] != "")
+    return (row is not None and len(row) > 0 and col in row and row[col] is not None and row[col] != "")
 
 
 def now(offset=0):

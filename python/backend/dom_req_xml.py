@@ -136,6 +136,19 @@ def domain_set_authcode(domain, authcode):
     }
 
 
+def domain_update_flags(domain, add_flags, del_flags):
+
+    update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}
+
+    if len(add_flags) > 0:
+        update_data["domain:add"] = {"domain:status": [ { "@s":flag } for flag in add_flags ]}
+
+    if len(del_flags) > 0:
+        update_data["domain:rem"] = {"domain:status": [ { "@s":flag } for flag in del_flags ]}
+
+    return {"update": {"domain:update": update_data}}
+
+
 def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
 
     update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}

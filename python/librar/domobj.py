@@ -28,12 +28,17 @@ class Domain:
         name = name.lower()
         if not validate.is_valid_fqdn(name):
             return False, "Invalid domain name"
-        if (tld := registry.tld_lib.tld_of_name(name)) is None or tld not in registry.tld_lib.zone_data:
+        if (idx := name.find(".")) < 0:
+            return False, "Invalid domain name"
+        tld = name[idx + 1:]
+        if tld not in registry.tld_lib.zone_data:
             return False, "TLD not supported"
+
         self.tld = tld
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
         self.permitted_locks = static_data.CLIENT_DOM_FLAGS
+
         if "locks" in self.registry:
             self.permitted_locks = self.registry["locks"]
         self.name = name

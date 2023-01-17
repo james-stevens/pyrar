@@ -13,16 +13,7 @@ from librar import mysql as sql
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
-EPP_REST_PRIORITY = os.environ["BASE"] + "/etc/priority.json"
-EPP_REGISTRY = os.environ["BASE"] + "/etc/registry.json"
-EPP_LOGINS = os.environ["BASE"] + "/etc/logins.json"
-EPP_PORTS_LIST = "/run/regs_ports"
-
-POW10 = [
-    1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000
-]
-
-SEND_REGS_ITEMS = ["max_checks", "desc", "type"]
+SEND_REGS_ITEMS = ["max_checks", "desc", "type","locks","renew_limit"]
 MANDATORY_REGS_ITEMS = ["locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs"]
 
 DEFAULT_XMLNS = {
@@ -87,9 +78,9 @@ class ZoneLib:
 
         self.last_zone_table = None
         self.check_zone_table()
-        self.logins_file = fileloader.FileLoader(EPP_LOGINS)
-        self.regs_file = fileloader.FileLoader(EPP_REGISTRY)
-        self.priority_file = fileloader.FileLoader(EPP_REST_PRIORITY)
+        self.logins_file = fileloader.FileLoader(static_data.LOGINS_FILE)
+        self.regs_file = fileloader.FileLoader(static_data.REGISTRY_FILE)
+        self.priority_file = fileloader.FileLoader(static_data.PRIORITY_FILE)
 
         self.process_json()
 
@@ -125,7 +116,7 @@ class ZoneLib:
             self.process_json()
 
     def process_json(self):
-        with open(EPP_PORTS_LIST, "r", encoding="UTF-8") as fd:
+        with open(static_data.PORTS_LIST_FILE, "r", encoding="UTF-8") as fd:
             port_lines = [line.split() for line in fd.readlines()]
         ports = {p[0]: int(p[1]) for p in port_lines}
 
@@ -163,7 +154,6 @@ class ZoneLib:
 
     def regs_send(self):
         regs_to_send = {}
-        items_to_send = SEND_REGS_ITEMS+MANDATORY_REGS_ITEMS
         for registry, reg_data in self.registry.items():
             regs_to_send[registry] = {item: reg_data[item] for item in SEND_REGS_ITEMS if item in reg_data}
         return regs_to_send
@@ -278,11 +268,11 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
         our_price *= float(num_years)
 
     site_currency = policy.policy("currency")
-    our_price *= POW10[site_currency["decimal"]]
+    our_price *= statis_data.POW10[site_currency["decimal"]]
     our_price = round(float(our_price), 0)
 
     if retain_reg_price:
-        regs_price *= POW10[site_currency["decimal"]]
+        regs_price *= statis_data.POW10[site_currency["decimal"]]
         regs_price = round(float(regs_price), 0)
         dom["reg_" + action] = int(regs_price)
 

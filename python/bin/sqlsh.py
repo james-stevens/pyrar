@@ -9,15 +9,14 @@ import argparse
 
 from librar import mysql as sql
 from librar import fileloader
+from librar import static_data
 
 parser = argparse.ArgumentParser(description='Command line SQL runner')
 parser.add_argument("-o", '--output-long', action="store_true")
 parser.add_argument("sql", nargs='+')
 args = parser.parse_args()
 
-LOGINS_JSON = f"{os.environ['BASE']}/etc/logins.json"
-logins = fileloader.load_file_json(LOGINS_JSON)
-
+logins = fileloader.load_file_json(static_data.LOGINS_FILE)
 
 def max_width(this_row):
     """ return width of widest column name """
