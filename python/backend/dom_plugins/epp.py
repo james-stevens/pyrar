@@ -172,7 +172,7 @@ def domain_create(bke_job, dom_db):
 
 def domain_info(bke_job, dom_db):
     """ Get domain info """
-    return epp_get_domain_info(bke_job["job_id"],dom_db["name"])
+    return epp_get_domain_info(bke_job["job_id"], dom_db["name"])
 
 
 def epp_get_domain_info(job_id, domain_name):
@@ -293,6 +293,8 @@ def domain_expired(bke_job, dom_db):
 def domain_delete(bke_job, dom_db):
     """ nothing to do here """
     return True
+
+
 # pylint: enable=unused-argument
 
 
@@ -351,7 +353,6 @@ def xml_check_with_fees(domlist, years, qry_type):
     }
 
 
-
 dom_handler.add_plugin(
     "epp", {
         "hello": my_hello,
@@ -369,7 +370,6 @@ dom_handler.add_plugin(
         "dom/price": epp_domain_prices
     })
 
-
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("engine")
@@ -379,4 +379,4 @@ if __name__ == "__main__":
     # print(domain_update_flags({"backend_id": 999}, {"name": "pant.to.glass", "client_locks": None}))
     my_domlist = domobj.DomainList()
     my_domlist.set_list("gits.to.glass,fits.to.glass,pant.to.glass")
-    print(json.dumps(epp_domain_prices(my_domlist),indent=3))
+    print(json.dumps(epp_domain_prices(my_domlist), indent=3))

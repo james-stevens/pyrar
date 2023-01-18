@@ -166,7 +166,7 @@ def main():
         ok, reply = dom.load_name(args.domain)
 
     if not ok:
-        print("ERROR",reply)
+        print("ERROR", reply)
         sys.exit(1)
 
     bke_job = {

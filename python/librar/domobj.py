@@ -25,8 +25,8 @@ class Domain:
         self.permitted_locks = None
         self.locks = None
 
-    def set_by_id(self,domain_id=None,user_id=None):
-        if domain_id is None or not isinstance(domain_id,int):
+    def set_by_id(self, domain_id=None, user_id=None):
+        if domain_id is None or not isinstance(domain_id, int):
             return False, "Imvalid domain id"
         where = {"domain_id": domain_id}
         if user_id is not None:
@@ -59,7 +59,7 @@ class Domain:
         self.name = name
         return True, None
 
-    def load_name(self,name,user_id=None):
+    def load_name(self, name, user_id=None):
         if not (reply := self.set_name(name))[0]:
             return False, reply[1]
         return self.load_record(user_id)
@@ -80,7 +80,7 @@ class Domain:
 
     def set_locks(self):
         self.locks = {}
-        if self.dom_db is not None and sql.has_data(self.dom_db,"client_locks"):
+        if self.dom_db is not None and sql.has_data(self.dom_db, "client_locks"):
             self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
         return True, None
 
@@ -153,10 +153,11 @@ class DomainList:
         if self.domobjs is None:
             return False, "Use `set_list` before `load_all`"
 
-        if (reply := sql.sql_select("domains",{"name":[ dom.name for __, dom in self.domobjs.items() ]}))[0] and reply[1] is None:
+        if (reply := sql.sql_select("domains",
+                                    {"name": [dom.name for __, dom in self.domobjs.items()]}))[0] and reply[1] is None:
             return False, "Failed to load domains from database"
 
-        domdb_by_name = { dom_db["name"]:dom_db for dom_db in reply[1] }
+        domdb_by_name = {dom_db["name"]: dom_db for dom_db in reply[1]}
         for __, dom in self.domobjs.items():
             dom.dom_db = None
             if dom.name in domdb_by_name:
@@ -183,6 +184,6 @@ if __name__ == "__main__":
         print(reply)
         sys.exit(1)
     print("LIST>>>", reply[1])
-    print("load all",my_doms.load_all())
+    print("load all", my_doms.load_all())
     for d, domobj in my_doms.domobjs.items():
         print(d, domobj.name, domobj.dom_db["name"] if domobj.dom_db is not None else "NOPE", domobj.locks)

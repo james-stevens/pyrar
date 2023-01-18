@@ -314,9 +314,9 @@ if __name__ == "__main__":
 
     connect("admin")
 
-    print(sql_select_one("x-domains",{"domain_id":sys.argv[1]}))
-    print(sql_select_one("domains",{"domain_id":sys.argv[1]}))
-    print(sql_select("domains",{"domain_id":sys.argv[1]}))
+    print(sql_select_one("x-domains", {"domain_id": sys.argv[1]}))
+    print(sql_select_one("domains", {"domain_id": sys.argv[1]}))
+    print(sql_select("domains", {"domain_id": sys.argv[1]}))
     sys.exit(0)
 
     ret, db_rows = run_select("select * from events limit 3")
