@@ -15,7 +15,6 @@ debugAPI = false;
 elm = {};
 gbl = {
 	"theme": window.localStorage.theme,
-	last_search: "",
 
 	tick: "&#x2611;",
 	cross: "&#x2612;",
@@ -2450,14 +2449,14 @@ function resend_password(with_push)
 function searchKey(e)
 {
 	if (e.key=="Enter") { doSearch(); return; }
-	if (e.key==":") {
-		elm.searchEdit.value = gbl.last_search;
-		togglePopUp("emojiPopup",0)
-		let e = document.getElementById("emojiSearch");
-		if (e) e.value = "";
-		show_emoji_search();
-		}
-	gbl.last_search = elm.searchEdit.value;
+	if (e.key!=":") return;
+
+	if (elm.searchEdit.value.slice(-1)==":")
+		elm.searchEdit.value = elm.searchEdit.value.slice(0,-1);
+	togglePopUp("emojiPopup",0)
+	let es = document.getElementById("emojiSearch");
+	if (es) es.value = "";
+	show_emoji_search();
 }
 
 
@@ -2470,7 +2469,6 @@ function all_words(words,desc)
 function add_emoji(emoji)
 {
 	elm.searchEdit.value += emoji;
-	gbl.last_search = elm.searchEdit.value;
 	hidePopUp();
 	elm.searchEdit.focus();
 }
@@ -2611,7 +2609,7 @@ function emojiKey(e)
 				<form action="#" name=searchForm onSubmit="return doSearch();">
 					<tr><td>
 						<div class="popup">
-							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for" style="width:600px" autofocus class=searchBox id=searchEdit>
+							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
 							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -600; margin-top: 40px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 450px"><p>
 								<span id="emojiOutput"></span>
