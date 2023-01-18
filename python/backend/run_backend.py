@@ -47,7 +47,7 @@ def post_processing(bke_job):
 
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": bke_job["domain_id"]})
     if not ok:
-        log(f"ERROR: Failed to run post-processing for {bke_job["job_type"]} on missing domain {bke_job['domain_id']}")
+        log(f"ERROR: Failed to run post-processing for {bke_job['job_type']} on missing domain {bke_job['domain_id']}")
         return False
 
     if bke_job["job_type"] == "dom/create":
