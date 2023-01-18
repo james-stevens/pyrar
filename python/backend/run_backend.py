@@ -8,6 +8,7 @@ import argparse
 
 from librar import mysql as sql
 from librar import registry
+from librar import pdns
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import sigprocs
@@ -40,14 +41,17 @@ def job_failed(bke_job):
     }, {"backend_id": bke_job["backend_id"]})
 
 
-def check_for_recreate(bke_job):
+def post_processing(bke_job):
     if bke_job["job_type"] not in RECREATE_ACTIONS_FOR:
         return True
 
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": bke_job["domain_id"]})
     if not ok:
-        log(f"ERROR: trying to create actions for missing domain {bke_job['domain_id']}")
+        log(f"ERROR: Failed to run post-processing for {bke_job["job_type"]} on missing domain {bke_job['domain_id']}")
         return False
+
+    if bke_job["job_type"] == "dom/create":
+        pdns.delete_zone(dom_db["name"])
 
     return creator.recreate_domain_actions(dom_db)
 
@@ -82,7 +86,7 @@ def run_backend_item(bke_job):
     if job_run is None:
         return job_abort(bke_job)
     if job_run:
-        check_for_recreate(bke_job)
+        post_processing(bke_job)
         return job_worked(bke_job)
 
     return job_failed(bke_job)

@@ -45,7 +45,7 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
         dom_price = dom_dict[name]
 
         if not this_domobj.valid_expiry_limit(num_years):
-            for action in static_data.EPP_ACTIONS:
+            for action in static_data.DOMAIN_ACTIONS:
                 if action in dom_price:
                     del dom_price[action]
                     dom_price[action + ":fail"] = "Renew limit exceeded"

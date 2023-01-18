@@ -238,7 +238,7 @@ class ZoneLib:
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for action in static_data.EPP_ACTIONS:
+            for action in static_data.DOMAIN_ACTIONS:
                 if action not in dom:
                     continue
 

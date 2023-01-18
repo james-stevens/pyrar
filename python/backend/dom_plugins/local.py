@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" bacnend call-backs for running as registry locally """
 
 import base64
 
@@ -17,6 +18,7 @@ from backend import dom_handler
 
 
 def tld_pdns_check(name):
+    """ check if domain exists in pdns """
     if (tld := registry.tld_lib.tld_of_name(name)) is None:
         return None
 
@@ -27,10 +29,12 @@ def tld_pdns_check(name):
 
 
 def domain_delete(bke_job, dom_db):
+    """ run dom/delete request """
     return remove_parent_records(bke_job, dom_db)
 
 
 def remove_parent_records(bke_job, dom_db):
+    """ remove the SLD from the TLD zone (in pdns) """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
@@ -51,22 +55,25 @@ def remove_parent_records(bke_job, dom_db):
 
 
 def domain_expired(bke_job, dom_db):
+    """ run dom/expired request for type=local"""
     return remove_parent_records(bke_job, dom_db)
 
 
 def domain_create(bke_job, dom_db):
+    """ run dom/create request for type=local """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
 
     log(f"domain_create: {dom_db['name']}, {dom_db['expiry_dt']} yrs={years}")
-    if (years := shared.check_num_years(bke_job)) is None:
-        return False
-    if (ok_add := add_yrs(years, dom_db, "created_dt")):
+
+    if (ok_add := add_years_to_expiry(years, dom_db, "created_dt")):
         create_update_request(bke_job)
+
     return ok_add
 
 
 def create_update_request(bke_job):
+    """ create a dom/update request to sync dom's data in TLD zone """
     new_bke = {
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],
@@ -80,11 +87,13 @@ def create_update_request(bke_job):
 
 
 def start_up_check():
+    """ needs to be run before these can be used """
     pdns.start_up()
     check_tlds_exist()
 
 
 def check_tlds_exist():
+    """ check all TLDs of type=local exist in pdns """
     for zone, zone_rec in registry.tld_lib.zone_data.items():
         if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and not pdns.zone_exists(zone)):
             pdns.create_zone(zone, True)
@@ -93,6 +102,7 @@ def check_tlds_exist():
 
 
 def domain_update_from_db(bke_job, dom_db):
+    """ run dom/update request to sync NS & DS into TLD zone """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
@@ -116,6 +126,7 @@ def domain_update_from_db(bke_job, dom_db):
 
 
 def domain_request_transfer(bke_job, dom_db):
+    """ run dom/transfer request """
     if not sql.has_data(bke_job, "authcode") or not sql.has_data(dom_db, "authcode"):
         return None
 
@@ -131,7 +142,8 @@ def domain_request_transfer(bke_job, dom_db):
     }, {"domain_id": dom_db["domain_id"]})
 
 
-def add_yrs(years, dom_db, start_date="expiry_dt"):
+def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
+    """ Set dom_db.expiry_dt = {years} + dom_db.{start_date} and update status """
     log(f"Adding {years} yrs to '{dom_db['name']}'/{start_date}")
     values = [
         f"expiry_dt = date_add({start_date},interval {years} year)",
@@ -142,21 +154,24 @@ def add_yrs(years, dom_db, start_date="expiry_dt"):
 
 
 def domain_renew(bke_job, dom_db):
+    """ run dom/renew request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
-    return add_yrs(years, dom_db)
+    return add_years_to_expiry(years, dom_db)
 
 
 def domain_recover(bke_job, dom_db):
+    """ run dom/recover request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
-    if (ok_add := add_yrs(years, dom_db)):
+    if (ok_add := add_years_to_expiry(years, dom_db)):
         create_update_request(bke_job)
     return ok_add
 
 
 # pylint: disable=unused-argument
 def domain_info(bke_job, dom_db):
+    """ noting to do for type=local """
     return dom_db
 
 
@@ -164,11 +179,13 @@ def domain_info(bke_job, dom_db):
 
 
 def set_authcode(bke_job, dom_db):
+    """ run dom/authcode request """
     password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if sql.has_data(bke_job, "authcode") else None
     return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 
 def my_hello(__):
+    """ test fn """
     return "LOCAL: Hello"
 
 

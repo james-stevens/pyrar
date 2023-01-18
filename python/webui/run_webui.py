@@ -736,7 +736,7 @@ def run_user_domain_task(domain_function, func_name):
     return req.response(reply)
 
 
-def get_dom_data_items(post_js):
+def get_price_check_properties(post_js):
     """ read domain check sent by the user, supporting GET/POST & JSON """
     num_years = 1
     qry_type = ["create", "renew"]
@@ -773,6 +773,9 @@ def get_dom_data_items(post_js):
     if (qry := data.get("qry_type")) is not None:
         qry_type = qry.split(",")
 
+    if not validate.valid_domain_actions(qry_type):
+        return None, "Imvalid actions", None
+
     return dom, num_years, qry_type
 
 
@@ -780,15 +783,13 @@ def get_dom_data_items(post_js):
 def rest_domain_price():
     """ check the price of a domain or list of domains """
     req = WebuiReq()
-    dom, num_years, qry_type = get_dom_data_items(req.post_js)
+    dom, num_years, qry_type = get_price_check_properties(req.post_js)
     if dom is None:
         return req.abort(num_years)
 
     domlist = domobj.DomainList()
-    ok, reply = domlist.set_list(dom)
-
-    if not ok or not reply:
-        return req.abort(reply if reply is not None else "Invalid domain name")
+    if not (reply := domlist.set_list(dom))[0]:
+        return req.abort(reply[1] if reply[1] is not None else "Invalid domain name")
 
     ok, reply = domains.get_domain_prices(domlist, num_years, qry_type, req.user_id)
     if ok:

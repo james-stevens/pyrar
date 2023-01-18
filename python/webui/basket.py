@@ -190,7 +190,7 @@ def check_basket_item(basket_item):
         return False, err
     if not isinstance(basket_item["num_years"], int):
         return False, "Basket seems to be corrupt"
-    if basket_item["action"] not in static_data.EPP_ACTIONS:
+    if basket_item["action"] not in static_data.DOMAIN_ACTIONS:
         return False, "Basket seems to be corrupt"
 
     return True, None
