@@ -43,83 +43,78 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
 
     for name, this_domobj in domlist.domobjs.items():
         dom_price = dom_dict[name]
-
-        if not this_domobj.valid_expiry_limit(num_years):
-            for action in static_data.DOMAIN_ACTIONS:
-                if action in dom_price:
-                    del dom_price[action]
-                    dom_price[action + ":fail"] = "Renew limit exceeded"
-
-        if this_domobj.dom_db is None:
-            continue
-        dom_db = this_domobj.dom_db
-
-        current_flags = {}
-        if sql.has_data(dom_db, "client_locks"):
-            current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
-        if "RenewProhibited" in current_flags and "renew" in dom_price:
-            del dom_price["renew"]
-            dom_price["renew:fail"] = "Renewal blocked by flags"
-
-        dom_price["avail"] = False
-        if dom_db["user_id"] == user_id:
-            dom_price["yours"] = True
-        dom_price["reason"] = "Already registered"
-
-        if sql.has_data(dom_db, "for_sale_msg"):
-            dom_price["avail"] = True
-            dom_price["for_sale_msg"] = dom_db["for_sale_msg"]
-
-        if "create" in dom_price:
-            del dom_price["create"]
+        futher_process_price_item(this_domobj, dom_price, num_years, user_id)
 
     registry.tld_lib.multiply_values(prices, num_years)
     return True, prices
 
 
+def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
+    if not this_domobj.valid_expiry_limit(num_years):
+        for action in static_data.DOMAIN_ACTIONS:
+            if action in dom_price:
+                del dom_price[action]
+                dom_price[action + ":fail"] = "Renew limit exceeded"
+
+    if this_domobj.dom_db is None:
+        return
+
+    dom_db = this_domobj.dom_db
+
+    if "RenewProhibited" in this_domobj.locks and "renew" in dom_price:
+        del dom_price["renew"]
+        dom_price["renew:fail"] = "Renewal blocked by locks"
+
+    dom_price["avail"] = False
+    if dom_db["user_id"] == user_id:
+        dom_price["yours"] = True
+    dom_price["reason"] = "Already registered"
+
+    if sql.has_data(dom_db, "for_sale_msg"):
+        dom_price["avail"] = True
+        dom_price["for_sale_msg"] = dom_db["for_sale_msg"]
+
+    if "create" in dom_price:
+        del dom_price["create"]
+
+
 def check_domain_is_mine(user_id, domain, require_live):
+    dom = domobj.Domain()
     if (not sql.has_data(domain, ["domain_id", "name"]) or not isinstance(domain["domain_id"], int)
             or not validate.is_valid_fqdn(domain["name"])):
         return False, "Domain data missing or invalid"
 
-    ok, dom_db = sql.sql_select_one("domains", {
-        "domain_id": int(domain["domain_id"]),
-        "name": domain["name"],
-        "user_id": int(user_id)
-    })
-
-    if not ok or not dom_db or len(dom_db) <= 0:
+    if not dom.load_name(domain["name"], user_id)[0]:
         return False, "Domain not found or not yours"
 
-    if require_live and dom_db["status_id"] not in static_data.LIVE_STATUS:
-        return False, "Not live yet"
+    if require_live and dom.dom_db["status_id"] not in static_data.LIVE_STATUS:
+        return False, "Operation only supported on live domains"
 
-    return True, dom_db
+    return True, dom
 
 
 def webui_update_domain(req):
     if not (reply := check_domain_is_mine(req.user_id, req.post_js, False))[0]:
         return False, reply[1]
-    dom_db = reply[1]
+    dom = reply[1]
 
     update_cols = {}
 
     if "auto_renew" in req.post_js and isinstance(req.post_js["auto_renew"], bool):
         update_cols["auto_renew"] = req.post_js["auto_renew"]
 
-    if not (reply := check_update_ns(req.post_js, dom_db, update_cols))[0]:
+    if not (reply := check_update_ns(req.post_js, dom.dom_db, update_cols))[0]:
         return False, reply[1]
 
-    if not (reply := check_update_ds(req.post_js, dom_db, update_cols))[0]:
+    if not (reply := check_update_ds(req.post_js, dom.dom_db, update_cols))[0]:
         return False, reply[1]
 
-    if not sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"], "user_id": req.user_id}):
+    if not sql.sql_update_one("domains", update_cols, {"domain_id": dom.dom_db["domain_id"], "user_id": req.user_id}):
         return False, "Domain update failed"
 
-    if dom_db["status_id"] not in static_data.LIVE_STATUS:
-        return True, update_cols
+    if dom.dom_db["status_id"] == static_data.LIVE_STATUS:
+        domain_backend_update(dom.dom_db)
 
-    domain_backend_update(dom_db)
     return True, update_cols
 
 
@@ -173,18 +168,15 @@ def domain_backend_update(dom_db, request_type="dom/update"):
 def webui_set_auth_code(req):
     if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
         return False, reply[1]
-    dom_db = reply[1]
+    dom = reply[1]
 
-    current_flags = {}
-    if sql.has_data(dom_db, "client_locks"):
-        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
-    if "TransferProhibited" in current_flags:
-        return False, "Gifting / Transfer blocked by flags"
+    if "TransferProhibited" in dom.locks:
+        return False, "Gifting / Transfer blocked by locks"
 
     auth_code = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
 
     bke_job = {
-        "domain_id": dom_db["domain_id"],
+        "domain_id": dom.dom_db["domain_id"],
         "user_id": req.user_id,
         "job_type": "dom/authcode",
         "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
@@ -201,12 +193,9 @@ def webui_set_auth_code(req):
 def webui_gift_domain(req):
     if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
         return False, reply[1]
-    dom_db = reply[1]
+    dom = reply[1]
 
-    current_flags = {}
-    if sql.has_data(dom_db, "client_locks"):
-        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
-    if "TransferProhibited" in current_flags:
+    if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by flags"
 
     if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
@@ -214,24 +203,24 @@ def webui_gift_domain(req):
 
     if not (reply := sql.sql_select_one("users", {"email": req.post_js["dest_email"]}))[0]:
         return False, "Recipient email invalid"
-    user_db = reply[1]
+    new_user_id = reply[1]["user_id"]
 
     where = {col: req.post_js[col] for col in ["domain_id", "name", "user_id"]}
-    if not sql.sql_update_one("domains", {"user_id": user_db["user_id"]}, where):
+    if not sql.sql_update_one("domains", {"user_id": new_user_id}, where):
         return False, "Gifting domain failed"
 
     spool_email.spool("gifted_domain", [["domains", {
         "domain_id": req.post_js["domain_id"]
     }], ["users", {
-        "user_id": user_db["user_id"]
+        "user_id": new_user_id
     }]])
-    return True, {"new_user_id": user_db["user_id"]}
+    return True, {"new_user_id": new_user_id}
 
 
 def webui_update_domains_flags(req):
     if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
         return False, reply[1]
-    dom_db = reply[1]
+    dom = reply[1]
 
     if not (sql.has_data(req.post_js, ["flag", "state"]) and isinstance(req.post_js["state"], bool)
             and req.post_js["flag"] in static_data.CLIENT_DOM_FLAGS):
@@ -243,26 +232,30 @@ def webui_update_domains_flags(req):
     if this_flag not in dom.registry["locks"]:
         return False, f"Flag '{this_flag}' is not supported in this registry"
 
-    current_flags = {}
-    if sql.has_data(dom_db, "client_locks"):
-        current_flags = {flag: True for flag in dom_db["client_locks"].split(",")}
+    new_flags = dom.locks.copy()
+    new_flags[this_flag] = req.post_js["state"]
+    update_flags = ",".join([flag for flag, flag_val in new_flags.items() if flag_val])
 
-    current_flags[this_flag] = req.post_js["state"]
-    new_flags = ",".join([flag for flag, flag_val in current_flags.items() if flag_val])
-
-    if not sql.sql_update_one("domains", {"client_locks": new_flags}, {
-            "domain_id": dom_db["domain_id"],
+    if not sql.sql_update_one("domains", {"client_locks": update_flags}, {
+            "domain_id": dom.dom_db["domain_id"],
             "user_id": req.user_id
     }):
         return False, "Domain update failed"
 
-    domain_backend_update(dom_db, "dom/flags")
-    return True, {"client_locks": new_flags}
+    domain_backend_update(dom.dom_db, "dom/flags")
+    return True, {"client_locks": update_flags}
 
 
-if __name__ == "__main__":
+def main():
     sql.connect("webui")
     registry.start_up()
     my_domlist = domobj.DomainList()
-    my_domlist.set_list(sys.argv[1:])
+    ok, reply = my_domlist.set_list(sys.argv[1:])
+    print(ok, reply)
+    if not ok:
+        sys.exit(1)
     print(json.dumps(get_domain_prices(my_domlist, 11, ["create", "renew"], 10450), indent=3))
+
+
+if __name__ == "__main__":
+    main()
