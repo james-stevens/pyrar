@@ -94,9 +94,9 @@ def check_domain_is_mine(user_id, domain, require_live):
 
 
 def webui_update_domain(req):
-    if not (reply := check_domain_is_mine(req.user_id, req.post_js, False))[0]:
-        return False, reply[1]
-    dom = reply[1]
+    ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
+    if not ok:
+        return False, dom
 
     update_cols = {}
 
@@ -166,9 +166,9 @@ def domain_backend_update(dom_db, request_type="dom/update"):
 
 
 def webui_set_auth_code(req):
-    if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
-        return False, reply[1]
-    dom = reply[1]
+    ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
+    if not ok:
+        return False, dom
 
     if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by locks"
@@ -191,9 +191,9 @@ def webui_set_auth_code(req):
 
 
 def webui_gift_domain(req):
-    if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
-        return False, reply[1]
-    dom = reply[1]
+    ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
+    if not ok:
+        return False, dom
 
     if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by flags"
@@ -218,16 +218,14 @@ def webui_gift_domain(req):
 
 
 def webui_update_domains_flags(req):
-    if not (reply := check_domain_is_mine(req.user_id, req.post_js, True))[0]:
-        return False, reply[1]
-    dom = reply[1]
+    ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
+    if not ok:
+        return False, dom
 
     if not (sql.has_data(req.post_js, ["flag", "state"]) and isinstance(req.post_js["state"], bool)
             and req.post_js["flag"] in static_data.CLIENT_DOM_FLAGS):
         return False, "Missing or invalid data"
 
-    dom = domobj.Domain()
-    dom.set_name(req.post_js["name"])
     this_flag = req.post_js["flag"]
     if this_flag not in dom.registry["locks"]:
         return False, f"Flag '{this_flag}' is not supported in this registry"

@@ -1238,7 +1238,7 @@ function userDetails()
 	x += "<tr><td id=userBtnBar class=btmBtnBar>";
 
 	if (!ctx.user.email_verified) 
-		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
+		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
@@ -1467,8 +1467,8 @@ function myAccount(with_push)
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	size_one_space();
-	callApi("users/details",(ret,reply) => {
-		if (!ret) {
+	callApi("users/details",(ok,reply) => {
+		if (!ok) {
 			goSearch(true);
 			return def_errMsg("Error in setting your data",reply,"searchEdit");
 			}

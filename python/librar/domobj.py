@@ -80,7 +80,7 @@ class Domain:
 
     def set_locks(self):
         self.locks = {}
-        if self.dom_db is not None and sql.has_data(self.dom_db,"client_locks") and self.dom_db["client_locks"].find(",") >= 0:
+        if self.dom_db is not None and sql.has_data(self.dom_db,"client_locks"):
             self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
         return True, None
 

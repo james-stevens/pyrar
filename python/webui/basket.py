@@ -108,7 +108,7 @@ def capture_basket(req, whole_basket):
         return False, "Basket too full - please remove one or more items"
 
     ok, sum_db = sql.sql_select_one("orders", {"user_id": user_db["user_id"]}, "sum(price_paid) 'sum_orders'")
-    if not ok or sum_orders is None:
+    if not ok or sum_db is None:
         return False, "Failed to read database"
 
     sum_orders = sum_db["sum_orders"] if sql.has_data(sum_db, "sum_orders") else 0

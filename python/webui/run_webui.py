@@ -184,9 +184,11 @@ def orders_cancel():
         return req.abort("No/invalid JSON posted")
 
     where = {"user_id": req.user_id, "order_item_id": int(req.post_js["order_item_id"])}
-    if not (reply := sql.sql_select_one("orders", where))[0]:
+
+    ok, order_db = sql.sql_select_one("orders", where)
+    if not ok:
         return req.abort(order_db)
-    order_db = reply[1]
+
     if not order_db or len(order_db) <= 0:
         return req.abort("Order not found")
 
@@ -296,7 +298,11 @@ def payments_list():
         return req.abort(NOT_LOGGED_IN)
     ok, reply = sql.sql_select("payments", {"user_id": req.user_id})
     if not ok:
-        return req.abort("Failed to load payment data")
+        if reply is None:
+            return req.abort("Failed to load payment data")
+        else:
+            return req.response({})
+
     return req.response(reply)
 
 
@@ -316,7 +322,11 @@ def users_transactions():
                                   limit=limit,
                                   order_by="acct_sequence_id desc")
     if not ok:
-        return req.abort("Unexpected error loading transactions")
+        if trans_db is None:
+            return req.abort("Unexpected error loading transactions")
+        else:
+            return req.response({})
+
     req.user_data["transactions"] = trans_db
     return req.response(req.user_data)
 
@@ -327,17 +337,21 @@ def users_domains():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not (reply := sql.sql_select("domains", {"user_id": req.user_id}, order_by="name"))[0]:
-        return req.abort("Failed to load domains")
+    ok, reply = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
+    if not ok:
+        if reply is None:
+            return req.abort("Failed to load domains")
+        else:
+            return req.response({})
 
-    for dom_db in reply[1]:
+    for dom_db in reply:
         dom = domobj.Domain()
         dom.set_name(dom_db["name"])
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
         dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
 
-    req.user_data["domains"] = reply[1]
+    req.user_data["domains"] = reply
 
     return req.response(req.user_data)
 
@@ -409,7 +423,10 @@ def users_details():
 
     ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
     if not ok:
-        return req.abort("Failed to load user account")
+        if user_db is None:
+            return req.abort("Failed to load user account")
+        else:
+            return req.response({})
 
     req.user_data["user"] = user_db
 
@@ -418,8 +435,8 @@ def users_details():
 
 def load_orders_and_reply(req):
     ok, orders_db = sql.sql_select("orders", {"user_id": req.user_id})
-    if not ok:
-        return req.abort(orders_db)
+    if not ok and orders_db is None:
+        return req.abort("Orders failed to load")
 
     req.user_data["orders"] = orders_db
     return req.response(req.user_data)
