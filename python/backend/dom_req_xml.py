@@ -1,16 +1,19 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions to create EPP JSON to be converted into XML """
 
 import json
 from backend import whois_priv
 
 
 def pad_ds(ds_dt):
+    """ add `secDNS:` prefix to all DS properties """
     return {"secDNS:" + tag: val for tag, val in ds_dt.items()}
 
 
 def host_add(hostname, ip_addrs=None):
+    """ JSON/XML to add a host """
     host_xml = {
         "create": {
             "host:create": {
@@ -30,6 +33,7 @@ def host_add(hostname, ip_addrs=None):
 
 
 def domain_info(name):
+    """ JSON/XML to get info on a domain """
     return {
         "info": {
             "domain:info": {
@@ -44,6 +48,7 @@ def domain_info(name):
 
 
 def domain_request_transfer(name, authcode, years):
+    """ JSON/XML to request a transfer """
     return {
         "transfer": {
             "@op": "request",
@@ -63,6 +68,7 @@ def domain_request_transfer(name, authcode, years):
 
 
 def domain_renew(name, years, cur_exp):
+    """ JSON/XML to renew a domain """
     return {
         "renew": {
             "domain:renew": {
@@ -79,6 +85,7 @@ def domain_renew(name, years, cur_exp):
 
 
 def domain_create(name, ns_list, ds_list, years):
+    """ JSON/XML to create a domain """
     xml = {
         "create": {
             "domain:create": {
@@ -121,6 +128,7 @@ def domain_create(name, ns_list, ds_list, years):
 
 
 def domain_set_authcode(domain, authcode):
+    """ JSON/XML to set the authcode on a domain """
     return {
         "update": {
             "domain:update": {
@@ -137,6 +145,7 @@ def domain_set_authcode(domain, authcode):
 
 
 def domain_update_flags(domain, add_flags, del_flags):
+    """ JSON/XML to update the client flags on a domain """
 
     update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}
 
@@ -150,6 +159,7 @@ def domain_update_flags(domain, add_flags, del_flags):
 
 
 def domain_update(domain, add_ns, del_ns, add_ds, del_ds):
+    """ JSON/XML to update the DS & NS on a domain """
 
     update_data = {"@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0", "domain:name": domain}
 

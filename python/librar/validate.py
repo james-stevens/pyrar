@@ -227,6 +227,13 @@ def valid_currency(currency):
     return True
 
 
+def valid_domain_actions(actions):
+    for action in actions:
+        if action not in static_data.DOMAIN_ACTIONS:
+            return False
+    return len(actions) > 0
+
+
 if __name__ == "__main__":
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))

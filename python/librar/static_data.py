@@ -17,7 +17,7 @@ HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
-EPP_ACTIONS = ["create", "renew", "transfer", "restore"]
+DOMAIN_ACTIONS = ["create", "renew", "transfer", "restore"]
 
 STATUS_LIVE = 1
 STATUS_WAITING_PAYMENT = 10

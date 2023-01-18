@@ -105,23 +105,22 @@ def capture_basket(req, whole_basket):
     user_db = whole_basket["user_db"]
 
     if len(basket) > policy.policy("max_basket_size"):
-        return False, "Basket too full"
+        return False, "Basket too full - please remove one or more items"
 
-    ok, sum_orders = sql.sql_select_one("orders", {"user_id": user_db["user_id"]}, "sum(price_paid) 'sum_orders'")
-    if not ok:
+    ok, sum_db = sql.sql_select_one("orders", {"user_id": user_db["user_id"]}, "sum(price_paid) 'sum_orders'")
+    if not ok or sum_db is None:
         return False, "Failed to read database"
 
-    availble_balance = user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]
+    sum_orders = sum_db["sum_orders"] if sql.has_data(sum_db, "sum_orders") else 0
 
-    if sum_orders["sum_orders"] is not None and sum_orders["sum_orders"] > availble_balance:
+    if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
         return False, "Please pay for your existing orders before placing more orders"
 
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
         return False, "Please clear your debt before placing more orders"
 
-    ok, reply = parse_basket(whole_basket)
-    if not ok:
-        return False, reply
+    if not (reply := parse_basket(whole_basket))[0]:
+        return False, reply[1]
 
     live_process_basket(req, whole_basket)
     return True, basket
@@ -190,7 +189,7 @@ def check_basket_item(basket_item):
         return False, err
     if not isinstance(basket_item["num_years"], int):
         return False, "Basket seems to be corrupt"
-    if basket_item["action"] not in static_data.EPP_ACTIONS:
+    if basket_item["action"] not in static_data.DOMAIN_ACTIONS:
         return False, "Basket seems to be corrupt"
 
     return True, None

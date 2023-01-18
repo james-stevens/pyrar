@@ -63,11 +63,9 @@ def order_cancel(act_db, dom_db):
 
 
 def delete_domain(act_db, dom_db):
-    ok = sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
-    if not ok:
-        return False
-
-    ok_pdns = pdns.delete_zone(dom_db["name"])
+    sql.sql_delete("orders", {"domain_id": dom_db["domain_id"]})
+    sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
+    pdns.delete_zone(dom_db["name"])
 
     if dom_db["status_id"] == static_data.STATUS_WAITING_PAYMENT:
         del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}

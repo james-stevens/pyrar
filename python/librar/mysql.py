@@ -231,22 +231,16 @@ def sql_select(table, where, columns="*", limit=None, order_by=None):
     if limit is not None:
         sql += f" limit {limit}"
 
-    ok, db_rows = run_select(sql)
+    if (reply := run_select(sql))[0] and len(reply[1]) > 0:
+        return True, reply[1]
 
-    if not ok:
-        return False, None
-
-    return True, db_rows
+    return False, reply[1]
 
 
 def sql_select_one(table, where, columns="*"):
-    ok, db_rows = sql_select(table, where, columns, 1)
-    if ok:
-        if len(db_rows) > 0:
-            return True, db_rows[0]
-        else:
-            return True, {}
-    return False, None
+    if (reply := sql_select(table, where, columns, 1))[0] and len(reply[1]) > 0:
+        return True, reply[1][0]
+    return False, reply[1]
 
 
 def connect(login):
@@ -319,6 +313,11 @@ if __name__ == "__main__":
     log_init(with_debug=True)
 
     connect("admin")
+
+    print(sql_select_one("x-domains", {"domain_id": sys.argv[1]}))
+    print(sql_select_one("domains", {"domain_id": sys.argv[1]}))
+    print(sql_select("domains", {"domain_id": sys.argv[1]}))
+    sys.exit(0)
 
     ret, db_rows = run_select("select * from events limit 3")
     if ret:

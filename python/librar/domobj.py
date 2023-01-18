@@ -9,6 +9,7 @@ from librar import mysql as sql
 from librar import registry
 from librar import static_data
 from librar import validate
+from librar import log
 from librar.policy import this_policy as policy
 
 
@@ -22,6 +23,20 @@ class Domain:
         self.dom_db = None
         self.locks = None
         self.permitted_locks = None
+        self.locks = None
+
+    def set_by_id(self, domain_id=None, user_id=None):
+        if domain_id is None or not isinstance(domain_id, int):
+            return False, "Imvalid domain id"
+        where = {"domain_id": domain_id}
+        if user_id is not None:
+            where["user_id"] = user_id
+
+        if not (reply := sql.sql_select_one("domains", where))[0]:
+            return False, "Domain not found"
+        self.dom_db = reply[1]
+        self.set_locks()
+        return self.set_name(self.dom_db["name"])
 
     def set_name(self, name):
         """ check the name is valid & find its registry """
@@ -42,25 +57,32 @@ class Domain:
         if "locks" in self.registry:
             self.permitted_locks = self.registry["locks"]
         self.name = name
-        return True, True
+        return True, None
+
+    def load_name(self, name, user_id=None):
+        if not (reply := self.set_name(name))[0]:
+            return False, reply[1]
+        return self.load_record(user_id)
 
     def load_record(self, user_id=None):
         """ load the domain from the database """
         if self.name is None or self.registry is None or self.tld is None:
-            return False
+            return False, "Use `set_name` before `load_record`"
         self.dom_db = None
         where = {"name": self.name}
         if user_id is not None:
             where["user_id"] = user_id
 
-        ok, reply = sql.sql_select_one("domains", where)
-        if not ok or not reply or len(reply) <= 0:
-            return False
-        self.dom_db = reply
+        if not (reply := sql.sql_select_one("domains", where))[0]:
+            return False, "Domain failed to load"
+        self.dom_db = reply[1]
+        return self.set_locks()
+
+    def set_locks(self):
         self.locks = {}
-        if self.dom_db["client_locks"] is not None and self.dom_db["client_locks"].find(",") >= 0:
+        if self.dom_db is not None and sql.has_data(self.dom_db, "client_locks"):
             self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
-        return True
+        return True, None
 
     def valid_expiry_limit(self, num_years):
         renew_limit = policy.policy("renew_limit")
@@ -125,27 +147,43 @@ class DomainList:
                 if self.registry["name"] != this_domobj.registry["name"]:
                     return False, "ERROR: Split registry request"
             self.domobjs[this_domobj.name] = this_domobj
-        return True, True
+        return True, None
 
     def load_all(self, user_id=None):
         if self.domobjs is None:
-            return False
-        for __, this_domobj in self.domobjs.items():
-            this_domobj.load_record(user_id)
-        return True
+            return False, "Use `set_list` before `load_all`"
+
+        if (reply := sql.sql_select("domains",
+                                    {"name": [dom.name for __, dom in self.domobjs.items()]}))[0] and reply[1] is None:
+            return False, "Failed to load domains from database"
+
+        domdb_by_name = {dom_db["name"]: dom_db for dom_db in reply[1]}
+        for __, dom in self.domobjs.items():
+            dom.dom_db = None
+            if dom.name in domdb_by_name:
+                dom.dom_db = domdb_by_name[dom.name]
+                dom.set_locks()
+
+        return True, None
 
 
 if __name__ == "__main__":
+    log.init(with_debug=True)
     sql.connect("webui")
     registry.start_up()
-    my_dom = Domain()
-    print("ONE:DOMS>>>", my_dom.set_name(sys.argv[1]), my_dom.registry)
-    print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
-    print("EXP>>>>", my_dom.valid_expiry_limit(5), my_dom.valid_expiry_limit(15))
-    print("LOCKS>>>>", my_dom.locks)
+    # my_dom = Domain()
+    # print("ONE:DOMS>>>", my_dom.set_by_id(int(sys.argv[1])),my_dom.__dict__)
+    # print("ONE:DOMS>>>", my_dom.load_name(sys.argv[1]), my_dom.registry)
+    # sys.exit(0)
+    # print("LOADDB>>>", my_dom.load_record(), my_dom.dom_db)
+    # print("EXP>>>>", my_dom.valid_expiry_limit(5), my_dom.valid_expiry_limit(15))
+    # print("LOCKS>>>>", my_dom.locks)
 
     my_doms = DomainList()
-    print("LIST>>>", my_doms.set_list(sys.argv[1:]))
-    my_doms.load_all()
+    if not (reply := my_doms.set_list(sys.argv[1:]))[0]:
+        print(reply)
+        sys.exit(1)
+    print("LIST>>>", reply[1])
+    print("load all", my_doms.load_all())
     for d, domobj in my_doms.domobjs.items():
-        print(d, domobj.name, domobj.dom_db)
+        print(d, domobj.name, domobj.dom_db["name"] if domobj.dom_db is not None else "NOPE", domobj.locks)

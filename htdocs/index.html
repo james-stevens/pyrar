@@ -5,6 +5,7 @@
 	<script src="/theme.js"></script>
 	<script src="/punycode.js"></script>
 	<script src="/lib.js"></script>
+	<script src="/emojis.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -66,7 +67,7 @@ function keyEsc(e) {
     	hideAllPopUp();
     	unerrMsg();
 		if (elm.search.style.display != "none")
-			document.searchForm.searchEdit.focus();
+			elm.searchEdit.focus();
     	}
 }
 
@@ -114,6 +115,7 @@ function togglePopUp(name,tmout)
 	if (name=="AddNSPopup") e = document.getElementById("inputNS");
 	if (name=="AddDSPopup") e = document.getElementById("inputDS");
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
+	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (e) { e.focus(); e.select(); }
 
 	return false;
@@ -137,7 +139,7 @@ function do_theme_change(value)
 	if (value in theme_colours) changeTheme(value);
 	let popup = document.getElementById("themePopup");
 	popup.classList.remove("show")
-	if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
+	if (elm.search.style.display != "none") elm.searchEdit.focus();
 }
 
 
@@ -173,7 +175,7 @@ function goSearch(with_push)
 {
 	if (with_push) push_hist("goSearch");
 	show_one_space("search");
-	document.searchForm.searchEdit.focus();
+	elm.searchEdit.focus();
 	size_one_space();
 }
 
@@ -305,7 +307,7 @@ function doRegister()
 		catch_user_data(reply);
 		loggedIn();
 
-		if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
+		if (elm.search.style.display != "none") elm.searchEdit.focus();
 
 		f.email.value = "";
 		f.password.value = "";
@@ -341,7 +343,7 @@ function doLogin()
 		catch_user_data(reply);
 		loggedIn();
 
-		if (elm.search.style.display != "none") document.searchForm.searchEdit.focus();
+		if (elm.search.style.display != "none") elm.searchEdit.focus();
 		if (elm.basketSpace.style.display != "none") basketCheckout(false);
 
 		f.email.value = "";
@@ -359,7 +361,7 @@ function doLogOut()
 	ctx = {};
 	callApi("users/logout",(ret,reply) => {});
 	show_one_space("search");
-	document.searchForm.searchEdit.focus();
+	elm.searchEdit.focus();
 	loggedOut();
 }
 
@@ -449,7 +451,7 @@ function push_hist(data)
 
 function go_welcome(with_push)
 {
-	["myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	["searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
 	"userSpace","output","topSpan","search","businessName"].forEach(i => {
 		elm[i] = document.getElementById(i);
 		} );
@@ -479,7 +481,7 @@ function go_welcome(with_push)
 		elm.output.innerHTML = `<div class=userMsg>${policy("user_message","Welcome")}</div>`;
 		size_one_space();
 		basket_changed();
-		document.searchForm.searchEdit.focus();
+		elm.searchEdit.focus();
 		if (with_push) push_hist("welcome");
 
 		if (ctx.session) {
@@ -546,9 +548,9 @@ function router_reset_password(params)
 	x += "<tr><th colspan=2>Reset your password</th></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += `<input type=hidden name=reset_code value='${params[0]}'>`;
-	x += '<tr><td class=formPrompt>&nbsp;Reset PIN Number:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 100px;" id="reset_pin">&nbsp;</td></tr>';
-	x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input autocomplete="new-password" onkeydown="keyEsc(event);" style="width: 250px;" type=password id="reset_password">&nbsp;</td></tr>';
-	x += '<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input autocomplete="new-password" onkeydown="keyEsc(event);" style="width: 250px;" type=password id="reset_confirm">&nbsp;</td></tr>';
+	x += '<tr><td class=formPrompt>&nbsp;Reset PIN Number:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 100px;" id="reset_pin">&nbsp;</td></tr>';
+	x += '<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input autocomplete="new-password" onkeyUp="keyEsc(event);" style="width: 250px;" type=password id="reset_password">&nbsp;</td></tr>';
+	x += '<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input autocomplete="new-password" onkeyUp="keyEsc(event);" style="width: 250px;" type=password id="reset_confirm">&nbsp;</td></tr>';
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += '<tr><td class=btmBtnBar colspan=2>';
 	x += '<span style="width: 75px;" tabindex=0 title="Cancel" class=myBtn onClick="goSearch();">Cancel</span>';
@@ -1238,7 +1240,7 @@ function userDetails()
 	x += "<tr><td id=userBtnBar class=btmBtnBar>";
 
 	if (!ctx.user.email_verified) 
-		x += btn("resend_verify_email()","Resend Verify","Resend e-mail verification",100);
+		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
@@ -1467,8 +1469,8 @@ function myAccount(with_push)
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	size_one_space();
-	callApi("users/details",(ret,reply) => {
-		if (!ret) {
+	callApi("users/details",(ok,reply) => {
+		if (!ok) {
 			goSearch(true);
 			return def_errMsg("Error in setting your data",reply,"searchEdit");
 			}
@@ -1632,7 +1634,7 @@ function inside_ns(param)
 {
 	let idx = param["idx"];
 	let x = "<table>" + settings_prompt(`Enter NS`);
-	x += `<input id=inputNS onkeydown="NSkeyDown(event,${idx});" size=40></td>`;
+	x += `<input id=inputNS onkeyUp="NSkeyDown(event,${idx});" size=40></td>`;
 	x += `<td><input type=button style='width: 110px;' onClick="doAddNS(${idx});" class=myBtn value="Add"></td>`;
 	return x+"</tr></table>";
 }
@@ -1641,7 +1643,7 @@ function inside_ds(param)
 {
 	let idx = param["idx"];
 	let x = "<table>" + settings_prompt(`Enter DS`);
-	x += `<input id=inputDS onkeydown="DSkeyDown(event,${idx});" size=40></td>`;
+	x += `<input id=inputDS onkeyUp="DSkeyDown(event,${idx});" size=40></td>`;
 	x += `<td><input type=button style='width: 110px;' onClick="doAddDS(${idx});" class=myBtn value="Add"></td>`;
 	return x+"</tr></table>";
 }
@@ -2190,7 +2192,7 @@ function add_rr_form(params)
 	let dom = ctx.domains[idx];
 	let dom_name = dom["name"]+".";
 
-	let add_key = `onkeydown="AddkeyDown(event,${idx},${last_rr.rrs_id},${last_rr.rec_id});"`
+	let add_key = `onkeyUp="AddkeyDown(event,${idx},${last_rr.rrs_id},${last_rr.rec_id});"`
 	let x = "<table cellspacing=1 cellpadding=0 border=0>";
 	x += `<tr><td class=formPrompt>Record Name :</td><Td><input value="${clean_host_name(dom_name,last_rr.rr_name)}" id=rr_name ${add_key} style="width: 250px;"></td></tr>`;
 	x += `<tr><td class=formPrompt>Record Type :</td><Td>` + rr_type_select("rr_type",last_rr.rr_type) + "</td></tr>";
@@ -2443,6 +2445,69 @@ function resend_password(with_push)
 }
 
 
+
+function searchKey(e)
+{
+	if (e.key=="Enter") { doSearch(); return; }
+	if (e.key!=":") return;
+
+	if (elm.searchEdit.value.slice(-1)==":")
+		elm.searchEdit.value = elm.searchEdit.value.slice(0,-1);
+	togglePopUp("emojiPopup",0)
+	let es = document.getElementById("emojiSearch");
+	if (es) es.value = "";
+	show_emoji_search();
+}
+
+
+function all_words(words,desc)
+{
+	for(let i of words) if (desc.indexOf(i) < 0) return false;
+	return true;
+}
+
+function add_emoji(emoji)
+{
+	elm.searchEdit.value += emoji;
+	hidePopUp();
+	elm.searchEdit.focus();
+}
+
+
+function show_emoji_search()
+{
+	let o = document.getElementById("emojiOutput");
+	let e = document.getElementById("emojiSearch");
+	let words = e.value.split(" ");
+	let per_row=7,this_row = 0;
+	let max = 1000;
+	let x = "<table border=0 cellspacing=0 cellpadding=0><tr>";
+	for(let i of emojis) {
+		if (i.desc.indexOf("tag ")==0) continue;
+
+		if (all_words(words,i.desc)) {
+			x += `<td><span onClick="add_emoji('${i.emoji}');" title="${i.desc}" class=emoji>${i.emoji}</span></td>`;
+			if (++this_row == per_row) { x+= "</tr><tr>"; this_row=0; }
+			if (--max <= 0) { x+= "<td>more...</td>"; break; }
+			}
+		}
+	if (x.slice(-4)=="<tr>") x = x.slice(0,-4);
+	o.innerHTML = x+"</table>";
+}
+
+
+function emojiKey(e) 
+{
+    if (e.key == "Escape") {
+    	hideAllPopUp();
+    	unerrMsg();
+    	elm.searchEdit.focus();
+    	return 
+    	}
+    show_emoji_search();
+}
+
+
 </script>
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
@@ -2459,10 +2524,10 @@ function resend_password(with_push)
 <span class="popuptext" id="registerPopup">
 <form onSubmit='doRegister(); return false;' method=submit action='#' name=formRegister><table>
 <tr onClick="toggleRegister();"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="name">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
-	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="confirm">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Name:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" name="name">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
+	<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" type=password name="confirm">&nbsp;</td></tr>
 <tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 <tr>
 	<td class=btmBtnBar colspan=2>
@@ -2479,8 +2544,8 @@ function resend_password(with_push)
 	<table>
 		<form onSubmit='return doLogin();' action="#" method=post name=formLogin>
 		<tr onClick="toggleLogin()"><Td colspan=2><div style="height: 15px;"></div></td></tr>
-			<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
-			<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeydown="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
+			<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" name="email">&nbsp;</td></tr>
+			<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input onkeyUp="keyEsc(event);" style="width: 250px;" type=password name="password">&nbsp;</td></tr>
 		<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
 		<tr><td align=center colspan=2><a href=# onClick="return resend_password(true);">Forgotton</a> your password</td></tr>
 		<tr><td colspan=2><div style='height: 7px;'></div></td></tr>
@@ -2539,13 +2604,22 @@ function resend_password(with_push)
 	<div style='height: 30px;'></div>
 	<div id="search">
 		<div style='height: 30px;'></div>
-		<table align=center width=40% border=0>
-		<form action="#" name=searchForm onSubmit="return doSearch();">
-			<tr><td><input placeholder="Enter a domain to search for" autofocus class=searchBox id=searchEdit></td></tr>
-		</form>
-			<tr><td><div id="output"></div></td></tr>
-		</table>
-	</div>
+			<span>
+			<table align=center border=0>
+				<form action="#" name=searchForm onSubmit="return doSearch();">
+					<tr><td>
+						<div class="popup">
+							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
+							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -600; margin-top: 40px;" id="emojiPopup">
+								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 450px"><p>
+								<span id="emojiOutput"></span>
+							</span>
+							</div>
+					</td></tr>
+				</form>
+				<tr><td><div id="output"></div></td></tr>
+			</table>
+		</div>
 	<span class="botSapce" id="userSpace" style="display: none;"></span>
 	<span class="botSapce" id="basketSpace" style="display: none;"></span>
 	<span class="botSapce" id="marketPlace" style="display: none;"></span>
@@ -2554,3 +2628,6 @@ function resend_password(with_push)
 <div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 </body>
 </html>
+
+
+

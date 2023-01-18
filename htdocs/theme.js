@@ -56,6 +56,30 @@ function theme_css(theme) {
 .fadeout { font-family:inherit; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
 
+.emoji {
+	text-align: center;
+	display: inline-block;
+	background-color: #${cols[17]};
+	color: #${cols[16]};
+	font-family: inherit;
+	border-radius: 6px;
+	border: 1px solid;
+	border-color: #${cols[10]};
+	font-size: 25px;
+	cursor: pointer;
+	padding: 1px 7px;
+	margin-top: 0px;
+	margin-left: 0px;
+	margin-bottom: 0px;
+	margin-right: 0px;
+	}
+
+.emoji:hover {
+	border-color: #${cols[13]};
+	background-color: #${cols[8]};
+	}
+
+
 .userIcons {
 	margin-right: 10px;
 	cursor: pointer;
@@ -263,8 +287,8 @@ form {
 	border-radius: 6px;
 	border: 1px solid;
 	border-color: #${cols[10]};
-	padding: 5px 16px;
 	cursor: pointer;
+	padding: 5px 16px;
 	margin-top: 0px;
 	margin-left: 10px;
 	margin-bottom: 2px;
