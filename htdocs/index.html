@@ -2482,17 +2482,15 @@ function show_emoji_search()
 	let e = document.getElementById("emojiSearch");
 	let words = e.value.split(" ");
 	let per_row=7,this_row = 0;
-	let max = per_row * 6;
+	let max = 1000;
 	let x = "<table border=0 cellspacing=0 cellpadding=0><tr>";
 	for(let i of emojis) {
-		if (i.emoji.length > 3) continue;
 		if (i.desc.indexOf("tag ")==0) continue;
 
 		if (all_words(words,i.desc)) {
 			x += `<td><span onClick="add_emoji('${i.emoji}');" title="${i.desc}" class=emoji>${i.emoji}</span></td>`;
 			if (++this_row == per_row) { x+= "</tr><tr>"; this_row=0; }
-			// max--
-			// if (max<=0) { x = x.slice(0,-4); break; }
+			if (--max <= 0) { x+= "<td>more...</td>"; break; }
 			}
 		}
 	if (x.slice(-4)=="<tr>") x = x.slice(0,-4);
@@ -2609,12 +2607,12 @@ function emojiKey(e)
 	<div id="search">
 		<div style='height: 30px;'></div>
 			<span>
-			<table align=center width=40% border=0>
+			<table align=center border=0>
 				<form action="#" name=searchForm onSubmit="return doSearch();">
 					<tr><td>
-						<div class="popup" style="width:500px">
-							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for" autofocus class=searchBox id=searchEdit>
-							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -500; margin-top: 40px;" id="emojiPopup">
+						<div class="popup">
+							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for" style="width:600px" autofocus class=searchBox id=searchEdit>
+							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -600; margin-top: 40px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 450px"><p>
 								<span id="emojiOutput"></span>
 							</span>
