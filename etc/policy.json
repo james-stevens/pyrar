@@ -11,6 +11,7 @@
 		},
 
 	"smtp_relayhost": "[192.168.1.20]",
+
 	"website_name": "https://pyrar.jrcs.net/",
 	"name_sender": "PyRar Registry",
 	"email_sender": "pyrar@jrcs.net",

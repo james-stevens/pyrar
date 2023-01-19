@@ -1,0 +1,3 @@
+{% if policy.smtp_relayhost is defined and policy.smtp_relayhost and logins.smtp.relay_auth is defined and logins.smtp.relay_auth %}
+{{policy.smtp_relayhost}} {{logins.smtp.relay_auth}}
+{% endif %}
