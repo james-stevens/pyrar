@@ -174,6 +174,7 @@ function do_size_one_space()
 function goSearch(with_push)
 {
 	if (with_push) push_hist("goSearch");
+	hideAllPopUp();
 	show_one_space("search");
 	elm.searchEdit.focus();
 	size_one_space();
@@ -2448,15 +2449,12 @@ function resend_password(with_push)
 
 function searchKey(e)
 {
-	if (e.key=="Enter") { doSearch(); return; }
-	if (e.key!=":") return;
+	if (e.key=="Enter") {
+		hidePopUp();
+		doSearch();
+		return; }
 
-	if (elm.searchEdit.value.slice(-1)==":")
-		elm.searchEdit.value = elm.searchEdit.value.slice(0,-1);
-	togglePopUp("emojiPopup",0)
-	let es = document.getElementById("emojiSearch");
-	if (es) es.value = "";
-	show_emoji_search();
+	if (e.key==":") togglePopUp("emojiPopup",0)
 }
 
 
@@ -2474,37 +2472,33 @@ function add_emoji(emoji)
 }
 
 
+
 function show_emoji_search()
 {
-	let o = document.getElementById("emojiOutput");
 	let e = document.getElementById("emojiSearch");
+	if (e.value==":") e.value="";
 	let words = e.value.split(" ");
-	let per_row=7,this_row = 0;
-	let max = 1000;
-	let x = "<table border=0 cellspacing=0 cellpadding=0><tr>";
-	for(let i of emojis) {
-		if (i.desc.indexOf("tag ")==0) continue;
 
-		if (all_words(words,i.desc)) {
-			x += `<td><span onClick="add_emoji('${i.emoji}');" title="${i.desc}" class=emoji>${i.emoji}</span></td>`;
-			if (++this_row == per_row) { x+= "</tr><tr>"; this_row=0; }
-			if (--max <= 0) { x+= "<td>more...</td>"; break; }
-			}
-		}
-	if (x.slice(-4)=="<tr>") x = x.slice(0,-4);
-	o.innerHTML = x+"</table>";
+	let max = 1000,x="";
+	emojis.filter((item) => (all_words(words,item[1]))&&(--max > 0)).forEach((item) => {
+		x += `<span onClick="add_emoji('${item[0]}');" title="${item[1]}" class=emoji>${item[0]}</span> `;
+		});
+	x += "</table>";
+	if (max<=0) x += "<P>More ...";
+
+	let o = document.getElementById("emojiOutput");
+	o.innerHTML = x;
 }
+
 
 
 function emojiKey(e) 
 {
-    if (e.key == "Escape") {
-    	hideAllPopUp();
-    	unerrMsg();
-    	elm.searchEdit.focus();
-    	return 
-    	}
-    show_emoji_search();
+    if (e.key != "Escape") { show_emoji_search(); return true; }
+	hideAllPopUp();
+	unerrMsg();
+	elm.searchEdit.focus();
+	return false;
 }
 
 
@@ -2607,12 +2601,14 @@ function emojiKey(e)
 			<span>
 			<table align=center border=0>
 				<form action="#" name=searchForm onSubmit="return doSearch();">
-					<tr><td align=center>
+					<tr><td>
 						<div class="popup">
-							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
-							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -600; margin-top: 40px;" id="emojiPopup">
-								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 450px"><p>
-								<span id="emojiOutput"></span>
+							<span>
+								<input onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
+							</span>
+							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
+								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
+								<div style="overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
 							</span>
 							</div>
 					</td></tr>
@@ -2628,6 +2624,7 @@ function emojiKey(e)
 <div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 </body>
 </html>
+
 
 
 

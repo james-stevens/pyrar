@@ -27,12 +27,12 @@ for line in lines:
     if n is not None:
         nd = misc.puny_to_utf8(n,False)
         if nd is not None:
-            print(nd,text[12])
-            emojis.append({"emoji":nd,"desc":text[12].strip().lower().replace(":","")})
+            desc = text[12].strip().lower().replace(":","")
+            emojis.append([nd,desc])
 
 with open("emojis.js","w",encoding='UTF-8') as fd:
     fd.write("emojis=")
-    fd.write(json.dumps(emojis))
+    fd.write(json.dumps(emojis, separators=(',', ':')))
 
 print(len(emojis))
 print(emojis[0])

@@ -67,11 +67,15 @@ function theme_css(theme) {
 	border-color: #${cols[10]};
 	font-size: 25px;
 	cursor: pointer;
+	width: 70px;
+	white-space: nowrap;
 	padding: 1px 7px;
 	margin-top: 0px;
 	margin-left: 0px;
 	margin-bottom: 0px;
 	margin-right: 0px;
+	text-overflow: clip;
+	overflow-x: hidden;
 	}
 
 .emoji:hover {
