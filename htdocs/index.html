@@ -418,6 +418,7 @@ function history_back(event)
 		"user_settings": user_settings,
 		"myAccount": myAccount,
 		"myDomains": myDomains,
+		"request_transfer": request_transfer,
 		"goSearch": goSearch,
 		"welcome": go_welcome
 		};
@@ -841,12 +842,60 @@ function doSearch()
 }
 
 
+
+function postDomainTransfer()
+{
+	let f = document.requestForm;
+	if ((!fqdnCheck.test(f.trans_domain_name.value))||(f.trans_domain_name.value.indexOf(".")<0)) {
+		f.trans_domain_name.focus();
+		return errMsg("Invalid domain name","trans_domain_name");
+		}
+	callApi("domain/transfer",(ok,reply) => {
+		console.log(ok,reply);
+		},	{
+			json : {
+				"name": f.trans_domain_name.value,
+				"authcode": f.trans_auth_code.value
+				}
+			}
+		);
+	return false;
+}
+
+
+
+function request_transfer(with_push)
+{
+	if (with_push) push_hist("request_transfer");
+
+	let x="<table align=center border=0>";
+	x += settings_header("Request Domain Transfer To You",true);
+	x += "<form name=requestForm method=post action=# onSubmit='postDomainTransfer(); return false;'>";
+	x += "<table id=requestTable width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += settings_prompt("Domain to transfer to you")+`<input placeholder="Domain name" style="width: 300px;" id='trans_domain_name'></td></tr>`;
+	x += settings_prompt("AuthCode")+`<input autocomplete="new-password" placeholder="Domain AuthCode" type=password style="width: 300px;" id='trans_auth_code'></td></tr>`;
+
+	x += "<tr><td colspan=2></td><td align=right><input type=submit class=myBtn value='Request Transfer'></td></tr>";
+	x += "</table></form></td></tr>";
+
+	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
+	size_one_space();
+	document.requestForm.trans_domain_name.focus();
+}
+
+
+
 function userDomainList()
 {
+	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
+	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
+	x += "</td></tr>";
+	x += "<tr><td colspan=6>"+gbl.gap+"</td></tr>";
+
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
 	let default_dns_servers = policy("dns_servers",null);
 
-	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 
@@ -1016,6 +1065,7 @@ function settings_header(title,spacer)
 	x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
 	return x;
 }
+
 function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
 
 
@@ -1023,6 +1073,7 @@ function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><t
 function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
+
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
@@ -2357,7 +2408,7 @@ function one_domain_html(idx)
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
 	if ((dom.is_live)&&(!have_locks.TransferProhibited))
-		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
+		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {
 		x += btn(`push_domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
