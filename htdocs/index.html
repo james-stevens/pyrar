@@ -2601,14 +2601,12 @@ function emojiKey(e)
 			<span>
 			<table align=center border=0>
 				<form action="#" name=searchForm onSubmit="return doSearch();">
-					<tr><td>
+					<tr><td align=center>
 						<div class="popup">
-							<span>
-								<input onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
-							</span>
+							<input onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
 							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
-								<div style="overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
+								<div style="text-align: left; overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
 							</span>
 							</div>
 					</td></tr>
@@ -2624,7 +2622,3 @@ function emojiKey(e)
 <div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 </body>
 </html>
-
-
-
-
