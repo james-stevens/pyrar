@@ -659,6 +659,17 @@ function one_search_line(item,block_not_avail)
 }
 
 
+function show_selected_domain()
+{
+	if (!ctx.show_one) { myDomains(true); return; }
+	let idx = null;
+	for(let i in ctx.domains)
+		if (ctx.domains[i].name==ctx.show_one) { idx = i; break; }
+
+	delete ctx.show_one;
+	if (idx) push_show_one_domain(idx); else myDomains(true);
+}
+
 
 function showSearch(ret,data)
 {
@@ -666,7 +677,11 @@ function showSearch(ret,data)
 
 	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
 
-	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(true); return; }
+	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) {
+		ctx.show_one = data[0].name;
+		load_domains_list(show_selected_domain);
+		return;
+		}
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
@@ -2502,6 +2517,13 @@ function emojiKey(e)
 }
 
 
+function searchFocus()
+{
+	let popup = document.getElementById("emojiPopup");
+	if ((popup)&&(popup.classList.contains("show"))) hideAllPopUp();
+}
+
+
 </script>
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
@@ -2603,7 +2625,7 @@ function emojiKey(e)
 				<form action="#" name=searchForm onSubmit="return doSearch();">
 					<tr><td align=center>
 						<div class="popup">
-							<input onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
+							<input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
 							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
 								<div style="text-align: left; overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
