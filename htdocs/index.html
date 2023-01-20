@@ -13,6 +13,32 @@
 debugAPI = false;
 
 
+const ds_algs = {
+	2:"Diffie-Hellman",
+	3:"DSA/SHA1",
+	5:"RSA/SHA-1",
+	6:"DSA-NSEC3-SHA1",
+	7:"RSASHA1-NSEC3-SHA1",
+	8:"RSA/SHA-256",
+	10:"RSA/SHA-512",
+	12:"GOST R 34.10-2001",
+	13:"ECDSA Curve P-256 with SHA-256",
+	14:"ECDSA Curve P-384 with SHA-384",
+	15:"Ed25519",
+	16:"Ed448"
+	};
+
+const ds_digest_types = {
+	1:"SHA-1",
+	2:"SHA-256",
+	3:"GOST R 34.11-94",
+	4:"SHA-384"
+	}
+
+const ds_len_by_digest_type = {1: 40, 2: 64, 3: 64, 4: 96};
+
+is_hex = /^[0-9a-fA-F]+$/;
+
 const pre_get_elm = [
 	"topMsg","searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon",
 	"basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
@@ -120,7 +146,7 @@ function togglePopUp(name,tmout)
 	if (name=="loginPopup") e = document.formLogin.email;
 	if (name=="registerPopup") e = document.formRegister.email;
 	if (name=="AddNSPopup") e = document.getElementById("inputNS");
-	if (name=="AddDSPopup") e = document.getElementById("inputDS");
+	if (name=="AddDSPopup") e = document.getElementById("ds_keyTag");
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (e) { e.focus(); e.select(); }
@@ -854,6 +880,7 @@ function postDomainTransfer()
 		return errMsg("Invalid domain name","trans_domain_name");
 		}
 	callApi("domain/transfer",(ok,reply) => {
+		// # CODE
 		console.log(ok,reply);
 		},	{
 			json : {
@@ -1588,32 +1615,49 @@ function doAddNS(idx)
 
 function validate_ds_rec(ds_rec)
 {
-	return true;
+	ds_items = ds_rec.split(" ");
+	digest_type = parseInt(ds_items[2]);
+
+	if (!(parseInt(ds_items[1]) in ds_algs)) return false;
+	if (!(digest_type in ds_digest_types)) return false;
+
+	let i = parseInt(ds_items[0]);
+	if ((i<0)||(i>65535)) return false;
+
+	let digest = ds_items[2].toLowerCase().replaceAll(" ","");
+	if (ds_items[3].length != ds_len_by_digest_type[digest_type]) return false;
+
+	return is_hex.test(digest);
 }
 
 
 
 function doAddDS(idx)
 {
-	let e = document.getElementById("inputDS");
-	if (!validate_ds_rec(e.value)) {
+	let ds_rec = "";
+	for(let i of ["keyTag","alg","digestType","digest"]) {
+		let e = document.getElementById("ds_"+i);
+		if (!e.value) { errMsg(`Invalid ${i} DS field`,"AddDSPopup"); e.focus(); return; }
+		ds_rec = `${ds_rec} ${e.value.replaceAll(" ","")}`;
+		}
+	ds_rec = ds_rec.slice(1);
+	e = document.getElementById("ds_keyTag");
+
+	if (!validate_ds_rec(ds_rec)) {
 		errMsg("Invalid DS Record","AddDSPopup");
 		e.focus(); return; }
-
-	hidePopUp();
 
 	let dom = ctx.domains[idx];
 	let ds = []
 	if (dom.ds) ds = dom.ds.split(",");
-	if (!ds.find(data => { return (data == e.value); })) {
-		if (!dom.ds) dom.ds = e.value;
-		else dom.ds += ","+e.value;
-		dom.unsaved = true;
-		push_domain_settings(idx);
-		}
-	else {
+	if (ds.find(data => { return (data == ds_rec); })) {
 		errMsg("DS already present","AddDSPopup");
 		e.focus(); return; }
+
+	if (!dom.ds) dom.ds = ds_rec; else dom.ds += ","+ds_rec;
+	dom.unsaved = true;
+	hidePopUp();
+	push_domain_settings(idx);
 }
 
 
@@ -1703,18 +1747,42 @@ function add_copy_btn(idx)
 function inside_ns(param)
 {
 	let idx = param["idx"];
-	let x = "<table>" + settings_prompt(`Enter NS`);
+	let x = "<table>" + settings_prompt(`Enter NS Host Name`);
 	x += `<input id=inputNS onkeyUp="NSkeyDown(event,${idx});" size=40></td>`;
 	x += `<td><input type=button style='width: 110px;' onClick="doAddNS(${idx});" class=myBtn value="Add"></td>`;
 	return x+"</tr></table>";
 }
 
+
+
 function inside_ds(param)
 {
 	let idx = param["idx"];
-	let x = "<table>" + settings_prompt(`Enter DS`);
-	x += `<input id=inputDS onkeyUp="DSkeyDown(event,${idx});" size=40></td>`;
-	x += `<td><input type=button style='width: 110px;' onClick="doAddDS(${idx});" class=myBtn value="Add"></td>`;
+	let x = "<table>";
+	x += settings_header(`Add DS Record`,true);
+	x += "<table>";
+	x += settings_prompt("Key Tag / ID") + `<input id=ds_keyTag onkeyUp="DSkeyDown(event,${idx});" style="width: 90px"></td>`;
+	x += settings_prompt("Key Algorithm") + "<select id=ds_alg>";
+	for(let i in ds_algs) {
+		chk=""; if (i==8) chk="selected";
+		x += `<option ${chk} value=${i}>${i} : ${ds_algs[i]}`;
+		}
+	x += "</select></td>";
+
+	x += settings_prompt("Digest Type") + "<select id=ds_digestType>"
+	for(let i in ds_digest_types) {
+		chk=""; if (i==2) chk="selected";
+		x += `<option ${chk} value=${i}>${i} : ${ds_digest_types[i]}`;
+		}
+	x += "</select></td>";
+
+	x += settings_prompt("Digest") + `<input id=ds_digest onkeyUp="DSkeyDown(event,${idx});" style="width: 450px"></td>`;
+	x += "</table><td></tr>";
+	x += "<tr><td class=btmBtnBar>"
+		+btn("hidePopUp()","Cancel","Do not add DS",75)
+		+btn(`doAddDS(${idx})`,"Add DS","Add this DS record",75)
+		+"</td></tr>";
+
 	return x+"</tr></table>";
 }
 
@@ -1727,7 +1795,8 @@ function add_rec_type_btn(rec_type,idx,inside_func)
 		"width": 75,
 		"title": `Add a ${rec_type} record`,
 		"internal": inside_func,
-		"param": {"idx":idx}
+		"param": {"idx":idx},
+		"timeout": 0
 		});
 }
 
@@ -1739,7 +1808,7 @@ function saveDomDetails(idx)
 	callApi("domain/update",(ok,reply) => {
 		if (!ok) return def_errMsg("Domain save failed",reply,"saveButton");
 		delete dom.unsaved;
-		myDomains(true);
+		push_show_one_domain(idx);
 		}, { json: dom });
 }
 
@@ -1764,6 +1833,8 @@ function removeNS(idx,ns_name)
 	dom.ns = ns.join(",");
 	dom.unsaved = true;
 	push_domain_settings(idx);
+
+	return false;
 }
 
 
@@ -1774,19 +1845,21 @@ function removeDS(idx,ds_data)
 	let ns = dom.ds.split(",");
 
 	function find_ds() {
-		for(let i in ds) {
-			if (ds[i]==ds_data) return i;
-			}
+		for(let i in ds) if (ds[i]==ds_data) return i;
 		return null;
 		}
+
 	let pos = find_ds()
 	if (!pos) {
 		errMsg("DS Record not found","AddDSPopup");
 		return; }
+
 	ds.splice(pos,1);
 	dom.ds = ds.join(",");
 	dom.unsaved = true;
 	push_domain_settings(idx);
+
+	return false;
 }
 
 
@@ -1862,7 +1935,7 @@ function domain_settings(idx)
 		ns = dom.ns.split(",").sort();
 		for(let i in ns) {
 			if (!have_locks.UpdateProhibited)
-				x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+				x += `<a title="Remove this NS" onClick="return removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
 			x += `${ns[i]}<br>`;
 			}
 		x += "</td></tr>";
@@ -1873,7 +1946,7 @@ function domain_settings(idx)
 		ds = dom.ds.split(",").sort();
 		for(let i in ds) {
 			if (!have_locks.UpdateProhibited)
-				x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+				x += `<a title="Remove this DS" onClick="return removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
 			x += `${ds[i]}<br>`;
 			}
 		x += "</td></tr>";
