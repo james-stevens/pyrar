@@ -1760,9 +1760,10 @@ function inside_ns(param)
 function inside_ds(param)
 {
 	let idx = param["idx"];
-	let x = "<table>";
-	x += settings_header(`Add DS Record`,true);
-	x += "<table>";
+	let x = "<table border=0 cellspacing=0 cellpadding=0>";
+	x += `<tr><td class=windowBanner>Add DS Record</td></tr>`;
+	x += `<tr><td>${gbl.gap}</td></tr>`;
+	x += "<tr><td><table>";
 	x += settings_prompt("Key Tag / ID") + `<input id=ds_keyTag onkeyUp="DSkeyDown(event,${idx});" style="width: 90px"></td>`;
 	x += settings_prompt("Key Algorithm") + "<select id=ds_alg>";
 	for(let i in ds_algs) {
@@ -1780,6 +1781,7 @@ function inside_ds(param)
 
 	x += settings_prompt("Digest") + `<input id=ds_digest onkeyUp="DSkeyDown(event,${idx});" style="width: 450px"></td>`;
 	x += "</table><td></tr>";
+	x += `<tr><td>${gbl.gap}</td></tr>`;
 	x += "<tr><td class=btmBtnBar>"
 		+btn("hidePopUp()","Cancel","Do not add DS",75)
 		+btn(`doAddDS(${idx})`,"Add DS","Add this DS record",75)

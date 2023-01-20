@@ -135,6 +135,13 @@ h2 { text-align: center; }
 	color: #${cols[1]};
 	}
 
+.windowBanner {
+	font-weight: bold;
+	font-size: 18px;
+	padding: 7px;
+	border-bottom: 1px solid #${cols[7]};
+	}
+
 .settingsBanner {
 	font-weight: bold;
 	font-size: 18px;
