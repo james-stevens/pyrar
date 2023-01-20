@@ -10,6 +10,7 @@
 		"decimal": 2
 		},
 
+	"theme":"red",
 	"smtp_relayhost": "[192.168.1.20]",
 
 	"website_name": "https://pyrar.jrcs.net/",
