@@ -85,7 +85,7 @@ def save_basket(req, whole_basket):
             continue
 
         order_db = order["order_db"]
-        if "domain_id" in ordeR_db and order_db["domain_id"] is None:
+        if "domain_id" in order_db and order_db["domain_id"] is None:
             ok, dom_db = make_blank_domain(order["domain"], user_db, static_data.STATUS_WAITING_PAYMENT)
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
@@ -206,7 +206,7 @@ def parse_basket(whole_basket):
     for order in basket:
         if "failed" in order:
             continue
-        ok, reply = price_order_item(order, user_db)
+        ok, reply = price_order_item(order)
         if not ok:
             log(reply)
             order["failed"] = "Price failed"
@@ -230,7 +230,7 @@ def parse_basket(whole_basket):
     return True, basket
 
 
-def price_order_item(order, user_db):
+def price_order_item(order):
     doms = domobj.DomainList()
     ok, reply = doms.set_list(order["domain"])
     if not ok:

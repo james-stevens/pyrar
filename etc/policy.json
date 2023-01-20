@@ -1,5 +1,5 @@
 {
-	"user_message": "Welcome to this site<P>🐸 Don't break it - be kind",
+	"user_message": "Welcome to this extra text pyrar development site<P>🐸 Don't break it - be kind",
 	"icon": "milkshake.png",
 	"business_name": "PyRar Registrar",
 	"currency" : {
@@ -10,7 +10,9 @@
 		"decimal": 2
 		},
 
+	"theme":"red",
 	"smtp_relayhost": "[192.168.1.20]",
+
 	"website_name": "https://pyrar.jrcs.net/",
 	"name_sender": "PyRar Registry",
 	"email_sender": "pyrar@jrcs.net",

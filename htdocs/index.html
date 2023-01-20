@@ -12,6 +12,39 @@
 
 debugAPI = false;
 
+
+const ds_algs = {
+	2:"Diffie-Hellman",
+	3:"DSA/SHA1",
+	5:"RSA/SHA-1",
+	6:"DSA-NSEC3-SHA1",
+	7:"RSASHA1-NSEC3-SHA1",
+	8:"RSA/SHA-256",
+	10:"RSA/SHA-512",
+	12:"GOST R 34.10-2001",
+	13:"ECDSA Curve P-256 with SHA-256",
+	14:"ECDSA Curve P-384 with SHA-384",
+	15:"Ed25519",
+	16:"Ed448"
+	};
+
+const ds_digest_types = {
+	1:"SHA-1",
+	2:"SHA-256",
+	3:"GOST R 34.11-94",
+	4:"SHA-384"
+	}
+
+const ds_len_by_digest_type = {1: 40, 2: 64, 3: 64, 4: 96};
+
+is_hex = /^[0-9a-fA-F]+$/;
+
+const pre_get_elm = [
+	"topMsg","searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon",
+	"basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	"userSpace","output","topSpan","search","businessName"
+	];
+
 elm = {};
 gbl = {
 	"theme": window.localStorage.theme,
@@ -113,7 +146,7 @@ function togglePopUp(name,tmout)
 	if (name=="loginPopup") e = document.formLogin.email;
 	if (name=="registerPopup") e = document.formRegister.email;
 	if (name=="AddNSPopup") e = document.getElementById("inputNS");
-	if (name=="AddDSPopup") e = document.getElementById("inputDS");
+	if (name=="AddDSPopup") e = document.getElementById("ds_keyTag");
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (e) { e.focus(); e.select(); }
@@ -174,6 +207,7 @@ function do_size_one_space()
 function goSearch(with_push)
 {
 	if (with_push) push_hist("goSearch");
+	hideAllPopUp();
 	show_one_space("search");
 	elm.searchEdit.focus();
 	size_one_space();
@@ -417,6 +451,7 @@ function history_back(event)
 		"user_settings": user_settings,
 		"myAccount": myAccount,
 		"myDomains": myDomains,
+		"request_transfer": request_transfer,
 		"goSearch": goSearch,
 		"welcome": go_welcome
 		};
@@ -451,11 +486,7 @@ function push_hist(data)
 
 function go_welcome(with_push)
 {
-	["searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
-	"userSpace","output","topSpan","search","businessName"].forEach(i => {
-		elm[i] = document.getElementById(i);
-		} );
-
+	pre_get_elm.forEach(i => { elm[i] = document.getElementById(i); } );
 	show_one_space("search");
 	let mainDiv = document.getElementById("allBottom");
 	mainDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
@@ -465,6 +496,8 @@ function go_welcome(with_push)
 	callApi("config",(ok,reply) => {
 		if (!ok) return def_errMsg("Error contacting servers",reply,"searchEdit");
 		gbl.config = reply;
+		if ((gbl.theme == "default")&&(gbl.config.policy.theme)) changeTheme(gbl.config.policy.theme);
+
 		gbl.config.ok_tlds = {};
 		gbl.currency = policy("currency",gbl.config.default_currency);
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
@@ -658,6 +691,17 @@ function one_search_line(item,block_not_avail)
 }
 
 
+function show_selected_domain()
+{
+	if (!ctx.show_one) { myDomains(true); return; }
+	let idx = null;
+	for(let i in ctx.domains)
+		if (ctx.domains[i].name==ctx.show_one) { idx = i; break; }
+
+	delete ctx.show_one;
+	if (idx) push_show_one_domain(idx); else myDomains(true);
+}
+
 
 function showSearch(ret,data)
 {
@@ -665,7 +709,11 @@ function showSearch(ret,data)
 
 	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
 
-	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) { myDomains(true); return; }
+	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) {
+		ctx.show_one = data[0].name;
+		load_domains_list(show_selected_domain);
+		return;
+		}
 
 	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
 	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
@@ -825,12 +873,61 @@ function doSearch()
 }
 
 
+
+function postDomainTransfer()
+{
+	let f = document.requestForm;
+	if ((!fqdnCheck.test(f.trans_domain_name.value))||(f.trans_domain_name.value.indexOf(".")<0)) {
+		f.trans_domain_name.focus();
+		return errMsg("Invalid domain name","trans_domain_name");
+		}
+	callApi("domain/transfer",(ok,reply) => {
+		// # CODE
+		console.log(ok,reply);
+		},	{
+			json : {
+				"name": f.trans_domain_name.value,
+				"authcode": f.trans_auth_code.value
+				}
+			}
+		);
+	return false;
+}
+
+
+
+function request_transfer(with_push)
+{
+	if (with_push) push_hist("request_transfer");
+
+	let x="<table align=center border=0>";
+	x += settings_header("Request Domain Transfer To You",true);
+	x += "<form name=requestForm method=post action=# onSubmit='postDomainTransfer(); return false;'>";
+	x += "<table id=requestTable width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += settings_prompt("Domain to transfer to you")+`<input placeholder="Domain name" style="width: 300px;" id='trans_domain_name'></td></tr>`;
+	x += settings_prompt("AuthCode")+`<input autocomplete="new-password" placeholder="Domain AuthCode" type=password style="width: 300px;" id='trans_auth_code'></td></tr>`;
+
+	x += "<tr><td colspan=2></td><td align=right><input type=submit class=myBtn value='Request Transfer'></td></tr>";
+	x += "</table></form></td></tr>";
+
+	elm.userSpace.innerHTML = x+gbl.settings_spacer+"</table>";
+	size_one_space();
+	document.requestForm.trans_domain_name.focus();
+}
+
+
+
 function userDomainList()
 {
+	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
+	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
+	x += "</td></tr>";
+	x += "<tr><td colspan=6>"+gbl.gap+"</td></tr>";
+
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
 	let default_dns_servers = policy("dns_servers",null);
 
-	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
 
@@ -1000,6 +1097,7 @@ function settings_header(title,spacer)
 	x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
 	return x;
 }
+
 function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
 
 
@@ -1007,6 +1105,7 @@ function settings_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><t
 function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
+
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
@@ -1518,32 +1617,49 @@ function doAddNS(idx)
 
 function validate_ds_rec(ds_rec)
 {
-	return true;
+	ds_items = ds_rec.split(" ");
+	digest_type = parseInt(ds_items[2]);
+
+	if (!(parseInt(ds_items[1]) in ds_algs)) return false;
+	if (!(digest_type in ds_digest_types)) return false;
+
+	let i = parseInt(ds_items[0]);
+	if ((i<0)||(i>65535)) return false;
+
+	let digest = ds_items[2].toLowerCase().replaceAll(" ","");
+	if (ds_items[3].length != ds_len_by_digest_type[digest_type]) return false;
+
+	return is_hex.test(digest);
 }
 
 
 
 function doAddDS(idx)
 {
-	let e = document.getElementById("inputDS");
-	if (!validate_ds_rec(e.value)) {
+	let ds_rec = "";
+	for(let i of ["keyTag","alg","digestType","digest"]) {
+		let e = document.getElementById("ds_"+i);
+		if (!e.value) { errMsg(`Invalid ${i} DS field`,"AddDSPopup"); e.focus(); return; }
+		ds_rec = `${ds_rec} ${e.value.replaceAll(" ","")}`;
+		}
+	ds_rec = ds_rec.slice(1);
+	e = document.getElementById("ds_keyTag");
+
+	if (!validate_ds_rec(ds_rec)) {
 		errMsg("Invalid DS Record","AddDSPopup");
 		e.focus(); return; }
-
-	hidePopUp();
 
 	let dom = ctx.domains[idx];
 	let ds = []
 	if (dom.ds) ds = dom.ds.split(",");
-	if (!ds.find(data => { return (data == e.value); })) {
-		if (!dom.ds) dom.ds = e.value;
-		else dom.ds += ","+e.value;
-		dom.unsaved = true;
-		push_domain_settings(idx);
-		}
-	else {
+	if (ds.find(data => { return (data == ds_rec); })) {
 		errMsg("DS already present","AddDSPopup");
 		e.focus(); return; }
+
+	if (!dom.ds) dom.ds = ds_rec; else dom.ds += ","+ds_rec;
+	dom.unsaved = true;
+	hidePopUp();
+	push_domain_settings(idx);
 }
 
 
@@ -1633,18 +1749,42 @@ function add_copy_btn(idx)
 function inside_ns(param)
 {
 	let idx = param["idx"];
-	let x = "<table>" + settings_prompt(`Enter NS`);
+	let x = "<table>" + settings_prompt(`Enter NS Host Name`);
 	x += `<input id=inputNS onkeyUp="NSkeyDown(event,${idx});" size=40></td>`;
 	x += `<td><input type=button style='width: 110px;' onClick="doAddNS(${idx});" class=myBtn value="Add"></td>`;
 	return x+"</tr></table>";
 }
 
+
+
 function inside_ds(param)
 {
 	let idx = param["idx"];
-	let x = "<table>" + settings_prompt(`Enter DS`);
-	x += `<input id=inputDS onkeyUp="DSkeyDown(event,${idx});" size=40></td>`;
-	x += `<td><input type=button style='width: 110px;' onClick="doAddDS(${idx});" class=myBtn value="Add"></td>`;
+	let x = "<table>";
+	x += settings_header(`Add DS Record`,true);
+	x += "<table>";
+	x += settings_prompt("Key Tag / ID") + `<input id=ds_keyTag onkeyUp="DSkeyDown(event,${idx});" style="width: 90px"></td>`;
+	x += settings_prompt("Key Algorithm") + "<select id=ds_alg>";
+	for(let i in ds_algs) {
+		chk=""; if (i==8) chk="selected";
+		x += `<option ${chk} value=${i}>${i} : ${ds_algs[i]}`;
+		}
+	x += "</select></td>";
+
+	x += settings_prompt("Digest Type") + "<select id=ds_digestType>"
+	for(let i in ds_digest_types) {
+		chk=""; if (i==2) chk="selected";
+		x += `<option ${chk} value=${i}>${i} : ${ds_digest_types[i]}`;
+		}
+	x += "</select></td>";
+
+	x += settings_prompt("Digest") + `<input id=ds_digest onkeyUp="DSkeyDown(event,${idx});" style="width: 450px"></td>`;
+	x += "</table><td></tr>";
+	x += "<tr><td class=btmBtnBar>"
+		+btn("hidePopUp()","Cancel","Do not add DS",75)
+		+btn(`doAddDS(${idx})`,"Add DS","Add this DS record",75)
+		+"</td></tr>";
+
 	return x+"</tr></table>";
 }
 
@@ -1657,7 +1797,8 @@ function add_rec_type_btn(rec_type,idx,inside_func)
 		"width": 75,
 		"title": `Add a ${rec_type} record`,
 		"internal": inside_func,
-		"param": {"idx":idx}
+		"param": {"idx":idx},
+		"timeout": 0
 		});
 }
 
@@ -1669,7 +1810,7 @@ function saveDomDetails(idx)
 	callApi("domain/update",(ok,reply) => {
 		if (!ok) return def_errMsg("Domain save failed",reply,"saveButton");
 		delete dom.unsaved;
-		myDomains(true);
+		push_show_one_domain(idx);
 		}, { json: dom });
 }
 
@@ -1694,6 +1835,8 @@ function removeNS(idx,ns_name)
 	dom.ns = ns.join(",");
 	dom.unsaved = true;
 	push_domain_settings(idx);
+
+	return false;
 }
 
 
@@ -1704,19 +1847,21 @@ function removeDS(idx,ds_data)
 	let ns = dom.ds.split(",");
 
 	function find_ds() {
-		for(let i in ds) {
-			if (ds[i]==ds_data) return i;
-			}
+		for(let i in ds) if (ds[i]==ds_data) return i;
 		return null;
 		}
+
 	let pos = find_ds()
 	if (!pos) {
 		errMsg("DS Record not found","AddDSPopup");
 		return; }
+
 	ds.splice(pos,1);
 	dom.ds = ds.join(",");
 	dom.unsaved = true;
 	push_domain_settings(idx);
+
+	return false;
 }
 
 
@@ -1792,7 +1937,7 @@ function domain_settings(idx)
 		ns = dom.ns.split(",").sort();
 		for(let i in ns) {
 			if (!have_locks.UpdateProhibited)
-				x += `<a title="Remove this NS" onClick="removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+				x += `<a title="Remove this NS" onClick="return removeNS(${idx},'${ns[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
 			x += `${ns[i]}<br>`;
 			}
 		x += "</td></tr>";
@@ -1803,7 +1948,7 @@ function domain_settings(idx)
 		ds = dom.ds.split(",").sort();
 		for(let i in ds) {
 			if (!have_locks.UpdateProhibited)
-				x += `<a title="Remove this DS" onClick="removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
+				x += `<a title="Remove this DS" onClick="return removeDS(${idx},'${ds[i]}');" href=#>&nbsp;${gbl.cut}&nbsp;</a>`;
 			x += `${ds[i]}<br>`;
 			}
 		x += "</td></tr>";
@@ -1851,11 +1996,18 @@ function domain_settings(idx)
 function flip_flag(idx,flag_name,switch_to)
 {
 	let dom = ctx.domains[idx];
+	post_js = {
+		"domain_id" : dom.domain_id,
+		"name":dom.name,
+		"flags": { }
+		}
+	post_js.flags[flag_name] = switch_to;
+
 	callApi("domain/flags",(ok,reply) => {
 		if (!ok) return def_errMsg("Change domain flag failed",reply,"flagsTable");
 		if ("client_locks" in reply) dom.client_locks = reply.client_locks;
 		domain_settings(idx);
-		},{json:{"domain_id":dom.domain_id,"name":dom.name,"flag":flag_name,"state":switch_to}});
+		},{ json: post_js });
 }
 
 
@@ -2341,7 +2493,7 @@ function one_domain_html(idx)
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
 	if ((dom.is_live)&&(!have_locks.TransferProhibited))
-		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer",`Options for transferring this domain to another owner`,100)
+		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {
 		x += btn(`push_domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
@@ -2448,15 +2600,12 @@ function resend_password(with_push)
 
 function searchKey(e)
 {
-	if (e.key=="Enter") { doSearch(); return; }
-	if (e.key!=":") return;
+	if (e.key=="Enter") {
+		hidePopUp();
+		doSearch();
+		return; }
 
-	if (elm.searchEdit.value.slice(-1)==":")
-		elm.searchEdit.value = elm.searchEdit.value.slice(0,-1);
-	togglePopUp("emojiPopup",0)
-	let es = document.getElementById("emojiSearch");
-	if (es) es.value = "";
-	show_emoji_search();
+	if (e.key==":") togglePopUp("emojiPopup",0)
 }
 
 
@@ -2474,37 +2623,40 @@ function add_emoji(emoji)
 }
 
 
+
 function show_emoji_search()
 {
-	let o = document.getElementById("emojiOutput");
 	let e = document.getElementById("emojiSearch");
+	if (e.value==":") e.value="";
 	let words = e.value.split(" ");
-	let per_row=7,this_row = 0;
-	let max = 1000;
-	let x = "<table border=0 cellspacing=0 cellpadding=0><tr>";
-	for(let i of emojis) {
-		if (i.desc.indexOf("tag ")==0) continue;
 
-		if (all_words(words,i.desc)) {
-			x += `<td><span onClick="add_emoji('${i.emoji}');" title="${i.desc}" class=emoji>${i.emoji}</span></td>`;
-			if (++this_row == per_row) { x+= "</tr><tr>"; this_row=0; }
-			if (--max <= 0) { x+= "<td>more...</td>"; break; }
-			}
-		}
-	if (x.slice(-4)=="<tr>") x = x.slice(0,-4);
-	o.innerHTML = x+"</table>";
+	let max = 1000,x="";
+	emojis.filter((item) => (all_words(words,item[1]))&&(--max > 0)).forEach((item) => {
+		x += `<span onClick="add_emoji('${item[0]}');" title="${item[1]}" class=emoji>${item[0]}</span> `;
+		});
+	x += "</table>";
+	if (max<=0) x += "<P>More ...";
+
+	let o = document.getElementById("emojiOutput");
+	o.innerHTML = x;
 }
+
 
 
 function emojiKey(e) 
 {
-    if (e.key == "Escape") {
-    	hideAllPopUp();
-    	unerrMsg();
-    	elm.searchEdit.focus();
-    	return 
-    	}
-    show_emoji_search();
+    if (e.key != "Escape") { show_emoji_search(); return true; }
+	hideAllPopUp();
+	unerrMsg();
+	elm.searchEdit.focus();
+	return false;
+}
+
+
+function searchFocus()
+{
+	let popup = document.getElementById("emojiPopup");
+	if ((popup)&&(popup.classList.contains("show"))) hideAllPopUp();
 }
 
 
@@ -2512,9 +2664,10 @@ function emojiKey(e)
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
 <table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
-<colgroup><col width=70%/><col/></colgroup>
+<colgroup><col width=40%/><col width=200px/><col/></colgroup>
 <tr>
 <td align=left><span id="businessName" class="businessName">Registrar</span></td>
+<td rowspan=2 align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
 
 <span style="display: none;" id="noLoginBtns">
@@ -2567,8 +2720,9 @@ function emojiKey(e)
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
 </span>
 </td></tr>
-</td></tr>
+</td>
 
+</tr>
 
 <tr><Td>
 <div class="popBelow">
@@ -2586,6 +2740,7 @@ function emojiKey(e)
 <span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 </td>
+
 
 <td align=right><table width=100% border=0>
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
@@ -2607,12 +2762,12 @@ function emojiKey(e)
 			<span>
 			<table align=center border=0>
 				<form action="#" name=searchForm onSubmit="return doSearch();">
-					<tr><td>
+					<tr><td align=center>
 						<div class="popup">
-							<input onkeyup="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px" autofocus class=searchBox id=searchEdit>
-							<span class="popupText" style="overflow: auto; max-height: 500px; margin-left: -600; margin-top: 40px;" id="emojiPopup">
-								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 450px"><p>
-								<span id="emojiOutput"></span>
+							<input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
+							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
+								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
+								<div style="text-align: left; overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
 							</span>
 							</div>
 					</td></tr>
@@ -2628,6 +2783,3 @@ function emojiKey(e)
 <div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>
 </body>
 </html>
-
-
-

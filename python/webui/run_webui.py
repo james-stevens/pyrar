@@ -7,7 +7,6 @@ import inspect
 import flask
 
 from librar import registry
-from librar import misc
 from librar import validate
 from librar import passwd
 from librar import pdns
@@ -187,10 +186,7 @@ def orders_cancel():
 
     ok, order_db = sql.sql_select_one("orders", where)
     if not ok:
-        return req.abort(order_db)
-
-    if not order_db or len(order_db) <= 0:
-        return req.abort("Order not found")
+        return req.abort("Order could not be found")
 
     event_db = {"event_type": "order/cancel"}
     dom_name = f"DOM-{order_db['domain_id']}"
@@ -297,11 +293,8 @@ def payments_list():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
     ok, reply = sql.sql_select("payments", {"user_id": req.user_id})
-    if not ok:
-        if reply is None:
-            return req.abort("Failed to load payment data")
-        else:
-            return req.response({})
+    if not ok and reply is None:
+        return req.abort("Failed to load payment data")
 
     return req.response(reply)
 
@@ -321,14 +314,34 @@ def users_transactions():
     ok, trans_db = sql.sql_select("transactions", {"user_id": req.user_id},
                                   limit=limit,
                                   order_by="acct_sequence_id desc")
-    if not ok:
-        if trans_db is None:
-            return req.abort("Unexpected error loading transactions")
-        else:
-            return req.response({})
+    if not ok and trans_db is None:
+        return req.abort("Unexpected error loading transactions")
 
     req.user_data["transactions"] = trans_db
     return req.response(req.user_data)
+
+
+@application.route('/pyrar/v1.0/domain/transfer', methods=['POST'])
+def domain_transfer():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+
+    if not sql.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
+        return req.abort("Missing or invalid data")
+
+    name = req.post_js["name"].lower()
+    doms = domobj.DomainList()
+    ok, reply = doms.set_list(name)
+    if not ok:
+        return req.abort(reply)
+    dom = doms.domobjs[name]
+
+    ok, prices = domains.get_domain_prices(doms, 1, ["transfer"], req.user_id)
+    if not ok:
+        return req.abort(prices)
+
+    return req.response({"name": dom.name, "tld": dom.tld, "authcode": req.post_js["authcode"], "prices": prices})
 
 
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
@@ -341,8 +354,7 @@ def users_domains():
     if not ok:
         if reply is None:
             return req.abort("Failed to load domains")
-        else:
-            return req.response({})
+        return req.response({})
 
     for dom_db in reply:
         dom = domobj.Domain()
@@ -380,19 +392,24 @@ def users_close():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
+    ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
+    if not ok:
+        return req.abort("User record not found")
+
     if not users.check_password(req.user_id, req.post_js):
         return req.abort("Password match failed")
 
     where = {
         "account_closed": 1,
-        "email": concat(user_id, ':', email),
-        "password": concat('CLOSED:', password),
-        "amended_dt": now()
+        "email": f"{req.user_id}:{user_db['email']}",
+        "password": f"CLOSED:{user_db['password']}",
+        "amended_dt": None
     }
-    if not sql.sql_update_one("users", ",".join(where), {"user_id": req.user_id}):
+    if not sql.sql_update_one("users", where, {"user_id": req.user_id}):
         return req.abort("Close account failed")
 
     sql.sql_delete_one("session_keys", {"user_id": req.user_id})
+    sql.sql_delete("orders", {"user_id": req.user_id})
     req.user_id = None
     req.sess_code = None
 
@@ -423,10 +440,7 @@ def users_details():
 
     ok, user_db = sql.sql_select_one("users", {"user_id": req.user_id})
     if not ok:
-        if user_db is None:
-            return req.abort("Failed to load user account")
-        else:
-            return req.response({})
+        return req.abort("Failed to load user account")
 
     req.user_data["user"] = user_db
 
@@ -813,7 +827,6 @@ def rest_domain_price():
     if ok:
         return req.response(reply)
 
-    log(f"FAILED: {ok}:{reply}:{dom_obj.names}")
     return req.abort(reply)
 
 

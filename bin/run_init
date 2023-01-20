@@ -19,11 +19,15 @@ ${BASE}/python/bin/policy_subst.py
 
 ${BASE}/python/bin/fix_db_schema.py
 
-cp /run/policy_subst/main.cf /etc/postfix/main.cf
-chown root: /etc/postfix/main.cf
-chmod 600 /etc/postfix/main.cf
+for file in main.cf relay_auth
+do
+	cp /run/policy_subst/${file} /etc/postfix/${file}
+	chown root: /etc/postfix/${file}
+	chmod 600 /etc/postfix/${file}
+done
 
 postalias /etc/postfix/aliases
+postalias /etc/postfix/relay_auth
 
 if test "${SYSLOG_SERVER}" = "None"
 	then

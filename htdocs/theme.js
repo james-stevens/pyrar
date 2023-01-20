@@ -42,6 +42,8 @@ const theme_colours = {
 
 function changeTheme(theme_name)
 {
+	if (!(theme_name in theme_colours)) return;
+
 	gbl.theme = theme_name;
 	window.localStorage.setItem("theme",gbl.theme);
 	document.querySelector("style").innerText = theme_css(theme_name);
@@ -67,11 +69,15 @@ function theme_css(theme) {
 	border-color: #${cols[10]};
 	font-size: 25px;
 	cursor: pointer;
+	width: 70px;
+	white-space: nowrap;
 	padding: 1px 7px;
 	margin-top: 0px;
 	margin-left: 0px;
 	margin-bottom: 0px;
 	margin-right: 0px;
+	text-overflow: clip;
+	overflow-x: hidden;
 	}
 
 .emoji:hover {

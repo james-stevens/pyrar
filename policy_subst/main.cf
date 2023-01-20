@@ -34,5 +34,20 @@ maximal_backoff_time = 60m
 minimal_backoff_time = 15m
 queue_run_delay = 15m
 
-relayhost = {{policy.smtp_relayhost}}
+{% if policy.smtp_tls_security_level is defined and policy.smtp_tls_security_level %}
+smtp_tls_security_level = {{ policy.smtp_tls_security_level }}
+{% endif %}
 
+{% if policy.smtp_relayhost is defined and policy.smtp_relayhost %}
+relayhost = {{policy.smtp_relayhost}}
+{% if logins.smtp.relay_auth is defined and logins.smtp.relay_auth %}
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = lmdb:/etc/postfix/relay_auth
+smtp_sasl_security_options = noanonymous
+smtp_sasl_mechanism_filter = plain, login
+{% endif %}
+{% endif %}
+
+{% if policy.smtp_more_options is defined and policy.smtp_more_options %}
+{{ "\n".join(policy.smtp_more_options.split("|")) }}
+{% endif %}
