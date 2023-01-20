@@ -222,16 +222,18 @@ def webui_update_domains_flags(req):
     if not ok:
         return False, dom
 
-    if not (sql.has_data(req.post_js, ["flag", "state"]) and isinstance(req.post_js["state"], bool)
-            and req.post_js["flag"] in static_data.CLIENT_DOM_FLAGS):
+    if not sql.has_data(req.post_js, "flags"):
         return False, "Missing or invalid data"
 
-    this_flag = req.post_js["flag"]
-    if this_flag not in dom.registry["locks"]:
-        return False, f"Flag '{this_flag}' is not supported in this registry"
-
     new_flags = dom.locks.copy()
-    new_flags[this_flag] = req.post_js["state"]
+    for flag, flag_state in req.post_js["flags"].items():
+        if not (isinstance(flag_state, bool) and isinstance(flag, str) and flag in static_data.CLIENT_DOM_FLAGS):
+            return False, "Missing or invalid data"
+        if flag not in dom.registry["locks"]:
+            return False, f"Flag '{this_flag}' is not supported in this registry"
+
+        new_flags[flag] = flag_state
+
     update_flags = ",".join([flag for flag, flag_val in new_flags.items() if flag_val])
 
     if not sql.sql_update_one("domains", {"client_locks": update_flags}, {

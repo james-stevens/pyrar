@@ -24,6 +24,15 @@ const validations = {
 
 function callApi(sfx,callback,inData)
 {
+	document.body.style.cursor="progress";
+	elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
+
+	function show_done()
+	{
+		document.body.style.cursor="auto";
+		elm.topMsg.innerHTML = "";
+	}
+
 	function check_session(headers)
 	{
 		let got_ses = false;
@@ -44,8 +53,6 @@ function callApi(sfx,callback,inData)
 			loggedOut();
 			}
 	}
-
-	document.body.style.cursor="progress";
 
 	if (debugAPI) { console.log("API>>>",sfx); console.log("API>>>",inData); }
 
@@ -86,11 +93,16 @@ function callApi(sfx,callback,inData)
 			response.text().then(
 				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
-					if (response.status != 499) return callback(false,{"error":"Unexecpted System Error"});
+					if (response.status != 499) {
+						show_done();
+						return callback(false,{"error":"Unexecpted System Error"});
+						}
 					check_session(response.headers);
 					try {
+						show_done();
 						return callback(false,JSON.parse(data));
 					} catch {
+						show_done();
 						return callback(false,{"error":data});
 						}
 					},
@@ -105,6 +117,7 @@ function callApi(sfx,callback,inData)
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
 
 				if ((inData != null)&&(inData.noData)) {
+					show_done();
 					return callback(true,true);
 				} else {
 					let param = data;
@@ -113,14 +126,16 @@ function callApi(sfx,callback,inData)
 					catch {
 						param = data; }
 
+					show_done();
 					return callback(true,param);
 					}
 				});
 			}
 		})
-		.catch(err => callback(false,{"error":"Server connection error"}))
-
-	document.body.style.cursor="auto";
+		.catch((err) => {
+			show_done();
+			callback(false,{"error":"Server connection error"})
+			} );
 }
 
 

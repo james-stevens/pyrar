@@ -327,21 +327,21 @@ def domain_transfer():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not sql.has_data(req.post_js,["name","authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
-        return req.abort("Missing or invalid data");
+    if not sql.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
+        return req.abort("Missing or invalid data")
 
     name = req.post_js["name"].lower()
     doms = domobj.DomainList()
     ok, reply = doms.set_list(name)
     if not ok:
         return req.abort(reply)
-    dom = doms.domobjs[name];
+    dom = doms.domobjs[name]
 
-    ok, prices = domains.get_domain_prices(doms,1,["transfer"],req.user_id)
+    ok, prices = domains.get_domain_prices(doms, 1, ["transfer"], req.user_id)
     if not ok:
         return req.abort(prices)
 
-    return req.response({"name":dom.name,"tld":dom.tld,"authcode":req.post_js["authcode"],"prices":prices})
+    return req.response({"name": dom.name, "tld": dom.tld, "authcode": req.post_js["authcode"], "prices": prices})
 
 
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])

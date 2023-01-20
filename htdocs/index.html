@@ -12,6 +12,13 @@
 
 debugAPI = false;
 
+
+const pre_get_elm = [
+	"topMsg","searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon",
+	"basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
+	"userSpace","output","topSpan","search","businessName"
+	];
+
 elm = {};
 gbl = {
 	"theme": window.localStorage.theme,
@@ -453,11 +460,7 @@ function push_hist(data)
 
 function go_welcome(with_push)
 {
-	["searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon","basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
-	"userSpace","output","topSpan","search","businessName"].forEach(i => {
-		elm[i] = document.getElementById(i);
-		} );
-
+	pre_get_elm.forEach(i => { elm[i] = document.getElementById(i); } );
 	show_one_space("search");
 	let mainDiv = document.getElementById("allBottom");
 	mainDiv.onclick = function (e) { if (e.target !== this) return; hidePopUp(); }
@@ -1918,11 +1921,18 @@ function domain_settings(idx)
 function flip_flag(idx,flag_name,switch_to)
 {
 	let dom = ctx.domains[idx];
+	post_js = {
+		"domain_id" : dom.domain_id,
+		"name":dom.name,
+		"flags": { }
+		}
+	post_js.flags[flag_name] = switch_to;
+
 	callApi("domain/flags",(ok,reply) => {
 		if (!ok) return def_errMsg("Change domain flag failed",reply,"flagsTable");
 		if ("client_locks" in reply) dom.client_locks = reply.client_locks;
 		domain_settings(idx);
-		},{json:{"domain_id":dom.domain_id,"name":dom.name,"flag":flag_name,"state":switch_to}});
+		},{ json: post_js });
 }
 
 
@@ -2579,9 +2589,10 @@ function searchFocus()
 <body onLoad="bodyLoaded();">
 <div id="topSpan">
 <table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
-<colgroup><col width=70%/><col/></colgroup>
+<colgroup><col width=40%/><col width=20%/><col/></colgroup>
 <tr>
 <td align=left><span id="businessName" class="businessName">Registrar</span></td>
+<td rowspan=2 align=center><div style="margin:20px; font-size: 25px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
 
 <span style="display: none;" id="noLoginBtns">
@@ -2634,8 +2645,9 @@ function searchFocus()
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
 </span>
 </td></tr>
-</td></tr>
+</td>
 
+</tr>
 
 <tr><Td>
 <div class="popBelow">
@@ -2653,6 +2665,7 @@ function searchFocus()
 <span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 </td>
+
 
 <td align=right><table width=100% border=0>
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
