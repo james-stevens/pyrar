@@ -2,7 +2,4 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-sleep 3 # wait for EPP rest/api to get started
-
-cd ${BASE}/python/backend
-exec su daemon -s /bin/sh -c "exec ./run_backend.py -l 2>&1 | logger -t backend"
+exec /usr/sbin/pdns_server 2>&1 | logger -t pdns

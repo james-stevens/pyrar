@@ -15,5 +15,6 @@ export PYRAR_REGISTRY="${registry}"
 cd ${BASE}/python/epprest
 exec gunicorn \
         --workers ${ses} \
+        --user=daemon \
         ${extra} --bind unix:/run/epp/wsgi_epprest_${registry}_${session}.sock \
-        wsgi >/tmp/start_wsgi.${registry}_${session}.log 2>&1
+        wsgi 2>&1 | logger -t eppapi.${registry}_${session}

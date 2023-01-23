@@ -3,4 +3,4 @@
 # Alternative license arrangements possible, contact me for more information
 
 cd ${BASE}/python/pay_engine
-exec ./run_payments.py >/tmp/pay_engine.log 2>&1
+exec su daemon -s /bin/sh -c "exec ./run_payments.py  2>&1 | logger -t payments"

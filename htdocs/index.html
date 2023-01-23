@@ -919,7 +919,7 @@ function request_transfer(with_push)
 
 function userDomainList()
 {
-	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	let x = "<table align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
 	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
 	x += "</td></tr>";
@@ -945,7 +945,7 @@ function userDomainList()
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
 
-		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td>${dom.ns.slice(0,40)}</td>`;
+		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
 
 		x += "</tr>";
 		}
@@ -2539,6 +2539,7 @@ function show_one_domain(idx)
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = one_domain_html(idx);
 	size_one_space();
+    window.scrollTo(0, 0);
 }
 
 
