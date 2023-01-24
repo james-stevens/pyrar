@@ -10,5 +10,6 @@ if test "${ses}" = "null"; then ses="3"; fi
 cd ${BASE}/python/admin
 exec gunicorn \
         --workers ${ses} \
+        --user=daemon \
 		${extra} --bind unix:/run/wsgi_admin.sock \
-        wsgi >/tmp/start_admin.log 2>&1
+        wsgi 2>&1 | logger -t admin_ui

@@ -118,6 +118,96 @@
          }
       }
    },
+   "contacts": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "city": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "contact_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "country": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "email": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
+         },
+         "fax": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "name": {
+            "size": 250,
+            "type": "varchar",
+            "null": true
+         },
+         "org_name": {
+            "size": 250,
+            "type": "varchar",
+            "null": true
+         },
+         "phone": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "postcode": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "state": {
+            "size": 200,
+            "type": "varchar",
+            "null": true
+         },
+         "street": {
+            "size": 350,
+            "type": "varchar",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "contact_id"
+            ],
+            "unique": true
+         },
+         "by_owner": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
    "deleted_domains": {
       "columns": {
          "amended_dt": {

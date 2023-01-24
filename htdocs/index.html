@@ -919,7 +919,7 @@ function request_transfer(with_push)
 
 function userDomainList()
 {
-	let x = "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	let x = "<table align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
 	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
 	x += "</td></tr>";
@@ -945,7 +945,7 @@ function userDomainList()
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
 
-		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td>${dom.ns.slice(0,40)}</td>`;
+		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
 
 		x += "</tr>";
 		}
@@ -966,13 +966,20 @@ function preset_domain_extras(dom)
 
 function load_domains_list(success_fn)
 {
+	show_one_space("userSpace");
+	elm.userSpace.innerHTML = "";
+	size_one_space();
+
 	callApi("users/domains",(ret,reply) => {
 		if ((ret)&&(reply.domains)) {
 			ctx.domains = reply.domains;
 			for(let dom of ctx.domains) preset_domain_extras(dom);
 			success_fn(true);
 			}
-		else delete ctx.domains;
+		else {
+			def_errMsg("Failed to load fresh list of domains",reply,"errorSpan");
+			delete ctx.domains;
+			}
 		});
 }
 
@@ -1565,9 +1572,11 @@ function html_for_basket(with_place_order)
 function myAccount(with_push)
 {
 	if (with_push) push_hist("myAccount");
+
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	size_one_space();
+
 	callApi("users/details",(ok,reply) => {
 		if (!ok) {
 			goSearch(true);
@@ -1760,9 +1769,10 @@ function inside_ns(param)
 function inside_ds(param)
 {
 	let idx = param["idx"];
-	let x = "<table>";
-	x += settings_header(`Add DS Record`,true);
-	x += "<table>";
+	let x = "<table border=0 cellspacing=0 cellpadding=0>";
+	x += `<tr><td class=windowBanner>Add DS Record</td></tr>`;
+	x += `<tr><td>${gbl.gap}</td></tr>`;
+	x += "<tr><td><table>";
 	x += settings_prompt("Key Tag / ID") + `<input id=ds_keyTag onkeyUp="DSkeyDown(event,${idx});" style="width: 90px"></td>`;
 	x += settings_prompt("Key Algorithm") + "<select id=ds_alg>";
 	for(let i in ds_algs) {
@@ -1780,6 +1790,7 @@ function inside_ds(param)
 
 	x += settings_prompt("Digest") + `<input id=ds_digest onkeyUp="DSkeyDown(event,${idx});" style="width: 450px"></td>`;
 	x += "</table><td></tr>";
+	x += `<tr><td>${gbl.gap}</td></tr>`;
 	x += "<tr><td class=btmBtnBar>"
 		+btn("hidePopUp()","Cancel","Do not add DS",75)
 		+btn(`doAddDS(${idx})`,"Add DS","Add this DS record",75)
@@ -2537,6 +2548,7 @@ function show_one_domain(idx)
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = one_domain_html(idx);
 	size_one_space();
+    window.scrollTo(0, 0);
 }
 
 

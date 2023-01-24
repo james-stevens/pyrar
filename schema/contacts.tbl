@@ -1,0 +1,32 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+. ./database
+
+sqlsh "drop table contacts"
+sqlsh "create table contacts (
+	contact_id			${auto},
+	user_id				${row_id},
+	name				varchar(250),
+	org_name			varchar(250),
+	street				varchar(350),
+	city				varchar(200),
+	state				varchar(200),
+	postcode			varchar(200),
+	country				varchar(200),
+	phone				varchar(200),
+	fax					varchar(200),
+	email				${email},
+
+	created_dt			datetime not null,
+	amended_dt			datetime not null,
+
+	primary key (contact_id),
+	key by_owner (user_id)
+)"
+
+sqlsh "ALTER TABLE contacts AUTO_INCREMENT = 10450"
+
+sqlsh "grant insert,update,select on contacts to raradm,engine,webui"

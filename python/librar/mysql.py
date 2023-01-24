@@ -243,6 +243,50 @@ def sql_select_one(table, where, columns="*"):
     return False, reply[1]
 
 
+def get_pdns_login(login, login_json):
+    if "pdns" not in login_json:
+        log(f"ERROR: Could not find P/DNS config in login file")
+        return False, None, None, None, None
+
+    pdns_json = login_json["pdns"]
+    if not has_data(pdns_json, ["database", "username", "password", "server"]):
+        log(f"Missing database or login data")
+        return False, None, None, None, None
+
+    return True, pdns_json["server"], pdns_json["username"], pdns_json["password"], pdns_json["database"]
+
+
+def get_mysql_login(login, login_json):
+    if "mysql" not in login_json:
+        log(f"ERROR: Could not find MySQL config in login file")
+        return False, None, None, None, None
+
+    mysql_json = login_json["mysql"]
+    if not has_data(mysql_json, ["database", login, "connect"]):
+        log(f"Missing server, database or login data")
+        return False, None, None, None, None
+
+    my_login = None
+    my_password = None
+    server = mysql_json["connect"]
+
+    if isinstance(mysql_json[login], str):
+        my_login = login
+        my_password = mysql_json[login]
+    elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
+        my_login = mysql_json[login][0]
+        my_password = mysql_json[login][1]
+    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
+        my_login = mysql_json[login]["username"]
+        my_password = mysql_json[login]["password"]
+
+    if my_login is None or my_password is None:
+        log(f"ERROR: Could not find MySQL password for user {login}")
+        return False, None, None, None, None
+
+    return True, server, my_login, my_password, mysql_json["database"]
+
+
 def connect(login):
     """ Connect to MySQL based on ENV vars """
 
@@ -254,41 +298,27 @@ def connect(login):
     logins.check_for_new()
     my_login = login
     my_password = None
-    mysql_json = logins.data()["mysql"]
 
-    if not has_data(mysql_json, ["database", login]):
-        log(f"Missing database or login data")
-        return False
-
-    conn = mysql_json["connect"]
-    if isinstance(mysql_json[login], str):
-        my_password = mysql_json[login]
-    elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
-        my_login = mysql_json[login][0]
-        my_password = mysql_json[login][1]
-    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
-        my_login = mysql_json[login]["username"]
-        my_password = mysql_json[login]["password"]
+    if login == "pdns":
+        ok, server, my_login, my_password, my_database = get_pdns_login(login, logins.data())
     else:
-        log(f"ERROR: Could not find MySQL password for user {login}")
+        ok, server, my_login, my_password, my_database = get_mysql_login(login, logins.data())
+
+    if not ok:
+        log(f"ERROR: Could not find credentials for user {login}")
         return False
 
-    if my_login is None or my_password is None:
-        log(f"ERROR: Could not find MySQL password for user {login}")
-        return False
-
-    my_database = mysql_json["database"]
     host = None
     port = None
     sock = ""
 
-    if conn.find("/") >= 0:
-        sock = conn
+    if server.find("/") >= 0:
+        sock = server
     else:
-        host = conn
+        host = server
         port = 3306
-        if conn.find(":") >= 0:
-            svr = conn.split(":")
+        if server.find(":") >= 0:
+            svr = server.split(":")
             host = svr[0]
             port = int(svr[1])
 
@@ -312,11 +342,12 @@ def connect(login):
 if __name__ == "__main__":
     log_init(with_debug=True)
 
-    connect("admin")
+    connect("pdns")
+    print(sql_select("domains", {"1": "1"}))
+    sys.exit(0)
 
-    print(sql_select_one("x-domains", {"domain_id": sys.argv[1]}))
+    connect("admin")
     print(sql_select_one("domains", {"domain_id": sys.argv[1]}))
-    print(sql_select("domains", {"domain_id": sys.argv[1]}))
     sys.exit(0)
 
     ret, db_rows = run_select("select * from events limit 3")

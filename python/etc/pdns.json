@@ -1,0 +1,374 @@
+{
+   "comments": {
+      "columns": {
+         "account": {
+            "size": 40,
+            "type": "varchar",
+            "null": true
+         },
+         "comment": {
+            "type": "text",
+            "null": false
+         },
+         "domain_id": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "id": {
+            "size": 11,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "modified_at": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "name": {
+            "size": 255,
+            "type": "varchar",
+            "null": false
+         },
+         "type": {
+            "size": 10,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "comments_name_type_idx": {
+            "columns": [
+               "name",
+               "type"
+            ],
+            "unique": false
+         },
+         "comments_order_idx": {
+            "columns": [
+               "domain_id",
+               "modified_at"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "cryptokeys": {
+      "columns": {
+         "active": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true
+         },
+         "content": {
+            "type": "text",
+            "null": true
+         },
+         "domain_id": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "flags": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "id": {
+            "size": 11,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "published": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true,
+            "default": 1
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "domainidindex": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "domainmetadata": {
+      "columns": {
+         "content": {
+            "type": "text",
+            "null": true
+         },
+         "domain_id": {
+            "size": 11,
+            "type": "int",
+            "null": false
+         },
+         "id": {
+            "size": 11,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "kind": {
+            "size": 32,
+            "type": "varchar",
+            "null": true
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "domainmetadata_idx": {
+            "columns": [
+               "domain_id",
+               "kind"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "domains": {
+      "columns": {
+         "account": {
+            "size": 40,
+            "type": "varchar",
+            "null": true
+         },
+         "catalog": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         },
+         "id": {
+            "size": 11,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "last_check": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "master": {
+            "size": 128,
+            "type": "varchar",
+            "null": true
+         },
+         "name": {
+            "size": 255,
+            "type": "varchar",
+            "null": false
+         },
+         "notified_serial": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
+         "options": {
+            "size": 64000,
+            "type": "varchar",
+            "null": true
+         },
+         "type": {
+            "size": 8,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "name_index": {
+            "columns": [
+               "name"
+            ],
+            "unique": true
+         },
+         "catalog_idx": {
+            "columns": [
+               "catalog"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "records": {
+      "columns": {
+         "auth": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true,
+            "default": 1
+         },
+         "content": {
+            "size": 64000,
+            "type": "varchar",
+            "null": true
+         },
+         "disabled": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true,
+            "default": 0
+         },
+         "domain_id": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "id": {
+            "size": 20,
+            "type": "bigint",
+            "serial": true,
+            "null": false
+         },
+         "name": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         },
+         "ordername": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         },
+         "prio": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "ttl": {
+            "size": 11,
+            "type": "int",
+            "null": true
+         },
+         "type": {
+            "size": 10,
+            "type": "varchar",
+            "null": true
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "nametype_index": {
+            "columns": [
+               "name",
+               "type"
+            ],
+            "unique": false
+         },
+         "domain_id": {
+            "columns": [
+               "domain_id"
+            ],
+            "unique": false
+         },
+         "ordername": {
+            "columns": [
+               "ordername"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "supermasters": {
+      "columns": {
+         "account": {
+            "size": 40,
+            "type": "varchar",
+            "null": false
+         },
+         "ip": {
+            "size": 64,
+            "type": "varchar",
+            "null": false
+         },
+         "nameserver": {
+            "size": 255,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "ip",
+               "nameserver"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "tsigkeys": {
+      "columns": {
+         "algorithm": {
+            "size": 50,
+            "type": "varchar",
+            "null": true
+         },
+         "id": {
+            "size": 11,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "name": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         },
+         "secret": {
+            "size": 255,
+            "type": "varchar",
+            "null": true
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "id"
+            ],
+            "unique": true
+         },
+         "namealgoindex": {
+            "columns": [
+               "name",
+               "algorithm"
+            ],
+            "unique": true
+         }
+      }
+   }
+}

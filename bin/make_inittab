@@ -12,12 +12,12 @@ awk '{
 echo "
 ::respawn:/usr/local/bin/start_wsgi_webui
 ::respawn:/usr/local/bin/start_wsgi_admin
-::respawn:/usr/sbin/pdns_server >/tmp/pdns.log 2>&1
+::respawn:/usr/local/bin/start_pdns
 ::respawn:/usr/local/bin/start_nginx
 ::respawn:/usr/local/bin/start_backend_runner
 ::respawn:/usr/local/bin/start_pay_engine
 ::respawn:/usr/local/bin/start_spooler
 ::respawn:/usr/sbin/crond -f -c /etc/crontabs -l 9
-::respawn:/usr/sbin/postfix start-fg
+::respawn:/usr/sbin/postfix start-fg >/tmp/postfix.log 2>&1
 "
 } > /run/inittab

@@ -18,6 +18,7 @@ ${BASE}/python/bin/policy_subst.py
 . /run/policy_subst/env.inc
 
 ${BASE}/python/bin/fix_db_schema.py
+${BASE}/python/bin/fix_db_schema.py -l pdns
 
 for file in main.cf relay_auth
 do
@@ -40,8 +41,13 @@ mkdir -p /run/epp /run/postfix
 mkdir /run/nginx; chown nginx: /run/nginx
 
 perm="${BASE}/storage/perm"
+sigs="${BASE}/storage/shared/signals"
 mkdir -p ${BASE}/storage ${perm} ${perm}/spooler ${perm}/mail_error ${perm}/postfix
-mkdir -p ${BASE}/storage/shared ${BASE}/storage/shared/signals
+mkdir -p ${BASE}/storage/shared ${sigs}
+chown daemon: ${sigs} ${perm}/spooler ${perm}/mail_error
+chmod 770 ${sigs}
+rm -f ${sigs}/*
+
 
 flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
 	{ if (have[$1]=="") have[$1]=n++; }
