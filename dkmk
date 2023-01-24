@@ -2,6 +2,7 @@
 
 cd ${BASE}
 
+./python/bin/fix_db_schema.py -C -l pdns
 ./python/bin/fix_db_schema.py -C
 if ! python3 -m compileall python; then exit 1; fi
 

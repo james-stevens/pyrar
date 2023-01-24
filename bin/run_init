@@ -18,6 +18,7 @@ ${BASE}/python/bin/policy_subst.py
 . /run/policy_subst/env.inc
 
 ${BASE}/python/bin/fix_db_schema.py
+${BASE}/python/bin/fix_db_schema.py -l pdns
 
 for file in main.cf relay_auth
 do
