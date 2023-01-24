@@ -262,12 +262,16 @@ def get_mysql_login(login, login_json):
         return False, None, None, None, None
 
     mysql_json = login_json["mysql"]
-    if not has_data(mysql_json, ["database", login]):
-        log(f"Missing database or login data")
+    if not has_data(mysql_json, ["database", login, "connect"]):
+        log(f"Missing server, database or login data")
         return False, None, None, None, None
 
+    my_login = None
+    my_password = None
     server = mysql_json["connect"]
+
     if isinstance(mysql_json[login], str):
+        my_login = login
         my_password = mysql_json[login]
     elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
         my_login = mysql_json[login][0]
@@ -275,9 +279,6 @@ def get_mysql_login(login, login_json):
     elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
         my_login = mysql_json[login]["username"]
         my_password = mysql_json[login]["password"]
-    else:
-        log(f"ERROR: Could not find MySQL password for user {login}")
-        return False, None, None, None, None
 
     if my_login is None or my_password is None:
         log(f"ERROR: Could not find MySQL password for user {login}")

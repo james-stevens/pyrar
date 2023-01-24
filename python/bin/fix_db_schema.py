@@ -93,7 +93,7 @@ def get_column_type(prefix, column_data):
 
 def run_query(query):
     if args.debug:
-        print(">>>>",query)
+        print(">>>>", query)
     else:
         sql.sql_exec(query)
 
@@ -101,21 +101,21 @@ def run_query(query):
 for table, table_data in save_schema.items():
     if table not in live_schema:
         query = f"create table {table} "
-        pfx="( "
+        pfx = "( "
         for column, column_data in table_data["columns"].items():
-            query += get_column_type(pfx+column+" ",column_data)
-            pfx=","
-        run_query(query+")")
-        live_schema[table] = {"columns":table_data["columns"],"indexes":{}}
+            query += get_column_type(pfx + column + " ", column_data)
+            pfx = ","
+        run_query(query + ")")
+        live_schema[table] = {"columns": table_data["columns"], "indexes": {}}
         live_table = live_schema[table]
     else:
         live_table = live_schema[table]
         for column, column_data in table_data["columns"].items():
             if column not in live_table["columns"]:
-                query = get_column_type(f"alter table {table} add column {column}",column_data)
+                query = get_column_type(f"alter table {table} add column {column}", column_data)
                 run_query(query)
             elif type_change(live_table["columns"][column], column_data):
-                query = get_column_type(f"alter table {table} change column {column} {column}",column_data)
+                query = get_column_type(f"alter table {table} change column {column} {column}", column_data)
                 run_query(query)
 
     if "indexs" not in table_data:
