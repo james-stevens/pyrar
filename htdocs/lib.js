@@ -27,10 +27,11 @@ function callApi(sfx,callback,inData)
 	document.body.style.cursor="progress";
 	elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
 
-	function show_done()
+	function we_are_done(ok,reply)
 	{
 		document.body.style.cursor="auto";
 		elm.topMsg.innerHTML = "";
+		return callback(ok,reply);
 	}
 
 	function check_session(headers)
@@ -93,17 +94,12 @@ function callApi(sfx,callback,inData)
 			response.text().then(
 				data => {
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
-					if (response.status != 499) {
-						show_done();
-						return callback(false,{"error":"Unexecpted System Error"});
-						}
+					if (response.status != 499) return we_are_done(false,{"error":"Unexecpted System Error"});
 					check_session(response.headers);
 					try {
-						show_done();
-						return callback(false,JSON.parse(data));
+						return we_are_done(false,JSON.parse(data));
 					} catch {
-						show_done();
-						return callback(false,{"error":data});
+						return we_are_done(false,{"error":data});
 						}
 					},
 				() => errMsg(`ERROR:2: ${response.status} ${response.statusText}`)
@@ -117,8 +113,7 @@ function callApi(sfx,callback,inData)
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
 
 				if ((inData != null)&&(inData.noData)) {
-					show_done();
-					return callback(true,true);
+					return we_are_done(true,true);
 				} else {
 					let param = data;
 					try {
@@ -126,15 +121,13 @@ function callApi(sfx,callback,inData)
 					catch {
 						param = data; }
 
-					show_done();
-					return callback(true,param);
+					return we_are_done(true,param);
 					}
 				});
 			}
 		})
 		.catch((err) => {
-			show_done();
-			callback(false,{"error":"Server connection error"})
+			we_are_done(false,{"error":"Server connection error"})
 			} );
 }
 
@@ -200,7 +193,7 @@ function format_amount(num)
 
 function def_errMsg(msg,reply,tagged_elm)
 {
-	if (reply.error) errMsg(reply.error,tagged_elm); else errMsg(msg,tagged_elm);
+	if ((reply)&&(reply.error)) errMsg(reply.error,tagged_elm); else errMsg(msg,tagged_elm);
 }
 
 

@@ -966,13 +966,20 @@ function preset_domain_extras(dom)
 
 function load_domains_list(success_fn)
 {
+	show_one_space("userSpace");
+	elm.userSpace.innerHTML = "";
+	size_one_space();
+
 	callApi("users/domains",(ret,reply) => {
 		if ((ret)&&(reply.domains)) {
 			ctx.domains = reply.domains;
 			for(let dom of ctx.domains) preset_domain_extras(dom);
 			success_fn(true);
 			}
-		else delete ctx.domains;
+		else {
+			def_errMsg("Failed to load fresh list of domains",reply,"errorSpan");
+			delete ctx.domains;
+			}
 		});
 }
 
@@ -1565,9 +1572,11 @@ function html_for_basket(with_place_order)
 function myAccount(with_push)
 {
 	if (with_push) push_hist("myAccount");
+
 	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
 	size_one_space();
+
 	callApi("users/details",(ok,reply) => {
 		if (!ok) {
 			goSearch(true);
