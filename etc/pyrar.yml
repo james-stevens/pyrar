@@ -1,3 +1,5 @@
 joins:
-  user_id: users.user_id
-  domain_id: domains.domain_id
+    user_id: users.user_id
+    domain_id: domains.domain_id
+    sales_item_id: sales.sales_item_id
+    transaction_id: transactions.transaction_id

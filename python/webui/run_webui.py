@@ -10,6 +10,7 @@ from librar import registry
 from librar import validate
 from librar import passwd
 from librar import pdns
+from librar import common_ui
 from librar import static_data
 from librar import domobj
 from librar import sigprocs
@@ -136,20 +137,7 @@ def before_request():
 @application.route('/pyrar/v1.0/config', methods=['GET'])
 def get_config():
     req = WebuiReq()
-    if (payment_methods := policy.policy("payment_methods")) is None:
-        payment_methods = list(pay_handler.pay_plugins)
-    return req.response({
-        "default_currency": policy.policy("currency"),
-        "registry": registry.tld_lib.regs_send(),
-        "dom_flags": static_data.CLIENT_DOM_FLAGS,
-        "zones": registry.tld_lib.return_zone_list(),
-        "status": static_data.DOMAIN_STATUS,
-        "payments": {
-            pay: pay_handler.pay_plugins[pay]["desc"]
-            for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
-        },
-        "policy": policy.data()
-    })
+    return req.response(common_ui.ui_config())
 
 
 @application.route('/pyrar/v1.0/zones', methods=['GET'])
