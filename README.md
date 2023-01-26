@@ -104,6 +104,7 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 ## Domains
 - Search for available domains
+	- Built-in emoji search option
 - Buy domains
 - Renew domains
 - Auto-Renew domains (partly working)
