@@ -167,7 +167,7 @@ It's getting pretty close to ready to use !
 
 ## Contacts
 Right now there is no support for contact records & attaching contact record to domains.
-This may be required to be allowed to work with some registries, but my preferance is for privacy!
+This may be required to be allowed to work with some EPP registries, but my preferance is for privacy!
 So there is a `contacts` table, in case this functionality needs to be added, but right now its not used.
 
 
