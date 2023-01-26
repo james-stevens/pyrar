@@ -109,18 +109,21 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Auto-Renew domains (partly working)
 - Gift a domain to a user on the same platform
 - Transfer domains using the standard AuthCode mechanism
-- Edit NS and DS records
-- Edit a locally hosted client zone file
+- Edit NS and DS records (in the parent zone)
+- Edit locally hosted client zone data
 - Sign / Unsign locally hosted client zone file
 - Offer domains for sale to others users (partly working)
-- Event log to give a history of the domain (for admin)
+- Event log to give a history of the domain (for admin use)
+- Support for the four standard domain locks
+
 
 # Engine
 - All function required to support an EPP registry (delayed transfers needs work)
 - All functions required to support running a simple registry locally
-- Create and process jobs for aging domains (renewal reminders, auto-renew, expire, delete)
+- Schedule and process event jobs for aging domains (renewal reminders, auto-renew, expire, delete)
 - Cronjob for routine maintenance
-- Background processing payments after credit comes in
+- Background processing pending payments after credit comes in
+
 
 ## Admin Web/UI
 - A Web/UI to the PowerDNS server is provided
@@ -130,6 +133,7 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 	- view domain history
 	- view transaction history
 	- view activity history
+
 
 ## EMails
 - Runs a Postfix SMTP spooler with optional support for relaying out via an external mail server/service, optionally with TLS & SMTP/AUTH
