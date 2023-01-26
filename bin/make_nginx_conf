@@ -70,6 +70,8 @@ echo "
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
 		location /usr/ { alias ${BASE}/htdocs/; }
+		location /img/ { alias ${BASE}/htdocs/img/; }
+		location /icons/ { alias ${BASE}/htdocs/icons/; }
 		location /adm { proxy_pass http://wsgi_admin/adm; }
 		root ${BASE}/admin_htdocs;"
 
@@ -96,5 +98,4 @@ echo "}"
 
 } > /run/nginx.conf
 
-sqlsh 'select concat(login,":",htpasswd) from sysadmins' > /run/admin_logins
-chmod 444 /run/admin_logins
+/usr/local/bin/make_admin_logins

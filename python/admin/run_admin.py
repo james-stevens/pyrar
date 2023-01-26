@@ -6,7 +6,12 @@ from datetime import datetime
 import flask
 
 from librar.log import log, debug, init as log_init
+from librar.policy import this_policy as policy
 from librar import mysql as sql
+from librar import registry
+from librar import pdns
+from librar import validate
+from librar import common_ui
 from librar import static_data
 from admin import load_schema
 
@@ -355,8 +360,17 @@ def check_supplied_modifiers(sent, allowed):
 
 
 application = flask.Flask("MySQL-Rest/API")
+log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
 sql.connect("admin")
 schema = load_schema.load_db_schema()
+registry.start_up()
+pdns.start_up()
+
+site_currency = policy.policy("currency")
+if not validate.valid_currency(site_currency):
+    raise ValueError("ERROR: Main policy.currency is not set up correctly")
+
+
 
 
 @application.route("/adm/v1", methods=['GET'])
@@ -365,17 +379,11 @@ def hello():
     return f"MySql-Auto-Rest/API: {sql.my_database}\n\n"
 
 
-@application.route("/adm/v1/meta/reload", methods=['GET'])
-def reload_schema():
-    """ reload the schema """
-    global schema
-    schema = load_schema.load_db_schema()
-    return response(200, schema)
-
-
 @application.route("/adm/v1/meta/schema", methods=['GET'])
 def give_schema():
     """ respond with full schema """
+    global schema
+    schema = load_schema.load_db_schema()
     return response(200, schema)
 
 
@@ -586,17 +594,11 @@ def get_table_row(table):
     return response(200, ret_rows)
 
 
-@application.route('/pyrar/v1.0/config', methods=['GET'])
+@application.route('/adm/v1/config', methods=['GET'])
 def get_config():
-    return response({
-        "default_currency": policy.policy("currency"),
-        "registry": registry.tld_lib.regs_send(),
-        "zones": registry.tld_lib.return_zone_list(),
-        "status": static_data.DOMAIN_STATUS,
-        "payments": {pay: pay_data["desc"]
-                     for pay, pay_data in pay_handler.pay_plugins.items() if "desc" in pay_data},
-        "policy": policy.data()
-    })
+    config = common_ui.ui_config()
+    config["schema"] = load_schema.load_db_schema()
+    return response(200, config)
 
 
 if __name__ == "__main__":

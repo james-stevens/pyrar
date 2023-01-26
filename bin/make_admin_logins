@@ -1,0 +1,14 @@
+#! /bin/sh
+# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+
+dst="/run/admin_logins"
+
+sqlsh 'select concat(login,":",htpasswd) from sysadmins' > ${dst}
+if ! test -s ${dst}
+	then
+		echo 'pyrar:$2b$12$QzdoF1paZjwdufgGml/9J.67H7N5bzZScBR8rIC92duMLNOdxFg7m' > ${dst}
+	fi
+
+chown nginx: ${dst}
+chmod 440 ${dst}

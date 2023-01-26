@@ -32,6 +32,4 @@ done
 ${cmd} "flush logs"
 ${cmd} 'purge binary logs before now()'
 
-./dump
-
 ${BASE}/python/bin/fix_db_schema.py -C

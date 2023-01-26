@@ -208,6 +208,7 @@ th {
 	background-color: #${cols[6]};
 	padding-left: 6px;
 	padding-right: 6px;
+	white-space: nowrap;
 	}
 
 select {

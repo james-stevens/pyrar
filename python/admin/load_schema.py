@@ -14,8 +14,7 @@ INTS = ["tinyint", "int", "bigint"]
 def load_more_schema(new_schema):
     """ load users file of additional schema information """
     new_schema[":more:"] = {}
-    pfx = f"{os.environ['BASE']}/etc/{sql.my_database}"
-    filename = pfx + ".yml"
+    filename = f"{os.environ['BASE']}/etc/pyrar.yml"
     if os.path.isfile(filename):
         with open(filename) as file:
             data = file.read()

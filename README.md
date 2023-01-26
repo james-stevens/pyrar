@@ -5,7 +5,8 @@ Python engine & rest/api with JS webui to provide a complete Domain Name Registr
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
-A lot works, but there's also a lot more to do.
+It's reached the point where a lot of the functionality is now there. 
+Handling payments is the most important missing peice left, really - all the other missing peices are relatively minor.
 
 If you want to play with buying domains on the demo, I can give you some fake credit, just ask.
 
@@ -86,11 +87,14 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 #  What Works - right now
 
+## General
+- Can automatically add tables, columns & indexes to the database after an upgrade
+
+
 ## Users / Accounts
 - Register
-- Login
-- Logout
-- View & edit details
+- Login & Logout
+- View & edit account details
 - Run an account
 - View a history of transactions
 - Change password
@@ -100,45 +104,72 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 ## Domains
 - Search for available domains
+	- Built-in emoji search option
 - Buy domains
 - Renew domains
 - Auto-Renew domains (partly working)
 - Gift a domain to a user on the same platform
 - Transfer domains using the standard AuthCode mechanism
-- Edit NS and DS records
-- Edit a locally hosted client zone file
+- Edit NS and DS records (in the parent zone)
+- Edit locally hosted client zone data
 - Sign / Unsign locally hosted client zone file
 - Offer domains for sale to others users (partly working)
-- Event log to give a history of the domain (for admin)
+- Event log to give a history of the domain (for admin use)
+- Support for the four standard domain locks
+
 
 # Engine
 - All function required to support an EPP registry (delayed transfers needs work)
 - All functions required to support running a simple registry locally
-- Create and process jobs for aging domains (renewal reminders, auto-renew, expire, delete)
+- Schedule and process event jobs for aging domains (renewal reminders, auto-renew, expire, delete)
 - Cronjob for routine maintenance
-- Background processing payments after credit comes in
+- Background processing pending payments after credit comes in
+
 
 ## Admin Web/UI
 - A Web/UI to the PowerDNS server is provided
+- find a user's account
+- find a domain
+- cross-links between related table data
+	- view domain history
+	- view transaction history
+	- view activity history
+
 
 ## EMails
+- Runs a Postfix SMTP spooler with optional support for relaying out via an external mail server/service, optionally with TLS & SMTP/AUTH
 - Can email users from template, either plain text or HTML
-- Password Reset request
-- Password reset confirmation
-- Renewal Reminder
-- Verify User's email address
+- Email Templates use the python standard `jinja2` templating package, so making your own is easy
+- Supported email events are...
+	- Password Reset request
+	- Password reset confirmation
+	- Renewal Reminder
+	- Verify User's email address
+	- Notification when you've been gifted a domain
+	- Receipt for all payments
+	- Domain transfer request succeeded (by EPP)
+
 
 
 # What doesn't work, yet
+
+It's getting pretty close to ready to use !
+
 
 ## Users
 - 2fA (enable & disable)
 - Make payments - e.g. PayPal, Stripe, Coinbase
 
 ## Domains
-- UI to request transfers
+- UI to request transfers (some done)
 - Auto-renewals
 - Ability to "recover" an expired domain
+
+
+## Contacts
+Right now there is no support for contact records & attaching contact record to domains.
+This may be required to be allowed to work with some EPP registries, but my preferance is for privacy!
+So there is a `contacts` table, in case this functionality needs to be added, but right now its not used.
 
 
 ## EPP
@@ -146,15 +177,8 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 
 ## Admin Web/UI
-A web/ui for standard / usual admin tasks is planned, for example
-- find a user's account
-- find a domain
-- view domain history
-- view transaction history
 - refunds
-- etc
+- check data held at registry (in EPP)
+- add & remove users for the admin system
 
 
-## Misc
-
-There's also a ToDo of lots of miscellaneous bits & bobs that changes so much, its not worth listing.

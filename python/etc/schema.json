@@ -705,6 +705,11 @@
             "type": "datetime",
             "null": true
          },
+         "been_refunded": {
+            "size": 1,
+            "type": "tinyint",
+            "null": true
+         },
          "created_dt": {
             "type": "datetime",
             "null": true
@@ -719,9 +724,21 @@
             "type": "char",
             "null": true
          },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
          "domain_name": {
             "size": 260,
             "type": "varchar",
+            "null": true
+         },
+         "is_refund_of": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
             "null": true
          },
          "num_years": {
@@ -769,6 +786,12 @@
          "user_email": {
             "size": 100,
             "type": "varchar",
+            "null": true
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
             "null": true
          },
          "zone_name": {

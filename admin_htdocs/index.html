@@ -11,6 +11,27 @@
 
 debugAPI = false;
 
+const pre_get_elm = [ "emailSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
+const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
+	"amount","pre_balance","post_balance","price_charged","price_paid"];
+
+const list_columns = {
+	"events": [ "when_dt","who_did_it","event_type","notes" ],
+	"actions": [ "execute_dt","action"],
+	"sales": [ "created_dt","sales_type","num_years","price_charged","price_paid" ],
+	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
+	"payments": [ "created_dt","provider","provider_tag" ],
+	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
+	};
+
+const order_by = {
+	"events" : "event_id desc",
+	"actions": "execute_dt",
+	"sales": "sales_item_id desc",
+	"transactions": "acct_sequence_id desc"
+	};
+
+linked_tables = {};
 elm = {};
 gbl = {
     theme: window.localStorage.theme,
@@ -39,6 +60,7 @@ gbl = {
     };
 
 ctx = {};
+gbl.head = document.head || document.getElementsByTagName('head')[0];
 
 if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
     gbl.theme="default";
@@ -117,8 +139,257 @@ function do_theme_change(value)
 }
 
 
+function pretty_prompt(tag)
+{
+	let s = tag.split("_");
+	for(let i in s)
+		s[i] = s[i][0].toUpperCase() + s[i].substr(1);
+	return s.join(" ");
+}
+
+
+
+function table_col_val(col,val)
+{
+	let s = col.split(".");
+	return tableLink(s[0],{ "where": { "=":{ [s[1]]:val } } });
+}
+
+
+
+function tableLink(table,where)
+{
+	callApi("data/"+table,(ok,reply) => {
+		if (!ok) return def_errMsg(`Error loading ${table} '${JSON.stringify(where)}'`,reply,"userInfo");
+
+		let data = reply[table];
+
+		if ((!data)||(!data.length)) {
+			errMsg(`Record search '${table}': '${JSON.stringify(where)}' not found`,"userInfo");
+			if ((table=="users")&&(elm.emailSearch.value!="")) elm.emailSearch.focus();
+			return;
+			}
+
+		if (table=="users") elm.emailSearch.value="";
+		if (table=="domains") elm.domainSearch.value="";
+
+		elm.moreInfo.innerHTML = html_one_record(table,data[0]);
+
+		},{ json: where});
+
+	return false;
+}
+
+
+
+function link_col_val(col,val)
+{
+	let s = col.split(".");
+	let where = { "where": { "=":{ [s[1]] : val } } }
+	if (s[0] in order_by) where["order"] = order_by[s[0]];
+	return linkedData(s[0],where);
+}
+
+
+
+function best_where(table,db_rec)
+{
+	let clause = {};
+	let t = gbl.config.schema[table];
+	for(let i of t.indexes[t.best_index].columns) 
+		if (i in db_rec) clause[i] = db_rec[i];
+	return JSON.stringify(clause);
+}
+
+
+
+function linkedData(table,where)
+{
+	callApi("data/"+table,(ok,reply) => {
+		if (!ok) return def_errMsg(`Error loading ${table} '${JSON.stringify(where)}'`,reply,"btnBarMore");
+
+		let data = reply[table];
+		if ((!data)||(!data.length)) return errMsg("No Data","btnBarMore");
+
+		let x = "<table border=0 cellspacing=1 cellpadding=1 width=100%>";
+		x += "<tr>";
+		for(let col of list_columns[table])
+			x += `<th>${pretty_prompt(col)}</th>`;
+		x += "</tr>";
+
+		for(let i of data) {
+			sub_where = `{"where": { "=": ${best_where(table,i)} } }`;
+			x += `<tr onClick='tableLink("${table}",${sub_where});' class=dataRow>`;
+			for(let col of list_columns[table]) {
+				value = i[col];
+
+				if ((table=="domains")&&(col=="ns")&&(value==gbl.config.policy.dns_servers)) value="Our NS";
+
+				if ((table=="domains")&&(col=="name")) {
+					if (hasIDN(value)) value = `${fromPuny(value)} <span style="margin-left: 25px" class=searchRenew>${value}</span>`;
+					}
+
+				if ((col=="status_id")&&(value in gbl.config.status)) value = `${gbl.config.status[value]}&nbsp;&nbsp;(${value})`;
+				if (col.slice(-3)=="_dt") value = value.split(" ")[0];
+				if (money_format.includes(col))
+					x += `<td align=right>${format_amount(value)}</td>`;
+				else
+					x += `<td>${value}</td>`;
+				}
+			x += "</tr>";
+			}
+		x += "</table>";
+
+		let e = document.getElementById("moreData");
+		e.innerHTML = x;
+		unerrMsg();
+
+		},{ json: where});
+}
+
+
+
+function html_one_record(table, db_rec)
+{
+	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
+	x += "<colgroup><col width=90%/><col/></colgroup>";
+	x += `<tr><td class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
+
+	x += "<tr><td><table border=0 cellspacing=0 cellpadding=1 align=center width=100%>";
+	x += "<colgroup><col width=30%/><col/></colgroup>";
+
+	for(let i in db_rec) {
+		if (i.slice(0,1)!=":") {
+			let value = db_rec[i];
+			if (i=="name") value = `${fromPuny(value)} <span style="margin-left: 25px" class=searchRenew>${value}</span>`;
+			if ((i=="status_id")&&(value in gbl.config.status)) value = `${gbl.config.status[value]}&nbsp;&nbsp;(${value})`;
+
+			if (money_format.includes(i)) value = format_amount(value);
+			if (i in gbl.config.schema[":more:"].joins)
+				value = `<a href=# onClick='return table_col_val("${gbl.config.schema[":more:"].joins[i]}","${value}");'>${value}</a>`;
+
+			x += `<tr class=dataRow><td align=right>${pretty_prompt(i)}&nbsp;:&nbsp;</td><td>${value}</td></tr>`;
+			}
+		}
+
+	x += "</table></td>";
+
+	if (table in linked_tables) {
+		x += "<td id=btnBarMore><table>";
+
+		let add_ending = false;
+
+		if (table=="domains") {
+			x += `<tr><td><button style="width:140px" class=myBtn>P/DNS Data</button></td></tr>`;
+			add_ending = true; }
+
+		if (table=="sales"){
+			x += `<tr><td><button style="width:140px" class=myBtn>Refund</button></td></tr>`;
+			add_ending = true; }
+
+		if (add_ending) {
+			x += "<tr><td>"+gbl.gap+"</td></tr>";
+			x += `<tr><td><div class="line"/></td></tr>`;
+			x += "<tr><td>"+gbl.gap+"</td></tr>";
+			}
+
+		for(let i of linked_tables[table]) {
+			s = i[1].split(".");
+			x += `<tr><td><button style="width:140px" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
+			}
+		x += "</table></td>";
+		}
+
+	x += "</tr>";
+	x += "<tr><td colspan=2><div id=moreData></div></td></tr>";
+	return x+"</table>";
+}
+
+
+function searchUser(email)
+{
+	if (isNaN(email)) return tableLink("users",{ "where": { "=": { "email": email } } });
+	return tableLink("users",{ "where": { "=": { "user_id": email } } });
+}
+
+
+function searchDomain(domain)
+{
+	if (isNaN(domain)) {
+		let as_puny = toASCII(domain);
+		if ((as_puny!=domain)&&(hasIDN(as_puny))) domain = as_puny;
+		return tableLink("domains", { "where": { "=": { "name":domain } } });
+		}
+	return tableLink("domains", { "where": { "=": { "domain_id":domain } } });
+}
+
+
+
+function key_down(event,input_id)
+{
+	if (event.key!="Enter") return;
+	let e = document.getElementById(input_id);
+	if (input_id=="domainSearch") return searchDomain(e.value);
+	if (input_id=="emailSearch") return searchUser(e.value);
+}
+
+
+
 function startUp()
 {
+	go_welcome(true);
+}
+
+
+function best_index(indexes)
+{
+	let best_name = Object.keys(indexes)[0];
+	let best_idx = indexes[best_name];
+	for(let i in indexes) {
+		if ((indexes[i].columns.length == best_idx.columns.length)&&(indexes[i].unique)&&(!best_idx.unique)) { best_name = i; best_idx = indexes[i]; }
+		if (indexes[i].columns.length < best_idx.columns.length) { best_name = i; best_idx = indexes[i]; }
+		}
+	return best_name;
+}
+
+
+function go_welcome(with_push)
+{
+	pre_get_elm.forEach(i => { elm[i] = document.getElementById(i); } );
+	callApi("config",(ok,reply) => {
+		if (!ok) return def_errMsg("Error contacting servers",reply,"userInfo");
+
+		gbl.config = reply;
+		gbl.currency = policy("currency",gbl.config.default_currency);
+
+		let my_icon = policy("icon",null);
+		let site_name = "Admin: "+policy("business_name","Registrar");
+		document.title = site_name;
+		if (my_icon) {
+			changeFavicon("/icons/"+my_icon)
+			site_name = `<img height=32 style="vertical-align:bottom" src="/icons/${my_icon}">&nbsp;${site_name}`;
+			}
+		elm.businessName.innerHTML = `<a href="${policy('website_name')}">${site_name}</a>`;
+
+		linked_tables = {};
+		for(let i in gbl.config.schema) {
+			if ((i[0]!=':')&&(gbl.config.schema[i].indexes)&&(Object.keys(gbl.config.schema[i].indexes).length)) {
+				gbl.config.schema[i].best_index = best_index(gbl.config.schema[i].indexes);
+				}
+
+			for(let col in gbl.config.schema[i].columns) {
+				if (col in gbl.config.schema[":more:"].joins) {
+					full_col = i+"."+col;
+					if (full_col == gbl.config.schema[":more:"].joins[col]) continue;
+					s = gbl.config.schema[":more:"].joins[col].split(".");
+
+					if (!(s[0] in linked_tables)) linked_tables[s[0]] = [];
+					if (i.slice(0,8)!="deleted_")
+						linked_tables[s[0]].push([ s[1], full_col ]);
+					}
+				}
+			}
+		});
 }
 
 </script>
@@ -127,9 +398,10 @@ function startUp()
 
 <div id="topSpan">
 <table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
-<colgroup><col width=70%/><col/></colgroup>
+<colgroup><col width=40%/><col width=200px/><col width=40%/></colgroup>
 <tr>
 <td align=left><span id="businessName" class="businessName">PyRar Admin</span></td>
+<td rowspan=2 align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
 <a href="/pdns.html" target=_window><span name=hitMe style='width: 110px;' class=myBtn>PowerDNS</span></a>
 
@@ -150,14 +422,17 @@ function startUp()
 </span>
 </div>
 </td>
-<td>More</td></tr>
+<td><span style="width:100px" id="userInfo">&nbsp;</span>
+DOM:<input onKeyDown="key_down(event,'domainSearch');" id=domainSearch style="width:250px">
+USR:<input onKeyDown="key_down(event,'emailSearch');" id=emailSearch style="width:250px">
+</td></tr>
 </table>
 </div>
 
 
 <div id="lowerSpan">
     <div style='height: 10px;'></div>
-	<h2>Hello</h2>
+	<div class=botSapce id="moreInfo"><h2>Hello</h2></div>
 </div>
 
-<div id=myMsgPop style="visibility: hidden;" class='msgPop msgPopNo'></div>
+<div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div>

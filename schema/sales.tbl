@@ -16,11 +16,15 @@ sqlsh "create table sales (
 	currency_paid		${currency},
 
 	domain_name			${domain_name},
+	domain_id			${row_id},
 	zone_name			${domain_name},
 	registry            varchar(50) not null,
 	user_email			${email},
 	sales_type			varchar(20) not null default 'none',
 	num_years			int not null,
+
+	is_refund_of		${row_id_null},
+	been_refunded		boolean,
 
 	created_dt			datetime null,
 	amended_dt			datetime null,

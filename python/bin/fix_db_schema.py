@@ -118,7 +118,7 @@ for table, table_data in save_schema.items():
                 query = get_column_type(f"alter table {table} change column {column} {column}", column_data)
                 run_query(query)
 
-    if "indexs" not in table_data:
+    if "indexes" not in table_data:
         continue
 
     for index, idx_data in table_data["indexes"].items():
