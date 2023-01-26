@@ -5,7 +5,8 @@ Python engine & rest/api with JS webui to provide a complete Domain Name Registr
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
-A lot works, but there's also a lot more to do.
+It's reached the point where a lot of the functionality is now there. 
+Handling payments is the most important missing peice left, really - all the other missing peices are relatively minor.
 
 If you want to play with buying domains on the demo, I can give you some fake credit, just ask.
 
@@ -86,11 +87,14 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 #  What Works - right now
 
+## General
+- Can automatically add tables, columns & indexes to the database after an upgrade
+
+
 ## Users / Accounts
 - Register
-- Login
-- Logout
-- View & edit details
+- Login & Logout
+- View & edit account details
 - Run an account
 - View a history of transactions
 - Change password
@@ -128,11 +132,17 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 	- view activity history
 
 ## EMails
+- Runs a Postfix SMTP spooler with optional support for relaying out via an external mail server/service, optionally with TLS & SMTP/AUTH
 - Can email users from template, either plain text or HTML
-- Password Reset request
-- Password reset confirmation
-- Renewal Reminder
-- Verify User's email address
+- Email Templates use the python standard `jinja2` templating package, so making your own is easy
+- Supported email events are...
+	- Password Reset request
+	- Password reset confirmation
+	- Renewal Reminder
+	- Verify User's email address
+	- Notification when you've been gifted a domain
+	- Receipt for all payments
+	- Domain transfer request succeeded (by EPP)
 
 
 
@@ -151,13 +161,19 @@ It's getting pretty close to ready to use !
 - Ability to "recover" an expired domain
 
 
+## Contacts
+Right now there is no support for contact records & attaching contact record to domains.
+This may be required to be allowed to work with some registries, but my preferance is for privacy!
+So there is a `contacts` table, in case this functionality needs to be added, but right now its not used.
+
+
 ## EPP
 - Poll for messages and know what some mean!!
 
 
 ## Admin Web/UI
-A web/ui for standard / usual admin tasks is planned, for example
 - refunds
 - check data held at registry (in EPP)
 - add & remove users for the admin system
+
 
