@@ -596,7 +596,9 @@ def get_table_row(table):
 
 @application.route('/adm/v1/config', methods=['GET'])
 def get_config():
-    return response(200, common_ui.ui_config())
+    config = common_ui.ui_config()
+    config["schema"] = load_schema.load_db_schema()
+    return response(200, config)
 
 
 if __name__ == "__main__":

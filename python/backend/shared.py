@@ -20,7 +20,7 @@ def event_log(notes, bke_job):
         "event_type": "BackEnd:" + bke_job["job_type"],
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],
-        "who_did_it": "eppsvr",
+        "who_did_it": "backend",
         "from_where": "localhost",
         "notes": notes
     }
