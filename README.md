@@ -120,6 +120,11 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 ## Admin Web/UI
 - A Web/UI to the PowerDNS server is provided
+- find a user's account
+- find a domain
+- cross-links between related table data
+	- view domain history
+	- view transaction history
 
 ## EMails
 - Can email users from template, either plain text or HTML
@@ -129,14 +134,18 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Verify User's email address
 
 
+
 # What doesn't work, yet
+
+It's getting pretty close to ready to use !
+
 
 ## Users
 - 2fA (enable & disable)
 - Make payments - e.g. PayPal, Stripe, Coinbase
 
 ## Domains
-- UI to request transfers
+- UI to request transfers (some done)
 - Auto-renewals
 - Ability to "recover" an expired domain
 
@@ -147,14 +156,7 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 
 ## Admin Web/UI
 A web/ui for standard / usual admin tasks is planned, for example
-- find a user's account
-- find a domain
-- view domain history
-- view transaction history
 - refunds
-- etc
+- check data held at registry (in EPP)
+- add & remove users for the admin system
 
-
-## Misc
-
-There's also a ToDo of lots of miscellaneous bits & bobs that changes so much, its not worth listing.
