@@ -125,6 +125,7 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - cross-links between related table data
 	- view domain history
 	- view transaction history
+	- view activity history
 
 ## EMails
 - Can email users from template, either plain text or HTML
