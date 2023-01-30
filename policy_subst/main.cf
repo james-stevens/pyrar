@@ -49,5 +49,5 @@ smtp_sasl_mechanism_filter = plain, login
 {% endif %}
 
 {% if policy.smtp_more_options is defined and policy.smtp_more_options %}
-{{ "\n".join(policy.smtp_more_options.split("|")) }}
+{{ "\n".join(policy.smtp_more_options) }}
 {% endif %}

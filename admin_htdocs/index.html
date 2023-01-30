@@ -5,6 +5,7 @@
     <script src="/usr/theme.js"></script>
     <script src="/usr/punycode.js"></script>
     <script src="/usr/lib.js"></script>
+    <script src="/usr/picklists.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -29,6 +30,23 @@ const order_by = {
 	"actions": "execute_dt",
 	"sales": "sales_item_id desc",
 	"transactions": "acct_sequence_id desc"
+	};
+
+const table_desc = {
+	"actions" : "Actions to apply to a domain in the future",
+	"backend" : "Actions to ask a registry to apply to a domain now",
+	"contacts" : "Unused, but maybe needed",
+	"deleted_domains" : "Domains that have been deleted",
+	"domains" : "SLDs owned by users",
+	"events" : "Recorded events applied to tables / users",
+	"orders" : "Orders from users waiting to be paid for",
+	"payments" : "Information abou how users pay",
+	"sales" : "Domain sales we have made to users",
+	"session_keys" : "Key for user's login session",
+	"sysadmins" : "Logins for the admin system",
+	"transactions" : "Credit / Debit transactions on a user's account",
+	"users" : "Users in the system / logins",
+	"zones" : "TLDs we sell"
 	};
 
 linked_tables = {};
@@ -295,7 +313,7 @@ function html_one_record(table, db_rec)
 
 		for(let i of linked_tables[table]) {
 			s = i[1].split(".");
-			x += `<tr><td><button style="width:140px" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
+			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
 			}
 		x += "</table></td>";
 		}

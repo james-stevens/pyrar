@@ -295,69 +295,6 @@
          }
       }
    },
-   "deleted_users": {
-      "columns": {
-         "amended_dt": {
-            "type": "datetime",
-            "null": true
-         },
-         "created_dt": {
-            "type": "datetime",
-            "null": true
-         },
-         "deleted_dt": {
-            "type": "datetime",
-            "null": true
-         },
-         "deleted_user_id": {
-            "unsigned": true,
-            "size": 10,
-            "type": "int",
-            "serial": true,
-            "null": false
-         },
-         "email": {
-            "size": 100,
-            "type": "varchar",
-            "null": true
-         },
-         "name": {
-            "size": 100,
-            "type": "varchar",
-            "null": true
-         },
-         "password": {
-            "size": 100,
-            "type": "varchar",
-            "null": true
-         },
-         "payment_data": {
-            "type": "longtext",
-            "null": true
-         },
-         "user_id": {
-            "unsigned": true,
-            "size": 10,
-            "type": "int",
-            "null": false,
-            "default": 0
-         }
-      },
-      "indexes": {
-         "PRIMARY": {
-            "columns": [
-               "deleted_user_id"
-            ],
-            "unique": true
-         },
-         "by_login": {
-            "columns": [
-               "email"
-            ],
-            "unique": true
-         }
-      }
-   },
    "domains": {
       "columns": {
          "amended_dt": {
