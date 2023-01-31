@@ -32,6 +32,19 @@ def start_up():
         create_zone(catalog_zone, False)
 
 
+def find_best_ds(key_data):
+    for key in key_data:
+        if "ds" in key:
+            for ds_rr in key["ds"]:
+                if ds_rr.find(" 2 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 3 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 1 ") >= 0:
+                    return ds_rr
+    return None
+
+
 def zone_exists(name):
     return load_zone_keys(name) is not None
 

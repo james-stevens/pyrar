@@ -16,6 +16,8 @@ RUN pip install apscheduler
 RUN apk add postfix
 COPY conf/aliases /etc/postfix/aliases
 
+RUN apk add ldns-tools
+
 RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 RUN rm -f /etc/periodic/daily/sysklogd

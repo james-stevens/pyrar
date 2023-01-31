@@ -576,7 +576,7 @@ def pdns_get_data(req, dom_db):
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(dom_name)
-        dns["ds"] = find_best_ds(dns["keys"])
+        dns["ds"] = pdns.find_best_ds(dns["keys"])
 
     return req.response({"domain": dom_db, "dns": dns})
 
@@ -602,24 +602,11 @@ def pdns_unsign_zone(req, dom_db):
 
 
 def update_doms_ds(req, key_data, dom_db):
-    ds_rr = find_best_ds(key_data)
+    ds_rr = pdns.find_best_ds(key_data)
     dom_db["ds"] = ds_rr
     sql.sql_update_one("domains", {"ds": ds_rr}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
     domains.domain_backend_update(dom_db)
     sigprocs.signal_service("backend")
-
-
-def find_best_ds(key_data):
-    for key in key_data:
-        if "ds" in key:
-            for ds_rr in key["ds"]:
-                if ds_rr.find(" 2 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 3 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 1 ") >= 0:
-                    return ds_rr
-    return None
 
 
 def pdns_drop_zone(req, dom_db):

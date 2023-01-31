@@ -1,5 +1,5 @@
 
-const yes_no = [ [1,"Yes"], [0,"No"] ]
+const yes_no = [ [true,"Yes"], [false,"No"] ];
 
 const pick_lists = {
 	"users" : {
@@ -21,4 +21,13 @@ const pick_lists = {
 			],
 		"auto_renew": yes_no
 	}
+};
+
+function find_pick_value(table,column,value)
+{
+	if (!pick_lists[table]) return value;
+	if (!pick_lists[table][column]) return value
+	for(let i of pick_lists[table][column])
+		if (value == i[0]) return `${i[1]} (${value})`;
+	return value;
 }
