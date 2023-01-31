@@ -1,0 +1,29 @@
+{
+	"nol" : {
+		"username": "NIC-2010",
+		"password": "abc123",
+		"server": "contain.jrcs.net"
+		},
+	"extra": {
+		"username": "NIC-2012",
+		"password": "xyz987",
+		"server": "contain.jrcs.net"
+		},
+	"mysql": {
+		"connect":"192.168.1.240:3306",
+		"database":"pyrar",
+		"webui": "BWB39B9M1c1ig",
+		"raradm": "132wSQI9Qik76",
+		"engine": "P0tsOvAJ2iMqo",
+		"admin": [ "reg", "jipki7Y32iX5c"]
+		},
+	"pdns" : {
+		"server":"192.168.1.240",
+		"database":"pyrar_pdns",
+		"username":"pyrar_pdns",
+		"password":"9hFw45ZffwzeDQ3571"
+		},
+	"smtp" : {
+		"relay_auth": "newme:Sm4ll D0g"
+		}
+}

@@ -21,12 +21,6 @@ def load_more_schema(new_schema):
             new_schema[":more:"] = yaml.load(data, Loader=yaml.FullLoader)
             return
 
-    filename = pfx + ".js"
-    if os.path.isfile(filename):
-        with open(filename) as file:
-            data = file.read()
-            new_schema[":more:"] = json.loads(data)
-
 
 def add_join_items(new_schema):
     """ add `join` items to columns that join """

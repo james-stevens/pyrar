@@ -496,7 +496,8 @@ function go_welcome(with_push)
 	callApi("config",(ok,reply) => {
 		if (!ok) return def_errMsg("Error contacting servers",reply,"searchEdit");
 		gbl.config = reply;
-		if ((gbl.theme == "default")&&(gbl.config.policy.theme)) changeTheme(gbl.config.policy.theme);
+		if ((gbl.theme == "default")&&(gbl.config.policy.default_theme))
+			changeTheme(gbl.config.policy.default_theme);
 
 		gbl.config.ok_tlds = {};
 		gbl.currency = policy("currency",gbl.config.default_currency);
