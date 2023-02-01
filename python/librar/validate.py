@@ -11,6 +11,7 @@ from librar import registry
 from librar import misc
 from librar import static_data
 
+IS_HOST = r'^(\*\.|)([\_a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
 IS_EMAIL = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{1,}\b'
@@ -152,10 +153,7 @@ def is_valid_hostname(name):
         return False
     if len(name) > 255 or len(name) <= 0:
         return False
-    if name[:2] == "*.":
-        return re.match(IS_FQDN, name[2:], re.IGNORECASE) is not None
-    else:
-        return re.match(IS_FQDN, name, re.IGNORECASE) is not None
+    return re.match(IS_HOST, name, re.IGNORECASE) is not None
 
 
 def is_valid_ses_code(code):
@@ -245,4 +243,4 @@ if __name__ == "__main__":
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
     for x in sys.argv:
-        print(x, is_valid_pin(x))
+        print(x, is_valid_hostname(x))

@@ -365,6 +365,13 @@ td {
 	cursor: pointer;
 	color: #${cols[16]};
 	background-color: #${cols[4]};
+	text-overflow: clip;
+	}
+
+.dnsData {
+	text-overflow: ellipsis;
+	overflow-x: clip;
+	max-width: 1px;
 	}
 
 .dataRow:hover { background-color: #${cols[2]}; }

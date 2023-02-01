@@ -13,6 +13,7 @@ from librar import pdns
 from librar import common_ui
 from librar import static_data
 from librar import domobj
+from librar import tlsa
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -654,6 +655,21 @@ def pdns_update_rrs(req, dom_db):
         return req.abort(reply)
 
     return req.response(True)
+
+
+@application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
+def make_tlsa():
+    req = WebuiReq()
+    if req.post_js is None or not sql.has_data(req.post_js, ["fqdn","o","ou","l","st","c"]):
+        return req.abort("No JSON posted or data is missing")
+
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+
+    if not (reply := tlsa.make_tlsa_json(req.post_js))[0]:
+        return req.abort("TLSA Generator failed")
+
+    return req.response(reply[1])
 
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
