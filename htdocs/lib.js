@@ -264,3 +264,14 @@ function changeFavicon(src)
 	if (oldLink) gbl.head.removeChild(oldLink);
 	gbl.head.appendChild(link);
 }
+
+
+
+function clean_host_name(dom_name,hostname)
+{
+    if (!hostname) return "";
+    if (hostname==dom_name) return '@';
+    if (hostname.slice(-1*dom_name.length)==dom_name) hostname = hostname.slice(0,-1*(dom_name.length+1))
+    if (hasIDN(hostname)) hostname = fromPuny(hostname);
+    return hostname;
+}

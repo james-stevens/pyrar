@@ -13,8 +13,8 @@ from librar import mysql as sql
 from librar import schema
 from librar.policy import this_policy as policy
 
-SCHEMA_FILE = f"{os.environ['BASE']}/python/etc/schema.json"
-SCHEMA_PDNS = f"{os.environ['BASE']}/python/etc/pdns.json"
+SCHEMA_FILE = f"{os.environ['BASE']}/etc/schema.json"
+SCHEMA_PDNS = f"{os.environ['BASE']}/etc/pdns.json"
 
 
 def type_change(col1, col2):

@@ -555,6 +555,24 @@ def delete_table_row(table):
     return response(499, None)
 
 
+@application.route("/adm/v1/dns/<domain>", methods=['GET'])
+def get_dns_data(domain):
+    """ get pdns data """
+    if not validate.is_valid_fqdn(domain):
+        return response(499, "Invalid domain name")
+    if not pdns.zone_exists(domain):
+        return response(499, "No data")
+
+    if (dns := pdns.load_zone(domain)) is None:
+        return response(499, "No data")
+
+    if dns and "dnssec" in dns and dns["dnssec"]:
+        dns["keys"] = pdns.load_zone_keys(domain)
+        dns["ds"] = pdns.find_best_ds(dns["keys"])
+
+    return response(200, {"name": domain, "dns": dns})
+
+
 @application.route("/adm/v1/data/<table>", methods=['GET', 'POST'])
 def get_table_row(table):
     """ run select queries """

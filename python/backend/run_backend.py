@@ -53,6 +53,10 @@ def post_processing(bke_job):
         log(f"ERROR: Failed to run post-processing for {bke_job['job_type']} on missing domain {bke_job['domain_id']}")
         return False
 
+    if bke_job["job_type"] == "dom/recover":
+        if pdns.zone_exists(dom_db["name"]):
+            pdns.add_to_catalog(dom_db["name"])
+
     if bke_job["job_type"] == "dom/create":
         pdns.delete_zone(dom_db["name"])
 

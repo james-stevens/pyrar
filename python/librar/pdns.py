@@ -29,11 +29,24 @@ def start_up():
 
     catalog_zone = policy.policy("catalog_zone")
     if not zone_exists(catalog_zone):
-        create_zone(catalog_zone,False)
+        create_zone(catalog_zone, False)
+
+
+def find_best_ds(key_data):
+    for key in key_data:
+        if "ds" in key:
+            for ds_rr in key["ds"]:
+                if ds_rr.find(" 2 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 3 ") >= 0:
+                    return ds_rr
+                if ds_rr.find(" 1 ") >= 0:
+                    return ds_rr
+    return None
 
 
 def zone_exists(name):
-    return load_zone_keys(name) != None
+    return load_zone_keys(name) is not None
 
 
 def hash_zone_name(name):
@@ -121,19 +134,21 @@ def create_zone(name, with_dnssec=False):
     if with_dnssec:
         post_json += dnssec_zone_cmds(name)
 
-    zone_hashed = hash_zone_name(name)
     now = str(int(time.time()))
-    catalog_zone = policy.policy("catalog_zone","pyrar.localhost")
 
     post_json += [{
         "cmd": "PATCH",
         "url": f"{PDNS_BASE_URL}/zones/{name}",
         "data": {
             "rrsets": [{
-                "name": f"{name}",
-                "ttl": policy.policy("default_ttl",86400),
-                "type": "SOA",
-                "changetype": "REPLACE",
+                "name":
+                f"{name}",
+                "ttl":
+                policy.policy("default_ttl"),
+                "type":
+                "SOA",
+                "changetype":
+                "REPLACE",
                 "records": [{
                     "content": f"{dns_servers[0]} hostmaster.{name} {now} 10800 3600 604800 3600",
                     "disabled": False
@@ -149,6 +164,89 @@ def create_zone(name, with_dnssec=False):
             "metadata": ["EPOCH"]
         }
     }, {
+        "cmd": "PUT",
+        "url": f"{PDNS_BASE_URL}/zones/{name}/notify"
+    }]
+
+    run_cmds(post_json)
+
+    add_to_catalog(name)
+
+    return load_zone(name)
+
+
+def unsign_zone(name):
+    if name[-1] != ".":
+        name += "."
+
+    keys = load_zone_keys(name)
+
+    post_json = [{
+        "cmd": "PUT",
+        "url": f"{PDNS_BASE_URL}/zones/{name}",
+        "data": {
+            "nsec3param": ""
+        },
+    }]
+
+    for key in keys:
+        post_json.append({"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}/cryptokeys/{key['id']}"})
+
+    return run_cmds(post_json)
+
+
+def run_cmds(post_json):
+    ret = True
+    for req in post_json:
+        json_data = req["data"] if "data" in req else None
+        request = requests.Request(req["cmd"], req["url"], json=json_data, headers=headers)
+        response = client.send(request.prepare())
+        if response.status_code < 200 or response.status_code > 299:
+            ret = False
+            log(f"PDNS-ERROR: {response.content}")
+    return ret
+
+
+def sign_zone(name):
+    if name[-1] != ".":
+        name += "."
+    run_cmds(dnssec_zone_cmds(name))
+    return load_zone_keys(name)
+
+
+def delete_from_catalog(name):
+    if name[-1] != ".":
+        name += "."
+    catalog_zone = policy.policy("catalog_zone")
+    zone_hashed = hash_zone_name(name)
+
+    post_json = [{
+        "cmd": "PATCH",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "data": {
+            "rrsets": [{
+                "name": f"{zone_hashed}.zones.{catalog_zone}.",
+                "ttl": 3600,
+                "type": "PTR",
+                "changetype": "REPLACE",
+                "records": []
+            }]
+        }
+    }, {
+        "cmd": "PUT",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
+    }]
+
+    return run_cmds(post_json)
+
+
+def add_to_catalog(name):
+    if name[-1] != ".":
+        name += "."
+    catalog_zone = policy.policy("catalog_zone")
+    zone_hashed = hash_zone_name(name)
+
+    post_json = [ {
         "cmd": "PATCH",
         "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
         "data": {
@@ -165,86 +263,29 @@ def create_zone(name, with_dnssec=False):
         }
     }, {
         "cmd": "PUT",
-        "url": f"{PDNS_BASE_URL}/zones/{name}/notify"
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
     }]
 
-    run_cmds(post_json)
-    return load_zone(name)
-
-
-def unsign_zone(name):
-    if name[-1] != ".":
-        name += "."
-
-    keys = load_zone_keys(name)
-
-    post_json = [ {
-        "cmd": "PUT",
-        "url": f"{PDNS_BASE_URL}/zones/{name}",
-        "data": { "nsec3param":"" },
-        } ]
-
-    for key in keys:
-        post_json.append({ "cmd":"DELETE", "url":f"{PDNS_BASE_URL}/zones/{name}/cryptokeys/{key['id']}" })
-
     return run_cmds(post_json)
-
-
-def run_cmds(post_json):
-    ret = True
-    for req in post_json:
-        json_data = req["data"] if "data" in req else None
-        request = requests.Request(req["cmd"],req["url"],json=json_data,headers=headers)
-        response = client.send(request.prepare())
-        ret = ret and response.status_code >= 200 and response.status_code <= 299
-    return ret
-
-
-def sign_zone(name):
-    if name[-1] != ".":
-        name += "."
-    run_cmds(dnssec_zone_cmds(name))
-    return load_zone_keys(name)
 
 
 def delete_zone(name):
     if name[-1] != ".":
         name += "."
 
-    catalog_zone = policy.policy("catalog_zone")
-    zone_hashed = hash_zone_name(name)
-
-    post_json = [ {
-        "cmd": "DELETE",
-        "url": f"{PDNS_BASE_URL}/zones/{name}"
-    } , {
-        "cmd": "PATCH",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
-        "data": { "rrsets": [ 
-            {
-            "name": f"{zone_hashed}.zones.{catalog_zone}.",
-            "ttl": 3600,
-            "type":"PTR",
-            "changetype":"REPLACE",
-            "records": []
-            } ] }
-    } , {
-        "cmd": "PUT",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}./notify"
-    } ]
-
-    return run_cmds(post_json)
+    delete_from_catalog(name)
+    return run_cmds( [{"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}"}])
 
 
-def update_rrs(zone,rrs):
+def update_rrs(zone, rrs):
     if zone[-1] != ".":
         zone += "."
 
     if "ttl" not in rrs:
         rrs["ttl"] = policy.policy("default_ttl")
 
-    rr_data = { "changetype": "REPLACE", "records": {} }
-    for item in ["name","ttl","type"]:
+    rr_data = {"changetype": "REPLACE", "records": {}}
+    for item in ["name", "ttl", "type"]:
         if item not in rrs:
             return False, f"Missing data item '{item}'"
         rr_data[item] = rrs[item]
@@ -252,9 +293,9 @@ def update_rrs(zone,rrs):
         rr_data["name"] += "."
 
     if "data" in rrs:
-        rr_data["records"] = [ { "content":val,"disabled":False} for val in rrs["data"] ]
+        rr_data["records"] = [{"content": val, "disabled": False} for val in rrs["data"]]
 
-    resp = client.patch(f"{PDNS_BASE_URL}/zones/{zone}",json={ "rrsets": [ rr_data ] },headers=headers)
+    resp = client.patch(f"{PDNS_BASE_URL}/zones/{zone}", json={"rrsets": [rr_data]}, headers=headers)
 
     ok = resp.status_code >= 200 and resp.status_code <= 299
     if not ok:
@@ -275,20 +316,21 @@ def update_rrs(zone,rrs):
     return ok, resp
 
 
-
 if __name__ == "__main__":
     start_up()
-    name="pant.to.glass"
+    name = "some.name."
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))
     # print("CREATE>>>>",json.dumps(create_zone(name, False),indent=3))
-    print("KEYS>>>>",load_zone_keys(name))
+    # print("KEYS>>>>", load_zone_keys(name))
     # print("EXISTS>>>>",zone_exists(name))
     # print("DELETE>>>>",json.dumps(delete_zone(name)))
-    print("EXISTS>>>>",zone_exists(name))
+    # print("EXISTS>>>>", zone_exists(name))
     # print("KEYS>>>>",load_zone_keys(name))
-    print("ZONE>>>>",json.dumps(load_zone(name)))
+    # print("ZONE>>>>", json.dumps(load_zone(name)))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))
     # print(json.dumps(create_zone("mine", True),indent=3))
+    # print("cat-add>>>>", json.dumps(add_to_catalog(name)))
+    print("cat-del>>>>", json.dumps(delete_from_catalog(name)))

@@ -5,7 +5,7 @@
 session="${1}"
 registry="${2}"
 
-ses="$(jq .${registry}.sessions ${BASE}/etc/registry.json)"
+ses="$(jq .${registry}.sessions ${BASE}/config/registry.json)"
 if test "${ses}" = "null"; then ses="3"; fi
 
 export PYRAR_REGISTRY="${registry}"

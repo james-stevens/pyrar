@@ -13,6 +13,7 @@ from librar import pdns
 from librar import common_ui
 from librar import static_data
 from librar import domobj
+from librar import tlsa
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -576,7 +577,7 @@ def pdns_get_data(req, dom_db):
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(dom_name)
-        dns["ds"] = find_best_ds(dns["keys"])
+        dns["ds"] = pdns.find_best_ds(dns["keys"])
 
     return req.response({"domain": dom_db, "dns": dns})
 
@@ -602,24 +603,11 @@ def pdns_unsign_zone(req, dom_db):
 
 
 def update_doms_ds(req, key_data, dom_db):
-    ds_rr = find_best_ds(key_data)
+    ds_rr = pdns.find_best_ds(key_data)
     dom_db["ds"] = ds_rr
     sql.sql_update_one("domains", {"ds": ds_rr}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
     domains.domain_backend_update(dom_db)
     sigprocs.signal_service("backend")
-
-
-def find_best_ds(key_data):
-    for key in key_data:
-        if "ds" in key:
-            for ds_rr in key["ds"]:
-                if ds_rr.find(" 2 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 3 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 1 ") >= 0:
-                    return ds_rr
-    return None
 
 
 def pdns_drop_zone(req, dom_db):
@@ -667,6 +655,21 @@ def pdns_update_rrs(req, dom_db):
         return req.abort(reply)
 
     return req.response(True)
+
+
+@application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
+def make_tlsa():
+    req = WebuiReq()
+    if req.post_js is None or not sql.has_data(req.post_js, ["fqdn","o","ou","l","st","c"]):
+        return req.abort("No JSON posted or data is missing")
+
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+
+    if not (reply := tlsa.make_tlsa_json(req.post_js))[0]:
+        return req.abort("TLSA Generator failed")
+
+    return req.response(reply[1])
 
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])

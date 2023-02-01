@@ -16,6 +16,8 @@ RUN pip install apscheduler
 RUN apk add postfix
 COPY conf/aliases /etc/postfix/aliases
 
+RUN apk add ldns-tools
+
 RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 RUN rm -f /etc/periodic/daily/sysklogd
@@ -33,7 +35,7 @@ RUN ln -fns /run/server.pem /etc/nginx/server.pem
 RUN ln -fns /run/inittab /etc/inittab
 RUN ln -fns /run/policy_subst/pdns.conf /etc/pdns/pdns.conf
 
-RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/etc /opt/pyrar/pems
+RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/config /opt/pyrar/pems
 
 COPY pems/myCA.pem /opt/pyrar/pems/myCA.pem
 COPY pems/myCA-2.pem /opt/pyrar/pems/myCA-2.pem
@@ -52,6 +54,7 @@ RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pe
 COPY policy_subst /opt/pyrar/policy_subst/
 COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY emails /opt/pyrar/emails/
+COPY etc /opt/pyrar/etc/
 
 COPY bin /usr/local/bin/
 COPY htdocs /opt/pyrar/htdocs/

@@ -1,0 +1,55 @@
+#! /bin/sh
+
+tmp="$1"
+if ! test -d "${tmp}"; then exit 1; fi
+cd ${tmp}
+
+error_exit()
+{
+	echo "$1"
+	cd / ; rm -rf ${tmp}
+	exit 1
+}
+
+conf="/opt/pyrar/etc/host.conf"
+
+ca_bits=4096
+key_bits=2048
+days=3655
+
+if test -z "${ENV_C}" -o -z "${ENV_ST}" -o -z "${ENV_L}" -o -z "${ENV_O}" -o -z "${ENV_OU}" -o -z "${ENV_FQDN}"
+	then
+		error_exit "Missing paramater"
+	fi
+
+echo "[ v3_req ]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ${ENV_FQDN}
+" > host.v3
+
+set -x
+
+#{
+openssl genrsa -out my_ca.key "${ca_bits}"
+openssl req -x509 -new -nodes -key my_ca.key -sha256 -days "${days}" -out my_ca.pem -config ${conf}
+
+openssl genrsa -out host.key "${key_bits}"
+openssl req -new -key host.key -sha256 -nodes -config ${conf} -out host.csr -extensions v3_req
+openssl x509 -req -in host.csr -CA my_ca.pem -CAkey my_ca.key -CAcreateserial -out host.crt -days "${days}" -sha256 -extensions v3_req -extfile host.v3
+
+#} >/dev/null 2>&1
+
+
+if ! test -f host.crt -a my_ca.pem -a host.crt -a host.key -a my_ca.key
+	then
+		error_exit "Keys failed to generate"
+	fi
+
+cat host.crt host.key > certkey.pem
+ldns-dane -c host.crt -f my_ca.pem create "${ENV_FQDN}" 443 3 1 2 > dns_tlsa.txt 2>/dev/null
+
+ls -l dns_tlsa.txt certkey.pem
+
+exit 0

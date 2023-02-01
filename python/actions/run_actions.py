@@ -10,6 +10,7 @@ from librar import mysql as sql
 from librar import static_data
 from librar import sigprocs
 from librar import registry
+from librar import pdns
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
 
@@ -53,6 +54,7 @@ def make_backend_job(job_type, dom_db):
 
 
 def flag_expired_domain(act_db, dom_db):
+    pdns.delete_from_catalog(dom_db["name"])
     sql.sql_update_one("domains", {"status_id": static_data.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
     return make_backend_job("dom/expired", dom_db)
 

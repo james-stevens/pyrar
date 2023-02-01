@@ -6,6 +6,7 @@
 	<script src="/punycode.js"></script>
 	<script src="/lib.js"></script>
 	<script src="/emojis.js"></script>
+	<script src="/countries.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -95,6 +96,27 @@ if (window.location.pathname!="/") {
 
 gbl.head = document.head || document.getElementsByTagName('head')[0];
 
+
+
+// This one function is danallison/downloadString.js
+// https://gist.github.com/danallison/3ec9d5314788b337b682
+function downloadFile(text, fileType, fileName) {
+    var blob = new Blob([text], { type: fileType });
+
+    var a = document.createElement('a');
+    a.download = fileName;
+    a.href = URL.createObjectURL(blob);
+    a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+// end of -> danallison/downloadString.js
+
+
+
 function keyEsc(e) {
     if (e.key == "Escape") {
     	hideAllPopUp();
@@ -148,6 +170,7 @@ function togglePopUp(name,tmout)
 	if (name=="AddNSPopup") e = document.getElementById("inputNS");
 	if (name=="AddDSPopup") e = document.getElementById("ds_keyTag");
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
+	if (name=="AddTLSAwin") e = document.getElementById("tlsa_o");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (e) { e.focus(); e.select(); }
 
@@ -496,7 +519,8 @@ function go_welcome(with_push)
 	callApi("config",(ok,reply) => {
 		if (!ok) return def_errMsg("Error contacting servers",reply,"searchEdit");
 		gbl.config = reply;
-		if ((gbl.theme == "default")&&(gbl.config.policy.theme)) changeTheme(gbl.config.policy.theme);
+		if ((gbl.theme == "default")&&(gbl.config.policy.default_theme))
+			changeTheme(gbl.config.policy.default_theme);
 
 		gbl.config.ok_tlds = {};
 		gbl.currency = policy("currency",gbl.config.default_currency);
@@ -2329,17 +2353,6 @@ function rr_type_select(name,val)
 
 
 
-function clean_host_name(dom_name,hostname)
-{
-	if (!hostname) return "";
-	if (hostname==dom_name) return '@';
-	if (hostname.slice(-1*dom_name.length)==dom_name) hostname = hostname.slice(0,-1*(dom_name.length+1))
-	if (hasIDN(hostname)) hostname = fromPuny(hostname);
-	return hostname;
-}
-
-
-
 function add_rr_form(params)
 {
 	let have_last_rr = false;
@@ -2417,12 +2430,82 @@ function drop_data_confirm(param)
 
 
 
+function add_tlsa(idx)
+{
+	let dom = ctx.domains[idx];
+
+	let tlsa_data = {}
+	for(let i of ["fqdn","o","ou","l","st","c"]) {
+		let e = document.getElementById("tlsa_"+i);
+		tlsa_data[i] = e.value;
+		}
+
+	callApi("dns/tlsa",(ok,reply) => {
+
+		hideAllPopUp();
+		let pem = reply.pem.join("\n");
+		window.localStorage.setItem(`TLSA:${tlsa_data.fqdn}`,pem);
+
+		add_rr = {
+			"name": reply.tlsa[0],
+			"ttl": parseInt(reply.tlsa[1]),
+			"type": reply.tlsa[3],
+			"data": [ `${reply.tlsa[4]} ${reply.tlsa[5]} ${reply.tlsa[6]} ${reply.tlsa[7]}` ]
+			};
+
+		callApi("dns/update",(ok,reply) => {
+			if (!ok) return def_errMsg("DNS Data failed to update",reply,"AddRRwin")
+			domain_dns(idx);
+
+			downloadFile(pem,"text/plain",tlsa_data.fqdn+"pem");
+
+			}, { json: { "name":dom["name"], "rr": add_rr }} );
+
+		},{ json: tlsa_data });
+}
+
+
+function add_tlsa_form(params)
+{
+	let idx = params.idx;
+	hosts = []
+	for(let i in ctx.dns.rrsets) {
+		let rrs = ctx.dns.rrsets[i];
+		if (((rrs.type=="A")||(rrs.type=="AAAA"))&&(!hosts.includes(rrs.name)))
+			hosts.push(rrs.name)
+		}
+
+	if (!hosts.length) return "You do not have any host records to secure";
+
+	let x = "<table cellspacing=1 cellpadding=1 border=0>";
+	x += settings_prompt("Select host")+"<select id=tlsa_fqdn>";
+	for(let i of hosts) x += `<option>${i}`;
+	x += "</select></td></tr>";
+
+	x += settings_prompt("Business / Org")+"<input id=tlsa_o style='width: 250px;'>";
+	x += settings_prompt("Department")+"<input id=tlsa_ou style='width: 250px;'>";
+	x += settings_prompt("Location / City")+"<input id=tlsa_l style='width: 250px;'>";
+	x += settings_prompt("State")+"<input id=tlsa_st style='width: 250px;'>";
+	x += settings_prompt("Country")+"<select id=tlsa_c>";
+	for(let i of countries) x += `<option value='${i[0]}'>${i[1]}`;
+	x += "</select></td></tr>";
+
+	x += "<tr><td colspan=2 class=btmBtnBar>"
+	x += btn(`hideAllPopUp()`,"Cancel","Cancel adding TLSA Record",75);
+	x += btn(`add_tlsa(${idx})`,"Add TLSA","Add TLSA Record",75);
+			
+	x += "</table>";
+	return x;
+}
+
+
+
 function show_dns_data(idx)
 {
 	let dom = ctx.domains[idx];
 	let dom_name = dom["name"]+".";
 
-	let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
+	let x="<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td align=center><table width=100%><tr><td class=btmBtnBar><span id=dnsBtnBar>"
 
     x += generic_popup_btn({
@@ -2442,6 +2525,18 @@ function show_dns_data(idx)
 		x += btn(`unsign_zone(${idx})`,`Unsign Zone`,"Remove DNSSSEC signing on this domain",100)
 
     let last_rr = ctx.last_rr;
+
+    x += generic_popup_btn({
+        "name": "AddTLSAwin",
+        "label": "Secure Host",
+        "width": 100,
+        "timeout": null,
+        "title": "Generate a PEM and add a TLSA to a host",
+        "internal": add_tlsa_form,
+		"style": "overflow: auto; margin-left: -250;",
+        "param": {"idx":idx}
+        });
+
     x += generic_popup_btn({
         "name": "AddRRwin",
         "label": "Add RR",
@@ -2465,18 +2560,18 @@ function show_dns_data(idx)
 	for(let i in ctx.dns.rrsets) {
 		let rrs = ctx.dns.rrsets[i];
 		for(let c in rrs.records) {
-		let each_rr = rrs.records[c];
-		let func = "edit_rr";
+			let each_rr = rrs.records[c];
+			let func = "edit_rr";
 
-		let show_name = clean_host_name(dom_name,rrs.name);
-		if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
+			let show_name = clean_host_name(dom_name,rrs.name);
+			if ((show_name=="@")&&((rrs.type=="NS")||(rrs.type=="SOA"))) func = "rr_locked";
 
-		x += `<tr title='Click to delete / edit this record' onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow>`;
-		x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+			x += `<tr title='Click to delete / edit this record' onClick="${func}(${idx},${i},${c});" id="rrs_${i}_${c}" class=dataRow>`;
+			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
 
-		if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.ds))
-			x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${ctx.dns.ds}</td></tr>`;
-		}
+			if ((rrs.type=="SOA")&&(ctx.dns.dnssec)&&(ctx.dns.ds))
+				x += `<tr onClick="rr_locked(${idx},'ds',0);" id="rrs_ds_0" class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${ctx.dns.ds}</td></tr>`;
+			}
 	}
 
 	x += "</table></td></tr></table>";

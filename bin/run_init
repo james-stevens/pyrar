@@ -49,7 +49,7 @@ chmod 770 ${sigs}
 rm -f ${sigs}/*
 
 
-flat ${BASE}/etc/registry.json | awk -F. 'BEGIN { n=10000 }
+flat ${BASE}/config/registry.json | awk -F. 'BEGIN { n=10000 }
 	{ if (have[$1]=="") have[$1]=n++; }
 	/\.sessions=/ { ses[$1]=substr($0,index($0,"=")+1) } 
 	/\.type=/ { typ[$1]=substr($0,index($0,"=")+1) } 

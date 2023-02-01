@@ -204,11 +204,10 @@ def local_domain_prices(domlist, num_years=1, qry_type=None):
         qry_type = ["create", "renew"]
     ret_doms = []
     for dom in domlist.domobjs:
-        add_dom = {"num_years": num_years, "avail": True}
+        add_dom = {"name": dom, "num_years": num_years, "avail": True}
         for qry in qry_type:
             add_dom[qry] = None
 
-        add_dom["name"] = dom
         ret_doms.append(add_dom)
 
     return True, ret_doms

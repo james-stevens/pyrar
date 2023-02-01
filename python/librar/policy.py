@@ -12,6 +12,7 @@ import librar.log as log
 policy_defaults = {
     "smtp_tls_security_level": "may",
     "locks": static_data.CLIENT_DOM_FLAGS,
+    "default_theme": "dark",
     "orders_expire_days": 7,
     "strict_idna2008": False,
     "strict_referrer": True,
