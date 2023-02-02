@@ -85,7 +85,14 @@ def make_tlsa(fqdn, location, organization, organizational_unit, state, country)
             os.path.join(tmpdir, "my_ca.pem"), "create", fqdn, "443", "3", "1", "2"
         ],
                                   capture_output=True)
-        ret_tlsa = {"pem": pem, "tlsa": tlsa_dns.stdout.decode('utf-8').strip().split()}
+
+        frag_tlsa = tlsa_dns.stdout.decode('utf-8').strip().split()
+        ret_tlsa = {"pem": pem, "tlsa_rr": {
+            "name": frag_tlsa[0],
+            "ttl": int(frag_tlsa[1]),
+            "type": frag_tlsa[3],
+            "data": [ f"{frag_tlsa[4]} {frag_tlsa[5]} {frag_tlsa[6]} {frag_tlsa[7]}" ]
+            } }
 
         return True, ret_tlsa
 

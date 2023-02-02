@@ -13,6 +13,8 @@ from librar.log import log
 from librar import mysql as sql
 from librar import sigprocs
 from librar import domobj
+from librar import pdns
+from librar import tlsa
 from librar import static_data
 from librar import hashstr
 
@@ -244,6 +246,22 @@ def webui_update_domains_flags(req):
 
     domain_backend_update(dom.dom_db, "dom/flags")
     return True, {"client_locks": update_flags}
+
+
+def webui_add_tlsa_record(req):
+    ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
+    if not ok:
+        return False, dom
+
+    ok, tlsa_data = tlsa.make_tlsa_json(req.post_js)
+    if not ok:
+        return False,"TLSA Generator failed"
+
+    ok, reply = pdns.update_rrs(dom.dom_db["name"], tlsa_data["tlsa_rr"])
+    if not ok:
+        return False, reply
+
+    return True, tlsa_data["pem"]
 
 
 def main():
