@@ -10,10 +10,15 @@ from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
+from librar import domobj
 from librar import validate
 from librar import common_ui
 from librar import static_data
 from admin import load_schema
+
+# pylint: disable=unused-wildcard-import, wildcard-import
+from backend import dom_handler
+from backend.dom_plugins import *
 
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 
@@ -370,7 +375,11 @@ site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
-
+all_regs = registry.tld_lib.regs_file.data()
+have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
+for this_type, funcs in dom_handler.backend_plugins.items():
+    if this_type in have_types and "start_up" in funcs:
+        funcs["start_up"]()
 
 
 @application.route("/adm/v1", methods=['GET'])
@@ -553,6 +562,34 @@ def delete_table_row(table):
     if num_rows is not None:
         return response(200, {"affected_rows": num_rows})
     return response(499, None)
+
+
+@application.route("/adm/v1/regs/<domain>", methods=['GET'])
+def get_registry_data(domain):
+    """ get registry data """
+    if not validate.is_valid_fqdn(domain):
+        return response(499, "Invalid domain name")
+    dom = domobj.Domain()
+    ok, reply = dom.load_name(domain)
+    if not ok:
+        return response(499, reply)
+
+    action = "dom/rawinfo"
+    bke_job = {
+        "job_id": 99,
+        "backend_id": "TEST",
+        "authcode": "some-auth-code",
+        "job_type": action,
+        "num_years": 1,
+        "domain_id": dom.dom_db["domain_id"]
+    }
+    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
+    if action not in this_handler:
+        return response(499, f"Unsupport action '{action}' for type='{dom.registry['type']}'")
+
+    if (reply := this_handler[action](bke_job, dom.dom_db)) is None:
+        return response(499, "Error getting domain info from backend")
+    return response(200, reply)
 
 
 @application.route("/adm/v1/dns/<domain>", methods=['GET'])

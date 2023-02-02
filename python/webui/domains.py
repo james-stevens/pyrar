@@ -255,7 +255,7 @@ def webui_add_tlsa_record(req):
 
     ok, tlsa_data = tlsa.make_tlsa_json(req.post_js)
     if not ok:
-        return False,"TLSA Generator failed"
+        return False, "TLSA Generator failed"
 
     ok, reply = pdns.update_rrs(dom.dom_db["name"], tlsa_data["tlsa_rr"])
     if not ok:

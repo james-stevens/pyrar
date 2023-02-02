@@ -4,12 +4,13 @@
 
 from librar import registry
 from librar.policy import this_policy as policy
-from librar import  static_data
+from librar import static_data
 from librar import mysql as sql
 
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
+
 
 def ui_config():
     if (payment_methods := policy.policy("payment_methods")) is None:
@@ -26,7 +27,7 @@ def ui_config():
             for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
         },
         "policy": policy.data()
-        }
+    }
 
 
 def main():

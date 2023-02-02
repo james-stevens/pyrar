@@ -87,12 +87,15 @@ def make_tlsa(fqdn, location, organization, organizational_unit, state, country)
                                   capture_output=True)
 
         frag_tlsa = tlsa_dns.stdout.decode('utf-8').strip().split()
-        ret_tlsa = {"pem": pem, "tlsa_rr": {
-            "name": frag_tlsa[0],
-            "ttl": int(frag_tlsa[1]),
-            "type": frag_tlsa[3],
-            "data": [ f"{frag_tlsa[4]} {frag_tlsa[5]} {frag_tlsa[6]} {frag_tlsa[7]}" ]
-            } }
+        ret_tlsa = {
+            "pem": pem,
+            "tlsa_rr": {
+                "name": frag_tlsa[0],
+                "ttl": int(frag_tlsa[1]),
+                "type": frag_tlsa[3],
+                "data": [f"{frag_tlsa[4]} {frag_tlsa[5]} {frag_tlsa[6]} {frag_tlsa[7]}"]
+            }
+        }
 
         return True, ret_tlsa
 

@@ -225,6 +225,7 @@ dom_handler.add_plugin(
         "dom/delete": domain_delete,
         "dom/expired": domain_expired,
         "dom/info": domain_info,
+        "dom/rawinfo": domain_info,
         "dom/recover": domain_recover,
         "dom/flags": domain_update_flags,
         "dom/price": local_domain_prices

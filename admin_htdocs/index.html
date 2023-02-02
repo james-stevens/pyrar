@@ -113,6 +113,25 @@ function clr_lazy_hide()
 
 
 
+function registry_type(domain)
+{
+	function find_tld(tld)
+	{
+		for(let i of gbl.config.zones)
+			if (i.name==tld) return i;
+		return null;
+	}
+
+	let pos = domain.indexOf(".");
+	if (pos<0) return null;
+	let tld = find_tld(domain.slice(pos+1));
+	if (tld===null) return null;
+	if (tld.registry in gbl.config.registry)
+		return gbl.config.registry[tld.registry].type;
+	return null;
+}
+
+
 
 function togglePopUp(name,tmout)
 {
@@ -273,28 +292,12 @@ function show_dns_data(domain)
 	if (domain.slice(-1)!=".") domain += ".";
 
 	callApi("dns/"+domain,(ok,reply) => {
-        if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo")
+        if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
 
         if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
             return errMsg("No DNS Data found for this domain","userInfo");
 
-        reply.dns.rrsets.sort((a,b) => {
-            if ((a.name == reply.dns.name)&&(b.name == reply.dns.name)) {
-                for(tag of ["SOA","NS","MX"]) {
-                    if (a.type == tag) return -1;
-                    if (b.type == tag) return 1;
-                    }
-                }
-            else {
-                if (a.name == reply.dns.name) return -1;
-                if (b.name == reply.dns.name) return 1;
-                if (a.name < b.name) return -1;
-                if (a.name > b.name) return 1;
-                }
-            if (a.type < b.type) return -1;
-            if (a.type > b.type) return 1;
-            return 0;
-            });
+        sort_rr_sets(reply);
 
 		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
 		x += "<tr><th>Host</th><th>Type</th><th>TTL</th><th>Value</th></tr>";
@@ -308,7 +311,7 @@ function show_dns_data(domain)
 			let show_name = clean_host_name(domain,rrs.name);
 
 			x += `<tr class=dataRow>`;
-			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
 
 			if ((rrs.type=="SOA")&&(reply.dns.dnssec)&&(reply.dns.ds))
 				x += `<tr class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${reply.dns.ds}</td></tr>`;
@@ -323,12 +326,26 @@ function show_dns_data(domain)
 }
 
 
+function show_regs_data(domain)
+{
+	callApi("regs/"+domain,(ok,reply) => {
+		if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
+
+		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
+		x += "<tr><th>Registry Data</th></tr>"
+		x += "<tr><td><xmp>"+JSON.stringify(reply, null, 3)+"</xmp></td></tr></table>";
+
+		let e = document.getElementById("moreData");
+		e.innerHTML = x;
+		});
+}
+
 
 function html_one_record(table, db_rec)
 {
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
 	x += "<colgroup><col width=90%/><col/></colgroup>";
-	x += `<tr><td class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
+	x += `<tr><td colspan=2 class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
 
 	x += "<tr><td><table border=0 cellspacing=0 cellpadding=1 align=center width=100%>";
 	x += "<colgroup><col width=30%/><col/></colgroup>";
@@ -356,6 +373,8 @@ function html_one_record(table, db_rec)
 		let add_ending = false;
 
 		if (table=="domains") {
+			if (registry_type(db_rec.name)=="epp")
+				x += `<tr><td><button style="width:140px" onClick="show_regs_data('${db_rec.name}');" class=myBtn>Reg's Data</button></td></tr>`;
 			x += `<tr><td><button style="width:140px" onClick="show_dns_data('${db_rec.name}');" class=myBtn>P/DNS Data</button></td></tr>`;
 			add_ending = true; }
 

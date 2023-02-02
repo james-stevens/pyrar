@@ -174,6 +174,7 @@ def main():
         sys.exit(1)
 
     bke_job = {
+        "job_id": 99,
         "backend_id": "TEST",
         "authcode": "eFNaYTlXZ2FVcW8xcmcy",
         "job_type": args.action,

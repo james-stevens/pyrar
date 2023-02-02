@@ -659,13 +659,13 @@ def pdns_update_rrs(req, dom_db):
 @application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
 def make_tlsa():
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, ["name","fqdn","o","ou","l","st","c"]):
+    if req.post_js is None or not sql.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
         return req.abort("No JSON posted or data is missing")
 
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    for item in ["o","ou","l","st","c"]:
+    for item in ["o", "ou", "l", "st", "c"]:
         if not validate.is_valid_display_name(req.post_js[item]):
             return req.abort("Invalid certificate information")
     if not validate.is_valid_fqdn(req.post_js["name"]) or not validate.is_valid_hostname(req.post_js["fqdn"]):

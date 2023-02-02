@@ -26,7 +26,7 @@ def load_file_json(filename):
 
 def have_newer(mtime, file_name):
     if not os.path.isfile(file_name) or not os.access(file_name, os.R_OK):
-        raise PermissionError
+        raise PermissionError(f"'{file_name}' not found or not readable")
 
     new_time = os.path.getmtime(file_name)
     if mtime is None:
