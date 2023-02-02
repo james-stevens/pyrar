@@ -38,5 +38,5 @@ if __name__ == "__main__":
     parser.add_argument("-D", '--debug', action="store_true")
     args = parser.parse_args()
     log_init(with_debug=args.debug)
-    sql.connect("raradm")
+    sql.connect("engine")
     run_all_jobs()

@@ -190,7 +190,7 @@ function pretty_prompt(tag)
 function table_col_val(col,val)
 {
 	let s = col.split(".");
-	return tableLink(s[0],{ "where": { "=":{ [s[1]]:val } } });
+	return push_table_link(s[0],{ "where": { "=":{ [s[1]]:val } } });
 }
 
 
@@ -257,7 +257,7 @@ function linkedData(table,where)
 
 		for(let i of data) {
 			sub_where = `{"where": { "=": ${best_where(table,i)} } }`;
-			x += `<tr onClick='tableLink("${table}",${sub_where});' class=dataRow>`;
+			x += `<tr onClick='push_table_link("${table}",${sub_where});' class=dataRow>`;
 			for(let col of list_columns[table]) {
 				value = i[col];
 
@@ -403,8 +403,8 @@ function html_one_record(table, db_rec)
 
 function searchUser(email)
 {
-	if (isNaN(email)) return tableLink("users",{ "where": { "=": { "email": email } } });
-	return tableLink("users",{ "where": { "=": { "user_id": email } } });
+	if (isNaN(email)) return push_table_link("users",{ "where": { "=": { "email": email } } });
+	return push_table_link("users",{ "where": { "=": { "user_id": email } } });
 }
 
 
@@ -413,9 +413,16 @@ function searchDomain(domain)
 	if (isNaN(domain)) {
 		let as_puny = toASCII(domain);
 		if ((as_puny!=domain)&&(hasIDN(as_puny))) domain = as_puny;
-		return tableLink("domains", { "where": { "=": { "name":domain } } });
+		return push_table_link("domains", { "where": { "=": { "name":domain } } });
 		}
-	return tableLink("domains", { "where": { "=": { "domain_id":domain } } });
+	return push_table_link("domains", { "where": { "=": { "domain_id":domain } } });
+}
+
+
+function push_table_link(table,where)
+{
+	push_hist({"func":"table_link","data":{"table":table,"where":where}});
+	return tableLink(table,where);
 }
 
 
@@ -430,10 +437,38 @@ function key_down(event,input_id)
 
 
 
+function history_back(event)
+{
+	function pop_table_link(data)
+	{
+		tableLink(data.table,data.where);
+	}
+
+	let router = {
+		"start": go_welcome,
+		"table_link": pop_table_link
+		};
+
+	if ((event.state.func)&&(event.state.func in router)) {
+		router[event.state.func](event.state.data);
+		}
+
+	return true;
+}
+
+
+
 function startUp()
 {
+	window.addEventListener('popstate',history_back);
 	go_welcome(true);
 }
+
+function push_hist(data)
+{
+	window.history.pushState(data,"");
+}
+
 
 
 function best_index(indexes)
@@ -450,6 +485,7 @@ function best_index(indexes)
 
 function go_welcome(with_push)
 {
+	if (with_push) push_hist({"func":"start"});
 	pre_get_elm.forEach(i => { elm[i] = document.getElementById(i); } );
 	callApi("config",(ok,reply) => {
 		if (!ok) return def_errMsg("Error contacting servers",reply,"userInfo");
@@ -484,6 +520,7 @@ function go_welcome(with_push)
 					}
 				}
 			}
+		elm.moreInfo.innerHTML = "<h2>Welcome</h2>";
 		});
 }
 
@@ -527,7 +564,7 @@ USR:<input onKeyDown="key_down(event,'emailSearch');" id=emailSearch style="widt
 
 <div id="lowerSpan">
     <div style='height: 10px;'></div>
-	<div class=botSapce id="moreInfo"><h2>Hello</h2></div>
+	<div class=botSapce id="moreInfo">&nbsp;</div>
 </div>
 
 <div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div>

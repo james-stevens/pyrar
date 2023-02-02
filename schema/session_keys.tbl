@@ -16,4 +16,4 @@ sqlsh "create table session_keys (
 	unique key by_user_id(user_id)
 )"
 
-sqlsh 'grant select, insert, update, delete on session_keys to webui,raradm'
+sqlsh 'grant select, insert, update, delete on session_keys to webui,engine'

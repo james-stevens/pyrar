@@ -24,6 +24,4 @@ sqlsh "CREATE TABLE payments (
 
 sqlsh "ALTER TABLE payments AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert, update, delete on payments to webui'
-sqlsh 'grant select on payments to engine'
-sqlsh 'grant select, insert, update, delete on payments to raradm'
+sqlsh 'grant select, insert, update, delete on payments to webui,engine'

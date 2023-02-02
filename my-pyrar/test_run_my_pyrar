@@ -1,0 +1,3 @@
+#! /bin/sh
+
+docker run -p 80:80 -p 443:443 -p 1000:1000 -p 53:53 -p 53:53/udp -it my-pyrar
