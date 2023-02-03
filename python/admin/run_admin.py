@@ -24,7 +24,6 @@ ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 
 schema = {}
 
-
 def response(code, data):
     """ return object {reason} with code {val} """
     resp = flask.make_response(flask.jsonify(data), code)
@@ -364,22 +363,31 @@ def check_supplied_modifiers(sent, allowed):
             json_abort(f"The modifier '{modifier}' is not supported in this request")
 
 
+def run_backend_start_ups():
+    all_regs = registry.tld_lib.regs_file.data()
+    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
+    for this_type, funcs in dom_handler.backend_plugins.items():
+        if this_type in have_types and "start_up" in funcs:
+            funcs["start_up"]()
+
+
 application = flask.Flask("MySQL-Rest/API")
 log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
 sql.connect("admin")
 schema = load_schema.load_db_schema()
 registry.start_up()
 pdns.start_up()
+run_backend_start_ups()
 
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
     raise ValueError("ERROR: Main policy.currency is not set up correctly")
 
-all_regs = registry.tld_lib.regs_file.data()
-have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
-for this_type, funcs in dom_handler.backend_plugins.items():
-    if this_type in have_types and "start_up" in funcs:
-        funcs["start_up"]()
+
+@application.before_request
+def before_request():
+    if registry.tld_lib.check_for_new_files():
+        run_backend_start_ups()
 
 
 @application.route("/adm/v1", methods=['GET'])

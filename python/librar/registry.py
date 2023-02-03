@@ -114,6 +114,9 @@ class ZoneLib:
 
         if regs_file_is_new or priority_file_is_new or zones_db_is_new:
             self.process_json()
+            return True
+
+        return False
 
     def process_json(self):
         with open(static_data.PORTS_LIST_FILE, "r", encoding="UTF-8") as fd:

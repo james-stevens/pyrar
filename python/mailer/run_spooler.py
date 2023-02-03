@@ -147,6 +147,7 @@ def run_server():
     while True:
         new_mtime = os.path.getmtime(spool_email.SPOOL_BASE)
         if new_mtime == signal_mtime:
+            registry.tld_lib.check_for_new_files()
             time.sleep(3)
         else:
             process_emails_waiting()

@@ -104,6 +104,14 @@ def run_backend_item(bke_job):
     return job_failed(bke_job)
 
 
+def run_start_up_checks():
+    all_regs = registry.tld_lib.regs_file.data()
+    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
+    for this_type, funcs in dom_handler.backend_plugins.items():
+        if this_type in have_types and "start_up" in funcs:
+            funcs["start_up"]()
+
+
 def run_server():
     """ continuously run the backend processing """
     log("BACK-END SERVER RUNNING")
@@ -116,6 +124,8 @@ def run_server():
             run_backend_item(bke_job[0])
         else:
             signal_mtime = sigprocs.signal_wait("backend", signal_mtime)
+            if registry.tld_lib.check_for_new_files():
+                run_start_up_checks()
 
 
 def start_up(is_live):
@@ -127,12 +137,8 @@ def start_up(is_live):
 
     sql.connect("engine")
     registry.start_up()
+    run_start_up_checks()
 
-    all_regs = registry.tld_lib.regs_file.data()
-    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
-    for this_type, funcs in dom_handler.backend_plugins.items():
-        if this_type in have_types and "start_up" in funcs:
-            funcs["start_up"]()
 
 
 def main():
