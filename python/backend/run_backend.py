@@ -140,7 +140,6 @@ def start_up(is_live):
     run_start_up_checks()
 
 
-
 def main():
     """ main """
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')

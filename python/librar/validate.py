@@ -232,6 +232,15 @@ def valid_domain_actions(actions):
     return len(actions) > 0
 
 
+def valid_float(num):
+    try:
+        ret = float(num)
+        return ret
+    except ValueError:
+        return None
+    return None
+
+
 if __name__ == "__main__":
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))

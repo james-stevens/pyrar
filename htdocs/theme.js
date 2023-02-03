@@ -342,6 +342,7 @@ td {
 	vertical-align: top;
 	padding-left: 7px;
 	padding-right: 7px;
+	padding-top: 2px;
 	white-space: normal;
 	min-width: 50%;
 	white-space: nowrap;

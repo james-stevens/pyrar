@@ -10,6 +10,7 @@ from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
+from librar import accounts
 from librar import domobj
 from librar import validate
 from librar import common_ui
@@ -23,6 +24,7 @@ from backend.dom_plugins import *
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 
 schema = {}
+
 
 def response(code, data):
     """ return object {reason} with code {val} """
@@ -570,6 +572,35 @@ def delete_table_row(table):
     if num_rows is not None:
         return response(200, {"affected_rows": num_rows})
     return response(499, None)
+
+
+@application.route("/adm/v1/user/transaction", methods=['POST'])
+def post_user_transaction():
+    if flask.request.json is None or not sql.has_data(flask.request.json, ["user_id", "amount", "description"]):
+        return response(499, "Missing or invalid data")
+
+    json = flask.request.json
+    user_id = json["user_id"]
+
+    if not isinstance(user_id, int):
+        return response(499, "Missing or invalid data")
+    if (amount := validate.valid_float(json["amount"])) is None:
+        return response(499, "Invalid amount")
+    if not validate.is_valid_display_name(json["description"]):
+        return response(499, "Invalid description")
+
+    ok, user_db = sql.sql_select("users", {"user_id": user_id})
+    if not ok or not user_db or len(user_db) <= 0:
+        return response(499, "Invalid user_id given")
+
+    amount *= static_data.POW10[site_currency["decimal"]]
+    amount = int(round(amount, 0))
+
+    ok, trans_id = accounts.apply_transaction(user_id, amount, "Admin: " + json["description"], as_admin=True)
+    if not ok:
+        return response(499, trans_id)
+
+    return response(200, True)
 
 
 @application.route("/adm/v1/regs/<domain>", methods=['GET'])

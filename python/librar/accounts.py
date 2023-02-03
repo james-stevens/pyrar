@@ -40,14 +40,14 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 
     row_count, row_id = sql.sql_exec(sql_cmd)
     if not row_count or not row_id:
-        return row_count
+        return False, row_id
 
     sql.sql_exec("select @trnum=NULL,@newbal=NULL,@prev=NULL")
 
     if amount > 0:
         sigprocs.signal_service("payeng")
 
-    return row_id
+    return True, row_id
 
 
 if __name__ == "__main__":

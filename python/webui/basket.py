@@ -146,11 +146,11 @@ def paid_for_basket_item(req, order, user_db):
     if (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]) < order_db["price_paid"]:
         return False
 
-    trans_id = accounts.apply_transaction(
+    ok, trans_id = accounts.apply_transaction(
         user_db["user_id"], (-1 * order_db["price_paid"]),
         f"{order_db['order_type']} on {order['domain']} for {order_db['num_years']} yrs")
 
-    if not trans_id:
+    if not ok or not trans_id:
         return False
 
     user_db["acct_previous_balance"] = user_db["acct_current_balance"]

@@ -299,3 +299,17 @@ function sort_rr_sets(reply)
 		})
 }
 
+
+
+function form_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
+function settings_prompt(txt) { return `<tr><td class=promptCell>${txt} :</td><td>`; }
+
+
+function settings_header(title,spacer)
+{
+    let x = "";
+    if (!spacer) x = gbl.settings_spacer;
+    x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
+    return x;
+}
+

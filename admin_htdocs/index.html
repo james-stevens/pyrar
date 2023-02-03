@@ -13,6 +13,8 @@
 
 debugAPI = false;
 
+const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:10000, 6:100000, 7:1000000, 8:10000000, 9:100000000 };
+
 const pre_get_elm = [ "emailSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
@@ -341,6 +343,75 @@ function show_regs_data(domain)
 }
 
 
+
+function prettyAmount(event,amt)
+{
+	let e = document.getElementById("pretty_amount");
+	if ((!amt.value)||(isNaN(amt.value))) { e.innerHTML = "Invalid"; return; }
+
+	let f = parseFloat(amt.value)*pow10[gbl.config.default_currency.decimal];
+	if (f>0) pfx="Credit"; else pfx="Debit";
+	e.innerHTML = pfx+"&nbsp;"+format_amount(Math.round(f));
+}
+
+
+
+function cancel_crdb()
+{
+	let e = document.getElementById("moreData");
+	e.innerHTML = "";
+}
+
+
+function post_crdb(user_id)
+{
+	let amt = document.getElementById("crdb_amnt");
+	if ((!amt.value)||(isNaN(amt.value))) {
+		errMsg("Invalid amount field","crdb_btns");
+		amt.focus(); return; }
+
+	let desc = document.getElementById("crdb_desc");
+	if (desc.value=="") {
+		errMsg("You must give a description","crdb_btns");
+		desc.focus(); return; }
+
+	callApi("user/transaction",(ok,reply) => {
+		if (!ok) return def_errMsg("Transaction failed to post",reply,"crdb_btns");
+		link_col_val("transactions.user_id",user_id);
+		},{ json: {
+			"user_id":user_id,
+			"amount":amt.value,
+			"description":desc.value
+			}});
+}
+
+
+
+function user_cr_db(user_id)
+{
+	let e = document.getElementById("moreData");
+	if ((e.innerHTML!="")&&(e.innerHTML.indexOf("crdb_amnt")>=0)) { e.innerHTML = ""; return; }
+
+	let x = "<table border=0 cellspacing=2 cellpadding=2 style='min-width:600px;' align=center>";
+	x += "<colgroup><col width=30%/><col/></colgroup>";
+	x += settings_prompt("Description")+"<input placeholder='Description user will see' style='width: 350px' id=crdb_desc></td></tr>";
+	x += settings_prompt("Amount")+gbl.config.default_currency.symbol;
+	x += "<input onkeyup='prettyAmount(event,this);' placeholder='-ve=debit +ve=credit' style='width: 200px' id=crdb_amnt>"
+	x += "<span style='padding-left: 50px' id=pretty_amount></span></td></tr>";
+
+	x += "<tr><td colspan=2 class=btmBtnBar id=crdb_btns>";
+	x += "<input type=button onClick='cancel_crdb();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += `<input type=button onClick='post_crdb(${user_id});' class=myBtn style='width: 150px' value='OK'>`;
+	x += "</td></tr>";
+	x += "</table>";
+
+	e.innerHTML = x;
+
+	e = document.getElementById("crdb_desc");
+	e.focus();
+}
+
+
 function html_one_record(table, db_rec)
 {
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
@@ -380,6 +451,10 @@ function html_one_record(table, db_rec)
 
 		if (table=="sales"){
 			x += `<tr><td><button style="width:140px" class=myBtn>Refund</button></td></tr>`;
+			add_ending = true; }
+
+		if (table=="users"){
+			x += `<tr><td><button onClick="user_cr_db(${db_rec.user_id});" style="width:140px" class=myBtn>Credit/Debit</button></td></tr>`;
 			add_ending = true; }
 
 		if (add_ending) {
