@@ -19,7 +19,8 @@ sqlsh "CREATE TABLE payments (
 	created_dt      datetime not null,
 	amended_dt      datetime not null,
 
-	primary key by_id (payment_id)
+	primary key by_id (payment_id),
+	unique key by_tag(provider_tag,provider)'
     ) ${utf8}"
 
 sqlsh "ALTER TABLE payments AUTO_INCREMENT = 10450"

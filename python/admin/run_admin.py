@@ -1,5 +1,7 @@
 #! /usr/bin/python3
-""" provide a rest/api to a MySQL Database using Flask """
+# (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
+# Alternative license arrangements possible, contact me for more information
+""" Admin webui """
 
 import json
 from datetime import datetime
@@ -15,7 +17,9 @@ from librar import domobj
 from librar import validate
 from librar import common_ui
 from librar import static_data
+
 from admin import load_schema
+from admin import transaction
 
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend import dom_handler
@@ -576,31 +580,10 @@ def delete_table_row(table):
 
 @application.route("/adm/v1/user/transaction", methods=['POST'])
 def post_user_transaction():
-    if flask.request.json is None or not sql.has_data(flask.request.json, ["user_id", "amount", "description"]):
-        return response(499, "Missing or invalid data")
-
-    json = flask.request.json
-    user_id = json["user_id"]
-
-    if not isinstance(user_id, int):
-        return response(499, "Missing or invalid data")
-    if (amount := validate.valid_float(json["amount"])) is None:
-        return response(499, "Invalid amount")
-    if not validate.is_valid_display_name(json["description"]):
-        return response(499, "Invalid description")
-
-    ok, user_db = sql.sql_select("users", {"user_id": user_id})
-    if not ok or not user_db or len(user_db) <= 0:
-        return response(499, "Invalid user_id given")
-
-    amount *= static_data.POW10[site_currency["decimal"]]
-    amount = int(round(amount, 0))
-
-    ok, trans_id = accounts.apply_transaction(user_id, amount, "Admin: " + json["description"], as_admin=True)
+    ok,reply = transaction.process(flask.request.json)
     if not ok:
-        return response(499, trans_id)
-
-    return response(200, True)
+        return response(499, reply)
+    return response(200,True)
 
 
 @application.route("/adm/v1/regs/<domain>", methods=['GET'])

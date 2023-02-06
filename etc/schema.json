@@ -633,6 +633,13 @@
                "payment_id"
             ],
             "unique": true
+         },
+         "by_tag": {
+            "columns": [
+               "provider_tag",
+               "provider"
+            ],
+            "unique": true
          }
       }
    },
