@@ -19,7 +19,6 @@ from librar import common_ui
 from librar import static_data
 
 from admin import load_schema
-from admin import transaction
 
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend import dom_handler
@@ -580,7 +579,7 @@ def delete_table_row(table):
 
 @application.route("/adm/v1/user/transaction", methods=['POST'])
 def post_user_transaction():
-    ok,reply = transaction.process(flask.request.json)
+    ok,reply = accounts.admin_trans(flask.request.json)
     if not ok:
         return response(499, reply)
     return response(200,True)
