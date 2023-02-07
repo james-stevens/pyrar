@@ -26,13 +26,15 @@ const list_columns = {
 	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
 	"payments": [ "created_dt","provider","provider_tag" ],
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
+	"sysadmins": ["login","htpasswd","amended_dt" ]
 	};
 
 const order_by = {
 	"events" : "event_id desc",
 	"actions": "execute_dt",
 	"sales": "sales_item_id desc",
-	"transactions": "acct_sequence_id desc"
+	"transactions": "acct_sequence_id desc",
+	"sysadmins": "login"
 	};
 
 const table_desc = {
@@ -154,7 +156,7 @@ function togglePopUp(name,tmout)
     ctx.popup = { "timer": hide_now, "name": name }
 
     let e = null;
-	// focus on edit box, if you want
+	if (name=="AddSysAdmin") e = document.getElementById("sysadm_login");
     if (e) { e.focus(); e.select(); }
 
     return false;
@@ -243,7 +245,55 @@ function best_where(table,db_rec)
 
 
 
-function linkedData(table,where)
+function sysadmins()
+{
+	linkedData("sysadmins",{"order":order_by["sysadmins"]},"moreInfo");
+}
+
+function do_add_sys_admin()
+{
+	let f = document.addSysAdm;
+	if (!(f.sysadm_login.value)||(!f.sysadm_password.value)) {
+		f.sysadm_login.focuds();
+		return errMsg("Please fill out all the fields","AddSysAdmin"); }
+
+	insert_data = {
+		"login":f.sysadm_login.value,
+		"htpasswd":f.sysadm_password.value,
+		"amended_dt":null,
+		"created_dt":null
+		};
+
+	callApi("data/sysadmins",(ok,reply) => {
+		if (!ok) return def_errMsg("Adding sysadmin user failed",reply,AddSysAdmin);
+
+		hidePopUp();
+		sysadmins();
+
+		},{ json:{"set":insert_data}, method: "PUT" });
+
+	return false;
+}
+
+
+
+function add_sysadmin_form()
+{
+	let x = "<form action=# onSubmit='return do_add_sys_admin();' name=addSysAdm><table>";
+	x += settings_prompt("Login")+"<input id=sysadm_login onkeyUp='keyEsc(event);' style='width:250px;'></td></tr>";
+	x += settings_prompt("Password")+"<input id=sysadm_password type=password onkeyUp='keyEsc(event);' autocomplete='new-password' style='width:250px;'></td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar id=crdb_btns>";
+	x += "<input type=button onClick='hidePopUp();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += "<input type=submit class=myBtn style='width: 150px' value='OK'>";
+	x += "</td></tr></form>";
+	x += "</table>";
+	return x;
+}
+
+function keyEsc(e) { if (e.key == "Escape") hidePopUp(); }
+
+
+function linkedData(table,where,location)
 {
 	callApi("data/"+table,(ok,reply) => {
 		if (!ok) return def_errMsg(`Error loading ${table} '${JSON.stringify(where)}'`,reply,"btnBarMore");
@@ -252,6 +302,20 @@ function linkedData(table,where)
 		if ((!data)||(!data.length)) return errMsg("No Data","btnBarMore");
 
 		let x = "<table border=0 cellspacing=1 cellpadding=1 width=100%>";
+		if (table == "sysadmins") {
+			x += `<tr><td colspan=${list_columns[table].length} class=btmBtnBar>`;
+			x += generic_popup_btn({
+				"name": "AddSysAdmin",
+				"label": "Add SysAdmin",
+				"width": 100,
+				"timeout": null,
+				"title": "Add a System Administrator",
+				"internal": add_sysadmin_form,
+				"style": "overflow: auto; margin-left: -300;"
+				});
+			x += "</td></tr>";
+			x += "<tr><td>"+gbl.gap+"</td></tr>";
+			}
 		x += "<tr>";
 		for(let col of list_columns[table])
 			x += `<th>${pretty_prompt(col)}</th>`;
@@ -280,7 +344,14 @@ function linkedData(table,where)
 			}
 		x += "</table>";
 
-		let e = document.getElementById("moreData");
+		let e = null;
+		if (location === undefined)
+			e = document.getElementById("moreData");
+		else {
+			if (location in elm) e = elm[location];
+			else e = document.getElementById(location);
+			}
+
 		e.innerHTML = x;
 		unerrMsg();
 
@@ -377,7 +448,7 @@ function post_crdb(user_id)
 
 	callApi("user/transaction",(ok,reply) => {
 		if (!ok) return def_errMsg("Transaction failed to post",reply,"crdb_btns");
-		link_col_val("transactions.user_id",user_id);
+		linkedData("transactions", {"where":{"=":{"user_id":user_id}},"order":order_by["transactions"]});
 		},{ json: {
 			"user_id":user_id,
 			"amount":amt.value,
@@ -438,8 +509,11 @@ function html_one_record(table, db_rec)
 
 	x += "</table></td>";
 
+	x += "<td id=btnBarMore><table>";
+	x += `<tr><td><button style="width:140px" class=myBtn>Delete</button></td></tr>`;
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+
 	if (table in linked_tables) {
-		x += "<td id=btnBarMore><table>";
 
 		let add_ending = false;
 
@@ -457,18 +531,14 @@ function html_one_record(table, db_rec)
 			x += `<tr><td><button onClick="user_cr_db(${db_rec.user_id});" style="width:140px" class=myBtn>Credit/Debit</button></td></tr>`;
 			add_ending = true; }
 
-		if (add_ending) {
-			x += "<tr><td>"+gbl.gap+"</td></tr>";
-			x += `<tr><td><div class="line"/></td></tr>`;
-			x += "<tr><td>"+gbl.gap+"</td></tr>";
-			}
-
+		if (add_ending) x += "<tr><td>"+gbl.gap+"</td></tr>";
+	
 		for(let i of linked_tables[table]) {
 			s = i[1].split(".");
 			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
 			}
-		x += "</table></td>";
 		}
+	x += "</table></td>";
 
 	x += "</tr>";
 	x += "<tr><td colspan=2><div id=moreData></div></td></tr>";
@@ -610,6 +680,7 @@ function go_welcome(with_push)
 <td align=left><span id="businessName" class="businessName">PyRar Admin</span></td>
 <td rowspan=2 align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
+<span onClick="sysadmins()" style='width: 110px;' class=myBtn>SysAdmins</span>
 <a href="/pdns.html" target=_window><span name=hitMe style='width: 110px;' class=myBtn>PowerDNS</span></a>
 
 </td></tr>

@@ -17,11 +17,6 @@ from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
-NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = [
-    "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
-]
-
 cnx = None
 my_login = None
 my_password = None
@@ -54,7 +49,7 @@ my_conv[FIELD_TYPE.NEWDECIMAL] = int
 
 def format_col(column, value):
     """ convert {value} to SQL string """
-    if column is not None and value is None and (column in NOW_DATE_FIELDS or column[-3:] == "_dt"):
+    if column is not None and value is None and (column in static_data.NOW_DATE_FIELDS or column[-3:] == "_dt"):
         return f"{column}=now()"
 
     if value is None:
@@ -191,7 +186,7 @@ def sql_delete_one(table, where):
 
 
 def sql_insert(table, column_vals):
-    if table in AUTO_CREATED_AMENDED_DT:
+    if table in static_data.AUTO_CREATED_AMENDED_DT:
         for col in ["amended_dt", "created_dt"]:
             if col not in column_vals:
                 column_vals[col] = None
@@ -205,7 +200,7 @@ def sql_exists(table, where):
 
 
 def sql_update_one(table, column_vals, where):
-    if table in AUTO_CREATED_AMENDED_DT and isinstance(column_vals, dict):
+    if table in static_data.AUTO_CREATED_AMENDED_DT and isinstance(column_vals, dict):
         column_vals["amended_dt"] = None
     return sql_update(table, column_vals, where, 1)
 

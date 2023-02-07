@@ -1707,26 +1707,6 @@ function do_change_ns(dest_dom,src_dom)
 }
 
 
-function generic_popup_btn(config)
-{
-	/* config: width, style, title, name, label, internal(), param */
-	let style_width="",pop_style="";
-	if ("width" in config) style_width = `style='width: ${config["width"]}px;'`;
-	if ("style" in config) pop_style = `style='${config["style"]}'`;
-
-	let timeout = 30000;
-	if ("timeout" in config) timeout = config.timeout;
-
-	let x = `<div class="popup">`;
-	x += `<span ${style_width}75px;' tabindex=0 title="${config["title"]}" `;
-	x += `class=myBtn onClick="togglePopUp('${config["name"]}',${timeout});">${config["label"]}</span>`;
-	x += `<span class="popuptext" ${pop_style} id="${config["name"]}">`;
-	x += config["internal"](config["param"]);
-	return x + `</span></div>`;
-}
-
-
-
 function copy_btn_internal(param)
 {
 	let default_dns_servers = policy("dns_servers",null);

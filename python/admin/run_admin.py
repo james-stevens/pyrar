@@ -14,6 +14,7 @@ from librar import registry
 from librar import pdns
 from librar import accounts
 from librar import domobj
+from librar import passwd
 from librar import validate
 from librar import common_ui
 from librar import static_data
@@ -474,8 +475,12 @@ def process_one_set(set_clause, table):
     for col in set_clause:
         if col not in cols:
             json_abort("Column {col} not in table {table}")
-
-        ret.append(col + "=" + add_data(set_clause[col], cols[col]))
+        val = add_data(set_clause[col], cols[col])
+        if col in ["amended_dt", "created_dt"]:
+            val = "now()"
+        elif col in ["htpasswd","password"]:
+            val = '"'+passwd.crypt(set_clause[col])+'"'
+        ret.append(col + "=" + val)
     return ret
 
 
@@ -514,7 +519,7 @@ def insert_table_row(table):
     sent = flask.request.json
     check_supplied_modifiers(sent, ["set"])
 
-    if not isinstance(sent["set"], (dict, list)):
+    if "set" not in sent or not isinstance(sent["set"], (dict, list)):
         json_abort("In an INSERT, the `set` clause must be an object or list type")
 
     if isinstance(sent["set"], dict):

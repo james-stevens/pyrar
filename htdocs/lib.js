@@ -67,13 +67,13 @@ function callApi(sfx,callback,inData)
 	let httpCmd = { headers: { }, method: 'GET' };
 
 	if (inData != null) {
-		if ("method" in inData) httpCmd.method = inData.method;
 		if ("json" in inData) {
 			httpCmd.body = JSON.stringify(inData.json);
 			httpCmd.headers["Content-type"] = "application/json; charset=UTF-8";
 			httpCmd.method = "POST";
 			}
 		if ("okResp" in inData) okResp = inData.okResp;
+		if ("method" in inData) httpCmd.method = inData.method;
 		}
 
 	if ("session" in ctx) {
@@ -313,3 +313,22 @@ function settings_header(title,spacer)
     return x;
 }
 
+
+
+function generic_popup_btn(config)
+{
+    /* config: width, style, title, name, label, internal(), param */
+    let style_width="",pop_style="";
+    if ("width" in config) style_width = `style='width: ${config["width"]}px;'`;
+    if ("style" in config) pop_style = `style='${config["style"]}'`;
+
+    let timeout = 30000;
+    if ("timeout" in config) timeout = config.timeout;
+
+    let x = `<div class="popup">`;
+    x += `<span ${style_width}75px;' tabindex=0 title="${config["title"]}" `;
+    x += `class=myBtn onClick="togglePopUp('${config["name"]}',${timeout});">${config["label"]}</span>`;
+    x += `<span class="popuptext" ${pop_style} id="${config["name"]}">`;
+    x += config["internal"](config["param"]);
+    return x + `</span></div>`;
+}
