@@ -168,32 +168,48 @@ def main():
 
     start_up(args.live)
 
+    domlist = domobj.DomainList()
     dom = domobj.Domain()
+
+    this_regs = None
     if args.domain.isdecimal():
         ok, reply = dom.set_by_id(int(args.domain))
     else:
-        ok, reply = dom.load_name(args.domain)
+        if args.action == "dom/price":
+            ok, reply = domlist.set_list(args.domain)
+            this_regs = domlist.registry
+        else:
+            ok, reply = dom.load_name(args.domain)
+    if this_regs is None:
+        this_regs = dom.registry
 
     if not ok:
         print("ERROR", reply)
         sys.exit(1)
 
-    bke_job = {
-        "job_id": 99,
-        "backend_id": "TEST",
-        "authcode": "eFNaYTlXZ2FVcW8xcmcy",
-        "job_type": args.action,
-        "num_years": 1,
-        "domain_id": dom.dom_db["domain_id"]
-    }
+    show_name = args.domain
+    if dom.dom_db:
+        bke_job = {
+            "job_id": 99,
+            "backend_id": "TEST",
+            "authcode": "eFNaYTlXZ2FVcW8xcmcy",
+            "job_type": args.action,
+            "num_years": 1,
+            "domain_id": dom.dom_db["domain_id"]
+        }
+        show_name = dom.dom_db["name"]
 
-    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
+    this_handler = dom_handler.backend_plugins[this_regs["type"]]
     if args.action not in this_handler:
-        print(f"Action '{args.action}' not supported by Plugin '{dom.registry['type']}'")
+        print(f"Action '{args.action}' not supported by Plugin '{this_regs['type']}'")
         sys.exit(1)
 
-    print(f"Running {dom.registry['type']}:{args.action} on {dom.dom_db['name']}")
-    out_js = this_handler[args.action](bke_job, dom.dom_db)
+    print(f"Running {this_regs['type']}:{args.action} on {show_name}")
+    if args.action == "dom/price":
+        out_js = this_handler[args.action](domlist)
+    else:
+        out_js = this_handler[args.action](bke_job, dom.dom_db)
+
     print(json.dumps(out_js, indent=3))
     return 0
 

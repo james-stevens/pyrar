@@ -118,6 +118,64 @@
          }
       }
    },
+   "class_by_name": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "class": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         },
+         "name": {
+            "size": 260,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "name"
+            ],
+            "unique": true
+         }
+      }
+   },
+   "class_by_regexp": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "class": {
+            "size": 50,
+            "type": "varchar",
+            "null": false
+         },
+         "name_regexp": {
+            "size": 260,
+            "type": "varchar",
+            "null": false
+         },
+         "zone": {
+            "size": 260,
+            "type": "varchar",
+            "null": false
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "zone",
+               "name_regexp"
+            ],
+            "unique": true
+         }
+      }
+   },
    "contacts": {
       "columns": {
          "amended_dt": {

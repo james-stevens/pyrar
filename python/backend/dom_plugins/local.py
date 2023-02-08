@@ -12,6 +12,7 @@ from librar import registry
 from librar import pdns
 from librar import static_data
 from librar import passwd
+from librar import misc
 
 from backend import shared
 from backend import dom_handler
@@ -198,13 +199,29 @@ def domain_update_flags(bke_job, dom_db):
 # pylint: enable=unused-argument
 
 
+def get_class_from_name(name):
+    ok, class_db = sql.sql_select_one("class_by_name", {"name": name})
+    if ok and class_db and len(class_db) > 0:
+        return class_db["class"]
+
+    if (idx := name.find(".")) < 0:
+        return "standard"
+
+    where = f"(unhex('{misc.ashex(name[:idx])}') regexp name_regexp) and zone = unhex('{misc.ashex(name[idx+1:])}')"
+    ok, class_db = sql.sql_select_one("class_by_regexp", where)
+    if ok and class_db and len(class_db) > 0:
+        return class_db["class"]
+
+    return "standard"
+
+
 def local_domain_prices(domlist, num_years=1, qry_type=None):
     """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
     if qry_type is None:
         qry_type = ["create", "renew"]
     ret_doms = []
     for dom in domlist.domobjs:
-        add_dom = {"name": dom, "num_years": num_years, "avail": True}
+        add_dom = {"name": dom, "num_years": num_years, "avail": True, "class": get_class_from_name(dom)}
         for qry in qry_type:
             add_dom[qry] = None
 
