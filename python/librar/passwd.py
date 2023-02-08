@@ -1,13 +1,15 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" password checking & encrypting fns """
 
 import sys
-import bcrypt
 import base64
+import bcrypt
 
 
 def crypt(text_password, salt=None):
+    """ encrypt a password, using salt if provided """
     if isinstance(text_password, str):
         enc_passwd = text_password.encode("utf-8")
     else:
@@ -21,6 +23,7 @@ def crypt(text_password, salt=None):
 
 
 def compare(text_password, stored_password):
+    """ return boolean if {text_password} matches {stored_password} """
     return crypt(text_password, stored_password) == stored_password
 
 

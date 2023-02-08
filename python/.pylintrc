@@ -1,5 +1,5 @@
 [BASIC]
-good-names=ok, e, fd
+good-names=ok, e, fd, ns, ds
 
 [FORMAT]
 max-line-length=119

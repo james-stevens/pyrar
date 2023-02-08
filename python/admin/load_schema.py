@@ -120,7 +120,7 @@ def schema_of_col(new_schema, col):
 def get_db_schema(new_schema):
     """ Read schema from database """
     ok, reply = sql.run_select("show tables")
-    tbl_title = "Tables_in_" + sql.my_database
+    tbl_title = "Tables_in_" + sql.MY_DATABASE
     for table in reply:
         new_schema[table[tbl_title]] = {}
 

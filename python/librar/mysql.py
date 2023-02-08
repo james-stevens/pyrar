@@ -1,26 +1,27 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" Code for interacting with MySQL """
+
 import sys
-import os
 import json
 import datetime
 import inspect
 from dateutil.relativedelta import relativedelta
+
+from MySQLdb import _mysql
+from MySQLdb.constants import FIELD_TYPE
+import MySQLdb.converters
 
 from librar import fileloader
 from librar import misc
 from librar import static_data
 from librar.log import log, debug, init as log_init
 
-from MySQLdb import _mysql
-from MySQLdb.constants import FIELD_TYPE
-import MySQLdb.converters
-
 cnx = None
-my_login = None
-my_password = None
-my_database = None
+MY_LOGIN = None
+MY_PASSWORD = None
+MY_DATABASE = None
 
 logins = fileloader.FileLoader(static_data.LOGINS_FILE)
 
@@ -78,19 +79,19 @@ def has_data(row, col):
         for item in col:
             all_ok = all_ok and has_data(row, item)
         return all_ok
-    return (row is not None and len(row) > 0 and col in row and row[col] is not None and row[col] != "")
+    return row is not None and len(row) > 0 and col in row and row[col] is not None and row[col] != ""
 
 
 def now(offset=0):
-    now = datetime.datetime.now()
-    now += datetime.timedelta(seconds=offset)
-    return now.strftime("%Y-%m-%d %H:%M:%S")
+    time_now = datetime.datetime.now()
+    time_now += datetime.timedelta(seconds=offset)
+    return time_now.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def date_add(mysql_time, days=0, hours=0, minutes=0, months=0, years=0):
-    now = datetime.datetime.strptime(mysql_time, "%Y-%m-%d %H:%M:%S")
-    now += relativedelta(days=days, hours=hours, minutes=minutes, months=months, years=years)
-    return now.strftime("%Y-%m-%d %H:%M:%S")
+def date_add(mysql_time, days=0, hours=0, years=0):
+    time_now = datetime.datetime.strptime(mysql_time, "%Y-%m-%d %H:%M:%S")
+    time_now += relativedelta(days=days, hours=hours, years=years)
+    return time_now.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def data_set(data, joiner):
@@ -105,9 +106,9 @@ def data_set(data, joiner):
 def reconnect():
     try:
         cnx.close()
-    except Exception as exc:
+    except Exception:
         pass
-    connect(my_login)
+    connect(MY_LOGIN)
 
 
 def return_select():
@@ -149,7 +150,6 @@ def run_sql(sql, func):
                 return func()
             except Exception as exc:
                 this_exc = exc
-                pass
         log("SQL-ERROR:" + str(this_exc))
         print("SQL-ERROR:" + str(this_exc))
         return None, None
@@ -238,66 +238,60 @@ def sql_select_one(table, where, columns="*"):
     return False, reply[1]
 
 
-def get_pdns_login(login, login_json):
+def get_pdns_login(login_json):
     if "pdns" not in login_json:
-        log(f"ERROR: Could not find P/DNS config in login file")
-        return False, None, None, None, None
+        raise ValueError("ERROR: Could not find P/DNS config in login file")
 
     pdns_json = login_json["pdns"]
     if not has_data(pdns_json, ["database", "username", "password", "server"]):
-        log(f"Missing database or login data")
-        return False, None, None, None, None
+        raise ValueError("Missing database or login data for P/DNS")
 
     return True, pdns_json["server"], pdns_json["username"], pdns_json["password"], pdns_json["database"]
 
 
 def get_mysql_login(login, login_json):
     if "mysql" not in login_json:
-        log(f"ERROR: Could not find MySQL config in login file")
-        return False, None, None, None, None
+        raise ValueError("ERROR: Could not find MySQL config in login file")
 
     mysql_json = login_json["mysql"]
     if not has_data(mysql_json, ["database", login, "connect"]):
-        log(f"Missing server, database or login data")
-        return False, None, None, None, None
+        raise ValueError(f"Missing server, database or login data for '{login}'")
 
-    my_login = None
-    my_password = None
+    find_login = None
+    find_passwd = None
     server = mysql_json["connect"]
 
     if isinstance(mysql_json[login], str):
-        my_login = login
-        my_password = mysql_json[login]
+        find_login = login
+        find_passwd = mysql_json[login]
     elif isinstance(mysql_json[login], list) and len(mysql_json[login]) == 2:
-        my_login = mysql_json[login][0]
-        my_password = mysql_json[login][1]
-    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], "username", "password"):
-        my_login = mysql_json[login]["username"]
-        my_password = mysql_json[login]["password"]
+        find_login = mysql_json[login][0]
+        find_passwd = mysql_json[login][1]
+    elif isinstance(mysql_json[login], dict) and has_data(mysql_json[login], ["username", "password"]):
+        find_login = mysql_json[login]["username"]
+        find_passwd = mysql_json[login]["password"]
 
-    if my_login is None or my_password is None:
-        log(f"ERROR: Could not find MySQL password for user {login}")
-        return False, None, None, None, None
+    if find_login is None or find_passwd is None:
+        raise ValueError(f"Could not find MySQL password for user {login}")
 
-    return True, server, my_login, my_password, mysql_json["database"]
+    return True, server, find_login, find_passwd, mysql_json["database"]
 
 
 def connect(login):
     """ Connect to MySQL based on ENV vars """
 
     global cnx
-    global my_login
-    global my_password
-    global my_database
+    global MY_LOGIN
+    global MY_PASSWORD
+    global MY_DATABASE
 
-    logins.check_for_new()
-    my_login = login
-    my_password = None
+    MY_LOGIN = login
+    MY_PASSWORD = None
 
     if login == "pdns":
-        ok, server, my_login, my_password, my_database = get_pdns_login(login, logins.data())
+        ok, server, MY_LOGIN, MY_PASSWORD, MY_DATABASE = get_pdns_login(logins.data())
     else:
-        ok, server, my_login, my_password, my_database = get_mysql_login(login, logins.data())
+        ok, server, MY_LOGIN, MY_PASSWORD, MY_DATABASE = get_mysql_login(login, logins.data())
 
     if not ok:
         log(f"ERROR: Could not find credentials for user {login}")
@@ -318,12 +312,12 @@ def connect(login):
             port = int(svr[1])
 
     try:
-        cnx = _mysql.connect(user=my_login,
-                             password=my_password,
+        cnx = _mysql.connect(user=MY_LOGIN,
+                             password=MY_PASSWORD,
                              unix_socket=sock,
                              host=host,
                              port=port,
-                             database=my_database,
+                             database=MY_DATABASE,
                              conv=my_conv,
                              charset='utf8mb4',
                              init_command='set names utf8mb4')
@@ -334,7 +328,7 @@ def connect(login):
     return cnx is not None
 
 
-if __name__ == "__main__":
+def main():
     log_init(with_debug=True)
 
     connect("pdns")
@@ -356,7 +350,7 @@ if __name__ == "__main__":
     ret, db_rows = run_select("select * from domains")
     print(">>>> DOMAINS", ret, json.dumps(db_rows, indent=4))
 
-    print(f">>>> sql exists -> 10452 ->", sql_exists("events", {"event_id": 10452}))
+    print(">>>> sql exists -> 10452 ->", sql_exists("events", {"event_id": 10452}))
     for e in ["james@jrcs.net", "aaa@bbb.com"]:
         print(f">>>> sql exists -> {e} ->", sql_exists("users", {"email": e}))
 
@@ -374,3 +368,7 @@ if __name__ == "__main__":
     print(">>UPDATE>>>", ret)
 
     cnx.close()
+
+
+if __name__ == "__main__":
+    main()

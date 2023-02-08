@@ -399,7 +399,7 @@ def before_request():
 @application.route("/adm/v1", methods=['GET'])
 def hello():
     """ respond with a `hello` to confirm working """
-    return f"MySql-Auto-Rest/API: {sql.my_database}\n\n"
+    return f"MySql-Auto-Rest/API: {sql.MY_DATABASE}\n\n"
 
 
 @application.route("/adm/v1/meta/schema", methods=['GET'])
@@ -478,8 +478,8 @@ def process_one_set(set_clause, table):
         val = add_data(set_clause[col], cols[col])
         if col in ["amended_dt", "created_dt"]:
             val = "now()"
-        elif col in ["htpasswd","password"]:
-            val = '"'+passwd.crypt(set_clause[col])+'"'
+        elif col in ["htpasswd", "password"]:
+            val = '"' + passwd.crypt(set_clause[col]) + '"'
         ret.append(col + "=" + val)
     return ret
 
@@ -584,10 +584,10 @@ def delete_table_row(table):
 
 @application.route("/adm/v1/user/transaction", methods=['POST'])
 def post_user_transaction():
-    ok,reply = accounts.admin_trans(flask.request.json)
+    ok, reply = accounts.admin_trans(flask.request.json)
     if not ok:
         return response(499, reply)
-    return response(200,True)
+    return response(200, True)
 
 
 @application.route("/adm/v1/regs/<domain>", methods=['GET'])

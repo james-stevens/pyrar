@@ -46,7 +46,7 @@ parser.add_argument("-l", '--login', default="admin")
 args = parser.parse_args()
 
 sql.connect(args.login)
-live_schema = schema.make_schema(sql.my_database)
+live_schema = schema.make_schema(sql.MY_DATABASE)
 
 filename = SCHEMA_FILE
 if args.login == "pdns":

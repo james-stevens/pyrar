@@ -673,7 +673,7 @@ def make_tlsa():
 
     ok, pem = domains.webui_add_tlsa_record(req)
     if not ok:
-        return req.abort(reply)
+        return req.abort(pem)
 
     return req.response(pem)
 

@@ -1,13 +1,13 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" manage policy values """
 
-import os
 import json
 
 from librar import static_data
 from librar import fileloader
-import librar.log as log
+
 
 policy_defaults = {
     "smtp_tls_security_level": "may",
@@ -51,6 +51,7 @@ policy_defaults = {
 
 
 class Policy:
+    """ policy values manager """
     def __init__(self):
         self.file = fileloader.FileLoader(static_data.POLICY_FILE)
         self.all_data = None

@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" load / reload JSON config files """
 
 import os
 import json
@@ -18,7 +19,7 @@ def load_file_json(filename):
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
-    except Exception as err:
+    except (ValueError, IOError) as err:
         log(f"load_file_json: {filename} : {str(err)}", context)
 
     return None
@@ -39,6 +40,7 @@ def have_newer(mtime, file_name):
 
 
 class FileLoader:
+    """ load & update a json file """
     def __init__(self, filename):
         self.filename = filename
         self.last_mtime = 0

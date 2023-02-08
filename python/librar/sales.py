@@ -1,14 +1,14 @@
 #! /usr/bin/python3
-# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions for recording & handling sales """
 
 import inspect
 
+from mailer import spool_email
 from librar import sigprocs
 from librar import registry
 from librar import mysql as sql
-
-from mailer import spool_email
 
 
 def make_backend_job(order_db):

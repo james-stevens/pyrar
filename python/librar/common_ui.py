@@ -1,15 +1,16 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-
-from librar import registry
-from librar.policy import this_policy as policy
-from librar import static_data
-from librar import mysql as sql
+""" used by both the user & admin ui's """
 
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
+
+from librar.policy import this_policy as policy
+from librar import static_data
+from librar import mysql as sql
+from librar import registry
 
 
 def ui_config():

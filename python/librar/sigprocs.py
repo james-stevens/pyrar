@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" notice when a signal file gets touched """
 
 import os
 import sys
@@ -30,7 +31,7 @@ def remake_sig_file(file):
         os.remove(file)
     except FileNotFoundError:
         pass
-    with open(file, "w") as file_des:
+    with open(file, "w",encoding="utf-8"):
         pass
     return fileloader.have_newer(None, file)
 
@@ -66,7 +67,7 @@ def signal_wait(sig_name, prev_mtime=None, loop_time=1, max_wait=30):
     return next_mtime
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) > 1:
         signal_service(sys.argv[1])
         sys.exit(0)
@@ -77,3 +78,7 @@ if __name__ == "__main__":
         if this_mtime is None:
             break
         print(">>>> PING", this_mtime)
+
+
+if __name__ == "__main__":
+    main()

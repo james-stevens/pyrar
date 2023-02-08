@@ -1,15 +1,16 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions for sys-logging """
 
 import syslog
 import inspect
 import datetime
 
-done_init = False
+DONE_INIT = False
 
-hold_debug = False
-hold_with_logging = True
+HOLD_DEBUG = False
+HOLD_WITH_LOGGING = True
 
 facility_options = {
     "kern": syslog.LOG_KERN,
@@ -53,7 +54,7 @@ severity_options = {
 def debug(line, where=None):
     if where is None:
         where = inspect.stack()[1]
-    if hold_debug:
+    if HOLD_DEBUG:
         log("[DEUBG] " + line, where)
 
 
@@ -64,31 +65,31 @@ def log(line, where=None, default_level=syslog.LOG_NOTICE):
     if where is not None:
         fname = where.filename.split("/")[-1].split(".")[0]
         txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
-    if hold_debug:
+    if HOLD_DEBUG:
         now = datetime.datetime.now()
         now_txt = now.strftime("%Y-%m-%d %H:%M:%S")
         print(f"{now_txt} SYSLOG{txt} {line}")
     else:
-        if not done_init:
+        if not DONE_INIT:
             init()
-        if hold_with_logging:
+        if HOLD_WITH_LOGGING:
             if isinstance(default_level, str):
                 default_level = severity_options[default_level]
-            syslog.syslog(txt + " " + line)
+            syslog.syslog(default_level, txt + " " + line)
 
 
-def init(facility="local0", with_debug=False, with_logging=True, default_level=syslog.LOG_NOTICE):
-    global hold_debug
-    global hold_with_logging
-    global done_init
+def init(facility="local0", with_debug=False, with_logging=True):
+    global HOLD_DEBUG
+    global HOLD_WITH_LOGGING
+    global DONE_INIT
 
     if isinstance(facility, str):
         facility = facility_options[facility]
 
     syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
-    hold_with_logging = with_logging
-    hold_debug = with_debug
-    done_init = True
+    HOLD_WITH_LOGGING = with_logging
+    HOLD_DEBUG = with_debug
+    DONE_INIT = True
 
 
 if __name__ == "__main__":

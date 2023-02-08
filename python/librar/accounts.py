@@ -2,7 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-from librar.log import log, debug, init as log_init
+from librar.log import init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import misc
@@ -57,11 +57,11 @@ def find_payment_record(injs):
     if "provider_tag" not in injs or not validate.is_valid_display_name(injs["provider_tag"]):
         return False, "Insufficient or invalid data"
 
-    where = { "provider_tag": injs[provider_tag] }
+    where = {"provider_tag": injs["provider_tag"]}
     if "provider" in injs:
         where["provider"] = injs["provider"]
 
-    ok, pay_db = sql.sql_select_one("payments",where)
+    ok, pay_db = sql.sql_select_one("payments", where)
     if ok and pay_db and len(pay_db) > 0:
         return True, pay_db
 
@@ -102,11 +102,12 @@ def admin_trans(injs):
 
     if pay_db is not None:
         if pay_db["single_use"]:
-            sql.sql_update_one("payments", {
-                "provider": "DONE:"+pay_db["provider"],
-                "provider_tag": "DONE:"+pay_db["provider_tag"],
-                "amended_dt": None
-                }, { "payment_id": pay_db["payment_id"] })
+            sql.sql_update_one(
+                "payments", {
+                    "provider": "DONE:" + pay_db["provider"],
+                    "provider_tag": "DONE:" + pay_db["provider_tag"],
+                    "amended_dt": None
+                }, {"payment_id": pay_db["payment_id"]})
 
     return True, True
 
@@ -115,5 +116,3 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
     print(">>>>>>", apply_transaction(10450, 90000, "Here's some fake money"))
-
-
