@@ -83,6 +83,11 @@ def init(facility="local0", with_debug=False, with_logging=True):
     global HOLD_WITH_LOGGING
     global DONE_INIT
 
+    if facility is None:
+        HOLD_WITH_LOGGING = False
+        DONE_INIT = True
+        return
+
     if isinstance(facility, str):
         facility = facility_options[facility]
 

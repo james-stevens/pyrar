@@ -10,5 +10,5 @@ if ! test -s ${dst}
 		echo 'pyrar:$2b$12$QzdoF1paZjwdufgGml/9J.67H7N5bzZScBR8rIC92duMLNOdxFg7m' > ${dst}
 	fi
 
-chown nginx: ${dst}
-chmod 440 ${dst}
+chown daemon: ${dst}
+chmod 660 ${dst}

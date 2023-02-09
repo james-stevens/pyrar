@@ -4,9 +4,10 @@
 """ Admin webui """
 
 from datetime import datetime
+import subprocess
 import flask
 
-from librar.log import init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import registry
@@ -26,6 +27,11 @@ from admin import load_schema
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 
 __SCHEMA = {}
+
+
+def post_table_trigger(table):
+    if table == "sysadmins":
+        subprocess.run(["/usr/local/bin/make_admin_logins"])
 
 
 def response(code, data):
@@ -167,7 +173,7 @@ def each_where_obj(sql_joins, table, ask_item, where_obj):
         col = where_itm
         if where_itm.find(".") >= 0:
             col, tbl = find_foreign_column(sql_joins, table, col)
-        elif col not in __SCHEMA[table]["columns"]:
+        elif col not in __SCHEMA[tbl]["columns"]:
             json_abort(f"Column `{col}` is not in table `{table}`")
 
         if ask_item == "=" and isinstance(where_obj[where_itm], list):
@@ -376,7 +382,7 @@ def run_backend_start_ups():
 
 
 application = flask.Flask("MySQL-Rest/API")
-log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
+log_init(policy.policy("facility_python_code"))
 sql.connect("admin")
 __SCHEMA = load_schema.load_db_schema()
 registry.start_up()
@@ -525,6 +531,7 @@ def insert_table_row(table):
         if row_id > 0:
             ret["row_id"] = row_id
 
+    post_table_trigger(table)
     return response(200, ret)
 
 
@@ -545,11 +552,14 @@ def update_table_row(table):
 
     set_list = process_one_set(sent["set"], table)
     query = f"update {table} set " + ",".join(set_list)
-    query = build_sql(table, sent, query)[1]
+    __, query = build_sql(table, sent, query)
 
+    log(f"PATCH->{query}")
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
+        post_table_trigger(table)
         return response(200, {"affected_rows": num_rows})
+
     return response(499, None)
 
 
@@ -564,11 +574,13 @@ def delete_table_row(table):
 
     check_supplied_modifiers(flask.request.json, ["where", "limit"])
 
-    query = build_sql(table, flask.request.json, f"delete from {table} ")[1]
+    __, query = build_sql(table, flask.request.json, f"delete from {table} ")
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
+        post_table_trigger(table)
         return response(200, {"affected_rows": num_rows})
+
     return response(499, None)
 
 
@@ -576,7 +588,7 @@ def delete_table_row(table):
 def post_user_transaction():
     ok, reply = accounts.admin_trans(flask.request.json)
     if not ok:
-        return response(499, reply)
+        return json_abort(reply)
     return response(200, True)
 
 
@@ -584,11 +596,11 @@ def post_user_transaction():
 def get_registry_data(domain):
     """ get registry data """
     if not validate.is_valid_fqdn(domain):
-        return response(499, "Invalid domain name")
+        return json_abort("Invalid domain name")
     dom = domobj.Domain()
     ok, reply = dom.load_name(domain)
     if not ok:
-        return response(499, reply)
+        return json_abort(reply)
 
     action = "dom/rawinfo"
     bke_job = {
@@ -601,23 +613,23 @@ def get_registry_data(domain):
     }
     this_handler = dom_handler.backend_plugins[dom.registry["type"]]
     if action not in this_handler:
-        return response(499, f"Unsupport action '{action}' for type='{dom.registry['type']}'")
+        return json_abort(f"Unsupport action '{action}' for type='{dom.registry['type']}'")
 
     if (reply := this_handler[action](bke_job, dom.dom_db)) is None:
-        return response(499, "Error getting domain info from backend")
+        return json_abort("Error getting domain info from backend")
     return response(200, reply)
 
 
 @application.route("/adm/v1/dns/<domain>", methods=['GET'])
 def get_dns_data(domain):
     """ get pdns data """
-    if not validate.is_valid_fqdn(domain):
-        return response(499, "Invalid domain name")
+    if not validate.is_valid_fqdn(domain) and not validate.is_valid_tld(domain):
+        return json_abort("Invalid domain name")
     if not pdns.zone_exists(domain):
-        return response(499, "No data")
+        return json_abort("No data")
 
     if (dns := pdns.load_zone(domain)) is None:
-        return response(499, "No data")
+        return json_abort("PowerDNS data failed to load")
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(domain)

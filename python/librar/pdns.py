@@ -24,6 +24,7 @@ PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 
 
 def start_up():
+    """ Initalisation """
     global CLIENT
     CLIENT = requests.Session()
     CLIENT.headers.update(headers)
@@ -37,19 +38,21 @@ def start_up():
 
 
 def find_best_ds(key_data):
+    """ pull out the DS record we think is the best one to use """
     for key in key_data:
         if "ds" in key:
+            each_ds = {}
             for ds_rr in key["ds"]:
-                if ds_rr.find(" 2 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 3 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 1 ") >= 0:
-                    return ds_rr
+                ds_parts = ds_rr.split()
+                each_ds[int(ds_parts[2])] = ds_rr
+            for sha_type in [2,4,1]:
+                if sha_type in each_ds:
+                    return each_ds[sha_type]
     return None
 
 
 def zone_exists(name):
+    """ P/DNS will respond differently if the zone exists or not """
     return load_zone_keys(name) is not None
 
 
@@ -173,9 +176,7 @@ def create_zone(name, with_dnssec=False):
     }]
 
     run_cmds(post_json)
-
     add_to_catalog(name)
-
     return load_zone(name)
 
 
@@ -323,6 +324,8 @@ def update_rrs(zone, rrs):
 def main():
     start_up()
     name = "r.zz."
+    ds = {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '256 3 13 gRj3zFi3p549gW3PhcBNEnmoyGU+WzOvGVl4BBDJQDXLvGEBNpSyPrSK4BrtCEXGlBi3waYwWFJvA+88Aeaykw==', 'flags': 256, 'id': 99, 'keytype': 'zsk', 'published': True, 'type': 'Cryptokey'}, {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '257 3 13 H+/+r2nHSgLgzHdZI/wt8hc+UVbEQP02BvvIYg9SalPn0O5QzpalrA6VB0Ns7KtavYllGHXrtJU7Gm9HBUsJhg==', 'ds': ['29301 13 1 f4493b0b1fa9985a0c89d4ee78027b5bf27546cc', '29301 13 2 ca2d1f3a267344bb16722c423876e4298f837a58d3ae094901ab674ff8b7eb5e', '29301 13 4 fe612ae33772f57032978b81af7e5ec27a3c9ef7307e114a9a6b9f1ec91005cafc65f20ec16e0211881b1b9d3f9a76c0'], 'flags': 257, 'id': 98, 'keytype': 'ksk', 'published': True, 'type': 'Cryptokey'}
+    print(find_best_ds(ds))
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))
@@ -332,7 +335,7 @@ def main():
     # print("DELETE>>>>",json.dumps(delete_zone(name)))
     # print("EXISTS>>>>", zone_exists(name))
     # print("KEYS>>>>",load_zone_keys(name))
-    print("ZONE>>>>", json.dumps(load_zone(name),indent=3))
+    #print("ZONE>>>>", json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))
     # print(json.dumps(create_zone("mine", True),indent=3))
