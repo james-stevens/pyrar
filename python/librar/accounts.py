@@ -7,7 +7,7 @@ from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import misc
 from librar import sigprocs
-from librar import static_data
+from librar import static
 from librar import validate
 
 
@@ -93,7 +93,7 @@ def admin_trans(injs):
         return False, "Invalid user_id given"
 
     site_currency = policy.policy("currency")
-    amount *= static_data.POW10[site_currency["decimal"]]
+    amount *= static.POW10[site_currency["decimal"]]
     amount = int(round(amount, 0))
 
     ok, trans_id = apply_transaction(user_id, amount, "Admin: " + injs["description"], as_admin=True)

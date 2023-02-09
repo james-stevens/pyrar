@@ -7,7 +7,7 @@ import sys
 
 from librar import mysql as sql
 from librar import registry
-from librar import static_data
+from librar import static
 from librar import validate
 from librar import log
 from librar.policy import this_policy as policy
@@ -52,7 +52,7 @@ class Domain:
         self.tld = tld
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
-        self.permitted_locks = static_data.CLIENT_DOM_FLAGS
+        self.permitted_locks = static.CLIENT_DOM_FLAGS
 
         if "locks" in self.registry:
             self.permitted_locks = self.registry["locks"]

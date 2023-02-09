@@ -1,13 +1,14 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" Run waiting domain actions when time is ready """
 
 import sys
 import argparse
 import inspect
 
 from librar import mysql as sql
-from librar import static_data
+from librar import static
 from librar import sigprocs
 from librar import registry
 from librar import pdns
@@ -53,9 +54,9 @@ def make_backend_job(job_type, dom_db):
     return ok
 
 
-def flag_expired_domain(act_db, dom_db):
+def flag_expired_domain(__, dom_db):
     pdns.delete_from_catalog(dom_db["name"])
-    sql.sql_update_one("domains", {"status_id": static_data.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
+    sql.sql_update_one("domains", {"status_id": static.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
     return make_backend_job("dom/expired", dom_db)
 
 
@@ -64,12 +65,12 @@ def order_cancel(act_db, dom_db):
     return delete_domain(act_db, dom_db)
 
 
-def delete_domain(act_db, dom_db):
+def delete_domain(__, dom_db):
     sql.sql_delete("orders", {"domain_id": dom_db["domain_id"]})
     sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
     pdns.delete_zone(dom_db["name"])
 
-    if dom_db["status_id"] == static_data.STATUS_WAITING_PAYMENT:
+    if dom_db["status_id"] == static.STATUS_WAITING_PAYMENT:
         del_dom_db = {col: dom_db[col] for col in COPY_DEL_DOM_COLS}
         del_dom_db["deleted_dt"] = None
         sql.sql_insert("deleted_domains", del_dom_db)
@@ -82,7 +83,7 @@ def auto_renew_domain(act_db, dom_db):
     return True
 
 
-def send_expiry_reminder(act_db, dom_db):
+def send_expiry_reminder(__, dom_db):
     spool_email.spool("reminder", [["users", {
         "user_id": dom_db["user_id"]
     }], ["domains", {
@@ -92,8 +93,7 @@ def send_expiry_reminder(act_db, dom_db):
 
 
 def delete_action(act_db):
-    sql.sql_delete_one("actions", {"action_id": act_db["action_id"]})
-    return True
+    return sql.sql_delete_one("actions", {"action_id": act_db["action_id"]})
 
 
 action_exec = {
@@ -106,11 +106,11 @@ action_exec = {
 
 
 def runner():
-    ok, act_db = sql.sql_select("actions", f"execute_dt < now()", limit=1, order_by="execute_dt")
-    if not ok or len(act_db) < 1:
+    ok, act_data = sql.sql_select("actions", "execute_dt < now()", limit=1, order_by="execute_dt")
+    if not ok or not act_data or len(act_data) < 1:
         return False
 
-    act_db = act_db[0]
+    act_db = act_data[0]
     if act_db["action"] not in action_exec:
         log(f"ERROR: Domain action '{act_db['action']}' for DOM-{act_db['domain_id']} - action not found")
         return delete_action(act_db)
@@ -127,7 +127,7 @@ def runner():
     return delete_action(act_db)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='EPP Jobs Runner')
     parser.add_argument("-D", '--debug', action="store_true")
     parser.add_argument("-a", '--action')
@@ -155,3 +155,7 @@ if __name__ == "__main__":
     debug("RUNNING")
     while runner():
         pass
+
+
+if __name__ == "__main__":
+    main()

@@ -31,7 +31,7 @@ def remake_sig_file(file):
         os.remove(file)
     except FileNotFoundError:
         pass
-    with open(file, "w",encoding="utf-8"):
+    with open(file, "w", encoding="utf-8"):
         pass
     return fileloader.have_newer(None, file)
 

@@ -13,11 +13,11 @@ import requests
 
 from librar.log import log
 from librar import misc
-from librar import static_data
+from librar import static
 from librar.policy import this_policy as policy
 
 CLIENT = None
-headers = static_data.HEADER
+headers = static.HEADER
 headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
 PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
@@ -29,8 +29,11 @@ def start_up():
     CLIENT.headers.update(headers)
 
     catalog_zone = policy.policy("catalog_zone")
-    if not zone_exists(catalog_zone):
-        create_zone(catalog_zone, False)
+    try:
+        if not zone_exists(catalog_zone):
+            create_zone(catalog_zone, False)
+    except requests.exceptions.ConnectionError:
+        raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
 
 
 def find_best_ds(key_data):

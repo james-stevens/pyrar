@@ -7,7 +7,7 @@ import inspect
 import idna
 
 from librar.policy import this_policy as policy
-from librar import static_data
+from librar import static
 
 
 def where_event_log():
@@ -25,7 +25,7 @@ def ashex(line):
         line = line.encode("utf-8")
     ret = ""
     for asc in line:
-        ret += static_data.HEXLIB[asc >> 4] + static_data.HEXLIB[asc & 0xf]
+        ret += static.HEXLIB[asc >> 4] + static.HEXLIB[asc & 0xf]
     return ret
 
 

@@ -15,7 +15,7 @@ from librar import sigprocs
 from librar import domobj
 from librar import pdns
 from librar import tlsa
-from librar import static_data
+from librar import static
 from librar import hashstr
 
 from mailer import spool_email
@@ -53,7 +53,7 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
 
 def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
     if not this_domobj.valid_expiry_limit(num_years):
-        for action in static_data.DOMAIN_ACTIONS:
+        for action in static.DOMAIN_ACTIONS:
             if action in dom_price:
                 del dom_price[action]
                 dom_price[action + ":fail"] = "Renew limit exceeded"
@@ -89,7 +89,7 @@ def check_domain_is_mine(user_id, domain, require_live):
     if not dom.load_name(domain["name"], user_id)[0]:
         return False, "Domain not found or not yours"
 
-    if require_live and dom.dom_db["status_id"] not in static_data.LIVE_STATUS:
+    if require_live and dom.dom_db["status_id"] not in static.LIVE_STATUS:
         return False, "Operation only supported on live domains"
 
     return True, dom
@@ -114,7 +114,7 @@ def webui_update_domain(req):
     if not sql.sql_update_one("domains", update_cols, {"domain_id": dom.dom_db["domain_id"], "user_id": req.user_id}):
         return False, "Domain update failed"
 
-    if dom.dom_db["status_id"] == static_data.LIVE_STATUS:
+    if dom.dom_db["status_id"] == static.LIVE_STATUS:
         domain_backend_update(dom.dom_db)
 
     return True, update_cols
@@ -229,7 +229,7 @@ def webui_update_domains_flags(req):
 
     new_flags = dom.locks.copy()
     for flag, flag_state in req.post_js["flags"].items():
-        if not (isinstance(flag_state, bool) and isinstance(flag, str) and flag in static_data.CLIENT_DOM_FLAGS):
+        if not (isinstance(flag_state, bool) and isinstance(flag, str) and flag in static.CLIENT_DOM_FLAGS):
             return False, "Missing or invalid data"
         if flag not in dom.registry["locks"]:
             return False, f"Flag '{flag}' is not supported in this registry"

@@ -10,7 +10,7 @@ from librar.log import log, init as log_init
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
-from librar import static_data
+from librar import static
 from librar import passwd
 from librar import misc
 
@@ -148,8 +148,7 @@ def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
     log(f"Adding {years} yrs to '{dom_db['name']}'/{start_date}")
     values = [
         f"expiry_dt = date_add({start_date},interval {years} year)",
-        f"status_id = if (expiry_dt > now(),{static_data.STATUS_LIVE},{static_data.STATUS_EXPIRED})",
-        "amended_dt = now()"
+        f"status_id = if (expiry_dt > now(),{static.STATUS_LIVE},{static.STATUS_EXPIRED})", "amended_dt = now()"
     ]
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 

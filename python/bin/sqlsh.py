@@ -9,14 +9,14 @@ import argparse
 
 from librar import mysql as sql
 from librar import fileloader
-from librar import static_data
+from librar import static
 
 parser = argparse.ArgumentParser(description='Command line SQL runner')
 parser.add_argument("-o", '--output-long', action="store_true")
 parser.add_argument("sql", nargs='+')
 args = parser.parse_args()
 
-logins = fileloader.load_file_json(static_data.LOGINS_FILE)
+logins = fileloader.load_file_json(static.LOGINS_FILE)
 
 
 def max_width(this_row):

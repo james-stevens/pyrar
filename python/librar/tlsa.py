@@ -91,7 +91,9 @@ def make_tlsa(fqdn, location, organization, organizational_unit, state, country)
                 "ldns-dane", "-c",
                 os.path.join(tmpdir, "host.crt"), "-f",
                 os.path.join(tmpdir, "my_ca.pem"), "create", fqdn, "443", "3", "1", "2"
-            ], check=True, capture_output=True)
+            ],
+                                      check=True,
+                                      capture_output=True)
         except subprocess.CalledProcessError:
             return False, None
 

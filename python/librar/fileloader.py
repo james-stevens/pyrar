@@ -8,7 +8,7 @@ import json
 import inspect
 
 from librar.log import log, init as log_init
-from librar import static_data
+from librar import static
 
 
 def load_file_json(filename):
@@ -66,5 +66,5 @@ class FileLoader:
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    file = FileLoader(static_data.LOGINS_FILE)
+    file = FileLoader(static.LOGINS_FILE)
     print(json.dumps(file.json, indent=4))

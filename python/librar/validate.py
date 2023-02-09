@@ -10,7 +10,7 @@ import re
 
 from librar import registry
 from librar import misc
-from librar import static_data
+from librar import static
 
 IS_HOST = r'^(\*\.|)([\_a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
@@ -193,7 +193,7 @@ def is_valid_ds(ds_rec):
         return False
 
     for character in ds_rec["digest"]:
-        if character not in static_data.HEXLIB:
+        if character not in static.HEXLIB:
             return False
 
     if VALID_DS_LEN[ints["digestType"]] != len(ds_rec["digest"]):
@@ -228,7 +228,7 @@ def valid_currency(currency):
 
 def valid_domain_actions(actions):
     for action in actions:
-        if action not in static_data.DOMAIN_ACTIONS:
+        if action not in static.DOMAIN_ACTIONS:
             return False
     return len(actions) > 0
 

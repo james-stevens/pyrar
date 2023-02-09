@@ -8,7 +8,7 @@ from webui import pay_handler
 from webui.pay_plugins import *
 
 from librar.policy import this_policy as policy
-from librar import static_data
+from librar import static
 from librar import mysql as sql
 from librar import registry
 
@@ -20,9 +20,9 @@ def ui_config():
     return {
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
-        "dom_flags": static_data.CLIENT_DOM_FLAGS,
+        "dom_flags": static.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
-        "status": static_data.DOMAIN_STATUS,
+        "status": static.DOMAIN_STATUS,
         "payments": {
             pay: pay_handler.pay_plugins[pay]["desc"]
             for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]

@@ -105,6 +105,7 @@ def run_backend_item(bke_job):
 
 
 def run_start_up_checks():
+    """ for each plug-in, if we use it, run its start-up """
     all_regs = registry.tld_lib.regs_file.data()
     have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
     for this_type, funcs in dom_handler.backend_plugins.items():

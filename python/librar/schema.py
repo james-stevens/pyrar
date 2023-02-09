@@ -72,10 +72,12 @@ def make_schema(database):
 
     return schema
 
+
 def main():
     sql.connect("admin")
     live_schema = make_schema(sql.MY_DATABASE)
-    print(json.dumps(live_schema,indent=3))
+    print(json.dumps(live_schema, indent=3))
+
 
 if __name__ == "__main__":
     main()

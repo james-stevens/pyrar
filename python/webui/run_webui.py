@@ -11,7 +11,7 @@ from librar import validate
 from librar import passwd
 from librar import pdns
 from librar import common_ui
-from librar import static_data
+from librar import static
 from librar import domobj
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
@@ -192,7 +192,7 @@ def orders_cancel():
         sql.sql_delete_one("domains", {
             "domain_id": order_db["domain_id"],
             "user_id": req.user_id,
-            "status_id": static_data.STATUS_WAITING_PAYMENT
+            "status_id": static.STATUS_WAITING_PAYMENT
         })
 
     req.event(event_db)
@@ -349,7 +349,7 @@ def users_domains():
         dom.set_name(dom_db["name"])
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
-        dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
+        dom_db["is_live"] = dom_db["status_id"] in static.LIVE_STATUS
 
     req.user_data["domains"] = reply
 
