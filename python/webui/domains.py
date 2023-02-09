@@ -232,7 +232,7 @@ def webui_update_domains_flags(req):
         if not (isinstance(flag_state, bool) and isinstance(flag, str) and flag in static_data.CLIENT_DOM_FLAGS):
             return False, "Missing or invalid data"
         if flag not in dom.registry["locks"]:
-            return False, f"Flag '{this_flag}' is not supported in this registry"
+            return False, f"Flag '{flag}' is not supported in this registry"
 
         new_flags[flag] = flag_state
 

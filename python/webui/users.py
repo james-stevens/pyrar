@@ -1,11 +1,8 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-import secrets
-import base64
-import hashlib
-import time
-import os
+""" user accoutn functions for webui """
+
 import sys
 
 from librar import mysql as sql
@@ -247,7 +244,7 @@ def reset_users_password(req):
         req, {
             "event_type": "password/reset",
             "user_id": user_db["user_id"],
-            "notes": f"User password reset using matching PIN & code"
+            "notes": "User password reset using matching PIN & code"
         })
 
     spool_email.spool("password_reset", [["users", {"user_id": user_db["user_id"]}]])
