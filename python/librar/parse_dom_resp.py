@@ -1,8 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-
-import json
+""" parse a json epp dom object into something nicer """
 
 
 def unroll_one_ds(ds_data):
@@ -13,10 +12,10 @@ def unroll_one_ns_attr(ns_data):
     return ns_data["domain:hostName"]
 
 
-def dt_to_sql(src, dt):
-    if dt not in src:
+def epp_dt_to_sql(src, which_property):
+    if which_property not in src:
         return None
-    return src[dt][:10] + " " + src[dt][11:19]
+    return src[which_property][:10] + " " + src[which_property][11:19]
 
 
 def parse_domain_info_xml(xml, data_type):
@@ -47,8 +46,8 @@ def parse_domain_info_xml(xml, data_type):
                 data["ns"] = [unroll_one_ns_attr(item) for item in dom_ns["domain:hostAttr"]]
         data["ns"].sort()
 
-    data["created_dt"] = dt_to_sql(dom_data, "domain:crDate")
-    data["expiry_dt"] = dt_to_sql(dom_data, "domain:exDate")
+    data["created_dt"] = epp_dt_to_sql(dom_data, "domain:crDate")
+    data["expiry_dt"] = epp_dt_to_sql(dom_data, "domain:exDate")
     data["name"] = dom_data["domain:name"]
 
     if "domain:clID" in dom_data:

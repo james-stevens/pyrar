@@ -1,15 +1,17 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-
-from librar import registry
-from librar.policy import this_policy as policy
-from librar import  static_data
-from librar import mysql as sql
+""" used by both the user & admin ui's """
 
 from webui import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
 from webui.pay_plugins import *
+
+from librar.policy import this_policy as policy
+from librar import static
+from librar import mysql as sql
+from librar import registry
+
 
 def ui_config():
     if (payment_methods := policy.policy("payment_methods")) is None:
@@ -18,15 +20,15 @@ def ui_config():
     return {
         "default_currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
-        "dom_flags": static_data.CLIENT_DOM_FLAGS,
+        "dom_flags": static.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
-        "status": static_data.DOMAIN_STATUS,
+        "status": static.DOMAIN_STATUS,
         "payments": {
             pay: pay_handler.pay_plugins[pay]["desc"]
             for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
         },
         "policy": policy.data()
-        }
+    }
 
 
 def main():

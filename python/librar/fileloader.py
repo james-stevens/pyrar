@@ -1,13 +1,14 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" load / reload JSON config files """
 
 import os
 import json
 import inspect
 
 from librar.log import log, init as log_init
-from librar import static_data
+from librar import static
 
 
 def load_file_json(filename):
@@ -18,7 +19,7 @@ def load_file_json(filename):
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
-    except Exception as err:
+    except (ValueError, IOError) as err:
         log(f"load_file_json: {filename} : {str(err)}", context)
 
     return None
@@ -26,7 +27,7 @@ def load_file_json(filename):
 
 def have_newer(mtime, file_name):
     if not os.path.isfile(file_name) or not os.access(file_name, os.R_OK):
-        raise PermissionError
+        raise PermissionError(f"'{file_name}' not found or not readable")
 
     new_time = os.path.getmtime(file_name)
     if mtime is None:
@@ -39,6 +40,7 @@ def have_newer(mtime, file_name):
 
 
 class FileLoader:
+    """ load & update a json file """
     def __init__(self, filename):
         self.filename = filename
         self.last_mtime = 0
@@ -64,5 +66,5 @@ class FileLoader:
 
 if __name__ == "__main__":
     log_init(with_debug=True)
-    file = FileLoader(static_data.LOGINS_FILE)
+    file = FileLoader(static.LOGINS_FILE)
     print(json.dumps(file.json, indent=4))

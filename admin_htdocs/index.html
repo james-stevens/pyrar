@@ -13,9 +13,13 @@
 
 debugAPI = false;
 
-const pre_get_elm = [ "emailSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
+const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:10000, 6:100000, 7:1000000, 8:10000000, 9:100000000 };
+
+const pre_get_elm = [ "emailSearch","zoneSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
+
+const show_as_json = [ "price_info" ];
 
 const list_columns = {
 	"events": [ "when_dt","who_did_it","event_type","notes" ],
@@ -24,13 +28,15 @@ const list_columns = {
 	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
 	"payments": [ "created_dt","provider","provider_tag" ],
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
+	"sysadmins": ["login","htpasswd","amended_dt" ]
 	};
 
 const order_by = {
 	"events" : "event_id desc",
 	"actions": "execute_dt",
 	"sales": "sales_item_id desc",
-	"transactions": "acct_sequence_id desc"
+	"transactions": "acct_sequence_id desc",
+	"sysadmins": "login"
 	};
 
 const table_desc = {
@@ -113,6 +119,31 @@ function clr_lazy_hide()
 
 
 
+function find_tld(tld)
+{
+	for(let i of gbl.config.zones) if (i.name==tld) return i;
+	return null;
+}
+
+function registry_type(domain)
+{
+	let pos = domain.indexOf(".");
+	if (pos<0) return null;
+	return reg_type_of_tld(domain.slice(pos+1));
+}
+
+
+
+function reg_type_of_tld(tld_name)
+{
+	let tld = find_tld(tld_name);
+	if (tld===null) return null;
+	if (tld.registry in gbl.config.registry)
+		return gbl.config.registry[tld.registry].type;
+	return null;
+}
+
+
 
 function togglePopUp(name,tmout)
 {
@@ -133,7 +164,7 @@ function togglePopUp(name,tmout)
     ctx.popup = { "timer": hide_now, "name": name }
 
     let e = null;
-	// focus on edit box, if you want
+	if (name=="AddSysAdmin") e = document.getElementById("sysadm_login");
     if (e) { e.focus(); e.select(); }
 
     return false;
@@ -171,7 +202,7 @@ function pretty_prompt(tag)
 function table_col_val(col,val)
 {
 	let s = col.split(".");
-	return tableLink(s[0],{ "where": { "=":{ [s[1]]:val } } });
+	return push_table_link(s[0],{ "where": { "=":{ [s[1]]:val } } });
 }
 
 
@@ -191,8 +222,11 @@ function tableLink(table,where)
 
 		if (table=="users") elm.emailSearch.value="";
 		if (table=="domains") elm.domainSearch.value="";
+		if (table=="zones") elm.zoneSearch.value="";
 
-		elm.moreInfo.innerHTML = html_one_record(table,data[0]);
+		ctx.one_row = { data: data[0], table: table, where: where };
+
+		elm.moreInfo.innerHTML = html_one_record(table,data[0],where);
 
 		},{ json: where});
 
@@ -222,7 +256,73 @@ function best_where(table,db_rec)
 
 
 
-function linkedData(table,where)
+function show_sysadmins()
+{
+	linkedData("sysadmins",{"order":order_by["sysadmins"]},"moreInfo");
+}
+
+
+
+function do_add_sys_admin()
+{
+	function find_login(name) {
+		for(let i of ctx.list.rows) {
+			if (i.login==name) return true;
+			}
+		return false;
+		}
+
+	let f = document.addSysAdm;
+	if (!(f.sysadm_login.value)||(!f.sysadm_password.value)) {
+		f.sysadm_login.focuds();
+		return errMsg("Please fill out all the fields","AddSysAdmin"); }
+
+	send_data = { 
+		"set": {
+			"htpasswd":f.sysadm_password.value,
+			"amended_dt":null
+			}
+		};
+	use_method = "PATCH";
+
+	if ((ctx.list.table=="sysadmins")&&(find_login(f.sysadm_login.value))) {
+		send_data.where = { "=": { "login": f.sysadm_login.value } };
+	} else {
+		send_data.set.created_dt = null;
+		send_data.set.login = f.sysadm_login.value;
+		use_method = "PUT";
+		}
+
+	callApi("data/sysadmins",(ok,reply) => {
+		if (!ok) return def_errMsg("Adding sysadmin user failed",reply,AddSysAdmin);
+
+		hidePopUp();
+		show_sysadmins();
+
+		},{ json: send_data, method: use_method });
+
+	return false;
+}
+
+
+
+function add_sysadmin_form()
+{
+	let x = "<form action=# onSubmit='return do_add_sys_admin();' name=addSysAdm><table>";
+	x += settings_prompt("Login")+"<input id=sysadm_login onkeyUp='keyEsc(event);' style='width:250px;'></td></tr>";
+	x += settings_prompt("Password")+"<input id=sysadm_password type=password onkeyUp='keyEsc(event);' autocomplete='new-password' style='width:250px;'></td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar id=crdb_btns>";
+	x += "<input type=button onClick='hidePopUp();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += "<input type=submit class=myBtn style='width: 150px' value='OK'>";
+	x += "</td></tr></form>";
+	x += "</table>";
+	return x;
+}
+
+function keyEsc(e) { if (e.key == "Escape") hidePopUp(); }
+
+
+function linkedData(table,where,location)
 {
 	callApi("data/"+table,(ok,reply) => {
 		if (!ok) return def_errMsg(`Error loading ${table} '${JSON.stringify(where)}'`,reply,"btnBarMore");
@@ -230,7 +330,23 @@ function linkedData(table,where)
 		let data = reply[table];
 		if ((!data)||(!data.length)) return errMsg("No Data","btnBarMore");
 
+		ctx.list = { table: table, rows: data, where: where };
+
 		let x = "<table border=0 cellspacing=1 cellpadding=1 width=100%>";
+		if (table == "sysadmins") {
+			x += `<tr><td colspan=${list_columns[table].length} class=btmBtnBar>`;
+			x += generic_popup_btn({
+				"name": "AddSysAdmin",
+				"label": "Add/Modify",
+				"width": 100,
+				"timeout": null,
+				"title": "Add or modify a System Administrator",
+				"internal": add_sysadmin_form,
+				"style": "overflow: auto; margin-left: -300;"
+				});
+			x += "</td></tr>";
+			x += "<tr><td>"+gbl.gap+"</td></tr>";
+			}
 		x += "<tr>";
 		for(let col of list_columns[table])
 			x += `<th>${pretty_prompt(col)}</th>`;
@@ -238,7 +354,7 @@ function linkedData(table,where)
 
 		for(let i of data) {
 			sub_where = `{"where": { "=": ${best_where(table,i)} } }`;
-			x += `<tr onClick='tableLink("${table}",${sub_where});' class=dataRow>`;
+			x += `<tr onClick='push_table_link("${table}",${sub_where});' class=dataRow>`;
 			for(let col of list_columns[table]) {
 				value = i[col];
 
@@ -259,7 +375,14 @@ function linkedData(table,where)
 			}
 		x += "</table>";
 
-		let e = document.getElementById("moreData");
+		let e = null;
+		if (location === undefined)
+			e = document.getElementById("moreData");
+		else {
+			if (location in elm) e = elm[location];
+			else e = document.getElementById(location);
+			}
+
 		e.innerHTML = x;
 		unerrMsg();
 
@@ -273,28 +396,12 @@ function show_dns_data(domain)
 	if (domain.slice(-1)!=".") domain += ".";
 
 	callApi("dns/"+domain,(ok,reply) => {
-        if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo")
+        if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
 
         if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
             return errMsg("No DNS Data found for this domain","userInfo");
 
-        reply.dns.rrsets.sort((a,b) => {
-            if ((a.name == reply.dns.name)&&(b.name == reply.dns.name)) {
-                for(tag of ["SOA","NS","MX"]) {
-                    if (a.type == tag) return -1;
-                    if (b.type == tag) return 1;
-                    }
-                }
-            else {
-                if (a.name == reply.dns.name) return -1;
-                if (b.name == reply.dns.name) return 1;
-                if (a.name < b.name) return -1;
-                if (a.name > b.name) return 1;
-                }
-            if (a.type < b.type) return -1;
-            if (a.type > b.type) return 1;
-            return 0;
-            });
+        sort_rr_sets(reply);
 
 		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
 		x += "<tr><th>Host</th><th>Type</th><th>TTL</th><th>Value</th></tr>";
@@ -308,7 +415,7 @@ function show_dns_data(domain)
 			let show_name = clean_host_name(domain,rrs.name);
 
 			x += `<tr class=dataRow>`;
-			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td>${each_rr.content}</td></tr>`;
+			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
 
 			if ((rrs.type=="SOA")&&(reply.dns.dnssec)&&(reply.dns.ds))
 				x += `<tr class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${reply.dns.ds}</td></tr>`;
@@ -323,12 +430,130 @@ function show_dns_data(domain)
 }
 
 
+function show_regs_data(domain)
+{
+	callApi("regs/"+domain,(ok,reply) => {
+		if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
 
-function html_one_record(table, db_rec)
+		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
+		x += "<tr><th>Registry Data</th></tr>"
+		x += "<tr><td><xmp>"+JSON.stringify(reply, null, 3)+"</xmp></td></tr></table>";
+
+		let e = document.getElementById("moreData");
+		e.innerHTML = x;
+		});
+}
+
+
+
+function prettyAmount(event,amt)
+{
+	let e = document.getElementById("pretty_amount");
+	if ((!amt.value)||(isNaN(amt.value))) { e.innerHTML = "Invalid"; return; }
+
+	let f = parseFloat(amt.value)*pow10[gbl.config.default_currency.decimal];
+	if (f>0) pfx="Credit"; else pfx="Debit";
+	e.innerHTML = pfx+"&nbsp;"+format_amount(Math.round(f));
+}
+
+
+
+function cancel_crdb()
+{
+	let e = document.getElementById("moreData");
+	e.innerHTML = "";
+}
+
+
+function post_crdb(user_id)
+{
+	let amt = document.getElementById("crdb_amnt");
+	if ((!amt.value)||(isNaN(amt.value))) {
+		errMsg("Invalid amount field","crdb_btns");
+		amt.focus(); return; }
+
+	let desc = document.getElementById("crdb_desc");
+	if (desc.value=="") {
+		errMsg("You must give a description","crdb_btns");
+		desc.focus(); return; }
+
+	callApi("user/transaction",(ok,reply) => {
+		if (!ok) return def_errMsg("Transaction failed to post",reply,"crdb_btns");
+		linkedData("transactions", {"where":{"=":{"user_id":user_id}},"order":order_by["transactions"]});
+		},{ json: {
+			"user_id":user_id,
+			"amount":amt.value,
+			"description":desc.value
+			}});
+}
+
+
+
+function user_cr_db(user_id)
+{
+	let e = document.getElementById("moreData");
+	if ((e.innerHTML!="")&&(e.innerHTML.indexOf("crdb_amnt")>=0)) { e.innerHTML = ""; return; }
+
+	let x = "<table border=0 cellspacing=2 cellpadding=2 style='min-width:600px;' align=center>";
+	x += "<colgroup><col width=30%/><col/></colgroup>";
+	x += settings_prompt("Description")+"<input placeholder='Description user will see' style='width: 350px' id=crdb_desc></td></tr>";
+	x += settings_prompt("Amount")+gbl.config.default_currency.symbol;
+	x += "<input onkeyup='prettyAmount(event,this);' placeholder='-ve=debit +ve=credit' style='width: 200px' id=crdb_amnt>"
+	x += "<span style='padding-left: 50px' id=pretty_amount></span></td></tr>";
+
+	x += "<tr><td colspan=2 class=btmBtnBar id=crdb_btns>";
+	x += "<input type=button onClick='cancel_crdb();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += `<input type=button onClick='post_crdb(${user_id});' class=myBtn style='width: 150px' value='OK'>`;
+	x += "</td></tr>";
+	x += "</table>";
+
+	e.innerHTML = x;
+
+	e = document.getElementById("crdb_desc");
+	e.focus();
+}
+
+
+
+function cancel_delete()
+{
+	let e = document.getElementById("moreData");
+	e.innerHTML = "";
+}
+
+
+
+function delete_row(table,where)
+{
+	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+	x += `<tr><th>Delete this '${table}' record, Are you sure?</th></tr>`;
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+	x += "<tr><td class=btmBtnBar id=del_btns>";
+	x += "<input type=button onClick='cancel_delete();' class=myBtn style='width: 150px' value='Keep it'>";
+	x += `<input type=button onClick='do_delete_row("${table}","${where}");' class=myBtn style='width: 150px' value='Delete it'>`;
+	x += "</td></tr>";
+	x += "</table>";
+	let e = document.getElementById("moreData");
+	e.innerHTML = x;
+}
+
+
+function do_delete_row(table,where)
+{
+	callApi("data/"+table,(ok,reply) => {
+		if (!ok) return def_errMsg("Error deleteing from '{table}'",reply,"userInfo");
+		if (table=="sysadmins") show_sysadmins();
+		}, { json : JSON.parse(atob(where)), method: "DELETE" })
+}
+
+
+
+function html_one_record(table, db_rec, where)
 {
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
 	x += "<colgroup><col width=90%/><col/></colgroup>";
-	x += `<tr><td class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
+	x += `<tr><td colspan=2 class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
 
 	x += "<tr><td><table border=0 cellspacing=0 cellpadding=1 align=center width=100%>";
 	x += "<colgroup><col width=30%/><col/></colgroup>";
@@ -340,6 +565,8 @@ function html_one_record(table, db_rec)
 		if (i=="name") value = `${fromPuny(value)} <span style="margin-left: 25px" class=searchRenew>${value}</span>`;
 
 		if (money_format.includes(i)) value = format_amount(value);
+		if (show_as_json.includes(i)) value = "<xmp>"+JSON.stringify(JSON.parse(value), null, 3)+"</xmp>";
+
 		if (i in gbl.config.schema[":more:"].joins)
 			value = `<a href=# onClick='return table_col_val("${gbl.config.schema[":more:"].joins[i]}","${value}");'>${value}</a>`;
 
@@ -350,31 +577,41 @@ function html_one_record(table, db_rec)
 
 	x += "</table></td>";
 
+	x += "<td id=btnBarMore><table>";
+	x += `<tr><td><button onClick="delete_row('${table}','${btoa(JSON.stringify(where))}');" style="width:140px" class=myBtn>Delete</button></td></tr>`;
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+
+	let add_ending = false, with_pdns = null;
+
+	if ((table=="zones")&&(reg_type_of_tld(db_rec.zone)=="local"))
+		{ with_pdns = db_rec.zone; add_ending = true; }
+
+	if (table=="domains") {
+		if (registry_type(db_rec.name)=="epp")
+			x += `<tr><td><button style="width:140px" onClick="show_regs_data('${db_rec.name}');" class=myBtn>Reg's Data</button></td></tr>`;
+		with_pdns = db_rec.name; add_ending = true; }
+
+	if (with_pdns)
+		x += `<tr><td><button style="width:140px" onClick="show_dns_data('${with_pdns}');" class=myBtn>P/DNS Data</button></td></tr>`;
+
+	if (table=="sales"){
+		x += `<tr><td><button style="width:140px" class=myBtn>Refund</button></td></tr>`;
+		add_ending = true; }
+
+	if (table=="users"){
+		x += `<tr><td><button onClick="user_cr_db(${db_rec.user_id});" style="width:140px" class=myBtn>Credit/Debit</button></td></tr>`;
+		add_ending = true; }
+
+	if (add_ending) x += "<tr><td>"+gbl.gap+"</td></tr>";
+
 	if (table in linked_tables) {
-		x += "<td id=btnBarMore><table>";
-
-		let add_ending = false;
-
-		if (table=="domains") {
-			x += `<tr><td><button style="width:140px" onClick="show_dns_data('${db_rec.name}');" class=myBtn>P/DNS Data</button></td></tr>`;
-			add_ending = true; }
-
-		if (table=="sales"){
-			x += `<tr><td><button style="width:140px" class=myBtn>Refund</button></td></tr>`;
-			add_ending = true; }
-
-		if (add_ending) {
-			x += "<tr><td>"+gbl.gap+"</td></tr>";
-			x += `<tr><td><div class="line"/></td></tr>`;
-			x += "<tr><td>"+gbl.gap+"</td></tr>";
-			}
-
 		for(let i of linked_tables[table]) {
 			s = i[1].split(".");
 			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
 			}
-		x += "</table></td>";
 		}
+
+	x += "</table></td>";
 
 	x += "</tr>";
 	x += "<tr><td colspan=2><div id=moreData></div></td></tr>";
@@ -384,8 +621,8 @@ function html_one_record(table, db_rec)
 
 function searchUser(email)
 {
-	if (isNaN(email)) return tableLink("users",{ "where": { "=": { "email": email } } });
-	return tableLink("users",{ "where": { "=": { "user_id": email } } });
+	if (isNaN(email)) return push_table_link("users",{ "where": { "=": { "email": email } } });
+	return push_table_link("users",{ "where": { "=": { "user_id": email } } });
 }
 
 
@@ -394,27 +631,69 @@ function searchDomain(domain)
 	if (isNaN(domain)) {
 		let as_puny = toASCII(domain);
 		if ((as_puny!=domain)&&(hasIDN(as_puny))) domain = as_puny;
-		return tableLink("domains", { "where": { "=": { "name":domain } } });
+		return push_table_link("domains", { "where": { "=": { "name":domain } } });
 		}
-	return tableLink("domains", { "where": { "=": { "domain_id":domain } } });
+	return push_table_link("domains", { "where": { "=": { "domain_id":domain } } });
 }
 
 
 
-function key_down(event,input_id)
+function searchZone(zone)
+{
+	push_table_link("zones", { "where": { "=": { "zone":zone } } });
+}
+
+
+function push_table_link(table,where)
+{
+	push_hist({"func":"table_link","data":{"table":table,"where":where}});
+	return tableLink(table,where);
+}
+
+
+
+function key_down(event,this_inp)
 {
 	if (event.key!="Enter") return;
-	let e = document.getElementById(input_id);
-	if (input_id=="domainSearch") return searchDomain(e.value);
-	if (input_id=="emailSearch") return searchUser(e.value);
+	if (this_inp.id=="zoneSearch") return searchZone(this_inp.value);
+	if (this_inp.id=="domainSearch") return searchDomain(this_inp.value);
+	if (this_inp.id=="emailSearch") return searchUser(this_inp.value);
+}
+
+
+
+function history_back(event)
+{
+	function pop_table_link(data)
+	{
+		tableLink(data.table,data.where);
+	}
+
+	let router = {
+		"start": go_welcome,
+		"table_link": pop_table_link
+		};
+
+	if ((event.state.func)&&(event.state.func in router)) {
+		router[event.state.func](event.state.data);
+		}
+
+	return true;
 }
 
 
 
 function startUp()
 {
+	window.addEventListener('popstate',history_back);
 	go_welcome(true);
 }
+
+function push_hist(data)
+{
+	window.history.pushState(data,"");
+}
+
 
 
 function best_index(indexes)
@@ -431,6 +710,7 @@ function best_index(indexes)
 
 function go_welcome(with_push)
 {
+	if (with_push) push_hist({"func":"start"});
 	pre_get_elm.forEach(i => { elm[i] = document.getElementById(i); } );
 	callApi("config",(ok,reply) => {
 		if (!ok) return def_errMsg("Error contacting servers",reply,"userInfo");
@@ -465,6 +745,7 @@ function go_welcome(with_push)
 					}
 				}
 			}
+		elm.moreInfo.innerHTML = "<h2>Welcome</h2>";
 		});
 }
 
@@ -473,12 +754,13 @@ function go_welcome(with_push)
 <body onLoad="startUp();">
 
 <div id="topSpan">
-<table border=0 width=100% cellspacing=0 cellpadding=5 style="margin-top: 15px;">
-<colgroup><col width=40%/><col width=200px/><col width=40%/></colgroup>
+<table border=0 width=100% style="height: 100px;" cellspacing=5 cellpadding=5 style="margin-top: 15px;">
+<colgroup><col width=20%/><col width=200px/><col width=40%/></colgroup>
 <tr>
 <td align=left><span id="businessName" class="businessName">PyRar Admin</span></td>
-<td rowspan=2 align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
+<td align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
+<span onClick="show_sysadmins()" style='width: 110px;' class=myBtn>SysAdmins</span>
 <a href="/pdns.html" target=_window><span name=hitMe style='width: 110px;' class=myBtn>PowerDNS</span></a>
 
 </td></tr>
@@ -498,9 +780,10 @@ function go_welcome(with_push)
 </span>
 </div>
 </td>
-<td><span style="width:100px" id="userInfo">&nbsp;</span>
-DOM:<input onKeyDown="key_down(event,'domainSearch');" id=domainSearch style="width:250px">
-USR:<input onKeyDown="key_down(event,'emailSearch');" id=emailSearch style="width:250px">
+<td colspan=2><span style="width:100px" id="userInfo">&nbsp;</span>
+Zone:<input onKeyDown="key_down(event,this);" id=zoneSearch style="width:150px">
+DOM:<input onKeyDown="key_down(event,this);" id=domainSearch style="width:250px">
+USR:<input onKeyDown="key_down(event,this);" id=emailSearch style="width:250px">
 </td></tr>
 </table>
 </div>
@@ -508,7 +791,7 @@ USR:<input onKeyDown="key_down(event,'emailSearch');" id=emailSearch style="widt
 
 <div id="lowerSpan">
     <div style='height: 10px;'></div>
-	<div class=botSapce id="moreInfo"><h2>Hello</h2></div>
+	<div class=botSapce id="moreInfo">&nbsp;</div>
 </div>
 
 <div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div>

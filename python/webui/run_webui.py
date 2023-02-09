@@ -11,9 +11,8 @@ from librar import validate
 from librar import passwd
 from librar import pdns
 from librar import common_ui
-from librar import static_data
+from librar import static
 from librar import domobj
-from librar import tlsa
 from librar import sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
@@ -193,7 +192,7 @@ def orders_cancel():
         sql.sql_delete_one("domains", {
             "domain_id": order_db["domain_id"],
             "user_id": req.user_id,
-            "status_id": static_data.STATUS_WAITING_PAYMENT
+            "status_id": static.STATUS_WAITING_PAYMENT
         })
 
     req.event(event_db)
@@ -350,7 +349,7 @@ def users_domains():
         dom.set_name(dom_db["name"])
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
-        dom_db["is_live"] = dom_db["status_id"] in static_data.LIVE_STATUS
+        dom_db["is_live"] = dom_db["status_id"] in static.LIVE_STATUS
 
     req.user_data["domains"] = reply
 
@@ -660,16 +659,23 @@ def pdns_update_rrs(req, dom_db):
 @application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
 def make_tlsa():
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, ["fqdn","o","ou","l","st","c"]):
+    if req.post_js is None or not sql.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
         return req.abort("No JSON posted or data is missing")
 
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not (reply := tlsa.make_tlsa_json(req.post_js))[0]:
-        return req.abort("TLSA Generator failed")
+    for item in ["o", "ou", "l", "st", "c"]:
+        if not validate.is_valid_display_name(req.post_js[item]):
+            return req.abort("Invalid certificate information")
+    if not validate.is_valid_fqdn(req.post_js["name"]) or not validate.is_valid_hostname(req.post_js["fqdn"]):
+        return req.abort("Invalid certificate information")
 
-    return req.response(reply[1])
+    ok, pem = domains.webui_add_tlsa_record(req)
+    if not ok:
+        return req.abort(pem)
+
+    return req.response(pem)
 
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])

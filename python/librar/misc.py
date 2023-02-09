@@ -1,13 +1,13 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions that didn't belong elsewhere """
 
-import os
 import inspect
 import idna
 
 from librar.policy import this_policy as policy
-from librar import static_data
+from librar import static
 
 
 def where_event_log():
@@ -25,7 +25,7 @@ def ashex(line):
         line = line.encode("utf-8")
     ret = ""
     for asc in line:
-        ret += static_data.HEXLIB[asc >> 4] + static_data.HEXLIB[asc & 0xf]
+        ret += static.HEXLIB[asc >> 4] + static.HEXLIB[asc & 0xf]
     return ret
 
 
@@ -35,13 +35,13 @@ def puny_to_utf8(name, strict_idna_2008=None):
     try:
         idn = idna.decode(name)
         return idn
-    except idna.IDNAError as e:
+    except idna.IDNAError:
         if strict_idna_2008:
             return None
         try:
             idn = name.encode("utf-8").decode("idna")
             return idn
-        except UnicodeError as e:
+        except UnicodeError:
             return None
     return None
 

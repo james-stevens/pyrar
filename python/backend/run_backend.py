@@ -104,6 +104,15 @@ def run_backend_item(bke_job):
     return job_failed(bke_job)
 
 
+def run_start_up_checks():
+    """ for each plug-in, if we use it, run its start-up """
+    all_regs = registry.tld_lib.regs_file.data()
+    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
+    for this_type, funcs in dom_handler.backend_plugins.items():
+        if this_type in have_types and "start_up" in funcs:
+            funcs["start_up"]()
+
+
 def run_server():
     """ continuously run the backend processing """
     log("BACK-END SERVER RUNNING")
@@ -116,6 +125,8 @@ def run_server():
             run_backend_item(bke_job[0])
         else:
             signal_mtime = sigprocs.signal_wait("backend", signal_mtime)
+            if registry.tld_lib.check_for_new_files():
+                run_start_up_checks()
 
 
 def start_up(is_live):
@@ -127,12 +138,7 @@ def start_up(is_live):
 
     sql.connect("engine")
     registry.start_up()
-
-    all_regs = registry.tld_lib.regs_file.data()
-    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
-    for this_type, funcs in dom_handler.backend_plugins.items():
-        if this_type in have_types and "start_up" in funcs:
-            funcs["start_up"]()
+    run_start_up_checks()
 
 
 def main():
@@ -163,31 +169,48 @@ def main():
 
     start_up(args.live)
 
+    domlist = domobj.DomainList()
     dom = domobj.Domain()
+
+    this_regs = None
     if args.domain.isdecimal():
         ok, reply = dom.set_by_id(int(args.domain))
     else:
-        ok, reply = dom.load_name(args.domain)
+        if args.action == "dom/price":
+            ok, reply = domlist.set_list(args.domain)
+            this_regs = domlist.registry
+        else:
+            ok, reply = dom.load_name(args.domain)
+    if this_regs is None:
+        this_regs = dom.registry
 
     if not ok:
         print("ERROR", reply)
         sys.exit(1)
 
-    bke_job = {
-        "backend_id": "TEST",
-        "authcode": "eFNaYTlXZ2FVcW8xcmcy",
-        "job_type": args.action,
-        "num_years": 1,
-        "domain_id": dom.dom_db["domain_id"]
-    }
+    show_name = args.domain
+    if dom.dom_db:
+        bke_job = {
+            "job_id": 99,
+            "backend_id": "TEST",
+            "authcode": "eFNaYTlXZ2FVcW8xcmcy",
+            "job_type": args.action,
+            "num_years": 1,
+            "domain_id": dom.dom_db["domain_id"]
+        }
+        show_name = dom.dom_db["name"]
 
-    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
+    this_handler = dom_handler.backend_plugins[this_regs["type"]]
     if args.action not in this_handler:
-        print(f"Action '{args.action}' not supported by Plugin '{dom.registry['type']}'")
+        print(f"Action '{args.action}' not supported by Plugin '{this_regs['type']}'")
         sys.exit(1)
 
-    print(f"Running {dom.registry['type']}:{args.action} on {dom.dom_db['name']}")
-    out_js = this_handler[args.action](bke_job, dom.dom_db)
+    print(f"Running {this_regs['type']}:{args.action} on {show_name}")
+    if args.action == "dom/price":
+        out_js = this_handler[args.action](domlist)
+    else:
+        out_js = this_handler[args.action](bke_job, dom.dom_db)
+
     print(json.dumps(out_js, indent=3))
     return 0
 

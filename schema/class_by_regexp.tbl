@@ -1,0 +1,18 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+. ./database
+
+sqlsh "drop table if exists class_by_regexp"
+sqlsh "create table class_by_regexp (
+	name_regexp			${domain_name} not null,
+	zone				${domain_name} not null,
+	class				varchar(50) not null,
+
+	amended_dt			datetime not null,
+
+	primary key (zone, name_regexp)
+)"
+
+sqlsh "grant select on class_by_regexp to engine,webui"

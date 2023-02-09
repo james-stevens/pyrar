@@ -12,14 +12,14 @@ const valid_email = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+
 
 // regex's for RR validation - just add more here and they will work
 const validations = {
-    rrAAAA: /^(([0-9A-F]{1,4}:){7,7}[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,7}:|([0-9A-F]{1,4}:){1,6}:[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,5}(:[0-9A-F]{1,4}){1,2}|([0-9A-F]{1,4}:){1,4}(:[0-9A-F]{1,4}){1,3}|([0-9A-F]{1,4}:){1,3}(:[0-9A-F]{1,4}){1,4}|([0-9A-F]{1,4}:){1,2}(:[0-9A-F]{1,4}){1,5}|[0-9A-F]{1,4}:((:[0-9A-F]{1,4}){1,6})|:((:[0-9A-F]{1,4}){1,7}|:)|fe80:(:[0-9A-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9A-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/i,
-       rrA: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
-      rrMX: /^[1-9][0-9]{0,5} (([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)+([A-Za-z0-9_]|[A-Za-z0-9_][A-Za-z0-9\-_]*[A-Za-z0-9_])[.]$/,
-      rrNS: fqdnCheck,
+	rrAAAA: /^(([0-9A-F]{1,4}:){7,7}[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,7}:|([0-9A-F]{1,4}:){1,6}:[0-9A-F]{1,4}|([0-9A-F]{1,4}:){1,5}(:[0-9A-F]{1,4}){1,2}|([0-9A-F]{1,4}:){1,4}(:[0-9A-F]{1,4}){1,3}|([0-9A-F]{1,4}:){1,3}(:[0-9A-F]{1,4}){1,4}|([0-9A-F]{1,4}:){1,2}(:[0-9A-F]{1,4}){1,5}|[0-9A-F]{1,4}:((:[0-9A-F]{1,4}){1,6})|:((:[0-9A-F]{1,4}){1,7}|:)|fe80:(:[0-9A-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9A-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/i,
+	   rrA: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
+	  rrMX: /^[1-9][0-9]{0,5} (([a-zA-Z0-9_]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])\.)+([A-Za-z0-9_]|[A-Za-z0-9_][A-Za-z0-9\-_]*[A-Za-z0-9_])[.]$/,
+	  rrNS: fqdnCheck,
    rrCNAME: fqdnCheck,
  rrCATALOG: fqdnCheck,
-      rrDS: /^(([123456]?[0-9]{1,4}|[0-9]1,4) ([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]) [1234] [0-9A-F ]{40,100})$/i,
-    };
+	  rrDS: /^(([123456]?[0-9]{1,4}|[0-9]1,4) ([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]) [1234] [0-9A-F ]{40,100})$/i,
+	};
 
 
 function callApi(sfx,callback,inData)
@@ -67,13 +67,13 @@ function callApi(sfx,callback,inData)
 	let httpCmd = { headers: { }, method: 'GET' };
 
 	if (inData != null) {
-		if ("method" in inData) httpCmd.method = inData.method;
 		if ("json" in inData) {
 			httpCmd.body = JSON.stringify(inData.json);
 			httpCmd.headers["Content-type"] = "application/json; charset=UTF-8";
 			httpCmd.method = "POST";
 			}
 		if ("okResp" in inData) okResp = inData.okResp;
+		if ("method" in inData) httpCmd.method = inData.method;
 		}
 
 	if ("session" in ctx) {
@@ -170,10 +170,10 @@ function supported_tld(fqdn)
 
 function format_amount(num)
 {
-    let pfx = gbl.currency.symbol;
-    if (num < 0) { pfx += "-"; num *= -1; }
-    num = num.toString();
-    if (num.length < (gbl.currency.decimal+1))
+	let pfx = gbl.currency.symbol;
+	if (num < 0) { pfx += "-"; num *= -1; }
+	num = num.toString();
+	if (num.length < (gbl.currency.decimal+1))
 		num = ("000000000000000"+num).slice((gbl.currency.decimal+1)*-1);
 
 	let neg_places = -1 * gbl.currency.decimal;
@@ -199,56 +199,56 @@ function def_errMsg(msg,reply,tagged_elm)
 
 function unerrMsg()
 {
-    let t1 = elm.myMsgPop.innerHTML;
-    let t2 = ctx.lastErrMsg;
-    if (t2 == null) t2 = "";
-    if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
-    delete ctx.lastErrMsg;
-    if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
-    delete ctx.err_msg_tout;
+	let t1 = elm.myMsgPop.innerHTML;
+	let t2 = ctx.lastErrMsg;
+	if (t2 == null) t2 = "";
+	if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
+	delete ctx.lastErrMsg;
+	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
+	delete ctx.err_msg_tout;
 }
 
 
 
 function errMsg(txt,tagged_elm)
 {
-    let hang_elm = null;
-    if (tagged_elm in elm) hang_elm = elm[tagged_elm];
-    else hang_elm = document.getElementById(tagged_elm);
-    if (!hang_elm) hang_elm = elm.userInfo;
+	let hang_elm = null;
+	if (tagged_elm in elm) hang_elm = elm[tagged_elm];
+	else hang_elm = document.getElementById(tagged_elm);
+	if (!hang_elm) hang_elm = elm.userInfo;
 
-    let m = elm.myMsgPop;
-    m.style.width = "auto";
-    if (txt.slice(0,1)!="&") txt = gbl.warn + " " + txt;
-    m.innerHTML = "&nbsp;"+txt+"&nbsp;";
+	let m = elm.myMsgPop;
+	m.style.width = "auto";
+	if (txt.slice(0,1)!="&") txt = gbl.warn + " " + txt;
+	m.innerHTML = "&nbsp;"+txt+"&nbsp;";
 
-    let p_box = hang_elm.getBoundingClientRect();
-    let m_box = m.getBoundingClientRect();
-    let m_width = m_box.width;
+	let p_box = hang_elm.getBoundingClientRect();
+	let m_box = m.getBoundingClientRect();
+	let m_width = m_box.width;
 
-    if (m_box.width < p_box.width) {
-        m.style.width = p_box.width + "px";
-        m_width = p_box.width;
-        }
-    let centre = p_box.x + (p_box.width/2);
-    let x_pos = centre - (m_width / 2)
-    m.style.left = x_pos + "px";
-    m.style.top = p_box.y + p_box.height + "px";
+	if (m_box.width < p_box.width) {
+		m.style.width = p_box.width + "px";
+		m_width = p_box.width;
+		}
+	let centre = p_box.x + (p_box.width/2);
+	let x_pos = centre - (m_width / 2)
+	m.style.left = x_pos + "px";
+	m.style.top = p_box.y + p_box.height + "px";
 
-    m.className = 'msgPop msgPopYes';
-    ctx.lastErrMsg = m.innerHTML;
-    ctx.err_msg_tout = setTimeout(unerrMsg,2500);
+	m.className = 'msgPop msgPopYes';
+	ctx.lastErrMsg = m.innerHTML;
+	ctx.err_msg_tout = setTimeout(unerrMsg,2500);
 
-    return false;
+	return false;
 }
 
 
 
 function hasIDN(name)
 {
-    if (name.slice(0,4)=="xn--") return true;
-    if (name.indexOf(".xn--") > 0) return true
-    return false;
+	if (name.slice(0,4)=="xn--") return true;
+	if (name.indexOf(".xn--") > 0) return true
+	return false;
 }
 
 
@@ -269,9 +269,66 @@ function changeFavicon(src)
 
 function clean_host_name(dom_name,hostname)
 {
-    if (!hostname) return "";
-    if (hostname==dom_name) return '@';
-    if (hostname.slice(-1*dom_name.length)==dom_name) hostname = hostname.slice(0,-1*(dom_name.length+1))
-    if (hasIDN(hostname)) hostname = fromPuny(hostname);
-    return hostname;
+	if (!hostname) return "";
+	if (hostname==dom_name) return '@';
+	if (hostname.slice(-1*dom_name.length)==dom_name) hostname = hostname.slice(0,-1*(dom_name.length+1))
+	if (hasIDN(hostname)) hostname = fromPuny(hostname);
+	return hostname;
+}
+
+
+
+function sort_rr_sets(reply)
+{
+	reply.dns.rrsets.sort((a,b) => {
+		if ((a.name == reply.dns.name)&&(b.name == reply.dns.name)) {
+			for(tag of ["SOA","NS","MX"]) {
+				if (a.type == tag) return -1;
+				if (b.type == tag) return 1;
+				}
+			}
+		else {
+			if (a.name == reply.dns.name) return -1;
+			if (b.name == reply.dns.name) return 1;
+			if (a.name < b.name) return -1;
+			if (a.name > b.name) return 1;
+			}
+		if (a.type < b.type) return -1;
+		if (a.type > b.type) return 1;
+		return 0;
+		})
+}
+
+
+
+function form_prompt(txt) { return `<tr><td class=formPrompt>${txt} :</td><td>`; }
+function settings_prompt(txt) { return `<tr><td class=promptCell>${txt} :</td><td>`; }
+
+
+function settings_header(title,spacer)
+{
+    let x = "";
+    if (!spacer) x = gbl.settings_spacer;
+    x += `<tr><td class=settingsBanner>${title}</td></tr><tr><td>`;
+    return x;
+}
+
+
+
+function generic_popup_btn(config)
+{
+    /* config: width, style, title, name, label, internal(), param */
+    let style_width="",pop_style="";
+    if ("width" in config) style_width = `style='width: ${config["width"]}px;'`;
+    if ("style" in config) pop_style = `style='${config["style"]}'`;
+
+    let timeout = 30000;
+    if ("timeout" in config) timeout = config.timeout;
+
+    let x = `<div class="popup">`;
+    x += `<span ${style_width}75px;' tabindex=0 title="${config["title"]}" `;
+    x += `class=myBtn onClick="togglePopUp('${config["name"]}',${timeout});">${config["label"]}</span>`;
+    x += `<span class="popuptext" ${pop_style} id="${config["name"]}">`;
+    x += config["internal"](config["param"]);
+    return x + `</span></div>`;
 }

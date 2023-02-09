@@ -30,11 +30,11 @@ def process_order(order_db):
     if not ok:
         return False
 
-    trans_id = accounts.apply_transaction(
+    ok, trans_id = accounts.apply_transaction(
         user_db["user_id"], (-1 * order_db["price_paid"]),
         f"{order_db['order_type']} on {dom_db['name']} for {order_db['num_years']} yrs")
 
-    if not trans_id:
+    if not ok or not trans_id:
         return False
 
     ok, sold_id = sales.sold_item(trans_id, order_db, dom_db, user_db)

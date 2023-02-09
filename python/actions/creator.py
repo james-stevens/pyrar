@@ -1,15 +1,16 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" re-create domain actions """
 
 import sys
 import json
 import inspect
 
 from librar import mysql as sql
-from librar import static_data
+from librar import static
 from librar import registry
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 
 
@@ -32,6 +33,7 @@ def domain_actions_live(dom_db):
 
 
 def domain_actions_pending_order(dom_db):
+    this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     add_domain_action(dom_db, sql.date_add(dom_db["created_dt"], hours=this_reg["orders_expire_hrs"]), "order/cancel")
 
 
@@ -55,18 +57,15 @@ def recreate_domain_actions(dom_db):
 
     if dom_db["status_id"] in action_fns:
         return action_fns[dom_db["status_id"]](dom_db)
-    else:
-        log(f"WARNINNG: No domain action recreate for domain status {dom_db['status_id']}")
 
+    log(f"WARNINNG: No domain action recreate for domain status {dom_db['status_id']}")
     return True
 
 
-action_fns = {
-    static_data.STATUS_LIVE: domain_actions_live,
-    static_data.STATUS_WAITING_PAYMENT: domain_actions_pending_order
-}
+action_fns = {static.STATUS_LIVE: domain_actions_live, static.STATUS_WAITING_PAYMENT: domain_actions_pending_order}
 
-if __name__ == "__main__":
+
+def main():
     log_init(with_debug=True)
     sql.connect("engine")
     registry.start_up()
@@ -77,3 +76,7 @@ if __name__ == "__main__":
         ok, reply = sql.sql_select("actions", {"domain_id": dom_db["domain_id"]}, order_by="execute_dt")
         print(json.dumps(dom_db, indent=3))
         print(json.dumps(reply, indent=3))
+
+
+if __name__ == "__main__":
+    main()

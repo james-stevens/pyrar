@@ -7,7 +7,7 @@ import sys
 
 from librar import mysql as sql
 from librar import registry
-from librar import static_data
+from librar import static
 from librar import validate
 from librar import log
 from librar.policy import this_policy as policy
@@ -52,7 +52,7 @@ class Domain:
         self.tld = tld
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
-        self.permitted_locks = static_data.CLIENT_DOM_FLAGS
+        self.permitted_locks = static.CLIENT_DOM_FLAGS
 
         if "locks" in self.registry:
             self.permitted_locks = self.registry["locks"]
@@ -149,7 +149,7 @@ class DomainList:
             self.domobjs[this_domobj.name] = this_domobj
         return True, None
 
-    def load_all(self, user_id=None):
+    def load_all(self):
         if self.domobjs is None:
             return False, "Use `set_list` before `load_all`"
 
@@ -180,10 +180,10 @@ if __name__ == "__main__":
     # print("LOCKS>>>>", my_dom.locks)
 
     my_doms = DomainList()
-    if not (reply := my_doms.set_list(sys.argv[1:]))[0]:
-        print(reply)
+    if not (tst_reply := my_doms.set_list(sys.argv[1:]))[0]:
+        print(tst_reply)
         sys.exit(1)
-    print("LIST>>>", reply[1])
+    print("LIST>>>", tst_reply[1])
     print("load all", my_doms.load_all())
     for d, domobj in my_doms.domobjs.items():
         print(d, domobj.name, domobj.dom_db["name"] if domobj.dom_db is not None else "NOPE", domobj.locks)

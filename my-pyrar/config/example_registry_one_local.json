@@ -1,0 +1,9 @@
+{
+  "local": {
+    "type": "local",
+    "prices": {
+      "new": 20,
+      "renew": 20
+    }
+  }
+}

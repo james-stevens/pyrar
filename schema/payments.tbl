@@ -19,11 +19,10 @@ sqlsh "CREATE TABLE payments (
 	created_dt      datetime not null,
 	amended_dt      datetime not null,
 
-	primary key by_id (payment_id)
+	primary key by_id (payment_id),
+	unique key by_tag(provider_tag,provider)'
     ) ${utf8}"
 
 sqlsh "ALTER TABLE payments AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert, update, delete on payments to webui'
-sqlsh 'grant select on payments to engine'
-sqlsh 'grant select, insert, update, delete on payments to raradm'
+sqlsh 'grant select, insert, update, delete on payments to webui,engine'

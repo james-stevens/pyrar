@@ -15,7 +15,7 @@ from librar.policy import this_policy as policy
 from librar import parse_dom_resp
 from librar import parsexml
 from librar import domobj
-from librar import static_data
+from librar import static
 from mailer import spool_email
 from backend import whois_priv
 from backend import dom_req_xml
@@ -31,7 +31,7 @@ def run_epp_request(this_reg, post_json):
     """ run EPP request to EPP service {this_reg} using {post_json} """
     try:
         client = registry.tld_lib.clients[this_reg["name"]]
-        resp = client.post(this_reg["url"], json=post_json, headers=static_data.HEADER)
+        resp = client.post(this_reg["url"], json=post_json, headers=static.HEADER)
         if resp.status_code < 200 or resp.status_code > 299:
             log(f"ERROR: {resp.status_code} {this_reg['url']} {resp.content}")
             return None
@@ -96,7 +96,7 @@ def domain_renew(bke_job, dom_db):
 
 def transfer_failed(domain_id):
     """ change domain status to show a transfer failed """
-    sql.sql_update_one("domains", {"status_id": static_data.STATUS_TRANS_FAIL}, {"domain_id": domain_id})
+    sql.sql_update_one("domains", {"status_id": static.STATUS_TRANS_FAIL}, {"domain_id": domain_id})
     return False
 
 
@@ -127,7 +127,7 @@ def domain_request_transfer(bke_job, dom_db):
     if xmlapi.xmlcode(xml) == 1000:
         xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "trn")
         update_cols["expiry_dt"] = xml_dom["expiry_dt"]
-        update_cols["status_id"] = static_data.STATUS_LIVE
+        update_cols["status_id"] = static.STATUS_LIVE
         sql.sql_update_one("domains", update_cols, {"domain_id": dom_db["domain_id"]})
         spool_email.spool("domain_transferred", [["domains", {
             "domain_id": dom_db["domain_id"]
@@ -162,7 +162,7 @@ def domain_create(bke_job, dom_db):
     xml_dom = parse_dom_resp.parse_domain_info_xml(xml, "cre")
 
     sql.sql_update_one("domains", {
-        "status_id": static_data.STATUS_LIVE,
+        "status_id": static.STATUS_LIVE,
         "reg_create_dt": xml_dom["created_dt"],
         "expiry_dt": xml_dom["expiry_dt"]
     }, {"domain_id": dom_db["domain_id"]})
@@ -175,7 +175,12 @@ def domain_info(bke_job, dom_db):
     return epp_get_domain_info(bke_job["job_id"], dom_db["name"])
 
 
-def epp_get_domain_info(job_id, domain_name):
+def domain_info_raw(bke_job, dom_db):
+    """ Get domain info """
+    return epp_get_domain_info(bke_job["job_id"], dom_db["name"], True)
+
+
+def epp_get_domain_info(job_id, domain_name, as_raw=False):
     """ Get domain info from EPP svr & return cooked result """
     this_reg = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or "url" not in this_reg:
@@ -185,7 +190,10 @@ def epp_get_domain_info(job_id, domain_name):
     xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name))
 
     if xml_check_code(job_id, "info", xml):
-        return parse_dom_resp.parse_domain_info_xml(xml, "inf")
+        if as_raw:
+            return xml
+        else:
+            return parse_dom_resp.parse_domain_info_xml(xml, "inf")
     return None
 
 
@@ -367,7 +375,8 @@ dom_handler.add_plugin(
         "dom/recover": domain_renew,
         "dom/expired": domain_expired,
         "dom/flags": domain_update_flags,
-        "dom/price": epp_domain_prices
+        "dom/price": epp_domain_prices,
+        "dom/rawinfo": domain_info_raw
     })
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ RUN rmdir /run
 RUN ln -s /dev/shm /run
 RUN mkdir /run/policy_subst
 RUN apk add nginx curl
+RUN addgroup nginx daemon
 
 RUN apk add python3 jq py-pip
 RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient

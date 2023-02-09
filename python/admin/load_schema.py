@@ -6,7 +6,7 @@ import os
 import yaml
 
 from librar import mysql as sql
-from librar.log import log, debug, init as log_init
+from librar.log import init as log_init
 
 INTS = ["tinyint", "int", "bigint"]
 
@@ -16,7 +16,7 @@ def load_more_schema(new_schema):
     new_schema[":more:"] = {}
     filename = f"{os.environ['BASE']}/etc/pyrar.yml"
     if os.path.isfile(filename):
-        with open(filename) as file:
+        with open(filename, encoding="utf-8") as file:
             data = file.read()
             new_schema[":more:"] = yaml.load(data, Loader=yaml.FullLoader)
             return
@@ -25,9 +25,9 @@ def load_more_schema(new_schema):
 def add_join_items(new_schema):
     """ add `join` items to columns that join """
     jns = new_schema[":more:"]["joins"]
-    for table in [t for t in new_schema]:
+    for table in list(new_schema):
         if table[0] != ":":
-            for col in [c for c in new_schema[table]["columns"]]:
+            for col in list(new_schema[table]["columns"]):
                 dst = find_join_dest(table, col, jns)
                 if dst is not None:
                     tblcol = dst.split(".")
@@ -64,9 +64,9 @@ def find_join_dest(table, col, jns):
     return None
 
 
-def sort_by_field(i):
+def sort_by_field(fld):
     """ return 'Field' item for sorting """
-    return i["Field"]
+    return fld["Field"]
 
 
 def schema_of_col(new_schema, col):
@@ -110,8 +110,6 @@ def schema_of_col(new_schema, col):
             defval = int(defval)
         elif this_type == "boolean":
             defval = (int(defval) == 1)
-        else:
-            defval = defval
         this_field["default"] = defval
 
     return this_field
@@ -120,7 +118,10 @@ def schema_of_col(new_schema, col):
 def get_db_schema(new_schema):
     """ Read schema from database """
     ok, reply = sql.run_select("show tables")
-    tbl_title = "Tables_in_" + sql.my_database
+    if not ok:
+        raise ValueError("Could not get list of tables")
+
+    tbl_title = "Tables_in_" + sql.MY_DATABASE
     for table in reply:
         new_schema[table[tbl_title]] = {}
 
@@ -129,8 +130,11 @@ def get_db_schema(new_schema):
             continue
 
         ok, reply = sql.run_select("describe " + table)
+        if not ok:
+            raise ValueError(f"Could not get info for table '{table}'")
+
         new_schema[table]["columns"] = {}
-        cols = [r for r in reply]
+        cols = list(reply)
         cols.sort(key=sort_by_field)
         for col in cols:
             new_schema[table]["columns"][col["Field"]] = schema_of_col(new_schema, col)
@@ -141,6 +145,9 @@ def get_db_schema(new_schema):
 def add_indexes_to_schema(new_schema, table):
     """ Add index info for {table} to {new_schema} """
     ok, reply = sql.run_select("show index from " + table)
+    if not ok:
+        raise ValueError(f"Could not get indexes for '{table}'")
+
     new_schema[table]["indexes"] = {}
     for col in reply:
         key = col["Key_name"] if col["Key_name"] != "PRIMARY" else ":primary:"
@@ -151,7 +158,12 @@ def add_indexes_to_schema(new_schema, table):
         new_schema[table]["indexes"][key]["unique"] = col["Non_unique"] == 0
 
 
-if __name__ == "__main__":
+def main():
+    """ main """
     log_init(with_debug=True)
     sql.connect("admin")
     print(json.dumps(load_db_schema(), indent=3))
+
+
+if __name__ == "__main__":
+    main()

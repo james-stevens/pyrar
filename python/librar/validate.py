@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" code to run validations """
 
 import binascii
 import base64
@@ -9,11 +10,11 @@ import re
 
 from librar import registry
 from librar import misc
-from librar import static_data
+from librar import static
 
 IS_HOST = r'^(\*\.|)([\_a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
-IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}$'
+IS_TLD = r'^[a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_EMAIL = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{1,}\b'
 
 MAX_DS_LEN = {"keyTag": 5, "alg": 2, "digestType": 1}
@@ -89,7 +90,7 @@ VALID_RR_TYPES = {
 }
 
 
-def hasIDN(name):
+def has_idn(name):
     if name[:4] == 'xn--':
         return True
     if name.find(".xn--") > 0:
@@ -143,7 +144,7 @@ def is_valid_fqdn(name):
         return False
     if re.match(IS_FQDN, name, re.IGNORECASE) is None:
         return False
-    if hasIDN(name) and misc.puny_to_utf8(name) is None:
+    if has_idn(name) and misc.puny_to_utf8(name) is None:
         return False
     return True
 
@@ -161,7 +162,7 @@ def is_valid_ses_code(code):
         return False
     try:
         base64.b64decode(code)
-    except binascii.Error as exc:
+    except binascii.Error:
         return False
     return True
 
@@ -191,8 +192,8 @@ def is_valid_ds(ds_rec):
     if ints["alg"] in [4, 9, 11]:
         return False
 
-    for ch in ds_rec["digest"]:
-        if ch not in static_data.HEXLIB:
+    for character in ds_rec["digest"]:
+        if character not in static.HEXLIB:
             return False
 
     if VALID_DS_LEN[ints["digestType"]] != len(ds_rec["digest"]):
@@ -227,12 +228,21 @@ def valid_currency(currency):
 
 def valid_domain_actions(actions):
     for action in actions:
-        if action not in static_data.DOMAIN_ACTIONS:
+        if action not in static.DOMAIN_ACTIONS:
             return False
     return len(actions) > 0
 
 
-if __name__ == "__main__":
+def valid_float(num):
+    try:
+        ret = float(num)
+        return ret
+    except ValueError:
+        return None
+    return None
+
+
+def main():
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))
     del sys.argv[0]
@@ -242,5 +252,9 @@ if __name__ == "__main__":
     # print("SESS",code,is_valid_ses_code(code))
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
-    for x in sys.argv:
-        print(x, is_valid_hostname(x))
+    for item in sys.argv:
+        print(item, is_valid_hostname(item))
+
+
+if __name__ == "__main__":
+    main()

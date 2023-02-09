@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" fixed data """
 
 import os
 
@@ -41,4 +42,9 @@ DOMAIN_STATUS = {
 
 POW10 = [
     1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000
+]
+
+NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
+AUTO_CREATED_AMENDED_DT = [
+    "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
 ]

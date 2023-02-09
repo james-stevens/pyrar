@@ -1,51 +1,58 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+""" functions for talking to PowerDNS """
 
 import os
-import requests
 import json
 import time
 import secrets
 import hashlib
 import dns.name
+import requests
 
 from librar.log import log
 from librar import misc
-from librar import static_data
+from librar import static
 from librar.policy import this_policy as policy
 
-client = None
-headers = static_data.HEADER
+CLIENT = None
+headers = static.HEADER
 headers["X-API-Key"] = os.environ["PDNS_API_KEY"]
 
 PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 
 
 def start_up():
-    global client
-    client = requests.Session()
-    client.headers.update(headers)
+    """ Initalisation """
+    global CLIENT
+    CLIENT = requests.Session()
+    CLIENT.headers.update(headers)
 
     catalog_zone = policy.policy("catalog_zone")
-    if not zone_exists(catalog_zone):
-        create_zone(catalog_zone, False)
+    try:
+        if not zone_exists(catalog_zone):
+            create_zone(catalog_zone, False)
+    except requests.exceptions.ConnectionError:
+        raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
 
 
 def find_best_ds(key_data):
+    """ pull out the DS record we think is the best one to use """
     for key in key_data:
         if "ds" in key:
+            each_ds = {}
             for ds_rr in key["ds"]:
-                if ds_rr.find(" 2 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 3 ") >= 0:
-                    return ds_rr
-                if ds_rr.find(" 1 ") >= 0:
-                    return ds_rr
+                ds_parts = ds_rr.split()
+                each_ds[int(ds_parts[2])] = ds_rr
+            for sha_type in [2,4,1]:
+                if sha_type in each_ds:
+                    return each_ds[sha_type]
     return None
 
 
 def zone_exists(name):
+    """ P/DNS will respond differently if the zone exists or not """
     return load_zone_keys(name) is not None
 
 
@@ -59,7 +66,7 @@ def hash_zone_name(name):
 def load_zone(name):
     if name[-1] != ".":
         name += "."
-    resp = client.get(f"{PDNS_BASE_URL}/zones/{name}")
+    resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
@@ -68,7 +75,7 @@ def load_zone(name):
 def load_zone_keys(name):
     if name[-1] != ".":
         name += "."
-    resp = client.get(f"{PDNS_BASE_URL}/zones/{name}/cryptokeys")
+    resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}/cryptokeys")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
@@ -169,9 +176,7 @@ def create_zone(name, with_dnssec=False):
     }]
 
     run_cmds(post_json)
-
     add_to_catalog(name)
-
     return load_zone(name)
 
 
@@ -200,7 +205,7 @@ def run_cmds(post_json):
     for req in post_json:
         json_data = req["data"] if "data" in req else None
         request = requests.Request(req["cmd"], req["url"], json=json_data, headers=headers)
-        response = client.send(request.prepare())
+        response = CLIENT.send(request.prepare())
         if response.status_code < 200 or response.status_code > 299:
             ret = False
             log(f"PDNS-ERROR: {response.content}")
@@ -295,7 +300,7 @@ def update_rrs(zone, rrs):
     if "data" in rrs:
         rr_data["records"] = [{"content": val, "disabled": False} for val in rrs["data"]]
 
-    resp = client.patch(f"{PDNS_BASE_URL}/zones/{zone}", json={"rrsets": [rr_data]}, headers=headers)
+    resp = CLIENT.patch(f"{PDNS_BASE_URL}/zones/{zone}", json={"rrsets": [rr_data]}, headers=headers)
 
     ok = resp.status_code >= 200 and resp.status_code <= 299
     if not ok:
@@ -308,17 +313,19 @@ def update_rrs(zone, rrs):
                     err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[2]
                 else:
                     err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[1]
-                return ok, err_txt
-        except Exception as e:
+                return False, err_txt
+        except Exception:
             pass
-        return ok, "Failed to update"
+        return False, "Failed to update"
 
-    return ok, resp
+    return True, resp
 
 
-if __name__ == "__main__":
+def main():
     start_up()
-    name = "some.name."
+    name = "r.zz."
+    ds = {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '256 3 13 gRj3zFi3p549gW3PhcBNEnmoyGU+WzOvGVl4BBDJQDXLvGEBNpSyPrSK4BrtCEXGlBi3waYwWFJvA+88Aeaykw==', 'flags': 256, 'id': 99, 'keytype': 'zsk', 'published': True, 'type': 'Cryptokey'}, {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '257 3 13 H+/+r2nHSgLgzHdZI/wt8hc+UVbEQP02BvvIYg9SalPn0O5QzpalrA6VB0Ns7KtavYllGHXrtJU7Gm9HBUsJhg==', 'ds': ['29301 13 1 f4493b0b1fa9985a0c89d4ee78027b5bf27546cc', '29301 13 2 ca2d1f3a267344bb16722c423876e4298f837a58d3ae094901ab674ff8b7eb5e', '29301 13 4 fe612ae33772f57032978b81af7e5ec27a3c9ef7307e114a9a6b9f1ec91005cafc65f20ec16e0211881b1b9d3f9a76c0'], 'flags': 257, 'id': 98, 'keytype': 'ksk', 'published': True, 'type': 'Cryptokey'}
+    print(find_best_ds(ds))
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))
@@ -328,9 +335,12 @@ if __name__ == "__main__":
     # print("DELETE>>>>",json.dumps(delete_zone(name)))
     # print("EXISTS>>>>", zone_exists(name))
     # print("KEYS>>>>",load_zone_keys(name))
-    # print("ZONE>>>>", json.dumps(load_zone(name)))
+    #print("ZONE>>>>", json.dumps(load_zone(name),indent=3))
     # print(json.dumps(sign_zone("mine"),indent=3))
     # print(json.dumps(load_zone_keys("mine"),indent=3))
     # print(json.dumps(create_zone("mine", True),indent=3))
     # print("cat-add>>>>", json.dumps(add_to_catalog(name)))
-    print("cat-del>>>>", json.dumps(delete_from_catalog(name)))
+    # print("cat-del>>>>", json.dumps(delete_from_catalog(name)))
+
+if __name__ == "__main__":
+    main()

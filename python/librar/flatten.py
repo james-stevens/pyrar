@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
-""" display JSON files as flat text For processing in shall scripts """
+""" display JSON files as flat text for processing in shell scripts """
 
 import sys
 import json
@@ -19,9 +19,9 @@ def do_flatten(pfx, inp_js, out_flat):
         for itm in inp_js:
             do_flatten(pfx + [itm], inp_js[itm], out_flat)
     elif isinstance(inp_js, list):
-        i = 0
+        idx = 0
         for itm in inp_js:
-            do_flatten(pfx + [f"[{(i := i + 1):02x}]"], itm, out_flat)
+            do_flatten(pfx + [f"[{(idx := idx + 1):02x}]"], itm, out_flat)
     else:
         out_flat[".".join(pfx)] = inp_js
 

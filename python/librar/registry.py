@@ -7,7 +7,7 @@ import json
 import random
 import requests
 
-from librar import static_data
+from librar import static
 from librar import fileloader
 from librar import mysql as sql
 from librar.log import log, debug, init as log_init
@@ -78,9 +78,9 @@ class ZoneLib:
 
         self.last_zone_table = None
         self.check_zone_table()
-        self.logins_file = fileloader.FileLoader(static_data.LOGINS_FILE)
-        self.regs_file = fileloader.FileLoader(static_data.REGISTRY_FILE)
-        self.priority_file = fileloader.FileLoader(static_data.PRIORITY_FILE)
+        self.logins_file = fileloader.FileLoader(static.LOGINS_FILE)
+        self.regs_file = fileloader.FileLoader(static.REGISTRY_FILE)
+        self.priority_file = fileloader.FileLoader(static.PRIORITY_FILE)
 
         self.process_json()
 
@@ -114,9 +114,12 @@ class ZoneLib:
 
         if regs_file_is_new or priority_file_is_new or zones_db_is_new:
             self.process_json()
+            return True
+
+        return False
 
     def process_json(self):
-        with open(static_data.PORTS_LIST_FILE, "r", encoding="UTF-8") as fd:
+        with open(static.PORTS_LIST_FILE, "r", encoding="UTF-8") as fd:
             port_lines = [line.split() for line in fd.readlines()]
         ports = {p[0]: int(p[1]) for p in port_lines}
 
@@ -238,7 +241,7 @@ class ZoneLib:
 
             cls = dom["class"].lower() if "class" in dom else "standard"
 
-            for action in static_data.DOMAIN_ACTIONS:
+            for action in static.DOMAIN_ACTIONS:
                 if action not in dom:
                     continue
 
@@ -268,11 +271,11 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
         our_price *= float(num_years)
 
     site_currency = policy.policy("currency")
-    our_price *= static_data.POW10[site_currency["decimal"]]
+    our_price *= static.POW10[site_currency["decimal"]]
     our_price = round(float(our_price), 0)
 
     if retain_reg_price:
-        regs_price *= static_data.POW10[site_currency["decimal"]]
+        regs_price *= static.POW10[site_currency["decimal"]]
         regs_price = round(float(regs_price), 0)
         dom["reg_" + action] = int(regs_price)
 

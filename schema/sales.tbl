@@ -35,4 +35,4 @@ sqlsh "create table sales (
 sqlsh "ALTER TABLE sales AUTO_INCREMENT = 10450"
 
 sqlsh "grant insert,update,select on sales to webui"
-sqlsh "grant select,insert,update,delete on sales to raradm,engine"
+sqlsh "grant select,insert,update,delete on sales to engine"

@@ -10,8 +10,9 @@ from librar.log import log, init as log_init
 from librar import mysql as sql
 from librar import registry
 from librar import pdns
-from librar import static_data
+from librar import static
 from librar import passwd
+from librar import misc
 
 from backend import shared
 from backend import dom_handler
@@ -147,8 +148,7 @@ def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
     log(f"Adding {years} yrs to '{dom_db['name']}'/{start_date}")
     values = [
         f"expiry_dt = date_add({start_date},interval {years} year)",
-        f"status_id = if (expiry_dt > now(),{static_data.STATUS_LIVE},{static_data.STATUS_EXPIRED})",
-        "amended_dt = now()"
+        f"status_id = if (expiry_dt > now(),{static.STATUS_LIVE},{static.STATUS_EXPIRED})", "amended_dt = now()"
     ]
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 
@@ -198,13 +198,29 @@ def domain_update_flags(bke_job, dom_db):
 # pylint: enable=unused-argument
 
 
+def get_class_from_name(name):
+    ok, class_db = sql.sql_select_one("class_by_name", {"name": name})
+    if ok and class_db and len(class_db) > 0:
+        return class_db["class"]
+
+    if (idx := name.find(".")) < 0:
+        return "standard"
+
+    where = f"(unhex('{misc.ashex(name[:idx])}') regexp name_regexp) and zone = unhex('{misc.ashex(name[idx+1:])}')"
+    ok, class_db = sql.sql_select_one("class_by_regexp", where)
+    if ok and class_db and len(class_db) > 0:
+        return class_db["class"]
+
+    return "standard"
+
+
 def local_domain_prices(domlist, num_years=1, qry_type=None):
     """ set up blank prices to be filled in by registry.tld_lib.multiply_values """
     if qry_type is None:
         qry_type = ["create", "renew"]
     ret_doms = []
     for dom in domlist.domobjs:
-        add_dom = {"name": dom, "num_years": num_years, "avail": True}
+        add_dom = {"name": dom, "num_years": num_years, "avail": True, "class": get_class_from_name(dom)}
         for qry in qry_type:
             add_dom[qry] = None
 
@@ -225,6 +241,7 @@ dom_handler.add_plugin(
         "dom/delete": domain_delete,
         "dom/expired": domain_expired,
         "dom/info": domain_info,
+        "dom/rawinfo": domain_info,
         "dom/recover": domain_recover,
         "dom/flags": domain_update_flags,
         "dom/price": local_domain_prices

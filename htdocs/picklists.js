@@ -8,6 +8,10 @@ const pick_lists = {
 		"default_auto_renew": yes_no,
 		"account_closed": yes_no
 		},
+	"zones" : {
+		"enabled": yes_no,
+		"allow_sales": yes_no
+		},
 	"domains" : {
 		"auto_renew": yes_no,
 		"status_id" : [

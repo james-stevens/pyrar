@@ -15,5 +15,3 @@ sqlsh "CREATE TABLE sysadmins (
 
 	primary key by_dom (login)
 	)"
-
-sqlsh "grant select,insert,update,delete on sysadmins to raradm"

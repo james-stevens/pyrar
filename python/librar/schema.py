@@ -1,17 +1,17 @@
 #! /usr/bin/python3
 #################################################################
-#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#    (c) Copyright 2009-2023 JRCS Ltd  - All Rights Reserved    #
 #################################################################
+""" read the database schema as JSON """
 
 import json
-import os
 from librar import mysql as sql
 
 numbers = {"tinyint", "int", "decimal"}
 
 
-def sortElm(i):
-    return i["Field"]
+def sort_elm(fld_elm):
+    return fld_elm["Field"]
 
 
 def make_schema(database):
@@ -21,53 +21,63 @@ def make_schema(database):
     res = sql.cnx.store_result()
     ret = res.fetch_row(maxrows=0, how=1)
 
-    n = "Tables_in_" + database
+    this_db = "Tables_in_" + database
 
-    schema = {t[n]: {} for t in ret}
+    schema = {table[this_db]: {} for table in ret}
 
-    for t in schema:
-        sql.cnx.query("describe " + t)
+    for table in schema:
+        this_tbl = schema[table]
+        sql.cnx.query("describe " + table)
         res = sql.cnx.store_result()
         ret = res.fetch_row(maxrows=0, how=1)
-        schema[t]["columns"] = {}
-        cols = [r for r in ret]
-        cols.sort(key=sortElm)
-        for r in cols:
+        this_tbl["columns"] = {}
+        cols = list(ret)
+        cols.sort(key=sort_elm)
+        for each_col in cols:
+            this_tbl["columns"][each_col["Field"]] = {}
+            fld_type = each_col["Type"]
+            if fld_type.find(" unsigned") >= 0:
+                fld_type = fld_type.split()[0]
+                this_tbl["columns"][each_col["Field"]]["unsigned"] = True
 
-            schema[t]["columns"][r["Field"]] = {}
-            tp = r["Type"]
-            if tp.find(" unsigned") >= 0:
-                tp = tp.split()[0]
-                schema[t]["columns"][r["Field"]]["unsigned"] = True
-
-            pos = tp.find("(")
+            pos = fld_type.find("(")
             if pos >= 0:
-                sz = tp[pos + 1:-1]
-                if sz[-2:] == ",0":
-                    sz = sz[:-2]
-                schema[t]["columns"][r["Field"]]["size"] = int(sz)
-                tp = tp[:pos]
+                fld_sz = fld_type[pos + 1:-1]
+                if fld_sz[-2:] == ",0":
+                    fld_sz = fld_sz[:-2]
+                this_tbl["columns"][each_col["Field"]]["size"] = int(fld_sz)
+                fld_type = fld_type[:pos]
 
-            schema[t]["columns"][r["Field"]]["type"] = tp
-            if r["Extra"] == "auto_increment":
-                schema[t]["columns"][r["Field"]]["serial"] = True
+            this_tbl["columns"][each_col["Field"]]["type"] = fld_type
+            if each_col["Extra"] == "auto_increment":
+                this_tbl["columns"][each_col["Field"]]["serial"] = True
 
-            schema[t]["columns"][r["Field"]]["null"] = r["Null"] == "YES"
-            if r["Default"] is not None:
-                if tp in numbers:
-                    schema[t]["columns"][r["Field"]]["default"] = int(r["Default"])
+            this_tbl["columns"][each_col["Field"]]["null"] = each_col["Null"] == "YES"
+            if each_col["Default"] is not None:
+                if fld_type in numbers:
+                    this_tbl["columns"][each_col["Field"]]["default"] = int(each_col["Default"])
                 else:
-                    schema[t]["columns"][r["Field"]]["default"] = r["Default"]
+                    this_tbl["columns"][each_col["Field"]]["default"] = each_col["Default"]
 
-        sql.cnx.query("show index from " + t)
+        sql.cnx.query("show index from " + table)
         res = sql.cnx.store_result()
         ret = res.fetch_row(maxrows=0, how=1)
-        schema[t]["indexes"] = {}
-        for r in ret:
-            if r["Key_name"] not in schema[t]["indexes"]:
-                schema[t]["indexes"][r["Key_name"]] = {}
-                schema[t]["indexes"][r["Key_name"]]["columns"] = []
-            schema[t]["indexes"][r["Key_name"]]["columns"].append(r["Column_name"])
-            schema[t]["indexes"][r["Key_name"]]["unique"] = r["Non_unique"] == 0
+        this_tbl["indexes"] = {}
+        for each_idx in ret:
+            if each_idx["Key_name"] not in this_tbl["indexes"]:
+                this_tbl["indexes"][each_idx["Key_name"]] = {}
+                this_tbl["indexes"][each_idx["Key_name"]]["columns"] = []
+            this_tbl["indexes"][each_idx["Key_name"]]["columns"].append(each_idx["Column_name"])
+            this_tbl["indexes"][each_idx["Key_name"]]["unique"] = each_idx["Non_unique"] == 0
 
     return schema
+
+
+def main():
+    sql.connect("admin")
+    live_schema = make_schema(sql.MY_DATABASE)
+    print(json.dumps(live_schema, indent=3))
+
+
+if __name__ == "__main__":
+    main()
