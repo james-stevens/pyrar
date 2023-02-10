@@ -10,6 +10,7 @@ import secrets
 import hashlib
 import dns.name
 import requests
+import inspect
 
 from librar.log import log
 from librar import misc
@@ -28,7 +29,6 @@ def start_up():
     global CLIENT
     CLIENT = requests.Session()
     CLIENT.headers.update(headers)
-
     catalog_zone = policy.policy("catalog_zone")
     try:
         if not zone_exists(catalog_zone):

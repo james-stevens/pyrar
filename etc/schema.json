@@ -1087,8 +1087,7 @@
    "zones": {
       "columns": {
          "allow_sales": {
-            "unsigned": true,
-            "size": 3,
+            "size": 1,
             "type": "tinyint",
             "null": false,
             "default": 1
@@ -1102,8 +1101,7 @@
             "null": true
          },
          "enabled": {
-            "unsigned": true,
-            "size": 3,
+            "size": 1,
             "type": "tinyint",
             "null": false,
             "default": 1

@@ -21,7 +21,8 @@ const pick_lists = {
 			[ 20 , "Expired" ],
 			[ 100 , "Transfer Queued" ],
 			[ 101 , "Transfer Requested" ],
-			[ 120 , "Transfer Failed" ]
+			[ 120 , "Transfer Failed" ],
+			[ 200, "Reserved" ],
 			],
 		"auto_renew": yes_no
 	}

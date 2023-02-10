@@ -19,6 +19,10 @@ const pre_get_elm = [ "emailSearch","zoneSearch","domainSearch","topMsg","myMsgP
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
 
+const hide_from_edit = [ "created_dt","amended_dt","last_login_dt","acct_sequence_id","reg_create_dt",
+	"users.user_id","domains.domain_id","event_id","transactions.transaction_id","action_id",
+	"domains.name","backend_id","sales.sales_item_id","payment_id", "acct_previous_balance","acct_current_balance" ];
+
 const show_as_json = [ "price_info" ];
 
 const list_columns = {
@@ -28,7 +32,8 @@ const list_columns = {
 	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
 	"payments": [ "created_dt","provider","provider_tag" ],
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
-	"sysadmins": ["login","htpasswd","amended_dt" ]
+	"sysadmins": ["login","htpasswd","amended_dt" ],
+	"class_by_regexp": ["name_regexp","zone","class","amended_dt" ],
 	};
 
 const order_by = {
@@ -36,7 +41,8 @@ const order_by = {
 	"actions": "execute_dt",
 	"sales": "sales_item_id desc",
 	"transactions": "acct_sequence_id desc",
-	"sysadmins": "login"
+	"sysadmins": "login",
+	"class_by_regexp": "zone,class,name_regexp"
 	};
 
 const table_desc = {
@@ -53,7 +59,9 @@ const table_desc = {
 	"sysadmins" : "Logins for the admin system",
 	"transactions" : "Credit / Debit transactions on a user's account",
 	"users" : "Users in the system / logins",
-	"zones" : "TLDs we sell"
+	"zones" : "TLDs we sell",
+	"class_by_regexp": "Price bands set by regular expressions",
+	"class_by_name": "Price bands set by domain name"
 	};
 
 linked_tables = {};
@@ -206,6 +214,10 @@ function table_col_val(col,val)
 }
 
 
+function reshow_one_record() { 
+	elm.moreInfo.innerHTML = html_one_record(ctx.one_row.table,ctx.one_row.data,ctx.one_row.where);
+}
+
 
 function tableLink(table,where)
 {
@@ -277,18 +289,12 @@ function do_add_sys_admin()
 		f.sysadm_login.focuds();
 		return errMsg("Please fill out all the fields","AddSysAdmin"); }
 
-	send_data = { 
-		"set": {
-			"htpasswd":f.sysadm_password.value,
-			"amended_dt":null
-			}
-		};
+	send_data = { "set": { "htpasswd":f.sysadm_password.value, } };
 	use_method = "PATCH";
 
 	if ((ctx.list.table=="sysadmins")&&(find_login(f.sysadm_login.value))) {
 		send_data.where = { "=": { "login": f.sysadm_login.value } };
 	} else {
-		send_data.set.created_dt = null;
 		send_data.set.login = f.sysadm_login.value;
 		use_method = "PUT";
 		}
@@ -337,10 +343,10 @@ function linkedData(table,where,location)
 			x += `<tr><td colspan=${list_columns[table].length} class=btmBtnBar>`;
 			x += generic_popup_btn({
 				"name": "AddSysAdmin",
-				"label": "Add/Modify",
+				"label": "Add",
 				"width": 100,
 				"timeout": null,
-				"title": "Add or modify a System Administrator",
+				"title": "Add a System Administrator",
 				"internal": add_sysadmin_form,
 				"style": "overflow: auto; margin-left: -300;"
 				});
@@ -415,7 +421,8 @@ function show_dns_data(domain)
 			let show_name = clean_host_name(domain,rrs.name);
 
 			x += `<tr class=dataRow>`;
-			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td><td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
+			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td>`;
+			x += `<td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
 
 			if ((rrs.type=="SOA")&&(reply.dns.dnssec)&&(reply.dns.ds))
 				x += `<tr class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${reply.dns.ds}</td></tr>`;
@@ -458,13 +465,6 @@ function prettyAmount(event,amt)
 
 
 
-function cancel_crdb()
-{
-	let e = document.getElementById("moreData");
-	e.innerHTML = "";
-}
-
-
 function post_crdb(user_id)
 {
 	let amt = document.getElementById("crdb_amnt");
@@ -502,7 +502,7 @@ function user_cr_db(user_id)
 	x += "<span style='padding-left: 50px' id=pretty_amount></span></td></tr>";
 
 	x += "<tr><td colspan=2 class=btmBtnBar id=crdb_btns>";
-	x += "<input type=button onClick='cancel_crdb();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += "<input type=button onClick='hide_more_data();' class=myBtn style='width: 150px' value='Cancel'>";
 	x += `<input type=button onClick='post_crdb(${user_id});' class=myBtn style='width: 150px' value='OK'>`;
 	x += "</td></tr>";
 	x += "</table>";
@@ -515,23 +515,120 @@ function user_cr_db(user_id)
 
 
 
-function cancel_delete()
+function hide_more_data()
 {
 	let e = document.getElementById("moreData");
 	e.innerHTML = "";
 }
 
+function dont_edit(table,col)
+{
+	return ((hide_from_edit.includes(col)) || (hide_from_edit.includes(table+"."+col)));
+}
+
+function edit_row()
+{
+	let tbl = ctx.one_row.table;
+	if (!(tbl in gbl.config.schema)) return errMSg(`Table '{tbl}' is not in the schema!!`,"userInfo");
+	let cols = gbl.config.schema[tbl].columns;
+	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
+	for(let col in cols) {
+		let sz = 150;
+		if (cols[col].size) sz = cols[col].size * 20;
+		if (sz > 600) sz = 600;
+
+		let inp = `<input id=${tbl}.${col} style='width: ${sz}px;'>`;
+		if ((tbl in pick_lists)&&(col in pick_lists[tbl])) {
+			inp = `<select id=${tbl}.${col}>`;
+			for(let item of pick_lists[tbl][col]) {
+				inp += `<option value=${item[0]}>${item[1]} (${item[0]})`;
+				}
+			inp += "</select>";
+			}
+		else if (dont_edit(tbl,col)) {
+			inp=ctx.one_row.data[col];
+			if (money_format.includes(col)) inp = format_amount(inp);
+			}
+		else if (show_as_json.includes(col))
+			inp=`<textarea id=${tbl}.${col} style="width: 600px; height: 250px;"></textarea>`;
+
+		x += settings_prompt(pretty_prompt(col))+inp+"</td></tr>";
+		}
+
+	x += "<tr><td>"+gbl.gap+"</td></tr>";
+
+	x += "<tr><td colspan=2 class=btmBtnBar id=edit_btns>";
+	x += "<input type=button onClick='reshow_one_record();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += `<input type=button onClick='save_edited_row();' class=myBtn style='width: 150px' value='Save'>`;
+	x += "</td></tr>";
+
+	x += "</table>";
+	elm.moreInfo.innerHTML = x;
+
+	ctx.one_row.prev_vals = {};
+	for(let col in cols) {
+		if (dont_edit(tbl,col)) continue;
+		if (!(col in ctx.one_row.data)) continue;
+
+		value = ctx.one_row.data[col];
+
+		let e = document.getElementById(tbl+"."+col);
+		if (show_as_json.includes(col))
+			value = JSON.stringify(JSON.parse(value), null, 3);
+		else if (money_format.includes(col))
+			value = format_amount(value,true);
+		
+		ctx.one_row.prev_vals[col] = value;
+		e.value = value;
+		}
+}
 
 
-function delete_row(table,where)
+
+function save_edited_row()
+{
+	let tbl = ctx.one_row.table;
+	let changed = read_items(tbl,ctx.one_row.prev_vals,ctx.one_row.prev_vals);
+	if (Object.keys(changed).length <= 0) return reshow_one_record();
+
+	let post_json = ctx.one_row.where;
+	post_json.set = changed;
+
+	callApi("data/"+tbl,(ok,reply) => {
+		if (!ok) return def_errMsg("Error editing '{ctx.one_row.table}'",reply,"userInfo");
+		tableLink(tbl,ctx.one_row.where);
+		}, { json: post_json, method: "PATCH" });
+}
+
+
+
+function read_items(tbl,cols,old_vals)
+{
+	changed = {};
+	for(let col in cols) {
+		let e = document.getElementById(tbl+"."+col);
+		value = e.value;
+		if (gbl.config.schema[tbl].columns[col].type == "boolean") value = (value == "true");
+		else if (show_as_json.includes(col))
+			value = JSON.stringify(JSON.parse(value), null, 0)
+		else if (money_format.includes(col))
+			value = Math.round(parseFloat(value)*pow10[gbl.config.default_currency.decimal]);
+
+		if ((!old_vals)||(value != old_vals[col])) changed[col] = value;
+		}
+	return changed;
+}
+
+
+function delete_row()
 {
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
-	x += `<tr><th>Delete this '${table}' record, Are you sure?</th></tr>`;
+	x += `<tr><th>Delete this '${ctx.one_row.table}' record, Are you sure?</th></tr>`;
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 	x += "<tr><td class=btmBtnBar id=del_btns>";
-	x += "<input type=button onClick='cancel_delete();' class=myBtn style='width: 150px' value='Keep it'>";
-	x += `<input type=button onClick='do_delete_row("${table}","${where}");' class=myBtn style='width: 150px' value='Delete it'>`;
+	x += "<input type=button onClick='hide_more_data();' class=myBtn style='width: 150px' value='Keep it'>";
+	x += `<input type=button onClick='do_delete_row();' class=myBtn style='width: 150px' value='Delete it'>`;
 	x += "</td></tr>";
 	x += "</table>";
 	let e = document.getElementById("moreData");
@@ -539,12 +636,17 @@ function delete_row(table,where)
 }
 
 
-function do_delete_row(table,where)
+
+function do_delete_row()
 {
-	callApi("data/"+table,(ok,reply) => {
-		if (!ok) return def_errMsg("Error deleteing from '{table}'",reply,"userInfo");
-		if (table=="sysadmins") show_sysadmins();
-		}, { json : JSON.parse(atob(where)), method: "DELETE" })
+	callApi("data/"+ctx.one_row.table,(ok,reply) => {
+		if (!ok) return def_errMsg("Error deleteing from '{ctx.one_row.table}'",reply,"userInfo");
+		if (ctx.one_row.table=="sysadmins") show_sysadmins();
+		}, {
+			json : ctx.one_row.where,
+			method: "DELETE"
+			}
+		);
 }
 
 
@@ -578,7 +680,8 @@ function html_one_record(table, db_rec, where)
 	x += "</table></td>";
 
 	x += "<td id=btnBarMore><table>";
-	x += `<tr><td><button onClick="delete_row('${table}','${btoa(JSON.stringify(where))}');" style="width:140px" class=myBtn>Delete</button></td></tr>`;
+	x += `<tr><td><button onClick="delete_row();" style="width:140px" class=myBtn>Delete</button></td></tr>`;
+	x += `<tr><td><button onClick="edit_row();" style="width:140px" class=myBtn>Edit</button></td></tr>`;
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 
 	let add_ending = false, with_pdns = null;
@@ -607,7 +710,7 @@ function html_one_record(table, db_rec, where)
 	if (table in linked_tables) {
 		for(let i of linked_tables[table]) {
 			s = i[1].split(".");
-			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}",${db_rec[i[0]]});' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
+			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}","${db_rec[i[0]]}");' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
 			}
 		}
 
@@ -780,7 +883,7 @@ function go_welcome(with_push)
 </span>
 </div>
 </td>
-<td colspan=2><span style="width:100px" id="userInfo">&nbsp;</span>
+<td align=right colspan=2><span style="width:100px" id="userInfo">&nbsp;</span>
 Zone:<input onKeyDown="key_down(event,this);" id=zoneSearch style="width:150px">
 DOM:<input onKeyDown="key_down(event,this);" id=domainSearch style="width:250px">
 USR:<input onKeyDown="key_down(event,this);" id=emailSearch style="width:250px">

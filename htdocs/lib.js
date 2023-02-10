@@ -168,9 +168,10 @@ function supported_tld(fqdn)
 
 
 
-function format_amount(num)
+function format_amount(num,omit_symbol)
 {
 	let pfx = gbl.currency.symbol;
+	if (omit_symbol) pfx = "";
 	if (num < 0) { pfx += "-"; num *= -1; }
 	num = num.toString();
 	if (num.length < (gbl.currency.decimal+1))
