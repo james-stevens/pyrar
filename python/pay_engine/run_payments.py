@@ -39,7 +39,7 @@ def process_order(order_db):
 
     ok, sold_id = sales.sold_item(trans_id, order_db, dom_db, user_db)
     if ok and sold_id:
-        sql.sql_update("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
+        sql.sql_update_one("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 
     sales.make_backend_job(order_db)
     sql.sql_delete_one("orders", {"order_item_id": order_db["order_item_id"]})

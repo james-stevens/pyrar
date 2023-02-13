@@ -773,10 +773,9 @@
             "null": false
          },
          "sales_type": {
-            "size": 20,
+            "size": 50,
             "type": "varchar",
-            "null": false,
-            "default": "none"
+            "null": false
          },
          "transaction_id": {
             "unsigned": true,

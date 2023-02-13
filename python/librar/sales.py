@@ -40,6 +40,7 @@ def sold_item(trans_id, order_db, dom_db, user_db):
         "domain_id": dom_db["domain_id"],
         "zone_name": registry.tld_lib.tld_of_name(dom_db["name"]),
         "registry": this_reg["name"] if this_reg is not None and "name" in this_reg else "Unknown",
+        "user_id": user_db["user_id"],
         "user_email": user_db["email"],
         "sales_type": order_db['order_type'],
         "num_years": order_db['num_years'],
