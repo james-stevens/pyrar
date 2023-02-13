@@ -210,7 +210,7 @@ function pretty_prompt(tag)
 function table_col_val(col,val)
 {
 	let s = col.split(".");
-	return push_table_link(s[0],{ "where": { "=":{ [s[1]]:val } } });
+	return push_table_link(s[0],{ "where": { "=":{ [s[1]]:val } }, "limit": 1 });
 }
 
 
@@ -290,10 +290,10 @@ function do_add_sys_admin()
 		return errMsg("Please fill out all the fields","AddSysAdmin"); }
 
 	send_data = { "set": { "htpasswd":f.sysadm_password.value, } };
-	use_method = "PATCH";
 
 	if ((ctx.list.table=="sysadmins")&&(find_login(f.sysadm_login.value))) {
-		send_data.where = { "=": { "login": f.sysadm_login.value } };
+		send_data.where = { "=": { "login": f.sysadm_login.value }, limit: 1 };
+		use_method = "PATCH";
 	} else {
 		send_data.set.login = f.sysadm_login.value;
 		use_method = "PUT";
@@ -359,7 +359,7 @@ function linkedData(table,where,location)
 		x += "</tr>";
 
 		for(let i of data) {
-			sub_where = `{"where": { "=": ${best_where(table,i)} } }`;
+			sub_where = `{"where": { "=": ${best_where(table,i)} }, "limit": 1 }`;
 			x += `<tr onClick='push_table_link("${table}",${sub_where});' class=dataRow>`;
 			for(let col of list_columns[table]) {
 				value = i[col];
@@ -724,8 +724,8 @@ function html_one_record(table, db_rec, where)
 
 function searchUser(email)
 {
-	if (isNaN(email)) return push_table_link("users",{ "where": { "=": { "email": email } } });
-	return push_table_link("users",{ "where": { "=": { "user_id": email } } });
+	if (isNaN(email)) return push_table_link("users",{ "where": { "=": { "email": email } }, "limit": 1 });
+	return push_table_link("users",{ "where": { "=": { "user_id": email } }, "limit": 1 });
 }
 
 
@@ -734,16 +734,16 @@ function searchDomain(domain)
 	if (isNaN(domain)) {
 		let as_puny = toASCII(domain);
 		if ((as_puny!=domain)&&(hasIDN(as_puny))) domain = as_puny;
-		return push_table_link("domains", { "where": { "=": { "name":domain } } });
+		return push_table_link("domains", { "where": { "=": { "name":domain } }, "limit": 1 });
 		}
-	return push_table_link("domains", { "where": { "=": { "domain_id":domain } } });
+	return push_table_link("domains", { "where": { "=": { "domain_id":domain } }, "limit": 1 });
 }
 
 
 
 function searchZone(zone)
 {
-	push_table_link("zones", { "where": { "=": { "zone":zone } } });
+	push_table_link("zones", { "where": { "=": { "zone":zone } }, "limit": 1 });
 }
 
 
