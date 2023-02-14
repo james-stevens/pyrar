@@ -150,9 +150,10 @@ def run_sql(sql, func):
                 return func()
             except Exception as exc:
                 this_exc = exc
+        log(f"SQL: {sql}")
         log("SQL-ERROR:" + str(this_exc))
         print("SQL-ERROR:" + str(this_exc))
-        return None, None
+        return False, this_exc.args[1]
 
 
 def run_select(sql):

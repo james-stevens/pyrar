@@ -170,6 +170,7 @@ function supported_tld(fqdn)
 
 function format_amount(num,omit_symbol)
 {
+	if (num==null) return "";
 	let pfx = gbl.currency.symbol;
 	if (omit_symbol) pfx = "";
 	if (num < 0) { pfx += "-"; num *= -1; }

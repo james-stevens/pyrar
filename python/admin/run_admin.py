@@ -48,10 +48,12 @@ def post_table_trigger(table,row_id=None,where=None):
     if table == "sysadmins":
         subprocess.run(["/usr/local/bin/make_admin_logins"])
     if table == "domains":
-        this_where = where[7:]
+        this_where = None
+        if where is not None:
+            this_where = where[7:]
         if row_id is not None:
             this_where = {"domain_id":row_id}
-        if where is not None:
+        if this_where is not None:
             ok, dom_db = sql.sql_select_one("domains", this_where)
             if ok and dom_db and len(dom_db):
                 creator.recreate_domain_actions(dom_db,"admin-ui")
@@ -154,7 +156,7 @@ def find_foreign_column(sql_joins, src_table, dstcol):
     fmt = "join {dsttbl} {alias} on({srctbl}.{srccol}={alias}.{dstcol})"
 
     if len(dst) != 2:
-        json_abort(f"Invalid column name `{dstcol}`")
+        return json_abort(f"Invalid column name `{dstcol}`")
 
     if dst[0] in schema[src_table]["columns"] and "join" in schema[src_table]["columns"][dst[0]]:
         src_col = schema[src_table]["columns"][dst[0]]
@@ -172,7 +174,7 @@ def find_foreign_column(sql_joins, src_table, dstcol):
 
     col_name = find_join_column(src_table, dst[0])
     if col_name is None:
-        json_abort(f"Could not find a join for `{dstcol}` to `{src_table}`")
+        return json_abort(f"Could not find a join for `{dstcol}` to `{src_table}`")
 
     alias = "__zz__" + col_name
     dstcol = alias + "." + dst[1]
@@ -199,11 +201,11 @@ def each_where_obj(sql_joins, table, ask_item, where_obj):
         if where_itm.find(".") >= 0:
             col, tbl = find_foreign_column(sql_joins, table, col)
         elif col not in schema[tbl]["columns"]:
-            json_abort(f"Column `{col}` is not in table `{table}`")
+            return json_abort(f"Column `{col}` is not in table `{table}`")
 
         if ask_item == "=" and isinstance(where_obj[where_itm], list):
             if (tbl not in schema) or (col not in schema[tbl]["columns"]):
-                json_abort(f"Column `{col}` is not in table `{table}`")
+                return json_abort(f"Column `{col}` is not in table `{table}`")
             this_col = schema[tbl]["columns"][col]
             where.append("(" + where_itm + " in (" + ",".join([add_data(d, this_col)
                                                                for d in where_obj[where_itm]]) + ") )")
@@ -211,7 +213,7 @@ def each_where_obj(sql_joins, table, ask_item, where_obj):
             clause = []
             for itm in clean_list_string(where_obj[where_itm]):
                 only_col = col if col.find(".") < 0 else col.split(".")[1]
-                clause.append(col + ask_item + add_data(itm, schema[tbl]["columns"][only_col]))
+                clause.append(col + " " + ask_item +" "+ add_data(itm, schema[tbl]["columns"][only_col]))
 
             where.append("(" + " or ".join(clause) + ")")
 
@@ -231,7 +233,7 @@ def where_clause(table, sent):
     if isinstance(sent["where"], object):
         for ask_item in sent["where"]:
             if ask_item not in ASKS:
-                json_abort(f"Comparison `{ask_item}` not supported")
+                return json_abort(f"Comparison `{ask_item}` not supported")
             where = each_where_obj(sql_joins, table, ask_item, sent["where"][ask_item])
 
     return " ".join([data for __, data in sql_joins.items()]) + (" where " + where) if len(where) > 0 else ""
@@ -259,7 +261,7 @@ def include_for_join(data):
 
 def mysql_abort(exc, state):
     """ abort on MySQL exception {exc} at {state} """
-    json_abort({"mysql": {"code": exc.args[0], "message": exc.args[1], "state": state}})
+    return json_abort({"mysql": {"code": exc.args[0], "message": exc.args[1], "state": state}})
 
 
 def load_all_joins(need):
@@ -366,7 +368,7 @@ def check_supplied_modifiers(sent, allowed):
     """ check the {sent} modifiers are in the {allowed} list """
     for modifier in sent:
         if modifier not in allowed:
-            json_abort(f"The modifier '{modifier}' is not supported in this request")
+            return json_abort(f"The modifier '{modifier}' is not supported in this request")
 
 
 def run_backend_start_ups():
@@ -407,7 +409,7 @@ def hello():
 def give_table_schema(table):
     """ respond with schema for one <table> """
     if table not in schema:
-        json_abort(f"Table '{table}' does not exist")
+        return json_abort(f"Table '{table}' does not exist")
     return response(200, schema[table])
 
 
@@ -422,10 +424,10 @@ def make_order_clause(sent, table):
             tst = order.split(" ")
             tst_order = tst[0]
             if tst[1] not in ("asc", "desc"):
-                json_abort(f"Only 'asc'/'desc' are allowed as 'order' modifiers, not '{tst[1]}'")
+                return json_abort(f"Only 'asc'/'desc' are allowed as 'order' modifiers, not '{tst[1]}'")
 
         if tst_order not in this_cols:
-            json_abort(f"Column '{order}' not in table '{table}'")
+            return json_abort(f"Column '{order}' not in table '{table}'")
 
     return " order by " + ",".join(order_list)
 
@@ -442,7 +444,7 @@ def build_sql(table, sent, start_sql):
             query = query + " offset " + str(start)
     else:
         if "skip" in sent:
-            json_abort("`skip` without `limit` is not allowed")
+            return json_abort("`skip` without `limit` is not allowed")
 
     return start, query
 
@@ -467,7 +469,7 @@ def process_one_set(set_clause, table):
     cols = schema[table]["columns"]
     for col in set_clause:
         if col not in cols:
-            json_abort("Column {col} not in table {table}")
+            return json_abort("Column {col} not in table {table}")
         val = add_data(set_clause[col], cols[col])
         if col in ["amended_dt", "created_dt"]:
             val = "now()"
@@ -490,7 +492,7 @@ def get_idx_cols(table, sent):
             idx_cols = clean_list_string(snt_by)
             for idx in idx_cols:
                 if not (idx == ":rowid:" or idx in schema[table]["columns"]):
-                    json_abort("Bad column name in `by` clause")
+                    return json_abort("Bad column name in `by` clause")
     if idx_cols is None and len(this_idxs) > 0:
         idx_cols = this_idxs[find_best_index(this_idxs)]["columns"]
 
@@ -504,16 +506,16 @@ def get_idx_cols(table, sent):
 def insert_table_row(table):
     """ do an sql insert on {table} """
     if table not in schema:
-        json_abort(f"Table '{table}' does not exist")
+        return json_abort(f"Table '{table}' does not exist")
 
     if (flask.request.json is None) or ("set" not in flask.request.json):
-        json_abort("A `set` clause is mandatory for an INSERT")
+        return json_abort("A `set` clause is mandatory for an INSERT")
 
     sent = flask.request.json
     check_supplied_modifiers(sent, ["set"])
 
     if "set" not in sent or not isinstance(sent["set"], dict):
-        json_abort("In an INSERT, the `set` clause must be an object or list type")
+        return json_abort("In an INSERT, the `set` clause must be an object or list type")
 
     for col in [ "amended_dt","created_dt"]:
         if table in has_column["amended_dt"] and col not in sent["set"]:
@@ -523,11 +525,13 @@ def insert_table_row(table):
     query = f"insert into {table} set " + ",".join(set_list)
 
     num_rows, row_id = sql.sql_exec(query)
+    if num_rows is False:
+        return json_abort(row_id)
 
+    log(f"num_rows={num_rows}, row_id={row_id}")
     ret = {"affected_rows": num_rows}
-    if ret["affected_rows"] == 1:
-        if row_id > 0:
-            ret["row_id"] = row_id
+    if num_rows == 1 and row_id > 0:
+        ret["row_id"] = row_id
 
     post_table_trigger(table,row_id = row_id)
     return response(200, ret)
@@ -567,10 +571,10 @@ def update_table_row(table):
 def delete_table_row(table):
     """ do an sql delete on {table} """
     if table not in schema:
-        json_abort(f"Table '{table}' does not exist")
+        return json_abort(f"Table '{table}' does not exist")
 
     if (flask.request.json is None) or ("where" not in flask.request.json):
-        json_abort("The `where` clause is mandatory for a DELETE")
+        return json_abort("The `where` clause is mandatory for a DELETE")
 
     check_supplied_modifiers(flask.request.json, ["where", "limit"])
 
@@ -578,7 +582,7 @@ def delete_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table, where = where_clause(table, sent))
+        post_table_trigger(table, where = where_clause(table, flask.request.json))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
@@ -642,7 +646,7 @@ def get_dns_data(domain):
 def get_table_row(table):
     """ run select queries """
     if table not in schema:
-        json_abort(f"Table '{table}' does not exist")
+        return json_abort(f"Table '{table}' does not exist")
 
     sent = None
     if flask.request.json is not None:

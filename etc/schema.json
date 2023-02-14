@@ -1001,11 +1001,11 @@
          },
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "default_auto_renew": {
             "size": 1,
@@ -1021,7 +1021,7 @@
          "email": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": false
          },
          "email_verified": {
             "size": 1,
@@ -1041,7 +1041,7 @@
          "password": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": false
          },
          "password_reset": {
             "size": 100,

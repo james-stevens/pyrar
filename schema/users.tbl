@@ -9,8 +9,8 @@ sqlsh "drop table if exists users"
 sqlsh "CREATE TABLE users (
 	user_id					${auto},
 
-	email					${email},
-	password				${password},
+	email					${email} not null,
+	password				${password} not null,
 	name					varchar(100),
 
 	email_verified			boolean not null default 0,
@@ -33,8 +33,8 @@ sqlsh "CREATE TABLE users (
 
 	last_login_dt			datetime,
 
-	created_dt				datetime,
-	amended_dt				datetime,
+	created_dt				datetime not null,
+	amended_dt				datetime not null,
 
 	primary key by_id (user_id),
 	unique key by_login(email),

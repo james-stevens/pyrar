@@ -36,6 +36,7 @@ const list_columns = {
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
 	"sysadmins": ["login","htpasswd","amended_dt" ],
 	"class_by_regexp": ["name_regexp","zone","class","amended_dt" ],
+	"zones": [ "zone","amended_dt","price_info" ],
 	};
 
 const order_by = {
@@ -53,7 +54,7 @@ const table_desc = {
 	"contacts" : "Unused, but maybe needed",
 	"deleted_domains" : "Domains that have been deleted",
 	"domains" : "SLDs owned by users",
-	"events" : "Recorded events applied to tables / users",
+	"events" : "Recorded events applied to domains / users",
 	"orders" : "Orders from users waiting to be paid for",
 	"payments" : "Information abou how users pay",
 	"sales" : "Domain sales we have made to users",
@@ -229,7 +230,6 @@ function tableLink(table,where)
 		if (!ok) return def_errMsg(`Error loading ${table} '${JSON.stringify(where)}'`,reply,"userInfo");
 
 		let data = reply[table];
-
 		if ((!data)||(!data.length)) {
 			errMsg(`Record search '${table}': '${JSON.stringify(where)}' not found`,"userInfo");
 			if ((table=="users")&&(elm.emailSearch.value!="")) elm.emailSearch.focus();
@@ -273,6 +273,12 @@ function best_where(table,db_rec)
 
 
 function show_sysadmins()
+{
+	push_hist({"func":"show_sysadmins","data":{}});
+	go_show_sysadmins()
+}
+
+function go_show_sysadmins()
 {
 	linkedData("sysadmins",{"order":order_by["sysadmins"]},"moreInfo");
 }
@@ -524,13 +530,16 @@ function hide_more_data()
 	e.innerHTML = "";
 }
 
+
+
 function dont_edit(table,col)
 {
-	if (ctx.one_row.cancel)
+	if (ctx.one_row.is_insert)
 		return ((hide_from_add.includes(col)) || (hide_from_add.includes(table+"."+col)));
 	else
 		return ((hide_from_edit.includes(col)) || (hide_from_edit.includes(table+"."+col)));
 }
+
 
 
 function edit_row()
@@ -606,19 +615,42 @@ function edit_row()
 
 
 
+function find_serial_col(table)
+{
+	for(let i in gbl.config.schema[table].columns)
+		if (gbl.config.schema[table].columns[i].serial) return i
+	return null;
+}
+
+
+
 function save_edited_row()
 {
 	let tbl = ctx.one_row.table;
 	let changed = read_items(tbl,ctx.one_row.can_edit,ctx.one_row.prev_vals);
 	if (Object.keys(changed).length <= 0) return reshow_one_record();
 
-	let post_json = ctx.one_row.where;
-	post_json.set = changed;
+	if (ctx.one_row.is_insert) {
+		let post_json = {};
+		post_json.set = changed;
+		callApi("data/"+tbl,(ok,reply) => {
+			if (!ok) return def_errMsg("Error inserting '{ctx.one_row.table}'",reply,"edit_btns");
+			if (reply.row_id) {
+				let col = find_serial_col(tbl);
+				if (col) return tableLink(tbl,{"where":{"=":{ [col] :reply.row_id}}});
+				}
+			linkedData(tbl,{limit:50},"moreInfo");
+			}, { json: post_json, method: "PUT" });
+		}
+	else {
+		let post_json = ctx.one_row.where;
+		post_json.set = changed;
 
-	callApi("data/"+tbl,(ok,reply) => {
-		if (!ok) return def_errMsg("Error editing '{ctx.one_row.table}'",reply,"userInfo");
-		tableLink(tbl,ctx.one_row.where);
-		}, { json: post_json, method: "PATCH" });
+		callApi("data/"+tbl,(ok,reply) => {
+			if (!ok) return def_errMsg("Error editing '{ctx.one_row.table}'",reply,"edit_btns");
+			tableLink(tbl,ctx.one_row.where);
+			}, { json: post_json, method: "PATCH" });
+		}
 }
 
 
@@ -665,7 +697,8 @@ function do_delete_row()
 {
 	callApi("data/"+ctx.one_row.table,(ok,reply) => {
 		if (!ok) return def_errMsg("Error deleteing from '{ctx.one_row.table}'",reply,"userInfo");
-		if (ctx.one_row.table=="sysadmins") show_sysadmins();
+		if (ctx.one_row.table=="sysadmins") return show_sysadmins();
+		linkedData(ctx.one_row.table,{limit:50},"moreInfo");
 		}, {
 			json : ctx.one_row.where,
 			method: "DELETE"
@@ -679,7 +712,7 @@ function html_one_record(table, db_rec, where)
 {
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
 	x += "<colgroup><col width=90%/><col/></colgroup>";
-	x += `<tr><td colspan=2 class=settingsBanner>${pretty_prompt(table)}</td></tr>`;
+	x += `<tr><td colspan=2 class=settingsBanner>${pretty_prompt(table)}, ${table_desc[table]}</td></tr>`;
 
 	x += "<tr><td><table border=0 cellspacing=0 cellpadding=1 align=center width=100%>";
 	x += "<colgroup><col width=30%/><col/></colgroup>";
@@ -798,7 +831,9 @@ function history_back(event)
 
 	let router = {
 		"start": go_welcome,
-		"table_link": pop_table_link
+		"table_link": pop_table_link,
+		"show_sysadmins": go_show_sysadmins,
+		"pop_add_row": pop_add_row
 		};
 
 	if ((event.state.func)&&(event.state.func in router)) {
@@ -837,17 +872,88 @@ function best_index(indexes)
 
 function add_row_form(table,data)
 {
+	push_hist({"func":"pop_add_row","data":{table:table,data:data}});
+	do_add_row_form(table,data)
+}
+
+function pop_add_row(data)
+{
+	do_add_row_form(data.table,data.data);
+}
+
+function do_add_row_form(table,data)
+{
 	let e = document.getElementById("add_row_select");
 	e.selectedIndex = 0;
-	ctx.one_row = { table: table, data: {}, cancel: "cancel_add_row" };
+	ctx.one_row = {
+		table: table,
+		data: {},
+		cancel: "history.back",
+		is_insert: true
+		};
 	edit_row();
 }
+
+
+function process_search_form(table)
+{
+	const ops = { "eq":"=", "gt":">", "lt":"<", "like":"like" };
+	let cols = gbl.config.schema[table].columns;
+	qry_js = {};
+	for(let col in cols) {
+		for(let pfx in ops) {
+			let e = document.getElementById(`${pfx}.${table}.${col}`);
+			if ((e)&&(e.value)) {
+				let value = e.value;
+				if (!("where" in qry_js)) qry_js.where = {};
+				if (!(ops[pfx] in qry_js.where)) qry_js.where[ops[pfx]] = {};
+				if (cols[col].is_plain_int) value = parseInt(value);
+				qry_js.where[ops[pfx]][col] = value;
+				}
+			}
+		}
+	console.log(qry_js);
+	linkedData(table,qry_js,"moreInfo");
+}
+
+
 
 function search_row_form(table,data)
 {
 	let e = document.getElementById("search_row_select");
 	e.selectedIndex = 0;
-	console.log("SEARCH",table,data);
+
+	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
+	let cols = gbl.config.schema[table].columns;
+	for(let col in cols) {
+		x += settings_prompt(pretty_prompt(col));
+		x += `<input id='eq.${table}.${col}' placeholder="equals" style='width: 200px;'></td>`;
+		if ((cols[col].type == "varchar")||(cols[col].type == "char")) {
+			x += `<td colspan=2><input id='like.${table}.${col}' placeholder="is like" style='width: 400px;'></td>`;
+		} else {
+			x += `<td><input id='gt.${table}.${col}' placeholder="greater than" style='width: 200px;'></td>`;
+			x += `<td><input id='lt.${table}.${col}' placeholder="less than" style='width: 200px;'></td>`;
+			}
+
+		x += `<td><select id='sort.${table}.${col}'><option value=''>Sort ...`
+
+		if (cols[col].is_plain_int)
+			x += `<option value=asc>Lowest First<option value=desc>Highest First`;
+		else if (cols[col].type == "datetime")
+			x += `<option value=asc>Oldest First<option value=desc>Most Recent First`;
+		else
+			x += `<option value=asc>A -> Z<option value=desc>Z -> A`;
+		x += "</select></td>";
+		x += "</tr>";
+		}
+
+	x += "<tr><td colspan=5 class=btmBtnBar id=search_btns>";
+	x += "<input type=button onClick='history.back();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += `<input type=button onClick='process_search_form("${table}");' class=myBtn style='width: 150px' value='Search'>`;
+	x += "</td></tr>";
+
+	x += "</table>";
+	elm.moreInfo.innerHTML = x;
 }
 
 
