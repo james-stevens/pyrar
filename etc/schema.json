@@ -50,7 +50,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 50,
@@ -66,7 +66,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "domain_id": {
             "unsigned": true,
@@ -77,7 +77,7 @@
          },
          "execute_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "failures": {
             "size": 11,
@@ -357,7 +357,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 100,
@@ -376,7 +376,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "domain_id": {
             "unsigned": true,
@@ -429,8 +429,7 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
-            "default": 0
+            "null": false
          }
       },
       "indexes": {
@@ -551,7 +550,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 50,
@@ -560,7 +559,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "currency_charged": {
             "size": 3,

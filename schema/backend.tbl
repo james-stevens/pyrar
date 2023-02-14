@@ -15,9 +15,9 @@ sqlsh "create table backend (
 	num_years			int,
 	authcode			varchar(50),
 
-	execute_dt			datetime null,
-	created_dt			datetime null,
-	amended_dt			datetime null,
+	execute_dt			datetime not null,
+	created_dt			datetime not null,
+	amended_dt			datetime not null,
 
 	CONSTRAINT primary key (backend_id),
 	key by_user (execute_dt)
