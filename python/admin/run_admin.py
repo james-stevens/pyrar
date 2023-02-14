@@ -18,6 +18,7 @@ from librar import domobj
 from librar import passwd
 from librar import validate
 from librar import common_ui
+from actions import creator
 
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend import dom_handler
@@ -43,9 +44,17 @@ def set_amended_and_created():
                 has_column[col][table] = True
 
 
-def post_table_trigger(table):
+def post_table_trigger(table,row_id=None,where=None):
     if table == "sysadmins":
         subprocess.run(["/usr/local/bin/make_admin_logins"])
+    if table == "domains":
+        this_where = where[7:]
+        if row_id is not None:
+            this_where = {"domain_id":row_id}
+        if where is not None:
+            ok, dom_db = sql.sql_select_one("domains", this_where)
+            if ok and dom_db and len(dom_db):
+                creator.recreate_domain_actions(dom_db,"admin-ui")
 
 
 def response(code, data):
@@ -75,6 +84,8 @@ def find_best_index(idxes):
 
 def add_data(data, this_col):
     """ convert {data} to SQL string """
+    if data is None:
+        return "NULL"
     if this_col["is_plain_int"]:
         return str(int(data))
     if this_col["type"] == "boolean":
@@ -518,7 +529,7 @@ def insert_table_row(table):
         if row_id > 0:
             ret["row_id"] = row_id
 
-    post_table_trigger(table)
+    post_table_trigger(table,row_id = row_id)
     return response(200, ret)
 
 
@@ -546,7 +557,7 @@ def update_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table)
+        post_table_trigger(table,where = where_clause(table, sent))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
@@ -567,7 +578,7 @@ def delete_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table)
+        post_table_trigger(table, where = where_clause(table, sent))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)

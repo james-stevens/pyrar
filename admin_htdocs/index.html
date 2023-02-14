@@ -1,12 +1,12 @@
 <html>
 <head>
-    <title>PyRar Admin</title>
-    <meta charSet="utf-8"/>
-    <script src="/usr/theme.js"></script>
-    <script src="/usr/punycode.js"></script>
-    <script src="/usr/lib.js"></script>
-    <script src="/usr/picklists.js"></script>
-    <script src="/usr/countries.js"></script>
+	<title>PyRar Admin</title>
+	<meta charSet="utf-8"/>
+	<script src="/usr/theme.js"></script>
+	<script src="/usr/punycode.js"></script>
+	<script src="/usr/lib.js"></script>
+	<script src="/usr/picklists.js"></script>
+	<script src="/usr/countries.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -15,13 +15,15 @@ debugAPI = false;
 
 const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:10000, 6:100000, 7:1000000, 8:10000000, 9:100000000 };
 
-const pre_get_elm = [ "emailSearch","zoneSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
+const pre_get_elm = [ "tableDrops","emailSearch","zoneSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
 
-const hide_from_edit = [ "created_dt","amended_dt","last_login_dt","acct_sequence_id","reg_create_dt",
+const hide_from_add = [ "created_dt","amended_dt","last_login_dt","acct_sequence_id","reg_create_dt",
 	"users.user_id","domains.domain_id","event_id","transactions.transaction_id","action_id",
-	"domains.name","backend_id","sales.sales_item_id","payment_id", "acct_previous_balance","acct_current_balance" ];
+	"backend_id","sales.sales_item_id","payment_id", "acct_previous_balance","acct_current_balance" ];
+
+const hide_from_edit = ["domains.name"].concat(hide_from_add);
 
 const show_as_json = [ "price_info" ];
 
@@ -67,62 +69,62 @@ const table_desc = {
 linked_tables = {};
 elm = {};
 gbl = {
-    theme: window.localStorage.theme,
-    url_prefix: "/adm/v1/",
+	theme: window.localStorage.theme,
+	url_prefix: "/adm/v1/",
 
-    tick: "&#x2611;",
-    cross: "&#x2612;",
-    timer: "&#x23f3;",
-    cut: "&#x2702;",
-    waste: "&#x1F5D1;",
-    warn: "&#x26a0;",
-    page: "&#x1F5CE;",
-    nsec: "&#x1F512;",
-    nsec3: "&#x1F510;",
-    clip: "&#x1F4CE;",
-    cart: "&#128722;",
-    email: "&#128231;",
-    copy: "&#x2398",
-    credit: "&#x1F4B3;",
-    lock: "&#x1F512;",
+	tick: "&#x2611;",
+	cross: "&#x2612;",
+	timer: "&#x23f3;",
+	cut: "&#x2702;",
+	waste: "&#x1F5D1;",
+	warn: "&#x26a0;",
+	page: "&#x1F5CE;",
+	nsec: "&#x1F512;",
+	nsec3: "&#x1F510;",
+	clip: "&#x1F4CE;",
+	cart: "&#128722;",
+	email: "&#128231;",
+	copy: "&#x2398",
+	credit: "&#x1F4B3;",
+	lock: "&#x1F512;",
 
-    gap: "<div style='height: 7px;'></div>",
-    settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
+	gap: "<div style='height: 7px;'></div>",
+	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
 
-    def_max_checks: 2
-    };
+	def_max_checks: 2
+	};
 
 ctx = {};
 gbl.head = document.head || document.getElementsByTagName('head')[0];
 
 if ((gbl.theme == null)||(!(gbl.theme in theme_colours))) {
-    gbl.theme="default";
-    window.localStorage.setItem("theme",gbl.theme);
-    }
+	gbl.theme="default";
+	window.localStorage.setItem("theme",gbl.theme);
+	}
 
 changeTheme(gbl.theme);
 if (window.location.pathname!="/") {
-    window.localStorage.setItem("router_path",window.location.pathname);
-    window.location = window.location.origin;
-    }
+	window.localStorage.setItem("router_path",window.location.pathname);
+	window.location = window.location.origin;
+	}
 
 function toggleTheme() { togglePopUp("themePopup",5000); }
 
 function hideAllPopUp()
 {
-    hidePopUp();
-    ["loginPopup","registerPopup","themePopup"].forEach(item => {
-        let popup = document.getElementById(item);
-        popup.classList.remove("show")
-        });
+	hidePopUp();
+	["loginPopup","registerPopup","themePopup"].forEach(item => {
+		let popup = document.getElementById(item);
+		popup.classList.remove("show")
+		});
 }
 
 
 function clr_lazy_hide()
 {
-    if (!ctx.popup) return;
-    if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
-    delete ctx.popup;
+	if (!ctx.popup) return;
+	if (ctx.popup.timer) clearTimeout(ctx.popup.timer);
+	delete ctx.popup;
 }
 
 
@@ -133,10 +135,12 @@ function find_tld(tld)
 	return null;
 }
 
+
+
 function registry_type(domain)
 {
 	let pos = domain.indexOf(".");
-	if (pos<0) return null;
+	if (pos < 0) return null;
 	return reg_type_of_tld(domain.slice(pos+1));
 }
 
@@ -155,45 +159,45 @@ function reg_type_of_tld(tld_name)
 
 function togglePopUp(name,tmout)
 {
-    if ("popup" in ctx) {
-        let save_name = ctx.popup.name;
-        hidePopUp();
-        if (save_name==name) { unerrMsg(); return; }
-        }
+	if ("popup" in ctx) {
+		let save_name = ctx.popup.name;
+		hidePopUp();
+		if (save_name==name) { unerrMsg(); return; }
+		}
 
-    let popup = document.getElementById(name);
-    if (popup) popup.classList.toggle("show");
+	let popup = document.getElementById(name);
+	if (popup) popup.classList.toggle("show");
 
-    let hide_now = null;
-    if (tmout) {
-        hide_now = setTimeout(hidePopUp,tmout);
-        }
+	let hide_now = null;
+	if (tmout) {
+		hide_now = setTimeout(hidePopUp,tmout);
+		}
 
-    ctx.popup = { "timer": hide_now, "name": name }
+	ctx.popup = { "timer": hide_now, "name": name }
 
-    let e = null;
+	let e = null;
 	if (name=="AddSysAdmin") e = document.getElementById("sysadm_login");
-    if (e) { e.focus(); e.select(); }
+	if (e) { e.focus(); e.select(); }
 
-    return false;
+	return false;
 }
 
 
 
 function hidePopUp()
 {
-    if (!("popup" in ctx)) return;
-    let popup = document.getElementById(ctx.popup.name);
-    if (popup) popup.classList.remove("show")
-    clr_lazy_hide();
+	if (!("popup" in ctx)) return;
+	let popup = document.getElementById(ctx.popup.name);
+	if (popup) popup.classList.remove("show")
+	clr_lazy_hide();
 }
 
 function do_theme_change(value)
 {
-    clr_lazy_hide();
-    if (value in theme_colours) changeTheme(value);
-    let popup = document.getElementById("themePopup");
-    popup.classList.remove("show")
+	clr_lazy_hide();
+	if (value in theme_colours) changeTheme(value);
+	let popup = document.getElementById("themePopup");
+	popup.classList.remove("show")
 }
 
 
@@ -371,7 +375,6 @@ function linkedData(table,where,location)
 					}
 
 				if ((col=="status_id")&&(value in gbl.config.status)) value = `${gbl.config.status[value]}&nbsp;&nbsp;(${value})`;
-				if (col.slice(-3)=="_dt") value = value.split(" ")[0];
 				if (money_format.includes(col))
 					x += `<td align=right>${format_amount(value)}</td>`;
 				else
@@ -402,12 +405,12 @@ function show_dns_data(domain)
 	if (domain.slice(-1)!=".") domain += ".";
 
 	callApi("dns/"+domain,(ok,reply) => {
-        if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
+		if (!ok) return def_errMsg("No DNS Data found for this domain",reply,"userInfo");
 
-        if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
-            return errMsg("No DNS Data found for this domain","userInfo");
+		if ((!reply)||(!reply.dns)||(!reply.dns.rrsets)||(!reply.dns.rrsets.length))
+			return errMsg("No DNS Data found for this domain","userInfo");
 
-        sort_rr_sets(reply);
+		sort_rr_sets(reply);
 
 		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
 		x += "<tr><th>Host</th><th>Type</th><th>TTL</th><th>Value</th></tr>";
@@ -523,8 +526,12 @@ function hide_more_data()
 
 function dont_edit(table,col)
 {
-	return ((hide_from_edit.includes(col)) || (hide_from_edit.includes(table+"."+col)));
+	if (ctx.one_row.cancel)
+		return ((hide_from_add.includes(col)) || (hide_from_add.includes(table+"."+col)));
+	else
+		return ((hide_from_edit.includes(col)) || (hide_from_edit.includes(table+"."+col)));
 }
+
 
 function edit_row()
 {
@@ -532,6 +539,8 @@ function edit_row()
 	if (!(tbl in gbl.config.schema)) return errMSg(`Table '{tbl}' is not in the schema!!`,"userInfo");
 	let cols = gbl.config.schema[tbl].columns;
 	let x = "<table border=0 cellspacing=0 cellpadding=1 align=center width=75%>";
+	let first_item = null;
+
 	for(let col in cols) {
 		let sz = 150;
 		if (cols[col].size) sz = cols[col].size * 20;
@@ -546,28 +555,35 @@ function edit_row()
 			inp += "</select>";
 			}
 		else if (dont_edit(tbl,col)) {
-			inp=ctx.one_row.data[col];
+			inp = ctx.one_row.data[col];
 			if (money_format.includes(col)) inp = format_amount(inp);
 			}
 		else if (show_as_json.includes(col))
 			inp=`<textarea id=${tbl}.${col} style="width: 600px; height: 250px;"></textarea>`;
+		else
+			if (!first_item) first_item = `${tbl}.${col}`;
 
-		x += settings_prompt(pretty_prompt(col))+inp+"</td></tr>";
+		if (inp) x += settings_prompt(pretty_prompt(col))+inp+"</td></tr>";
 		}
 
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 
+	let cancel_fnc = "reshow_one_record";
+	if (ctx.one_row.cancel) cancel_fnc = ctx.one_row.cancel;
+
 	x += "<tr><td colspan=2 class=btmBtnBar id=edit_btns>";
-	x += "<input type=button onClick='reshow_one_record();' class=myBtn style='width: 150px' value='Cancel'>";
+	x += `<input type=button onClick='${cancel_fnc}();' class=myBtn style='width: 150px' value='Cancel'>`;
 	x += `<input type=button onClick='save_edited_row();' class=myBtn style='width: 150px' value='Save'>`;
 	x += "</td></tr>";
 
 	x += "</table>";
 	elm.moreInfo.innerHTML = x;
 
+	ctx.one_row.can_edit = {};
 	ctx.one_row.prev_vals = {};
 	for(let col in cols) {
 		if (dont_edit(tbl,col)) continue;
+		ctx.one_row.can_edit[col] = true;
 		if (!(col in ctx.one_row.data)) continue;
 
 		value = ctx.one_row.data[col];
@@ -581,6 +597,11 @@ function edit_row()
 		ctx.one_row.prev_vals[col] = value;
 		e.value = value;
 		}
+
+	if (first_item) {
+		let e = document.getElementById(first_item);
+		e.focus();
+		}
 }
 
 
@@ -588,7 +609,7 @@ function edit_row()
 function save_edited_row()
 {
 	let tbl = ctx.one_row.table;
-	let changed = read_items(tbl,ctx.one_row.prev_vals,ctx.one_row.prev_vals);
+	let changed = read_items(tbl,ctx.one_row.can_edit,ctx.one_row.prev_vals);
 	if (Object.keys(changed).length <= 0) return reshow_one_record();
 
 	let post_json = ctx.one_row.where;
@@ -608,13 +629,16 @@ function read_items(tbl,cols,old_vals)
 	for(let col in cols) {
 		let e = document.getElementById(tbl+"."+col);
 		value = e.value;
+		if ((!value)&&(!old_vals[col])) continue;
+
 		if (gbl.config.schema[tbl].columns[col].type == "boolean") value = (value == "true");
 		else if (show_as_json.includes(col))
 			value = JSON.stringify(JSON.parse(value), null, 0)
 		else if (money_format.includes(col))
 			value = Math.round(parseFloat(value)*pow10[gbl.config.default_currency.decimal]);
 
-		if ((!old_vals)||(value != old_vals[col])) changed[col] = value;
+		if ((value=="")&&(gbl.config.schema[tbl].columns[col].null)) value=null;
+		if (value != old_vals[col]) changed[col] = value;
 		}
 	return changed;
 }
@@ -811,6 +835,23 @@ function best_index(indexes)
 }
 
 
+function add_row_form(table,data)
+{
+	let e = document.getElementById("add_row_select");
+	e.selectedIndex = 0;
+	ctx.one_row = { table: table, data: {}, cancel: "cancel_add_row" };
+	edit_row();
+}
+
+function search_row_form(table,data)
+{
+	let e = document.getElementById("search_row_select");
+	e.selectedIndex = 0;
+	console.log("SEARCH",table,data);
+}
+
+
+
 function go_welcome(with_push)
 {
 	if (with_push) push_hist({"func":"start"});
@@ -831,7 +872,14 @@ function go_welcome(with_push)
 		elm.businessName.innerHTML = `<a href="${policy('website_name')}">${site_name}</a>`;
 
 		linked_tables = {};
+		let add_drop = "<select onChange='add_row_form(this.value,{});' id=add_row_select><option>--- Add to Table ---";
+		let search_drop = "<select onChange='search_row_form(this.value,{});' id=search_row_select><option>--- Search Table ---";
 		for(let i in gbl.config.schema) {
+			if ("columns" in gbl.config.schema[i]) {
+				add_drop += `<option>${i}`;
+				search_drop += `<option>${i}`;
+				}
+
 			if ((i[0]!=':')&&(gbl.config.schema[i].indexes)&&(Object.keys(gbl.config.schema[i].indexes).length)) {
 				gbl.config.schema[i].best_index = best_index(gbl.config.schema[i].indexes);
 				}
@@ -848,7 +896,14 @@ function go_welcome(with_push)
 					}
 				}
 			}
+		elm.tableDrops.innerHTML = add_drop+"</select>&nbsp;"+search_drop+"</select>&nbsp;";
 		elm.moreInfo.innerHTML = "<h2>Welcome</h2>";
+		pick_lists.zones.registry = []
+		for(let i in gbl.config.registry) {
+			let desc = i;
+			if ("desc" in gbl.config.registry[i]) desc = gbl.config.registry[i].desc;
+			pick_lists.zones.registry.push([i,desc]);
+			}
 		});
 }
 
@@ -863,6 +918,7 @@ function go_welcome(with_push)
 <td align=left><span id="businessName" class="businessName">PyRar Admin</span></td>
 <td align=center><div style="width: 200px margin:20px; font-size: 20px;" id="topMsg">&nbsp;</div></td>
 <td align=right>
+<span id=tableDrops></span>
 <span onClick="show_sysadmins()" style='width: 110px;' class=myBtn>SysAdmins</span>
 <a href="/pdns.html" target=_window><span name=hitMe style='width: 110px;' class=myBtn>PowerDNS</span></a>
 
@@ -893,7 +949,7 @@ USR:<input onKeyDown="key_down(event,this);" id=emailSearch style="width:250px">
 
 
 <div id="lowerSpan">
-    <div style='height: 10px;'></div>
+	<div style='height: 10px;'></div>
 	<div class=botSapce id="moreInfo">&nbsp;</div>
 </div>
 

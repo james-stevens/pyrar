@@ -1,7 +1,7 @@
 
 const yes_no = [ [true,"Yes"], [false,"No"] ];
 
-const pick_lists = {
+pick_lists = {
 	"users" : {
 		"acct_on_hold": yes_no,
 		"email_verified": yes_no,
@@ -10,7 +10,21 @@ const pick_lists = {
 		},
 	"zones" : {
 		"enabled": yes_no,
-		"allow_sales": yes_no
+		"allow_sales": yes_no,
+		"renew_limit": [
+			[ 0, "Unlimited"],
+			[ 1, "1 Year" ],
+			[ 2, "2 Years" ],
+			[ 3, "3 Years" ],
+			[ 4, "4 Years" ],
+			[ 5, "5 Years" ],
+			[ 6, "6 Years" ],
+			[ 7, "7 Years" ],
+			[ 8, "8 Years" ],
+			[ 9, "9 Years" ],
+			[ 10, "10 Years" ],
+			[ 11, "11 Years" ],
+			]
 		},
 	"domains" : {
 		"auto_renew": yes_no,
@@ -27,6 +41,7 @@ const pick_lists = {
 		"auto_renew": yes_no
 	}
 };
+
 
 function find_pick_value(table,column,value)
 {
