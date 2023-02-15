@@ -10,6 +10,9 @@ from librar import sigprocs
 from librar import accounts
 from librar import sales
 from librar import registry
+from backend import creator
+
+DEFAULT_WAIT = 60
 
 
 def get_next_order_to_clear():
@@ -41,15 +44,12 @@ def process_order(order_db):
     if ok and sold_id:
         sql.sql_update_one("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 
-    sales.make_backend_job(order_db)
+    creator.make_backend_job(order_db["order_type"],dom_db,order_db["num_years"],order_db["authcode"])
     sql.sql_delete_one("orders", {"order_item_id": order_db["order_item_id"]})
     return True
 
 
-def run_server(max_wait=None):
-    if not max_wait:
-        max_wait = 30
-
+def run_server(max_wait=DEFAULT_WAIT):
     log("PAY-ENGINE RUNNING")
     signal_mtime = None
     while True:
@@ -69,4 +69,4 @@ if __name__ == "__main__":
 
     sql.connect("engine")
     registry.start_up()
-    run_server(5 if args.debug else 30)
+    run_server(5 if args.debug else DEFAULT_WAIT)

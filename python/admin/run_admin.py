@@ -18,7 +18,7 @@ from librar import domobj
 from librar import passwd
 from librar import validate
 from librar import common_ui
-from actions import creator
+from backend import creator
 
 # pylint: disable=unused-wildcard-import, wildcard-import
 from backend import dom_handler
@@ -28,9 +28,20 @@ from admin import load_schema
 
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 CHECK_HAS_COLUMN = [ "amended_dt","created_dt"]
+DOMAIN_JOB_TYPES = { "PUT":"dom/create","PATCH":"dom/update","DELETE":"dom/delete" }
 
 schema = {}
 has_column = {}
+
+
+def find_serial_column(table):
+    if table not in schema or "columns" not in schema[table]:
+        return None
+    for col,col_data in schema[table]["columns"].items():
+        if "serial" in col_data and col_data["serial"]:
+            return col
+    return None
+
 
 def set_amended_and_created():
     global has_column
@@ -44,19 +55,35 @@ def set_amended_and_created():
                 has_column[col][table] = True
 
 
-def post_table_trigger(table,row_id=None,where=None):
+def post_table_trigger(table,action,row_id=None,where=None):
+    if row_id is None and where is None:
+        log(f"ERROR: post_table_trigger on '{table}' with '{action}' wasn't given any keys")
+        return
+
     if table == "sysadmins":
         subprocess.run(["/usr/local/bin/make_admin_logins"])
+        return
+
+    this_where = None
+    if where is not None:
+        this_where = where[7:]
+    elif row_id is not None:
+        if (col := find_serial_column(table)) is None:
+            return
+        this_where = {col:row_id}
+
     if table == "domains":
-        this_where = None
-        if where is not None:
-            this_where = where[7:]
-        if row_id is not None:
-            this_where = {"domain_id":row_id}
-        if this_where is not None:
-            ok, dom_db = sql.sql_select_one("domains", this_where)
-            if ok and dom_db and len(dom_db):
-                creator.recreate_domain_actions(dom_db,"admin-ui")
+        return post_trigger_domains(action,this_where)
+
+
+def post_trigger_domains(action,this_where):
+    if action not in DOMAIN_JOB_TYPES:
+        log(f"ERROR: Action '{action}' not in DOMAIN_JOB_TYPES")
+        return
+
+    ok, dom_db = sql.sql_select_one("domains", this_where)
+    if ok and dom_db and len(dom_db):
+        creator.make_backend_job(DOMAIN_JOB_TYPES[action],dom_db)
 
 
 def response(code, data):
@@ -533,7 +560,7 @@ def insert_table_row(table):
     if num_rows == 1 and row_id > 0:
         ret["row_id"] = row_id
 
-    post_table_trigger(table,row_id = row_id)
+    post_table_trigger(table,"PUT",row_id = row_id)
     return response(200, ret)
 
 
@@ -561,7 +588,7 @@ def update_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table,where = where_clause(table, sent))
+        post_table_trigger(table,"PATCH",where = where_clause(table, sent))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
@@ -582,7 +609,7 @@ def delete_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table, where = where_clause(table, flask.request.json))
+        post_table_trigger(table, "DELETE", where = where_clause(table, flask.request.json))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)

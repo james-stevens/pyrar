@@ -27,6 +27,7 @@ STATUS_EXPIRED = 20
 STATUS_TRANS_QUEUED = 100
 STATUS_TRANS_REQ = 101
 STATUS_TRANS_FAIL = 120
+STATUS_RESERVED = 200
 
 LIVE_STATUS = {1: True}
 
@@ -37,7 +38,8 @@ DOMAIN_STATUS = {
     20: "Expired",
     100: "Transfer Queued",
     101: "Transfer Requested",
-    120: "Transfer Failed"
+    120: "Transfer Failed",
+    200: "Reserved"
 }
 
 POW10 = [

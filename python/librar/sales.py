@@ -11,23 +11,6 @@ from librar import registry
 from librar import mysql as sql
 
 
-def make_backend_job(order_db):
-    bke_job = {
-        "domain_id": order_db["domain_id"],
-        "user_id": order_db["user_id"],
-        "job_type": order_db["order_type"],
-        "num_years": order_db['num_years'],
-        "authcode": order_db["authcode"],
-        "failures": 0,
-        "execute_dt": sql.now(),
-        "created_dt": None,
-        "amended_dt": None
-    }
-
-    sql.sql_insert("backend", bke_job)
-    sigprocs.signal_service("backend")
-
-
 def sold_item(trans_id, order_db, dom_db, user_db):
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     sales = {

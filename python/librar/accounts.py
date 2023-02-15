@@ -78,19 +78,28 @@ def admin_trans(injs):
         return False, "Invalid description"
 
     pay_db = None
+    user_db = None
     if "user_id" in injs:
         user_id = injs["user_id"]
         if not isinstance(user_id, int):
             return False, "Missing or invalid data"
+    elif "email" in injs:
+        if not validate.is_valid_email(injs["email"]):
+            return False, "Invalid email address given"
+        ok, user_db = sql.sql_select_one("users",{"email":injs["email"]})
+        if not ok or not user_db or not len(user_db) or not sql.has_data(user_db,"user_id"):
+            return False, f"No user matching '{injs['email']}' could be found"
+        user_id = user_db["user_id"]
     else:
         ok, pay_db = find_payment_record(injs)
         if not ok:
             return False, pay_db
         user_id = pay_db["user_id"]
 
-    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
-    if not ok or not user_db or len(user_db) <= 0:
-        return False, "Invalid user_id given"
+    if user_db is None:
+        ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
+        if not ok or not user_db or len(user_db) <= 0:
+            return False, "Invalid user_id given"
 
     site_currency = policy.policy("currency")
     amount *= static.POW10[site_currency["decimal"]]

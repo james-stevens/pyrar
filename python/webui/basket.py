@@ -15,6 +15,7 @@ from librar import sales
 from librar import mysql as sql
 from librar.policy import this_policy as policy
 from librar import domobj
+from backend import creator
 
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -175,7 +176,7 @@ def paid_for_basket_item(req, order, user_db):
 
     event_log(req, order)
     order["paid-for"] = True
-    sales.make_backend_job(order_db)
+    creator.make_backend_job(order_db["order_type"],order_db,order_db["num_years"],order_db["authcode"])
     return True
 
 

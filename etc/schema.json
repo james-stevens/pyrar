@@ -413,7 +413,7 @@
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": false
+            "null": true
          },
          "reg_create_dt": {
             "type": "datetime",

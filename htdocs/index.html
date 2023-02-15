@@ -1115,8 +1115,8 @@ function goMarketPlace()
 
 
 
-function enable_two_fa() { errMsg("Not yet implemented","edit2FA"); }
-function disable_two_fa() { errMsg("Not yet implemented","edit2FA"); }
+function enable_two_fa() { errMsg("Not yet implemented","2fa_section"); }
+function disable_two_fa() { errMsg("Not yet implemented","2fa_section"); }
 
 
 
@@ -1140,14 +1140,14 @@ function user_settings(with_push)
 
 
 	x += settings_header("Control Two-Factor Authentication");
-	x += "<table id=edit2FA width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	if (("two_fa" in ctx.user) && (ctx.user.two_fa != null) && (ctx.user.two_fa != "")) {
 		x += "<tr><td colspan=2>Disable Google Authenticator two-factor authentication</td></tr>";
-		x += "<tr><td colspan=2></td><td align=right>"+btn("disable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		x += "<tr><td colspan=2></td><td id=2fa_section align=right>"+btn("disable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
 		}
 	else {
 		x += "<tr><td colspan=2>Enable Google Authenticator two-factor authentication</td></tr>";
-		x += "<tr><td colspan=2></td><td align=right>"+btn("enable_two_fa()","Enable 2FA","Enable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		x += "<tr><td colspan=2></td><td id=2fa_section align=right>"+btn("enable_two_fa()","Enable 2FA","Enable Google Authenticator two-factor authentication",100)+"</td></tr>";
 		}
 	x += "</table></form></td></tr>";
 

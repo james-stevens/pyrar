@@ -203,20 +203,23 @@ def webui_gift_domain(req):
     if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
         return False, "Recipient email missing or invalid"
 
-    if not (reply := sql.sql_select_one("users", {"email": req.post_js["dest_email"]}))[0]:
+    if ok, new_user_db := sql.sql_select_one("users", {"email": req.post_js["dest_email"]})):
+    if not ok:
         return False, "Recipient email invalid"
-    new_user_id = reply[1]["user_id"]
 
     where = {col: req.post_js[col] for col in ["domain_id", "name", "user_id"]}
-    if not sql.sql_update_one("domains", {"user_id": new_user_id}, where):
+    if not sql.sql_update_one("domains", {"user_id": new_user_db["user_id"]}, where):
         return False, "Gifting domain failed"
+
+    pdns.delete_from_catalog(dom.dom_db["name"])
+    pdns.delete_zone(dom.dom_db["name"])
 
     spool_email.spool("gifted_domain", [["domains", {
         "domain_id": req.post_js["domain_id"]
     }], ["users", {
-        "user_id": new_user_id
+        "user_id": new_user_db["user_id"]
     }]])
-    return True, {"new_user_id": new_user_id}
+    return True, {"new_user_id": new_user_db["user_id"]}
 
 
 def webui_update_domains_flags(req):

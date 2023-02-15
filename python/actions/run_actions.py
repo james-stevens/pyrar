@@ -14,6 +14,8 @@ from librar import registry
 from librar import pdns
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
+from backend import creator
+
 
 COPY_DEL_DOM_COLS = [
     "domain_id", "name", "user_id", "status_id", "auto_renew", "ns", "ds", "client_locks", "created_dt", "amended_dt",
@@ -38,26 +40,10 @@ def event_log(notes, action):
     sql.sql_insert("events", event_row)
 
 
-def make_backend_job(job_type, dom_db):
-    backend = {
-        "domain_id": dom_db["domain_id"],
-        "user_id": dom_db["user_id"],
-        "job_type": job_type,
-        "failures": 0,
-        "execute_dt": sql.now(),
-        "created_dt": None,
-        "amended_dt": None
-    }
-
-    ok = sql.sql_insert("backend", backend)
-    sigprocs.signal_service("backend")
-    return ok
-
-
 def flag_expired_domain(__, dom_db):
     pdns.delete_from_catalog(dom_db["name"])
     sql.sql_update_one("domains", {"status_id": static.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
-    return make_backend_job("dom/expired", dom_db)
+    return creator.make_backend_job("dom/expired", dom_db)
 
 
 def order_cancel(act_db, dom_db):
@@ -75,7 +61,7 @@ def delete_domain(__, dom_db):
         del_dom_db["deleted_dt"] = None
         sql.sql_insert("deleted_domains", del_dom_db)
 
-    return make_backend_job("dom/delete", dom_db)
+    return creator.make_backend_job("dom/delete", dom_db)
 
 
 def auto_renew_domain(act_db, dom_db):
