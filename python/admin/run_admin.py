@@ -496,14 +496,14 @@ def process_one_set(set_clause, table):
     cols = schema[table]["columns"]
     for col in set_clause:
         if col not in cols:
-            return json_abort("Column {col} not in table {table}")
+            False, "Column {col} not in table {table}"
         val = add_data(set_clause[col], cols[col])
         if col in ["amended_dt", "created_dt"]:
             val = "now()"
         elif col in ["htpasswd", "password"]:
             val = '"' + passwd.crypt(set_clause[col]) + '"'
         ret.append(col + "=" + val)
-    return ret
+    return True, ret
 
 
 def get_idx_cols(table, sent):
@@ -545,17 +545,19 @@ def insert_table_row(table):
         return json_abort("In an INSERT, the `set` clause must be an object or list type")
 
     for col in [ "amended_dt","created_dt"]:
-        if table in has_column["amended_dt"] and col not in sent["set"]:
+        if table in has_column[col] and col not in sent["set"]:
             sent["set"][col] = None
 
-    set_list = process_one_set(sent["set"], table)
+    ok, set_list = process_one_set(sent["set"], table)
+    if not ok:
+        return json_abort(set_list)
+    log(f"set_list={set_list}")
     query = f"insert into {table} set " + ",".join(set_list)
 
     num_rows, row_id = sql.sql_exec(query)
     if num_rows is False:
         return json_abort(row_id)
 
-    log(f"num_rows={num_rows}, row_id={row_id}")
     ret = {"affected_rows": num_rows}
     if num_rows == 1 and row_id > 0:
         ret["row_id"] = row_id
@@ -582,7 +584,9 @@ def update_table_row(table):
     if table in has_column["amended_dt"] and "amended_dt" not in sent["set"]:
         sent["set"]["amended_dt"] = None
 
-    set_list = process_one_set(sent["set"], table)
+    ok, set_list = process_one_set(sent["set"], table)
+    if not ok:
+        return json_abort(set_list)
     query = f"update {table} set " + ",".join(set_list)
     __, query = build_sql(table, sent, query)
 

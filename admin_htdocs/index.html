@@ -29,7 +29,7 @@ const show_as_json = [ "price_info" ];
 
 const list_columns = {
 	"events": [ "when_dt","who_did_it","event_type","notes" ],
-	"actions": [ "execute_dt","action"],
+	"actions": [ "execute_dt","action","domain_id"],
 	"sales": [ "created_dt","sales_type","num_years","price_charged","price_paid" ],
 	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
 	"payments": [ "created_dt","provider","provider_tag" ],
@@ -38,6 +38,8 @@ const list_columns = {
 	"class_by_regexp": ["name_regexp","zone","class","amended_dt" ],
 	"zones": [ "zone","amended_dt","price_info" ],
 	"users": [ "user_id","email","account_closed","created_dt"],
+	"class_by_name": [ "name","class","amended_dt"],
+	"class_by_regexp": ["name_regexp","zone","class","amended_dt"],
 	};
 
 const order_by = {
@@ -641,8 +643,6 @@ function save_edited_row()
 	if (Object.keys(changed).length <= 0) return reshow_one_record();
 
 	if (ctx.one_row.is_insert) {
-		let post_json = {};
-		post_json.set = changed;
 		callApi("data/"+tbl,(ok,reply) => {
 			if (!ok) return def_errMsg("Error inserting '{ctx.one_row.table}'",reply,"edit_btns");
 			if (reply.row_id) {
@@ -650,7 +650,7 @@ function save_edited_row()
 				if (col) return tableLink(tbl,{"where":{"=":{ [col] :reply.row_id}}});
 				}
 			linkedData(tbl,{limit:50},"moreInfo");
-			}, { json: post_json, method: "PUT" });
+			}, { json: {"set":changed }, method: "PUT" });
 		}
 	else {
 		let post_json = ctx.one_row.where;
