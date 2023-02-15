@@ -203,7 +203,7 @@ def webui_gift_domain(req):
     if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
         return False, "Recipient email missing or invalid"
 
-    if ok, new_user_db := sql.sql_select_one("users", {"email": req.post_js["dest_email"]})):
+    ok, new_user_db = sql.sql_select_one("users", {"email": req.post_js["dest_email"]})
     if not ok:
         return False, "Recipient email invalid"
 

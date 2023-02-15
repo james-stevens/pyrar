@@ -748,20 +748,12 @@ def run_user_domain_task(domain_function, func_name):
 
     context = inspect.stack()[1]
     notes = context.function
+
     if func_name == "Gift":
-        if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
-            return req.abort("Invalid recipient")
         notes = f"Domain gifted from {req.user_id} to {req.post_js['dest_email']}"
+        req.event({ "user_id": reply["new_user_id"], "domain_id": req.post_js["domain_id"], "notes": notes, "event_type": context.function })
 
     req.event({"domain_id": req.post_js["domain_id"], "notes": notes, "event_type": context.function})
-    if func_name == "Gift":
-        req.event({
-            "user_id": reply["new_user_id"],
-            "domain_id": req.post_js["domain_id"],
-            "notes": notes,
-            "event_type": context.function
-        })
-
     return req.response(reply)
 
 

@@ -905,6 +905,7 @@ function postDomainTransfer()
 		f.trans_domain_name.focus();
 		return errMsg("Invalid domain name","trans_domain_name");
 		}
+
 	callApi("domain/transfer",(ok,reply) => {
 		// # CODE
 		console.log(ok,reply);
@@ -915,6 +916,7 @@ function postDomainTransfer()
 				}
 			}
 		);
+
 	return false;
 }
 
