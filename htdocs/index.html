@@ -7,6 +7,7 @@
 	<script src="/lib.js"></script>
 	<script src="/emojis.js"></script>
 	<script src="/countries.js"></script>
+	<script src="/paypal.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -550,6 +551,13 @@ function go_welcome(with_push)
 				check_router_path();
 				});
 			} else { loggedOut(); check_router_path(); }
+
+		if ((gbl.config.payment_methods.paypal_single)&&(gbl.config.payment_creds.paypal_single)) {
+			let paypal_mode = "live";
+			if (gbl.config.payment_creds.paypal_single.mode) paypal_mode = gbl.config.payment_creds.paypal_single.mode;
+			if ((paypal_mode in gbl.config.payment_creds.paypal_single)&&(gbl.config.payment_creds.paypal_single[paypal_mode].client_id))
+				add_paypal_script(gbl.config.payment_creds.paypal_single[paypal_mode].client_id,gbl.currency.iso);
+			}
 		});
 }
 
@@ -1274,11 +1282,14 @@ function add_payment()
 	callApi("payments/html",(ok,reply) => {
 		let p = document.getElementById("add_pay_div");
 		if ((ok)&&(p)) {
-			let x="<table align=center border=0>";
-			x += settings_header(`Add Payment Method - ${gbl.config.payments[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
-			p.innerHTML = x;
-			let f = document.getElementById("pay.provider_tag");
-			if (f) f.focus();
+			// let x="<table align=center border=0>";
+			// x += settings_header(`Add Payment Method - ${gbl.config.payment_methods[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
+			console.log(reply);
+			gbl.paypal = reply;
+			if (reply.html) p.innerHTML = reply.html;
+			if (reply.script) { let k = eval(reply.script); }
+			// let f = document.getElementById("pay.provider_tag");
+			// if (f) f.focus();
 			return;
 			}
 		def_errMsg("Error getting HTML for payment",reply,"add_pay_div");
@@ -1292,8 +1303,8 @@ function add_payment_form()
 	let x = "<table>";
 	x += "<tr><td class=fpormPromt>Select method to add:</td>";
 	x += "<td><select id=add_payment_type>"
-	for(let i in gbl.config.payments) {
-		x += `<option value='${i}'>${gbl.config.payments[i]}`;
+	for(let i in gbl.config.payment_methods) {
+		x += `<option value='${i}'>${gbl.config.payment_methods[i]}`;
 		}
 	x += "</select></td></tr>";
 	x += "<tr><td colspan=2 class=btmBtnBar>"+btn("add_payment()","Add","Add payment method",75)+"</td></tr>";
@@ -1333,7 +1344,7 @@ function payment_methods(with_push)
 			x += "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 			x += "<tr><th>Payment Method</th><th>Payment Data</th></tr>"
 			for(let i of reply) {
-				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payments[i.provider]}</td>`;
+				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payment_methods[i.provider]}</td>`;
 				x += `<td>${i.provider_tag}</td></tr>`;
 				}
 			x += "</table>";

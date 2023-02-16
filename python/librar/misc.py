@@ -7,17 +7,20 @@ import inspect
 import idna
 
 from librar.policy import this_policy as policy
+from librar import mysql as sql
 from librar import static
 
 
-def where_event_log():
-    where = inspect.stack()[2]
-    return {
+def event_log(other_items, stack_pos = 2):
+    where = inspect.stack()[stack_pos]
+    event_db = {
         "program": where.filename.split("/")[-1].split(".")[0],
         "function": where.function,
         "line_num": where.lineno,
         "when_dt": None
     }
+    event_db.update(other_items)
+    sql.sql_insert("events", event_db)
 
 
 def ashex(line):
@@ -44,6 +47,29 @@ def puny_to_utf8(name, strict_idna_2008=None):
         except UnicodeError:
             return None
     return None
+
+
+def format_currency(number, currency):
+    num = number
+    pfx = currency["symbol"]
+    if num < 0:
+        pfx += "-"
+        num *= -1
+    num = str(num)
+    places = currency["decimal"]
+    if len(num) < (places + 1):
+        num = ("000000000000000" + num)[(places + 1) * -1:]
+    neg_places = -1 * places
+    start = num[:neg_places]
+    use_start = ""
+    while len(start) > 3:
+        use_start += currency["separator"][0] + start[-3:]
+        start = start[:-3]
+    if len(start) > 0:
+        use_start = start + use_start
+
+    return pfx + use_start + currency["separator"][1] + num[neg_places:]
+
 
 
 if __name__ == "__main__":

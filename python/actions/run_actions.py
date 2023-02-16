@@ -24,20 +24,14 @@ COPY_DEL_DOM_COLS = [
 
 
 def event_log(notes, action):
-    where = inspect.stack()[1]
-    event_row = {
-        "program": where.filename.split("/")[-1].split(".")[0],
-        "function": where.function,
-        "line_num": where.lineno,
-        "when_dt": None,
+    misc.event_log({
         "event_type": "Action:" + action["action"],
         "domain_id": action["domain_id"],
         "user_id": None,
         "who_did_it": "action",
         "from_where": "localhost",
         "notes": notes
-    }
-    sql.sql_insert("events", event_row)
+    })
 
 
 def flag_expired_domain(__, dom_db):

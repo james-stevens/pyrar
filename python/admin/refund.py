@@ -77,20 +77,14 @@ class Refund:
 
 
     def log_event(self):
-        where = inspect.stack()[1]
-        event_db = {
-            "program": where.filename.split("/")[-1].split(".")[0],
-            "function": where.function,
-            "line_num": where.lineno,
-            "when_dt": None,
+        misc.event_log({
             "event_type": self.refund_db['sales_type'],
             "notes": f"Refund: {self.dom_db['name']} refund {self.refund_db['sales_type']} for {self.refund_db['num_years']} yrs",
             "domain_id": self.dom_db["domain_id"],
             "user_id": self.dom_db["user_id"],
             "who_did_it": "admin",
             "from_where": "localhost"
-        }
-        sql.sql_insert("events", event_db)
+        })
 
 
 def main():

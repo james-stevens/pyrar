@@ -3,11 +3,10 @@
 # Alternative license arrangements possible, contact me for more information
 """ functions for recording & handling sales """
 
-import inspect
-
 from mailer import spool_email
 from librar import sigprocs
 from librar import registry
+from librar import misc
 from librar import mysql as sql
 
 
@@ -31,22 +30,16 @@ def sold_item(trans_id, order_db, dom_db, user_db):
         "amended_dt": None
     }
 
-    where = inspect.stack()[1]
-    event_db = {
-        "program": where.filename.split("/")[-1].split(".")[0],
-        "function": where.function,
-        "line_num": where.lineno,
-        "when_dt": None,
+    ok, row_id = sql.sql_insert("sales", sales)
+
+    misc.event_log({
         "event_type": order_db['order_type'],
         "notes": f"Sale: {dom_db['name']} sold with {order_db['order_type']} for {order_db['num_years']} yrs",
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "who_did_it": "sales",
         "from_where": "localhost"
-    }
-    sql.sql_insert("events", event_db)
-
-    ok, row_id = sql.sql_insert("sales", sales)
+    },1)
 
     spool_email.spool("receipt", [["sales", {
         "sales_item_id": row_id

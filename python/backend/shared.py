@@ -11,20 +11,14 @@ from librar import validate
 
 
 def event_log(notes, bke_job):
-    where = inspect.stack()[1]
-    event_row = {
-        "program": where.filename.split("/")[-1].split(".")[0],
-        "function": where.function,
-        "line_num": where.lineno,
-        "when_dt": None,
+    misc.event_log({
         "event_type": "BackEnd:" + bke_job["job_type"],
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],
         "who_did_it": "backend",
         "from_where": "localhost",
         "notes": notes
-    }
-    sql.sql_insert("events", event_row)
+    })
 
 
 def check_have_data(job_id, dom_db, items):

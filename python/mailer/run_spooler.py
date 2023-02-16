@@ -35,7 +35,7 @@ def spool_email_file(filename, server=None):
 
     if "email" not in data or "message" not in data["email"]:
         log(f"ERROR: no message type specified")
-        return False
+        return False, None
 
     which_message = data["email"]["message"]
     pfx = f"{spool_email.TEMPLATE_DIR}/{which_message}"
@@ -48,7 +48,7 @@ def spool_email_file(filename, server=None):
         is_html = True
     else:
         log(f"No merge message file found for '{which_message}'")
-        return False
+        return False, None
 
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(f"{os.environ['BASE']}/emails"))
     template = environment.get_template(merge_file)
@@ -119,7 +119,7 @@ def spool_email_file(filename, server=None):
         smtp_cnx.sendmail(smtp_from_addr, all_rcpt.split(","), msg.as_string())
         smtp_cnx.quit()
 
-    return True
+    return True, data
 
 
 def process_emails_waiting(server=None):
@@ -128,13 +128,16 @@ def process_emails_waiting(server=None):
         if not os.path.isfile(path):
             continue
 
+        records = None
         try:
-            ok = spool_email_file(path, server)
+            ok, records = spool_email_file(path, server)
         except Exception as e:
             log(f"ERROR: Failed to email '{path}' - {e}")
             ok = False
 
         if ok:
+            if records is not None:
+                spool_email.event_log("Delivered",records)
             os.remove(path)
         else:
             log(f"ERROR: Failed to process email '{path}'")

@@ -272,6 +272,7 @@ def payments_html():
     ok, reply = plugin_func(req.user_id)
     if not ok:
         return req.abort("Missign or invalid payment method")
+
     return req.response(reply)
 
 

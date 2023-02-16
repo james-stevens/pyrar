@@ -3,7 +3,12 @@
 # Alternative license arrangements possible, contact me for more information
 """ handles plug-in modules for domain interfaces needed by the UI """
 
+from librar import static
+from librar import fileloader
+
 pay_plugins = {}
+
+payment_file = fileloader.FileLoader(static.PAYMENT_FILE)
 
 
 def add_plugin(name, funcs):
@@ -16,4 +21,5 @@ def run(plugin_name, func_name):
     """ return the function named {func_name} in the set of handlers for {plugin_name} """
     if plugin_name not in pay_plugins or func_name not in pay_plugins[plugin_name]:
         return None
+    payment_file.check_for_new()
     return pay_plugins[plugin_name][func_name]

@@ -23,7 +23,8 @@ def ui_config():
         "dom_flags": static.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
         "status": static.DOMAIN_STATUS,
-        "payments": {
+        "payment_creds": pay_handler.payment_file.data(),
+        "payment_methods": {
             pay: pay_handler.pay_plugins[pay]["desc"]
             for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
         },

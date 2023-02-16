@@ -9,6 +9,7 @@ POLICY_FILE = os.environ["BASE"] + "/config/policy.json"
 PRIORITY_FILE = os.environ["BASE"] + "/config/priority.json"
 REGISTRY_FILE = os.environ["BASE"] + "/config/registry.json"
 LOGINS_FILE = os.environ["BASE"] + "/config/logins.json"
+PAYMENT_FILE = os.environ["BASE"] + "/config/payment.json"
 PORTS_LIST_FILE = "/run/regs_ports"
 
 DEFAULT_CURRENCY = {"desc": "US Dollars", "iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2}

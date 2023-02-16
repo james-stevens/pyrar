@@ -1,0 +1,15 @@
+{
+	"paypal_single": {
+		"mode": "test",
+		"test" : {
+			"client_id": "AfPi-bkzYWoqktZKdFa9K6FJSeR_SPdbUfyl_M93ylxWu6Xsyou1cTp1ORqBOiuzVng3wRfwrejtpjKQ",
+			"secret": "EFN3L_E2rozrXO7JJARRlwskcvVrs059GMrkGCVP3r-R1F_VcDN-j7h-EsY03kyMl4XVTYrYvIEZzeEj",
+			"webhook": "9Oi89WxnNfOVJMApgcSr71C61lUxPb8bUohKn"
+			},
+		"live": {
+			"client_id": "AZQ_c0E0AgOf2E_aEtMIdOeTbA-5qVIEBP3HXBgOnUJAFTbAr0J0P1Q-DAyyIgRKH0qSV3Q6vA9ORyva",
+			"secret": "EC0oWYOUWe5BgyfCiu4volpNwZTQ07OyzOt8hEeTFsK7Nq-gofxN6sZWLF1VbbM-8WmC63wlC8MYSBcI",
+			"webhook": "9Oi89WxnNfOVJMApgcSr71C61lUxPb8bUohKn"
+			}
+		}
+}

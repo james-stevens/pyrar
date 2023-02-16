@@ -5,7 +5,6 @@
 
 import sys
 import json
-import inspect
 
 from librar import mysql as sql
 from librar import static
@@ -38,20 +37,14 @@ def domain_actions_pending_order(dom_db):
 
 
 def recreate_domain_actions(dom_db,who_did_it = "sales"):
-    where = inspect.stack()[1]
-    event_db = {
-        "program": where.filename.split("/")[-1].split(".")[0],
-        "function": where.function,
-        "line_num": where.lineno,
-        "when_dt": None,
+    misc.event_log({
         "event_type": "actions/recreate",
         "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt'].split()[0]}",
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "who_did_it": who_did_it,
         "from_where": "localhost"
-    }
-    sql.sql_insert("events", event_db)
+    },1)
 
     sql.sql_exec(f"delete from actions where domain_id = {dom_db['domain_id']}")
 

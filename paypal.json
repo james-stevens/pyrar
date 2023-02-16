@@ -1,0 +1,74 @@
+{
+  "id": "2BJ08393Y47423248",
+  "intent": "CAPTURE",
+  "status": "COMPLETED",
+  "purchase_units": [
+    {
+      "reference_id": "default",
+      "amount": {
+        "currency_code": "USD",
+        "value": "12.99"
+      },
+      "payee": {
+        "email_address": "sb-irmqn24007482@business.example.com",
+        "merchant_id": "8ABGNSC8Q2SY2"
+      },
+      "description": "Domain Names",
+      "shipping": {
+        "name": {
+          "full_name": "John Doe"
+        },
+        "address": {
+          "address_line_1": "Whittaker House",
+          "address_line_2": "2 Whittaker Avenue",
+          "admin_area_2": "Richmond",
+          "admin_area_1": "Surrey",
+          "postal_code": "TW9 1EH",
+          "country_code": "GB"
+        }
+      },
+      "payments": {
+        "captures": [
+          {
+            "id": "75L60428WR729401S",
+            "status": "COMPLETED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "12.99"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "ELIGIBLE",
+              "dispute_categories": [
+                "ITEM_NOT_RECEIVED",
+                "UNAUTHORIZED_TRANSACTION"
+              ]
+            },
+            "create_time": "2023-02-16T17:01:41Z",
+            "update_time": "2023-02-16T17:01:41Z"
+          }
+        ]
+      }
+    }
+  ],
+  "payer": {
+    "name": {
+      "given_name": "John",
+      "surname": "Doe"
+    },
+    "email_address": "sb-1iqum23988456@personal.example.com",
+    "payer_id": "SA3XU4N2ALCEA",
+    "address": {
+      "country_code": "GB"
+    }
+  },
+  "create_time": "2023-02-16T16:59:54Z",
+  "update_time": "2023-02-16T17:01:41Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2BJ08393Y47423248",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+}

@@ -11,10 +11,13 @@ import hashlib
 import base64
 
 
-def make_hash(src_string, chars_needed=20):
+def make_hash(src_string=None, chars_needed=20):
     """ make general purpose random string """
     hsh = hashlib.sha256()
-    hsh.update(src_string.encode("utf-8"))
+    if src_string is None:
+        hsh.update(secrets.token_bytes(500))
+    else:
+        hsh.update(src_string.encode("utf-8"))
     return re.sub("[+/.=]", "", base64.b64encode(hsh.digest()).decode("utf-8"))[:chars_needed]
 
 
@@ -37,4 +40,4 @@ def make_session_key(session_code, user_agent):
 
 
 if __name__ == "__main__":
-    print(make_hash(make_session_code(100), 30))
+    print(make_hash())
