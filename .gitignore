@@ -3,3 +3,4 @@ pems/server.pem
 etc/logins.json
 env
 storage/perm
+config
