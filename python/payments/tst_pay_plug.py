@@ -3,13 +3,16 @@
 # Alternative license arrangements possible, contact me for more information
 """ handles plug-in modules for domain interfaces needed by the UI """
 
-from webui import pay_handler
+from librar.log import log, debug, init as log_init
+
+from payments import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
-from webui.pay_plugins import *
+from payments.plugins import *
 
 
 def main():
-    ok, reply = pay_handler.run("paypal_single","single")(10450)
+    log_init(with_debug=True)
+    ok, reply = pay_handler.run("paypal","single")(10450)
     print(reply)
 
 

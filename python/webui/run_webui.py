@@ -19,12 +19,13 @@ from librar.policy import this_policy as policy
 from librar import mysql as sql
 from mailer import spool_email
 
+from payments import pay_handler
+# pylint: disable=unused-wildcard-import, wildcard-import
+from payments.plugins import *
+
 from webui import users
 from webui import domains
 from webui import basket
-from webui import pay_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
-from webui.pay_plugins import *
 
 WANT_REFERRER_CHECK = True
 

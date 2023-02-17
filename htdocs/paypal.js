@@ -12,8 +12,7 @@ function add_paypal_script(client_id, currency) {
 function show_paypal()
 {
 	show_one_space("userSpace")
-	let src = '<div id="smart-button-container"><div style="text-align: center;"><div id="paypal-button-container"></div></div></div>';
-	elm.userSpace.innerHTML = src;
+	elm.userSpace.innerHTML = '<div id="paypal-button-container"></div>';
 	initPayPalButton();
 }
 

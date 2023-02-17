@@ -171,23 +171,24 @@ function supported_tld(fqdn)
 function format_amount(num,omit_symbol)
 {
 	if (num==null) return "";
-	let pfx = gbl.currency.symbol;
+	let cur = gbl.config.currency;
+	let pfx = cur.symbol;
 	if (omit_symbol) pfx = "";
 	if (num < 0) { pfx += "-"; num *= -1; }
 	num = num.toString();
-	if (num.length < (gbl.currency.decimal+1))
-		num = ("000000000000000"+num).slice((gbl.currency.decimal+1)*-1);
+	if (num.length < (cur.decimal+1))
+		num = ("000000000000000"+num).slice((cur.decimal+1)*-1);
 
-	let neg_places = -1 * gbl.currency.decimal;
+	let neg_places = -1 * cur.decimal;
 	let use_start="";
 	let start = num.slice(0,neg_places);
 	while(start.length > 3) {
-		use_start += gbl.currency.separator[0]+start.slice(-3);
+		use_start += cur.separator[0]+start.slice(-3);
 		start = start.slice(0,-3);
 		}
 
 	if (start.length) use_start = start+use_start;
-	return pfx+use_start+gbl.currency.separator[1]+num.slice(neg_places);
+	return pfx+use_start+cur.separator[1]+num.slice(neg_places);
 }
 
 

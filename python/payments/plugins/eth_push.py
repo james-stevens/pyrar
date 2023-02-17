@@ -3,10 +3,10 @@
 # Alternative license arrangements possible, contact me for more information
 
 from librar import validate
-from webui import pay_handler
 from librar import mysql as sql
-
 from librar.policy import this_policy as policy
+
+from payments import pay_handler
 
 
 def eth_push_html(user_id):

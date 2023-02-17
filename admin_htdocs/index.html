@@ -479,7 +479,7 @@ function prettyAmount(event,amt)
 	let e = document.getElementById("pretty_amount");
 	if ((!amt.value)||(isNaN(amt.value))) { e.innerHTML = "Invalid"; return; }
 
-	let f = parseFloat(amt.value)*pow10[gbl.config.default_currency.decimal];
+	let f = parseFloat(amt.value)*pow10[gbl.config.currency.decimal];
 	if (f>0) pfx="Credit"; else pfx="Debit";
 	e.innerHTML = pfx+"&nbsp;"+format_amount(Math.round(f));
 }
@@ -518,7 +518,7 @@ function user_cr_db(user_id)
 	let x = "<table border=0 cellspacing=2 cellpadding=2 style='min-width:600px;' align=center>";
 	x += "<colgroup><col width=30%/><col/></colgroup>";
 	x += settings_prompt("Description")+"<input placeholder='Description user will see' style='width: 350px' id=crdb_desc></td></tr>";
-	x += settings_prompt("Amount")+gbl.config.default_currency.symbol;
+	x += settings_prompt("Amount")+gbl.config.currency.symbol;
 	x += "<input onkeyup='prettyAmount(event,this);' placeholder='-ve=debit +ve=credit' style='width: 200px' id=crdb_amnt>"
 	x += "<span style='padding-left: 50px' id=pretty_amount></span></td></tr>";
 
@@ -677,7 +677,7 @@ function read_items(tbl,cols,old_vals)
 		else if (show_as_json.includes(col))
 			value = JSON.stringify(JSON.parse(value), null, 0)
 		else if (money_format.includes(col))
-			value = Math.round(parseFloat(value)*pow10[gbl.config.default_currency.decimal]);
+			value = Math.round(parseFloat(value)*pow10[gbl.config.currency.decimal]);
 
 		if ((value=="")&&(gbl.config.schema[tbl].columns[col].null)) value=null;
 		if (value != old_vals[col]) changed[col] = value;
@@ -1006,7 +1006,6 @@ function go_welcome(with_push)
 		if (!ok) return def_errMsg("Error contacting servers",reply,"userInfo");
 
 		gbl.config = reply;
-		gbl.currency = policy("currency",gbl.config.default_currency);
 
 		let my_icon = policy("icon",null);
 		let site_name = "Admin: "+policy("business_name","Registrar");

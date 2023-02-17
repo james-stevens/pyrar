@@ -5,12 +5,14 @@
 import jinja2
 
 from librar import validate
-from webui import pay_handler
 from librar import mysql as sql
 from librar import policy
 from librar import hashstr
 
-THIS_MODULE = "paypal_single"
+from payments import pay_handler
+
+
+THIS_MODULE = "paypal"
 
 def paypal_single_html(user_id):
     merge_data = { "unique_id": hashstr.make_hash(chars_needed=30) }
@@ -18,7 +20,7 @@ def paypal_single_html(user_id):
     merge_data["policy"].update(policy.this_policy.data())
 
     pay_conf = pay_handler.payment_file.data()
-    if THIS_MODULE not in pay_conf:
+    if not isinstance(pay_conf,dict) or THIS_MODULE not in pay_conf:
         return False, "Payment module config is incomplete"
 
     my_conf = pay_conf[THIS_MODULE]
@@ -36,6 +38,6 @@ def paypal_single_html(user_id):
 
 
 pay_handler.add_plugin(THIS_MODULE, {
-    "desc": "PayPal Single Payment",
-    "html": paypal_single_html,
+    "desc": "PayPal",
+    "single": paypal_single_html,
 })

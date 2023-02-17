@@ -524,7 +524,6 @@ function go_welcome(with_push)
 			changeTheme(gbl.config.policy.default_theme);
 
 		gbl.config.ok_tlds = {};
-		gbl.currency = policy("currency",gbl.config.default_currency);
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
 		let my_icon = policy("icon",null);
@@ -552,12 +551,8 @@ function go_welcome(with_push)
 				});
 			} else { loggedOut(); check_router_path(); }
 
-		if ((gbl.config.payment_methods.paypal_single)&&(gbl.config.payment_creds.paypal_single)) {
-			let paypal_mode = "live";
-			if (gbl.config.payment_creds.paypal_single.mode) paypal_mode = gbl.config.payment_creds.paypal_single.mode;
-			if ((paypal_mode in gbl.config.payment_creds.paypal_single)&&(gbl.config.payment_creds.paypal_single[paypal_mode].client_id))
-				add_paypal_script(gbl.config.payment_creds.paypal_single[paypal_mode].client_id,gbl.currency.iso);
-			}
+		if (gbl.config.paypal_client_id)
+			add_paypal_script(gbl.config.paypal_client_id,gbl.config.currency.iso);
 		});
 }
 
