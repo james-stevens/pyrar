@@ -660,7 +660,8 @@ def get_dns_data(domain):
     """ get pdns data """
     if not validate.is_valid_fqdn(domain) and not validate.is_valid_tld(domain):
         return json_abort("Invalid domain name")
-    if (dns := pdns.create_zone(domain, ensure_zone=True)) is None:
+    pdns.create_zone(domain, ensure_zone=True)
+    if (dns := pdns.load_zone(domain)) is None:
         return json_abort("PowerDNS data failed to load")
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(domain)

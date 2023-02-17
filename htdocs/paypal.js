@@ -17,7 +17,7 @@ function show_paypal()
 }
 
 
-function initPayPalButton(description, amount, currency) {
+function initPayPalButton(description, custom_id, amount, currency) {
   paypal.Buttons({
 	style: {
 	  shape: 'rect',
@@ -29,7 +29,16 @@ function initPayPalButton(description, amount, currency) {
 
 	createOrder: function(data, actions) {
 	  return actions.order.create({
-		purchase_units: [{"description":description,"amount":{"currency_code":currency,"value":amount}}]
+		purchase_units: [
+			{
+			"description":description,
+			"custom_id": custom_id,
+			"amount":{
+				"currency_code":currency,
+				"value":amount
+				}
+			}
+		]
 	  });
 	},
 

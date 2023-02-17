@@ -49,9 +49,9 @@ def puny_to_utf8(name, strict_idna_2008=None):
     return None
 
 
-def format_currency(number, currency):
+def format_currency(number, currency, with_symbol = True):
     num = number
-    pfx = currency["symbol"]
+    pfx = currency["symbol"] if with_symbol else ""
     if num < 0:
         pfx += "-"
         num *= -1

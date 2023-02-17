@@ -1274,11 +1274,13 @@ function add_payment()
 	let e = document.getElementById("add_payment_type");
 	if (!e) return;
 
+	console.log("add_payment",e.value);
+
 	callApi("payments/html",(ok,reply) => {
 		let p = document.getElementById("add_pay_div");
 		if ((ok)&&(p)) {
 			// let x="<table align=center border=0>";
-			// x += settings_header(`Add Payment Method - ${gbl.config.payment_methods[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
+			// x += settings_header(`Add Payment Method - ${gbl.config.payment[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
 			console.log(reply);
 			gbl.paypal = reply;
 			if (reply.html) p.innerHTML = reply.html;
@@ -1296,10 +1298,10 @@ function add_payment()
 function add_payment_form()
 {
 	let x = "<table>";
-	x += "<tr><td class=fpormPromt>Select method to add:</td>";
+	x += "<tr><td class=formPrompt>Select method to add:</td>";
 	x += "<td><select id=add_payment_type>"
-	for(let i in gbl.config.payment_methods) {
-		x += `<option value='${i}'>${gbl.config.payment_methods[i]}`;
+	for(let i in gbl.config.payment) {
+		x += `<option value='${i}'>${gbl.config.payment[i]}`;
 		}
 	x += "</select></td></tr>";
 	x += "<tr><td colspan=2 class=btmBtnBar>"+btn("add_payment()","Add","Add payment method",75)+"</td></tr>";
@@ -1339,7 +1341,7 @@ function payment_methods(with_push)
 			x += "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 			x += "<tr><th>Payment Method</th><th>Payment Data</th></tr>"
 			for(let i of reply) {
-				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payment_methods[i.provider]}</td>`;
+				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payment[i.provider]}</td>`;
 				x += `<td>${i.provider_tag}</td></tr>`;
 				}
 			x += "</table>";

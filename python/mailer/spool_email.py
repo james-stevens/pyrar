@@ -94,7 +94,7 @@ def spool(which_message, request_list):
                                      prefix=which_message + "_") as fd:
         fd.write(json.dumps(request_data))
 
-    event_log("Spooled", request_data)
+    event_log("Queued", request_data)
     return True
 
 

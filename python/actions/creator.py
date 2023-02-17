@@ -8,6 +8,7 @@ import json
 
 from librar import mysql as sql
 from librar import static
+from librar import misc
 from librar import registry
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy

@@ -137,7 +137,7 @@ def create_zone(name, with_dnssec=False,ensure_zone = False):
 
     if response.status_code >= 400:
         if ensure_zone:
-            return load_zone(name)
+            return True
         log(f"ERROR: Creating '{name}' failed, code={response.status_code} - {response.content}")
         return None
 
@@ -181,7 +181,7 @@ def create_zone(name, with_dnssec=False,ensure_zone = False):
 
     run_cmds(post_json)
     add_to_catalog(name)
-    return load_zone(name)
+    return True
 
 
 def unsign_zone(name):

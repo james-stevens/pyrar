@@ -19,10 +19,9 @@ USER_REQUIRED = ["email", "password"]
 
 
 def event_log(req, more_event_items):
-    event_db = misc.where_event_log()
-    event_db.update(req.base_event)
+    event_db = req.base_event.copy()
     event_db.update(more_event_items)
-    sql.sql_insert("events", event_db)
+    misc.event_log(event_db)
 
 
 def start_session(user_db, user_agent):

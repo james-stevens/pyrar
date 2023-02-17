@@ -8,6 +8,7 @@ from librar.log import log
 from librar.policy import this_policy as policy
 from librar import mysql as sql
 from librar import validate
+from librar import misc
 
 
 def event_log(notes, bke_job):

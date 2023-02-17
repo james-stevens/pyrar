@@ -549,7 +549,7 @@ def users_register():
     return req.response(val)
 
 
-def pdns_action(func):
+def pdns_action(func, action):
     req = WebuiReq()
     if req.post_js is None or not sql.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
@@ -566,12 +566,18 @@ def pdns_action(func):
     if dom.dom_db is None:
         return req.abort("Domain not found or not yours")
 
+    req.event({
+        "domain_id": dom.dom_db["domain_id"],
+        "notes": f"PDNS: calling '{action}' on '{dom.dom_db['name']}'",
+        "event_type": action
+    })
     return func(req, dom.dom_db)
 
 
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
-    dns = pdns.create_zone(dom_name, ensure_zone=True)
+    pdns.create_zone(dom_name, ensure_zone=True)
+    dns = pdns.load_zone(dom_name)
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(dom_name)
@@ -680,31 +686,31 @@ def make_tlsa():
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
 def domain_dns_update():
     """ Update an RR-set in P/DNS """
-    return pdns_action(pdns_update_rrs)
+    return pdns_action(pdns_update_rrs, "pdns/update")
 
 
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
     """ Drop a domain & all its data in P/DNS """
-    return pdns_action(pdns_drop_zone)
+    return pdns_action(pdns_drop_zone, "pdns/drop")
 
 
 @application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
 def domain_dns_unsign():
     """ Remove DNSSEC from a domain in P/DNS """
-    return pdns_action(pdns_unsign_zone)
+    return pdns_action(pdns_unsign_zone, "pdns/unsign")
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
 def domain_dns_sign():
     """ Sign a domain in P/DNS """
-    return pdns_action(pdns_sign_zone)
+    return pdns_action(pdns_sign_zone, "pdns/sign")
 
 
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
     """ load domain's DNS data from P/DNS """
-    return pdns_action(pdns_get_data)
+    return pdns_action(pdns_get_data, "pdns/load")
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
@@ -746,7 +752,7 @@ def run_user_domain_task(domain_function, func_name):
         return req.abort(reply)
 
     context = inspect.stack()[1]
-    notes = context.function
+    notes = f"Domain {func_name}: {context.function}"
 
     if func_name == "Gift":
         notes = f"Domain gifted from {req.user_id} to {req.post_js['dest_email']}"
