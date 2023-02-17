@@ -22,8 +22,7 @@ TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 REQUIRE_FORMATTING = ["price_paid", "acct_current_balance"]
 
 
-
-def event_log(prefix,records):
+def event_log(prefix, records):
     email = records["user"]["email"] if "user" in records else None
     user_id = records["user"]["user_id"] if "user" in records else None
     domain_id = records["domain"]["domain_id"] if "domain" in records else None
@@ -95,7 +94,7 @@ def spool(which_message, request_list):
                                      prefix=which_message + "_") as fd:
         fd.write(json.dumps(request_data))
 
-    event_log("Spooled",request_data)
+    event_log("Spooled", request_data)
     return True
 
 

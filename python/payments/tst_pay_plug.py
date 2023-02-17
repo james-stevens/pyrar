@@ -12,7 +12,7 @@ from payments.plugins import *
 
 def main():
     log_init(with_debug=True)
-    ok, reply = pay_handler.run("paypal","single")(10450)
+    ok, reply = pay_handler.run("paypal", "single")(10450)
     print(reply)
 
 

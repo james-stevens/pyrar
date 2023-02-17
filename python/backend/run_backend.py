@@ -54,8 +54,8 @@ def post_processing(bke_job):
         return False
 
     if bke_job["job_type"] == "dom/recover":
-        if pdns.zone_exists(dom_db["name"]):
-            pdns.add_to_catalog(dom_db["name"])
+        pdns.create_zone(dom_db["name"], ensure_zone=True)
+        pdns.add_to_catalog(dom_db["name"])
 
     if bke_job["job_type"] == "dom/create":
         pdns.delete_zone(dom_db["name"])

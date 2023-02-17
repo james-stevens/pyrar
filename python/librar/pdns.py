@@ -4,6 +4,7 @@
 """ functions for talking to PowerDNS """
 
 import os
+import sys
 import json
 import time
 import secrets
@@ -12,7 +13,7 @@ import dns.name
 import requests
 import inspect
 
-from librar.log import log
+from librar.log import log, debug, init as log_init
 from librar import misc
 from librar import static
 from librar.policy import this_policy as policy
@@ -31,8 +32,7 @@ def start_up():
     CLIENT.headers.update(headers)
     catalog_zone = policy.policy("catalog_zone")
     try:
-        if not zone_exists(catalog_zone):
-            create_zone(catalog_zone, False)
+        create_zone(catalog_zone, False, ensure_zone=True)
     except requests.exceptions.ConnectionError:
         raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
 
@@ -117,7 +117,8 @@ def dnssec_zone_cmds(name):
     }]
 
 
-def create_zone(name, with_dnssec=False):
+
+def create_zone(name, with_dnssec=False,ensure_zone = False):
     if name[-1] != ".":
         name += "."
 
@@ -126,18 +127,21 @@ def create_zone(name, with_dnssec=False):
         if ns[-1] != ".":
             dns_servers[idx] += "."
 
-    post_json = [{
-        "cmd": "POST",
-        "url": f"{PDNS_BASE_URL}/zones",
-        "data": {
+    response = run_one_cmd("POST",f"{PDNS_BASE_URL}/zones",{
             "name": name,
             "kind": "Master",
             "masters": [],
             "nameservers": dns_servers,
             "soa_edit_api": "EPOCH"
-        }
-    }]
+        })
 
+    if response.status_code >= 400:
+        if ensure_zone:
+            return load_zone(name)
+        log(f"ERROR: Creating '{name}' failed, code={response.status_code} - {response.content}")
+        return None
+
+    post_json = []
     if with_dnssec:
         post_json += dnssec_zone_cmds(name)
 
@@ -200,12 +204,16 @@ def unsign_zone(name):
     return run_cmds(post_json)
 
 
+def run_one_cmd(cmd,url,json_data):
+    request = requests.Request(cmd, url, json=json_data, headers=headers)
+    return CLIENT.send(request.prepare())
+
+
 def run_cmds(post_json):
     ret = True
     for req in post_json:
         json_data = req["data"] if "data" in req else None
-        request = requests.Request(req["cmd"], req["url"], json=json_data, headers=headers)
-        response = CLIENT.send(request.prepare())
+        response = run_one_cmd(req["cmd"], req["url"],json_data)
         if response.status_code < 200 or response.status_code > 299:
             ret = False
             log(f"PDNS-ERROR: {response.content}")
@@ -322,10 +330,13 @@ def update_rrs(zone, rrs):
 
 
 def main():
+    log_init(with_debug=True)
     start_up()
     name = "r.zz."
-    ds = {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '256 3 13 gRj3zFi3p549gW3PhcBNEnmoyGU+WzOvGVl4BBDJQDXLvGEBNpSyPrSK4BrtCEXGlBi3waYwWFJvA+88Aeaykw==', 'flags': 256, 'id': 99, 'keytype': 'zsk', 'published': True, 'type': 'Cryptokey'}, {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '257 3 13 H+/+r2nHSgLgzHdZI/wt8hc+UVbEQP02BvvIYg9SalPn0O5QzpalrA6VB0Ns7KtavYllGHXrtJU7Gm9HBUsJhg==', 'ds': ['29301 13 1 f4493b0b1fa9985a0c89d4ee78027b5bf27546cc', '29301 13 2 ca2d1f3a267344bb16722c423876e4298f837a58d3ae094901ab674ff8b7eb5e', '29301 13 4 fe612ae33772f57032978b81af7e5ec27a3c9ef7307e114a9a6b9f1ec91005cafc65f20ec16e0211881b1b9d3f9a76c0'], 'flags': 257, 'id': 98, 'keytype': 'ksk', 'published': True, 'type': 'Cryptokey'}
-    print(find_best_ds(ds))
+    print(create_zone(sys.argv[1],with_dnssec=True,ensure_zone=True))
+    #print("ZONE>>>>", json.dumps(load_zone(sys.argv[1]),indent=3))
+    # ds = {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '256 3 13 gRj3zFi3p549gW3PhcBNEnmoyGU+WzOvGVl4BBDJQDXLvGEBNpSyPrSK4BrtCEXGlBi3waYwWFJvA+88Aeaykw==', 'flags': 256, 'id': 99, 'keytype': 'zsk', 'published': True, 'type': 'Cryptokey'}, {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '257 3 13 H+/+r2nHSgLgzHdZI/wt8hc+UVbEQP02BvvIYg9SalPn0O5QzpalrA6VB0Ns7KtavYllGHXrtJU7Gm9HBUsJhg==', 'ds': ['29301 13 1 f4493b0b1fa9985a0c89d4ee78027b5bf27546cc', '29301 13 2 ca2d1f3a267344bb16722c423876e4298f837a58d3ae094901ab674ff8b7eb5e', '29301 13 4 fe612ae33772f57032978b81af7e5ec27a3c9ef7307e114a9a6b9f1ec91005cafc65f20ec16e0211881b1b9d3f9a76c0'], 'flags': 257, 'id': 98, 'keytype': 'ksk', 'published': True, 'type': 'Cryptokey'}
+    # print(find_best_ds(ds))
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))

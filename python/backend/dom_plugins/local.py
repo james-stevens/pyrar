@@ -22,10 +22,7 @@ def tld_pdns_check(name):
     """ check if domain exists in pdns """
     if (tld := registry.tld_lib.tld_of_name(name)) is None:
         return None
-
-    if not pdns.zone_exists(tld):
-        pdns.create_zone(tld, True)
-
+    pdns.create_zone(tld, True, ensure_zone=True)
     return tld
 
 
@@ -96,8 +93,8 @@ def start_up_check():
 def check_tlds_exist():
     """ check all TLDs of type=local exist in pdns """
     for zone, zone_rec in registry.tld_lib.zone_data.items():
-        if ("reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local" and not pdns.zone_exists(zone)):
-            pdns.create_zone(zone, True)
+        if "reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local":
+            pdns.create_zone(zone, True, ensure_zone=True)
 
     return True
 

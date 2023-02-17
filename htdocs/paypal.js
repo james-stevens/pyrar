@@ -13,11 +13,11 @@ function show_paypal()
 {
 	show_one_space("userSpace")
 	elm.userSpace.innerHTML = '<div id="paypal-button-container"></div>';
-	initPayPalButton();
+	initPayPalButton("Test Description",12.99,"USD");
 }
 
 
-function initPayPalButton() {
+function initPayPalButton(description, amount, currency) {
   paypal.Buttons({
 	style: {
 	  shape: 'rect',
@@ -29,7 +29,7 @@ function initPayPalButton() {
 
 	createOrder: function(data, actions) {
 	  return actions.order.create({
-		purchase_units: [{"description":"Domain Names","amount":{"currency_code":"USD","value":12.99}}]
+		purchase_units: [{"description":description,"amount":{"currency_code":currency,"value":amount}}]
 	  });
 	},
 

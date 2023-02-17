@@ -44,7 +44,7 @@ def process_order(order_db):
     if ok and sold_id:
         sql.sql_update_one("transactions", {"sales_item_id": sold_id}, {"transaction_id": trans_id})
 
-    creator.make_backend_job(order_db["order_type"],dom_db,order_db["num_years"],order_db["authcode"])
+    creator.make_backend_job(order_db["order_type"], dom_db, order_db["num_years"], order_db["authcode"])
     sql.sql_delete_one("orders", {"order_item_id": order_db["order_item_id"]})
     return True
 

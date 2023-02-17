@@ -32,14 +32,15 @@ def sold_item(trans_id, order_db, dom_db, user_db):
 
     ok, row_id = sql.sql_insert("sales", sales)
 
-    misc.event_log({
-        "event_type": order_db['order_type'],
-        "notes": f"Sale: {dom_db['name']} sold with {order_db['order_type']} for {order_db['num_years']} yrs",
-        "domain_id": dom_db["domain_id"],
-        "user_id": dom_db["user_id"],
-        "who_did_it": "sales",
-        "from_where": "localhost"
-    },1)
+    misc.event_log(
+        {
+            "event_type": order_db['order_type'],
+            "notes": f"Sale: {dom_db['name']} sold with {order_db['order_type']} for {order_db['num_years']} yrs",
+            "domain_id": dom_db["domain_id"],
+            "user_id": dom_db["user_id"],
+            "who_did_it": "sales",
+            "from_where": "localhost"
+        }, 1)
 
     spool_email.spool("receipt", [["sales", {
         "sales_item_id": row_id

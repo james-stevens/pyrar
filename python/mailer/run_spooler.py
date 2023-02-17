@@ -137,7 +137,7 @@ def process_emails_waiting(server=None):
 
         if ok:
             if records is not None:
-                spool_email.event_log("Delivered",records)
+                spool_email.event_log("Delivered", records)
             os.remove(path)
         else:
             log(f"ERROR: Failed to process email '{path}'")

@@ -86,8 +86,8 @@ def admin_trans(injs):
     elif "email" in injs:
         if not validate.is_valid_email(injs["email"]):
             return False, "Invalid email address given"
-        ok, user_db = sql.sql_select_one("users",{"email":injs["email"]})
-        if not ok or not user_db or not len(user_db) or not sql.has_data(user_db,"user_id"):
+        ok, user_db = sql.sql_select_one("users", {"email": injs["email"]})
+        if not ok or not user_db or not len(user_db) or not sql.has_data(user_db, "user_id"):
             return False, f"No user matching '{injs['email']}' could be found"
         user_id = user_db["user_id"]
     else:

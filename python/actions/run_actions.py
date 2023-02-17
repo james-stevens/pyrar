@@ -16,7 +16,6 @@ from librar.log import log, debug, init as log_init
 from mailer import spool_email
 from backend import creator
 
-
 COPY_DEL_DOM_COLS = [
     "domain_id", "name", "user_id", "status_id", "auto_renew", "ns", "ds", "client_locks", "created_dt", "amended_dt",
     "expiry_dt"

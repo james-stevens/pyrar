@@ -571,10 +571,7 @@ def pdns_action(func):
 
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
-    if not pdns.zone_exists(dom_name):
-        dns = pdns.create_zone(dom_name)
-    else:
-        dns = pdns.load_zone(dom_name)
+    dns = pdns.create_zone(dom_name, ensure_zone=True)
 
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(dom_name)
@@ -753,7 +750,12 @@ def run_user_domain_task(domain_function, func_name):
 
     if func_name == "Gift":
         notes = f"Domain gifted from {req.user_id} to {req.post_js['dest_email']}"
-        req.event({ "user_id": reply["new_user_id"], "domain_id": req.post_js["domain_id"], "notes": notes, "event_type": context.function })
+        req.event({
+            "user_id": reply["new_user_id"],
+            "domain_id": req.post_js["domain_id"],
+            "notes": notes,
+            "event_type": context.function
+        })
 
     req.event({"domain_id": req.post_js["domain_id"], "notes": notes, "event_type": context.function})
     return req.response(reply)

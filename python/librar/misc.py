@@ -11,7 +11,7 @@ from librar import mysql as sql
 from librar import static
 
 
-def event_log(other_items, stack_pos = 2):
+def event_log(other_items, stack_pos=2):
     where = inspect.stack()[stack_pos]
     event_db = {
         "program": where.filename.split("/")[-1].split(".")[0],
@@ -69,7 +69,6 @@ def format_currency(number, currency):
         use_start = start + use_start
 
     return pfx + use_start + currency["separator"][1] + num[neg_places:]
-
 
 
 if __name__ == "__main__":

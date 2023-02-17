@@ -31,7 +31,7 @@ def ui_config():
     }
 
     pay_conf = pay_handler.payment_file.data()
-    if isinstance(pay_conf,dict) and "paypal" in pay_conf:
+    if isinstance(pay_conf, dict) and "paypal" in pay_conf:
         payapl_conf = pay_conf["paypal"]
         paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
         if paypal_mode in payapl_conf and "client_id" in payapl_conf[paypal_mode]:
@@ -40,7 +40,6 @@ def ui_config():
             full_conf["paypal_client_id"] = payapl_conf["client_id"]
 
     return full_conf
-
 
 
 def main():

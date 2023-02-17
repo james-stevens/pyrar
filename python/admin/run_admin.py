@@ -27,8 +27,8 @@ from backend.dom_plugins import *
 from admin import load_schema
 
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
-CHECK_HAS_COLUMN = [ "amended_dt","created_dt"]
-DOMAIN_JOB_TYPES = { "PUT":"dom/create","PATCH":"dom/update","DELETE":"dom/delete" }
+CHECK_HAS_COLUMN = ["amended_dt", "created_dt"]
+DOMAIN_JOB_TYPES = {"PUT": "dom/create", "PATCH": "dom/update", "DELETE": "dom/delete"}
 
 schema = {}
 has_column = {}
@@ -37,7 +37,7 @@ has_column = {}
 def find_serial_column(table):
     if table not in schema or "columns" not in schema[table]:
         return None
-    for col,col_data in schema[table]["columns"].items():
+    for col, col_data in schema[table]["columns"].items():
         if "serial" in col_data and col_data["serial"]:
             return col
     return None
@@ -45,8 +45,8 @@ def find_serial_column(table):
 
 def set_amended_and_created():
     global has_column
-    has_column = { col:{} for col in CHECK_HAS_COLUMN }
-    for table,tbl_data in schema.items():
+    has_column = {col: {} for col in CHECK_HAS_COLUMN}
+    for table, tbl_data in schema.items():
         if "columns" not in tbl_data:
             continue
 
@@ -55,7 +55,7 @@ def set_amended_and_created():
                 has_column[col][table] = True
 
 
-def post_table_trigger(table,action,row_id=None,where=None):
+def post_table_trigger(table, action, row_id=None, where=None):
     if row_id is None and where is None:
         log(f"ERROR: post_table_trigger on '{table}' with '{action}' wasn't given any keys")
         return
@@ -70,20 +70,20 @@ def post_table_trigger(table,action,row_id=None,where=None):
     elif row_id is not None:
         if (col := find_serial_column(table)) is None:
             return
-        this_where = {col:row_id}
+        this_where = {col: row_id}
 
     if table == "domains":
-        return post_trigger_domains(action,this_where)
+        return post_trigger_domains(action, this_where)
 
 
-def post_trigger_domains(action,this_where):
+def post_trigger_domains(action, this_where):
     if action not in DOMAIN_JOB_TYPES:
         log(f"ERROR: Action '{action}' not in DOMAIN_JOB_TYPES")
         return
 
     ok, dom_db = sql.sql_select_one("domains", this_where)
     if ok and dom_db and len(dom_db):
-        creator.make_backend_job(DOMAIN_JOB_TYPES[action],dom_db)
+        creator.make_backend_job(DOMAIN_JOB_TYPES[action], dom_db)
 
 
 def response(code, data):
@@ -240,7 +240,7 @@ def each_where_obj(sql_joins, table, ask_item, where_obj):
             clause = []
             for itm in clean_list_string(where_obj[where_itm]):
                 only_col = col if col.find(".") < 0 else col.split(".")[1]
-                clause.append(col + " " + ask_item +" "+ add_data(itm, schema[tbl]["columns"][only_col]))
+                clause.append(col + " " + ask_item + " " + add_data(itm, schema[tbl]["columns"][only_col]))
 
             where.append("(" + " or ".join(clause) + ")")
 
@@ -544,7 +544,7 @@ def insert_table_row(table):
     if "set" not in sent or not isinstance(sent["set"], dict):
         return json_abort("In an INSERT, the `set` clause must be an object or list type")
 
-    for col in [ "amended_dt","created_dt"]:
+    for col in ["amended_dt", "created_dt"]:
         if table in has_column[col] and col not in sent["set"]:
             sent["set"][col] = None
 
@@ -562,7 +562,7 @@ def insert_table_row(table):
     if num_rows == 1 and row_id > 0:
         ret["row_id"] = row_id
 
-    post_table_trigger(table,"PUT",row_id = row_id)
+    post_table_trigger(table, "PUT", row_id=row_id)
     return response(200, ret)
 
 
@@ -592,7 +592,7 @@ def update_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table,"PATCH",where = where_clause(table, sent))
+        post_table_trigger(table, "PATCH", where=where_clause(table, sent))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
@@ -613,7 +613,7 @@ def delete_table_row(table):
 
     num_rows, __ = sql.sql_exec(query)
     if num_rows is not None:
-        post_table_trigger(table, "DELETE", where = where_clause(table, flask.request.json))
+        post_table_trigger(table, "DELETE", where=where_clause(table, flask.request.json))
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
@@ -660,12 +660,8 @@ def get_dns_data(domain):
     """ get pdns data """
     if not validate.is_valid_fqdn(domain) and not validate.is_valid_tld(domain):
         return json_abort("Invalid domain name")
-    if not pdns.zone_exists(domain):
-        return json_abort("No data")
-
-    if (dns := pdns.load_zone(domain)) is None:
+    if (dns := pdns.create_zone(domain, ensure_zone=True)) is None:
         return json_abort("PowerDNS data failed to load")
-
     if dns and "dnssec" in dns and dns["dnssec"]:
         dns["keys"] = pdns.load_zone_keys(domain)
         dns["ds"] = pdns.find_best_ds(dns["keys"])
