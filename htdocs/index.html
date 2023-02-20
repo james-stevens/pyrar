@@ -7,7 +7,6 @@
 	<script src="/lib.js"></script>
 	<script src="/emojis.js"></script>
 	<script src="/countries.js"></script>
-	<script src="/paypal.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -47,6 +46,7 @@ const pre_get_elm = [
 	"userSpace","output","topSpan","search","businessName"
 	];
 
+payments = {};
 elm = {};
 gbl = {
 	"theme": window.localStorage.theme,
@@ -173,6 +173,7 @@ function togglePopUp(name,tmout)
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
 	if (name=="AddTLSAwin") e = document.getElementById("tlsa_o");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
+	if (name=="TopUpAcct") e = document.getElementById("top_up_amount");
 	if (e) { e.focus(); e.select(); }
 
 	return false;
@@ -526,6 +527,10 @@ function go_welcome(with_push)
 		gbl.config.ok_tlds = {};
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
+		if (gbl.config.payment) {
+			for(let i in gbl.config.payment) add_payment_script(i);
+			}
+
 		let my_icon = policy("icon",null);
 		let site_name = policy("business_name","Registrar");
 		document.title = site_name;
@@ -551,8 +556,6 @@ function go_welcome(with_push)
 				});
 			} else { loggedOut(); check_router_path(); }
 
-		if (gbl.config.paypal_client_id)
-			add_paypal_script(gbl.config.paypal_client_id,gbl.config.currency.iso);
 		});
 }
 
@@ -1310,6 +1313,52 @@ function add_payment_form()
 
 
 
+function top_up_account()
+{
+	let f = document.top_up_form;
+	if (!f.top_up_method.value) {
+		errMsg("Please select a payment method","TopUpAcct");
+		f.top_up_method.focus();
+		return false;
+		}
+
+	if (!f.top_up_amount.value) {
+		errMsg("Please enter a top-up amount","TopUpAcct");
+		f.top_up_amount.focus();
+		return false;
+		}
+
+	let x = `<center><h3>Top-Up Amount: ${gbl.config.currency.symbol}${f.top_up_amount.value}</h3></center>`;
+	x += "<div id='payment-whole'></div>";
+	elm.userSpace.innerHTML = x;
+
+	payments[f.top_up_method.value].single(`${policy("business_name","Registrar")}: Top-Up`,f.top_up_amount.value);
+
+	return false;
+}
+
+
+function top_up_account_form()
+{
+	let x = "<form name=top_up_form onSubmit='return top_up_account();' action=# method=post><table>";
+	x += "<tr><td class=formPrompt>Top-Up Amount:</td>";
+	x += `<td>${gbl.config.currency.symbol}<input id='top_up_amount' style="width: 250px;"></td></tr>`;
+	x += "<tr><td class=formPrompt>Select method:</td>";
+	x += "<td><select id=top_up_method><option value=''>--- Select Method ---"
+	for(let i in payments) {
+		if ((i in gbl.config.payment)&&(payments[i].single))
+			x += `<option value='${i}'>${payments[i].desc}`;
+		}
+	x += "</select></td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar>"
+	x += btn("hideAllPopUp()","Cancel","Cancel this top-up",80);
+	x += "<input class=myBtn type=submit value='Top-Up' title='Make top-up payment now' style='width: 120px;'></td></tr>";
+
+	return x +"</form></table>";
+}
+
+
+
 function remove_payment(provider,provider_tag)
 {
 	callApi("payments/delete",(ok,reply) => {
@@ -1326,15 +1375,27 @@ function payment_methods(with_push)
 	callApi("payments/list",(ok,reply) => {
 		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><td class=btmBtnBar>";
+
 		x += generic_popup_btn({
 			"name": "AddPayment",
 			"label": "Add Payment",
-			"width": 100,
+			"width": 120,
 			"timeout": null,
 			"title": "Add a payment method",
 			"internal": add_payment_form,
 			"style": "overflow: auto; margin-left: -250;"
 			});
+
+		x += generic_popup_btn({
+			"name": "TopUpAcct",
+			"label": "Top-Up Account",
+			"width": 120,
+			"timeout": null,
+			"title": "Add a credit to your account for future payments",
+			"internal": top_up_account_form,
+			"style": "overflow: auto; margin-left: -250;"
+			});
+
 		x += "</td></tr></table>";
 		x += "<div id='add_pay_div'>"+gbl.gap;
 		if (reply.length>0) {

@@ -1,4 +1,17 @@
 
+// PayPal Payment plug-in JS
+
+function paypal_startup() // {module}_startup() is a mandatory func in a JS payment module
+{
+	if ((gbl.config.payment)&&(gbl.config.payment.paypal)&&(gbl.config.payment.paypal.client_id))
+		add_paypal_script(gbl.config.payment.paypal.client_id,gbl.config.currency.iso);
+
+	payments["paypal"] = {
+		"desc": "PayPal",
+		"single": paypal_single_payment
+		};
+}
+
 
 function add_paypal_script(client_id, currency) {
 	let s = document.createElement('script');
@@ -9,15 +22,34 @@ function add_paypal_script(client_id, currency) {
 }
 
 
-function show_paypal()
+
+function paypal_single_payment(description, amount)
 {
-	show_one_space("userSpace")
-	elm.userSpace.innerHTML = '<div id="paypal-button-container"></div>';
-	initPayPalButton("Test Description",12.99,"USD");
+	callApi("payments/single",(ok,reply)=> {
+		if (!ok) return def_errMsg("Failed to create single use token",reply,"payment-whole");
+
+		let x = "<table width=100%>"
+		x += "<colgroup><col width=70%/><col/></colgroup>";
+		x += "<tr><td align=center>Make payment by PayPal</td><td><span id='payment-button'></span></td></tr></table>";
+
+		let e = document.getElementById("payment-whole");
+		e.innerHTML = x;
+
+		initPayPalButton(description, amount, reply.provider_tag);
+		},{ json:{ "provider":"paypal"}})
 }
 
 
-function initPayPalButton(description, custom_id, amount, currency) {
+function test_single_paypal() // this is for debugging
+{
+	show_one_space("userSpace")
+	elm.userSpace.innerHTML = "<div id='payment-whole'></div>";
+	payments.paypal.single("Test Description",18.99);
+}
+
+
+
+function initPayPalButton(description, amount, custom_id) {
   paypal.Buttons({
 	style: {
 	  shape: 'rect',
@@ -31,11 +63,11 @@ function initPayPalButton(description, custom_id, amount, currency) {
 	  return actions.order.create({
 		purchase_units: [
 			{
-			"description":description,
+			"description": description,
 			"custom_id": custom_id,
 			"amount":{
-				"currency_code":currency,
-				"value":amount
+				"currency_code": gbl.config.currency.iso,
+				"value": amount
 				}
 			}
 		]
@@ -44,22 +76,15 @@ function initPayPalButton(description, custom_id, amount, currency) {
 
 	onApprove: function(data, actions) {
 	  return actions.order.capture().then(function(orderData) {
-		
-		// Full available details
-		console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
-
-		// Show a success message within this page, e.g.
-		const element = document.getElementById('paypal-button-container');
-		element.innerHTML = '';
-		element.innerHTML = '<h3>Thank you for your payment!</h3>';
-
-		// Or go to another URL:  actions.redirect('thank_you.html');
-		
+		// console.log(orderData);
+		let e = document.getElementById("payment-whole");
+		let x = '<center><h3>Thank you for your payment!</h3><br>'
+		x += "Your payment will be processed<br>when PayPal notifies us they have completed the transfer</center>";
+		e.innerHTML = x;
 	  });
 	},
 
-	onError: function(err) {
-	  console.log(err);
-	}
-  }).render('#paypal-button-container');
+	onError: function(err) { errMsg(err,"payment-whole"); }
+
+  }).render('#payment-button');
 }

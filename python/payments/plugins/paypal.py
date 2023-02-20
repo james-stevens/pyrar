@@ -38,8 +38,33 @@ def paypal_startup():
     return True
 
 
-def paypal_process_webhook():
-    # CODE
+def check_web_hook_data(sent_data):
+    if len(sent_data["purchase_units"] != 1:
+        log("ERROR: PayPal record does have one 'purchase_units'")
+        return False
+
+    pay_unit = sent_data["purchase_units"][0]
+    if "amount" not in pay_unit or not isinstance(pay_unit["amount"],dict):
+        log("ERROR: PayPal 'amount' record missing or invalid")
+        return False
+
+    currency = policy.policy("currency")
+    if "currency" not in pay_unit["amount"] or pay_unit["amount"]["currency"] != currency["iso"]:
+        log(f"ERROR: PayPal currency missing or doesn't match '{currency['iso']}'")
+        return False
+
+    if "value" not in pay_unit["amount"]:
+        log(f"ERROR: PayPal amount has no 'value' field")
+        return False
+
+    if "custom_id" not in pay_unit:
+        log(f"ERROR: PayPal purchase_unit has no 'custom_id' field")
+
+
+
+def paypal_process_webhook(sent_data):
+    if not check_web_hook_data(sent_data):
+        return False
     return True
 
 
@@ -47,5 +72,5 @@ pay_handler.add_plugin(THIS_MODULE, {
     "desc": "PayPal",
     "config": paypal_config,
     "startup": paypal_startup,
-    "process": paypal_process_webhook,
+    "webhook": paypal_process_webhook,
 })

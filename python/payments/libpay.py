@@ -3,6 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 """ handles plug-in modules for domain interfaces needed by the UI """
 
+import os
 import json
 
 from librar.log import log, debug, init as log_init
@@ -35,8 +36,23 @@ def config():
     return all_config
 
 
-def process_webhook(webhook):
-    return True
+def process_webhook(pay_module, sent_data):
+    save_dir = os.path.join(os.environ["BASE"],"payments")
+    with tempfile.NamedTemporaryFile("w+", encoding="utf-8", dir=save_dir, delete=False, prefix=pay_module + "_") as fd:
+        fd.write(sent_data)
+
+    if (func := pay_handler.run(pay_mod, "webhook")) is None:
+        return False, f"Call to Webhook for '{pay_mod}' failed"
+
+    if func(sent_data):
+        return True, "Processed"
+    else:
+        return False, f"Webhook for'{pay_mod}' module is not set up"
+
+    return False, f"Unknown failure for pay module '{pay_mod}'"
+
+
+    return True, True
 
 
 def main():

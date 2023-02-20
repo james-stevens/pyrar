@@ -10,8 +10,7 @@ from librar.policy import this_policy as policy
 
 
 def remove_old_one_time_payment_keys():
-    tout = "7 day"
-    query = f"delete from payments where single_use and amended_dt < date_sub(now(), interval {tout})"
+    query = "delete from payments where single_use and amended_dt < date_sub(now(), interval 7 day)"
     return sql.sql_exec(query)
 
 

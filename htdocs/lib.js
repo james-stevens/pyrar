@@ -335,3 +335,22 @@ function generic_popup_btn(config)
     x += config["internal"](config["param"]);
     return x + `</span></div>`;
 }
+
+
+
+function add_payment_script(module) {
+    let s = document.createElement('script');
+    s.setAttribute("src", "/"+module+".js" );
+    s.setAttribute("type", 'text/javascript');
+    s.onload = () => { eval(module+"_startup()"); };
+    document.body.appendChild( s );
+}
+
+
+
+function rand_tag(want_char)
+{
+	if (!want_char) want_char = 30
+	let myar = new Uint8Array(10);
+    return btoa(window.crypto.getRandomValues(myar)).slice(0,want_char);
+}

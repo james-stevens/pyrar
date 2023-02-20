@@ -14,6 +14,7 @@ from librar import common_ui
 from librar import static
 from librar import domobj
 from librar import sigprocs
+from librar import hashstr
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql as sql
@@ -22,6 +23,10 @@ from mailer import spool_email
 from webui import users
 from webui import domains
 from webui import basket
+
+from payments import libpay
+from payments import pay_handler
+
 
 WANT_REFERRER_CHECK = True
 
@@ -45,6 +50,7 @@ sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 registry.start_up()
 pdns.start_up()
+libpay.startup()
 
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
@@ -124,9 +130,11 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
+    if flask.request.path.find("/webhook/") > 0:
+        return None
+
     if WANT_REFERRER_CHECK and policy.policy(
             "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
-        log(f"Referer mismatch: {flask.request.referrer} " + policy.policy("website_name"))
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
     return None
 
@@ -147,6 +155,25 @@ def get_supported_zones():
 def hello():
     req = WebuiReq()
     return req.response({"hello": "world"})
+
+
+@application.route('/pyrar/v1.0/webhook/<webhook>/', methods=['GET','POST'])
+def catch_webhook(webhook):
+    req = WebuiReq()
+    if webhook is None or webhook not in pay_handler.pay_webhooks:
+        return req.abort(f"Webhook not recognised - '{webhook}'")
+    pay_mod = pay_handler.pay_webhooks[webhook]
+
+    sent_data = None
+    if flask.request.method == "POST":
+        sent_data = flask.request.form
+    if flask.request.method == "GET":
+        sent_data = flask.request.args
+
+    ok, reply = libpay.process_webhook(pay_mod,sent_data)
+    if not ok:
+    	return req.abort(reply)
+	return return req.response(reply)
 
 
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
@@ -226,34 +253,48 @@ def payments_delete():
         return req.abort(NOT_LOGGED_IN)
     if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
         return req.abort("Missing or invalid payment method data")
-    req.post_js["user_id"] = req.user_id
-    if not sql.sql_delete_one("payments", req.post_js):
+    if req.post_js["provider"] not in pay_handler.pay_plugins:
+        return req.abort(f"Invalid payment provider '{req.post_js['provider']}'")
+
+    pay_db = {
+        "provider": req.post_js["provider"],
+        "provider_tag": req.post_js["provider_tag"],
+        "single_use": False,
+        "user_id": req.user_id
+        }
+    if not sql.sql_delete_one("payments", pay_db)
         return req.abort("Failed to remove payment method")
+
     return req.response(True)
 
 
-@application.route('/pyrar/v1.0/payments/store', methods=['POST'])
-def payments_validate():
+@application.route('/pyrar/v1.0/payments/single', methods=['POST'])
+def payments_single():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, ["provider", "provider_tag", "single_use", "can_pull"]):
+    if not sql.has_data(req.post_js, "provider"):
         return req.abort("Missing or invalid payment method data")
 
-    if (plugin_func := pay_handler.run(req.post_js["provider"], "validate")) is None:
-        return req.abort("Missing or invalid payment method data")
+    if req.post_js["provider"] not in pay_handler.pay_plugins:
+        return req.abort(f"Invalid payment provider '{req.post_js['provider']}'")
 
-    req.post_js["user_id"] = req.user_id
-    if not plugin_func(req.post_js):
-        return req.abort("Failed validation")
+    pay_db = {
+        "provider": req.post_js["provider"],
+        "provider_tag": hashstr.make_hash(chars_needed=30),
+        "single_use": True,
+        "user_id": req.user_id,
+        "can_pull": 0,
+        "verified": 0,
+        "created_dt": None,
+        "amended_dt": None
+        }
 
-    req.post_js["created_dt"] = None
-    req.post_js["amended_dt"] = None
-    ok, __ = sql.sql_insert("payments", req.post_js)
+    ok, __ = sql.sql_insert("payments", pay_db)
     if not ok:
         return req.abort("Adding payments data failed")
 
-    return req.response(True)
+    return req.response(pay_db)
 
 
 @application.route('/pyrar/v1.0/payments/html', methods=['POST'])
@@ -278,7 +319,7 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments", {"user_id": req.user_id})
+    ok, reply = sql.sql_select("payments", {"user_id": req.user_id, "single_use": False})
     if not ok and reply is None:
         return req.abort("Failed to load payment data")
 
