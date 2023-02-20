@@ -2,35 +2,50 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-from librar import validate
-from librar import mysql as sql
 from librar.policy import this_policy as policy
-from librar import hashstr
-from librar import misc
 
 from payments import pay_handler
+from payments import payfile
 
 THIS_MODULE = "paypal"
 
 
-def paypal_topup(user_id):
-    return paypal_topup(user_id,amount_owed)
+def paypal_config():
+    pay_conf = payfile.payment_file.data()
+    if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
+        return None
+
+    return_conf = {"desc": "PayPal"}
+    payapl_conf = pay_conf[THIS_MODULE]
+    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
+    if paypal_mode in payapl_conf and "client_id" in payapl_conf[paypal_mode]:
+        return_conf["client_id"] = payapl_conf[paypal_mode]["client_id"]
+    elif "client_id" in payapl_conf:
+        return_conf["client_id"] = payapl_conf["client_id"]
+    else:
+        return None
+    return return_conf
 
 
-def paypal_topup(user_id,amount):
-    business_name = policy.policy("business_name")
-    random_str = hashstr.make_hash(chars_needed=30)
-    currency = policy.policy("currency")
-    fmt_amt = misc.format_currency(amount,currency,with_symbol=False)
+def paypal_startup():
+    pay_conf = payfile.payment_file.data()
+    if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
+        return None
 
-    return True, {
-        "html": '<div id="paypal-button-container"></div>',
-        "script": f"initPayPalButton('Top-Up: {business_name}','{random_str}',{fmt_amt},'{currency['iso']}')"
-    }
+    payapl_conf = pay_conf[THIS_MODULE]
+    if "webhook" in payapl_conf:
+        pay_handler.pay_webhooks[payapl_conf["webhook"]] = THIS_MODULE
+    return True
+
+
+def paypal_process_webhook():
+    # CODE
+    return True
 
 
 pay_handler.add_plugin(THIS_MODULE, {
     "desc": "PayPal",
-    "paynow": paypal_paynow_html,
-    "autopay": paypal_auto_html,
+    "config": paypal_config,
+    "startup": paypal_startup,
+    "process": paypal_process_webhook,
 })
