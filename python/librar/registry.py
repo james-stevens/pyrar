@@ -7,6 +7,7 @@ import json
 import random
 import requests
 
+from librar import misc
 from librar import static
 from librar import fileloader
 from librar import mysql as sql
@@ -273,7 +274,7 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     currency = policy.policy("currency")
     if retain_reg_price:
         dom["reg_" + action] = amt_from_float(regs_price, currency)
-    dom[action] = amt_from_float(out_price, currency)
+    dom[action] = misc.amt_from_float(our_price, currency)
 
 
 def start_up():

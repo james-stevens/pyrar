@@ -133,9 +133,15 @@ def before_request():
     if flask.request.path.find("/pyrar/v1.0/webhook/") == 0:
         return None
 
-    if WANT_REFERRER_CHECK and policy.policy(
-            "strict_referrer") and flask.request.referrer != policy.policy("website_name"):
+    if not WANT_REFERRER_CHECK:
+        return None
+
+    if not policy.policy("strict_referrer"):
+        return None
+
+    if flask.request.referrer != policy.policy("website_name"):
         return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
+
     return None
 
 
@@ -873,6 +879,7 @@ def rest_domain_price():
 
 
 def main():
+    global WANT_REFERRER_CHECK
     log_init(with_debug=True)
     WANT_REFERRER_CHECK = False
     application.run()

@@ -10,7 +10,7 @@ from librar.policy import this_policy as policy
 
 
 def remove_old_one_time_payment_keys():
-    query = "delete from payments where single_use and amended_dt < date_sub(now(), interval 7 day)"
+    query = "delete from payments where single_use and created_dt < date_sub(now(), interval 7 day)"
     return sql.sql_exec(query)
 
 
@@ -21,8 +21,11 @@ def clear_old_session_keys():
 
 
 def cancel_unpaid_orders():
+    tout = policy.policy('create_expire_days')
+    query = f"delete from orders where order_type = 'dom/create' and created_dt < date_sub(now(), interval {tout} day)"
+    sql.sql_exec(query)
     tout = policy.policy('orders_expire_days')
-    query = f"delete from orders where created_dt < date_sub(now(), interval {tout} day)"
+    query = f"delete from orders where order_type <> 'dom/create' and created_dt < date_sub(now(), interval {tout} day)"
     return sql.sql_exec(query)
 
 
