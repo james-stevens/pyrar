@@ -270,16 +270,10 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     if dom[action] is None or dom[action] == 0:
         our_price *= float(num_years)
 
-    site_currency = policy.policy("currency")
-    our_price *= static.POW10[site_currency["decimal"]]
-    our_price = round(float(our_price), 0)
-
+    currency = policy.policy("currency")
     if retain_reg_price:
-        regs_price *= static.POW10[site_currency["decimal"]]
-        regs_price = round(float(regs_price), 0)
-        dom["reg_" + action] = int(regs_price)
-
-    dom[action] = int(our_price)
+        dom["reg_" + action] = amt_from_float(regs_price, currency)
+    dom[action] = amt_from_float(out_price, currency)
 
 
 def start_up():

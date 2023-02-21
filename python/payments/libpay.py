@@ -5,8 +5,11 @@
 
 import os
 import json
+import tempfile
+import datetime
 
 from librar.log import log, debug, init as log_init
+from mailer import spool_email
 from payments import payfile
 
 from payments import pay_handler
@@ -37,22 +40,39 @@ def config():
 
 
 def process_webhook(pay_module, sent_data):
-    save_dir = os.path.join(os.environ["BASE"],"payments")
-    with tempfile.NamedTemporaryFile("w+", encoding="utf-8", dir=save_dir, delete=False, prefix=pay_module + "_") as fd:
-        fd.write(sent_data)
+    save_dir = os.path.join(os.environ["BASE"], "storage/perm/payments")
+    for dir in datetime.datetime.now().strftime("%Y,%m,%d").split(","):
+        save_dir = os.path.join(save_dir, dir)
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
+            os.chmod(save_dir, 0o777)
 
-    if (func := pay_handler.run(pay_mod, "webhook")) is None:
-        return False, f"Call to Webhook for '{pay_mod}' failed"
+    file_name = None
+    with tempfile.NamedTemporaryFile("w+", encoding="utf-8", dir=save_dir, delete=False,
+                                     prefix=pay_module + "_") as fd:
+        file_name = fd.name
+        os.chmod(file_name, 0o755)
+        if isinstance(sent_data, str):
+            fd.write(sent_data)
+        else:
+            json.dump(sent_data, fd)
 
-    if func(sent_data):
+    if (func := pay_handler.run(pay_module, "webhook")) is None:
+        return False, f"Webhook for'{pay_module}' module is not set up"
+
+    ok, reply = func(sent_data)
+    if ok:
         return True, "Processed"
-    else:
-        return False, f"Webhook for'{pay_mod}' module is not set up"
 
-    return False, f"Unknown failure for pay module '{pay_mod}'"
+    if file_name is not None:
+        spool_email.spool("admin_webhook_failed",
+                          [[None, {
+                              "filename": file_name,
+                              "pay_module": pay_module,
+                              "message": reply
+                          }]])
 
-
-    return True, True
+    return False, f"Call to Webhook for '{pay_module}' failed"
 
 
 def main():

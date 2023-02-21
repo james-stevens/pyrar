@@ -12,6 +12,7 @@ from librar import passwd
 from librar import pdns
 from librar import common_ui
 from librar import static
+from librar import misc
 from librar import domobj
 from librar import sigprocs
 from librar import hashstr
@@ -26,7 +27,6 @@ from webui import basket
 
 from payments import libpay
 from payments import pay_handler
-
 
 WANT_REFERRER_CHECK = True
 
@@ -130,7 +130,7 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if flask.request.path.find("/webhook/") > 0:
+    if flask.request.path.find("/pyrar/v1.0/webhook/") == 0:
         return None
 
     if WANT_REFERRER_CHECK and policy.policy(
@@ -157,7 +157,7 @@ def hello():
     return req.response({"hello": "world"})
 
 
-@application.route('/pyrar/v1.0/webhook/<webhook>/', methods=['GET','POST'])
+@application.route('/pyrar/v1.0/webhook/<webhook>/', methods=['GET', 'POST'])
 def catch_webhook(webhook):
     req = WebuiReq()
     if webhook is None or webhook not in pay_handler.pay_webhooks:
@@ -165,15 +165,17 @@ def catch_webhook(webhook):
     pay_mod = pay_handler.pay_webhooks[webhook]
 
     sent_data = None
-    if flask.request.method == "POST":
-        sent_data = flask.request.form
-    if flask.request.method == "GET":
+    if flask.request.json:
+        sent_data = flask.request.json
+    elif flask.request.method == "POST":
+        sent_data = dict(flask.request.form)
+    elif flask.request.method == "GET":
         sent_data = flask.request.args
 
-    ok, reply = libpay.process_webhook(pay_mod,sent_data)
+    ok, reply = libpay.process_webhook(pay_mod, sent_data)
     if not ok:
-    	return req.abort(reply)
-	return return req.response(reply)
+        return req.abort(reply)
+    return req.response(reply)
 
 
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
@@ -253,7 +255,11 @@ def payments_delete():
         return req.abort(NOT_LOGGED_IN)
     if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
         return req.abort("Missing or invalid payment method data")
-    if req.post_js["provider"] not in pay_handler.pay_plugins:
+
+    provider = req.post_js["provider"]
+    if provider.find(":") > 0:
+        provider = provider.split(":")[0]
+    if provider not in pay_handler.pay_plugins:
         return req.abort(f"Invalid payment provider '{req.post_js['provider']}'")
 
     pay_db = {
@@ -261,10 +267,10 @@ def payments_delete():
         "provider_tag": req.post_js["provider_tag"],
         "single_use": False,
         "user_id": req.user_id
-        }
-    if not sql.sql_delete_one("payments", pay_db)
-        return req.abort("Failed to remove payment method")
+    }
 
+    if not sql.sql_delete_one("payments", pay_db):
+        return req.abort("Failed to remove payment method")
     return req.response(True)
 
 
@@ -280,15 +286,15 @@ def payments_single():
         return req.abort(f"Invalid payment provider '{req.post_js['provider']}'")
 
     pay_db = {
-        "provider": req.post_js["provider"],
-        "provider_tag": hashstr.make_hash(chars_needed=30),
+        "provider": f"{req.post_js['provider']}:single",
+        "provider_tag": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
         "single_use": True,
         "user_id": req.user_id,
         "can_pull": 0,
         "verified": 0,
         "created_dt": None,
         "amended_dt": None
-        }
+    }
 
     ok, __ = sql.sql_insert("payments", pay_db)
     if not ok:
@@ -866,7 +872,11 @@ def rest_domain_price():
     return req.abort(reply)
 
 
-if __name__ == "__main__":
+def main():
     log_init(with_debug=True)
     WANT_REFERRER_CHECK = False
     application.run()
+
+
+if __name__ == "__main__":
+    main()

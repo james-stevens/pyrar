@@ -5,6 +5,7 @@
 
 import inspect
 import idna
+import sys
 
 from librar.policy import this_policy as policy
 from librar import mysql as sql
@@ -24,6 +25,12 @@ def event_log(other_items, stack_pos=2):
 
 
 def ashex(line):
+    if isinstance(line, int):
+        out_hex = ""
+        while line > 0:
+            out_hex = static.HEXLIB[line & 0xf] + out_hex
+            line = line >> 4
+        return out_hex if len(out_hex) > 0 else "0"
     if isinstance(line, str):
         line = line.encode("utf-8")
     ret = ""
@@ -49,6 +56,14 @@ def puny_to_utf8(name, strict_idna_2008=None):
     return None
 
 
+def amt_from_float(amt, currency=None):
+    if currency is None:
+        currency = policy.policy("currency")
+    amt = float(amt)
+    amt *= static.POW10[currency["decimal"]]
+    return int(round(float(amt), 0))
+
+
 def format_currency(number, currency, with_symbol=True):
     num = number
     pfx = currency["symbol"] if with_symbol else ""
@@ -72,13 +87,16 @@ def format_currency(number, currency, with_symbol=True):
 
 
 if __name__ == "__main__":
-    print(puny_to_utf8("frog.xn--k3h"))
-    print(puny_to_utf8("frog.xn--k3hw410f"))
-    print(puny_to_utf8("xn--e28h.xn--dp8h"))
-    print(puny_to_utf8("xn--strae-oqa.com"))
+    print(amt_from_float(sys.argv[1]))
+    #print(ashex(int(sys.argv[1])))
 
-    print(puny_to_utf8("frog.xn--k3h", True))
-    print(puny_to_utf8("frog.xn--k3hw410f", True))
-    print(puny_to_utf8("xn--e28h.xn--dp8h", True))
-    print(puny_to_utf8("xn--strae-oqa.com", True))
-    print(puny_to_utf8("xn--st-rae-oqa.com", True))
+    # print(puny_to_utf8("frog.xn--k3h"))
+    # print(puny_to_utf8("frog.xn--k3hw410f"))
+    # print(puny_to_utf8("xn--e28h.xn--dp8h"))
+    # print(puny_to_utf8("xn--strae-oqa.com"))
+
+    # print(puny_to_utf8("frog.xn--k3h", True))
+    # print(puny_to_utf8("frog.xn--k3hw410f", True))
+    # print(puny_to_utf8("xn--e28h.xn--dp8h", True))
+    # print(puny_to_utf8("xn--strae-oqa.com", True))
+    # print(puny_to_utf8("xn--st-rae-oqa.com", True))

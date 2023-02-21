@@ -19,7 +19,10 @@ SPOOL_BASE = f"{os.environ['BASE']}/storage/perm/spooler"
 ERROR_BASE = f"{os.environ['BASE']}/storage/perm/mail_error"
 TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 
-REQUIRE_FORMATTING = ["price_paid", "acct_current_balance"]
+REQUIRE_FORMATTING = [
+    "price_paid", "price_charged", "acct_current_balance", "amount", "pre_balance", "post_balance",
+    "acct_current_balance", "acct_previous_balance", "acct_overdraw_limit", "acct_warn_low_balance", "for_sale_amount"
+]
 
 
 def event_log(prefix, records):

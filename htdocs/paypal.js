@@ -7,7 +7,7 @@ function paypal_startup() // {module}_startup() is a mandatory func in a JS paym
 		add_paypal_script(gbl.config.payment.paypal.client_id,gbl.config.currency.iso);
 
 	payments["paypal"] = {
-		"desc": "PayPal",
+		"desc": "Pay by PayPal",
 		"single": paypal_single_payment
 		};
 }
@@ -78,8 +78,8 @@ function initPayPalButton(description, amount, custom_id) {
 	  return actions.order.capture().then(function(orderData) {
 		// console.log(orderData);
 		let e = document.getElementById("payment-whole");
-		let x = '<center><h3>Thank you for your payment!</h3><br>'
-		x += "Your payment will be processed<br>when PayPal notifies us they have completed the transfer</center>";
+		let x = '<center><h3>Thank you for your payment!</h3>'
+		x += "Your payment will be processed when PayPal notifies us they have completed the transfer</center>";
 		e.innerHTML = x;
 	  });
 	},

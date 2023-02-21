@@ -101,10 +101,7 @@ def admin_trans(injs):
         if not ok or not user_db or len(user_db) <= 0:
             return False, "Invalid user_id given"
 
-    site_currency = policy.policy("currency")
-    amount *= static.POW10[site_currency["decimal"]]
-    amount = int(round(amount, 0))
-
+    amount = amt_from_float(amount)
     ok, trans_id = apply_transaction(user_id, amount, "Admin: " + injs["description"], as_admin=True)
     if not ok:
         return False, trans_id

@@ -1,0 +1,21 @@
+To: {{policy.admin_email}}
+From: {{policy.name_sender}} <{{policy.email_sender}}>
+X-Env-From: {{policy.email_return}}
+Subject: {{policy.business_name}}: {{pay_module}} failed payment processing
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{policy.name_sender}},</font><p>
+
+Processig of payment from {{pay_module}} failed.
+<P>
+<table style="margin-left: 100px">
+<tr><Td class=promptCell>Processor :</td><td class=dataCell>{{pay_module}}</td></tr>
+<tr><Td class=promptCell>Message :</td><td class=dataCell>{{message}}</td></tr>
+<tr><Td class=promptCell>Failename :</td><td class=dataCell>{{filename}}</td></tr>
+</table>
+
+{% include "end.html" %}

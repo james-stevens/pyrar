@@ -21,6 +21,13 @@ const validations = {
 	  rrDS: /^(([123456]?[0-9]{1,4}|[0-9]1,4) ([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]) [1234] [0-9A-F ]{40,100})$/i,
 	};
 
+const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:100000, 6:1000000, 7:10000000, 8:100000000, 9:1000000000, 10:10000000000 };
+
+function from_float(amount)
+{
+	return Math.round(parseFloat(amount)*pow10[gbl.config.currency.decimal]);
+}
+
 
 function callApi(sfx,callback,inData)
 {

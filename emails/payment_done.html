@@ -1,0 +1,27 @@
+{% include "start.inc" %}
+Subject: {{policy.business_name}}: Successfully processed credit from {{ provider }}
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+Thank you for you payment from {{provider}}. Any pending orders you have will
+now be automatically processed.
+<P>
+
+<table style="margin-left: 100px">
+<tr><Td class=promptCell>Amount Credited :</td><td class=dataCell>{{transaction.amount_fmt}}</td></tr>
+<tr><Td class=promptCell>New Account Balance :</td><td class=dataCell>{{user.acct_current_balance_fmt}}</td></tr>
+
+{% if paypal_trans_id is defined and paypal_trans_id %}
+<tr><Td class=promptCell>PayPal Transaction Refrence :</td><td class=dataCell>{{paypal_trans_id}}</td></tr>
+<tr><Td class=promptCell>PayPal Account EMail :</td><td class=dataCell>{{paypal_email}}</td></tr>
+{% endif %}
+
+</table>
+
+
+{% include "end.html" %}
