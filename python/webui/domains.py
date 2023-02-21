@@ -81,11 +81,10 @@ def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
 
 
 def check_domain_is_mine(user_id, domain, require_live):
-    dom = domobj.Domain()
-    if (not sql.has_data(domain, ["domain_id", "name"]) or not isinstance(domain["domain_id"], int)
-            or not validate.is_valid_fqdn(domain["name"])):
+    if not sql.has_data(domain, "name") or not validate.is_valid_fqdn(domain["name"]):
         return False, "Domain data missing or invalid"
 
+    dom = domobj.Domain()
     if not dom.load_name(domain["name"], user_id)[0]:
         return False, "Domain not found or not yours"
 

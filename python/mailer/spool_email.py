@@ -56,7 +56,7 @@ def load_records(which_message, request_list):
             return None
 
         for fmt in REQUIRE_FORMATTING:
-            if fmt in reply:
+            if fmt in reply and reply[fmt] is not None:
                 reply[fmt + "_fmt"] = misc.format_currency(reply[fmt], my_currency)
 
         if table == "users":

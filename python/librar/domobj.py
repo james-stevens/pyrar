@@ -73,9 +73,10 @@ class Domain:
         if user_id is not None:
             where["user_id"] = user_id
 
-        ok, dom_db = sql.sql_select_one("domains", where)
+        ok, reply = sql.sql_select_one("domains", where)
         if not ok:
             return False, "Domain failed to load"
+        self.dom_db = reply
         return self.set_locks()
 
     def set_locks(self):
