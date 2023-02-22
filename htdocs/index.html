@@ -67,11 +67,12 @@ gbl = {
 	credit: "&#x1F4B3;",
 	lock: "&#x1F512;",
 	unlock: "&#x1F513;",
+	thumb: "&#x1F44d;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
 
-	def_max_checks: 2
+	def_max_checks: 5
 	};
 
 ctx = {};
@@ -688,7 +689,9 @@ function check_router_path()
 function catch_user_data(reply)
 {
 	["failed_basket","transactions","user","domains","orders"].forEach((item) => {
-		if (item in reply) ctx[item] = reply[item];
+		if (item in reply) {
+			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
+			}
 		})
 }
 
@@ -838,7 +841,7 @@ function searchNext()
 
 	let max = gbl.def_max_checks;
 
-	if ((first.registry in gbl.config.registry)&&("max_checks" in gbl.config.registry[first.registry]))
+	if ((first.registry in gbl.config.registry)&&(gbl.config.registry[first.registry].max_checks))
 		max = gbl.config.registry[first.registry].max_checks;
 
 	while((ctx.search.todo.length > 0)&&(srch.length < max)&&(first.registry == ctx.search.todo[0].registry)) {
@@ -951,7 +954,7 @@ function request_transfer(with_push)
 
 function userDomainList()
 {
-	let x = "<table align=center cellspacing=1 cellpadding=0 border=0>";
+	let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
 	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
 	x += "</td></tr>";
@@ -1118,13 +1121,13 @@ function postCloseAccount()
 
 function goMarketPlace()
 {
-	errMsg("Not yet implemented","marketPlaceBtn");
+	errMsg(gbl.thumb+"&nbsp;Coming Soon","marketPlaceBtn");
 }
 
 
 
-function enable_two_fa() { errMsg("Not yet implemented","2fa_section"); }
-function disable_two_fa() { errMsg("Not yet implemented","2fa_section"); }
+function enable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
+function disable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
 
 
 
@@ -1164,11 +1167,11 @@ function user_settings(with_push)
 	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
 	x += "<table id=editUserPassword width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += form_prompt("Current Password");
-	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
-	x += form_prompt("New Password");
-	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Your new password" type=password id='new_password'></td></tr>`;
-	x += form_prompt("Confirm Password");
-	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm your new password" type=password id='confirm_password'></td></tr>`;
+	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Current password" type=password id='password'></td></tr>`;
+	x += form_prompt("<b>New</b> Password");
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="New password" type=password id='new_password'></td></tr>`;
+	x += form_prompt("Confirm <b>New</b> Password");
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm New Password" type=password id='confirm_password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
 	x += "</table></form></td></tr>";
 
@@ -1270,40 +1273,6 @@ function click_add_payment()
 
 
 
-function add_payment()
-{
-	hidePopUp();
-
-	let e = document.getElementById("add_payment_type");
-	if (!e) return;
-
-	callApi("payments/html",(ok,reply) => {
-		let p = document.getElementById("add_pay_div");
-		if ((ok)&&(p)) {
-			// # CODE
-			console.log(reply);
-			return;
-			}
-		def_errMsg("Error getting HTML for payment",reply,"add_pay_div");
-		},{ json: {"method":e.value}});
-}
-
-
-
-function add_payment_form()
-{
-	let x = "<table>";
-	x += "<tr><td class=formPrompt>Select method to add:</td>";
-	x += "<td><select id=add_payment_type>"
-	for(let i in gbl.config.payment) {
-		x += `<option value='${i}'>${gbl.config.payment[i]}`;
-		}
-	x += "</select></td></tr>";
-	x += "<tr><td colspan=2 class=btmBtnBar>"+btn("add_payment()","Add","Add payment method",75)+"</td></tr>";
-	return x +"</table>";
-}
-
-
 
 function top_up_account()
 {
@@ -1325,10 +1294,24 @@ function top_up_account()
 	x += "<div id='payment-whole'></div>";
 	elm.userSpace.innerHTML = x;
 
-	payments[f.top_up_method.value].single(`${policy("business_name","Registrar")}: Top-Up`,format_amount(raw_amt,true));
+	payments[f.top_up_method.value].single(`${policy("business_name","Registrar")}: Top-Up`,raw_amt);
 
 	return false;
 }
+
+
+
+function make_pay_by_select(name,onchange)
+{
+	let extra="", x="";
+	if (onchange) extra = `onChange="${onchange}(this);"`;
+	x += `<select ${extra} id=top_up_method><option value=''>--- Select Payment Method ---`;
+	for(let i in payments)
+		if ((i in gbl.config.payment)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
+	x += "</select>";
+	return x;
+}
+
 
 
 function top_up_account_form()
@@ -1337,12 +1320,7 @@ function top_up_account_form()
 	x += "<tr><td class=formPrompt>Top-Up Amount:</td>";
 	x += `<td>${gbl.config.currency.symbol}<input id='top_up_amount' style="width: 250px;"></td></tr>`;
 	x += "<tr><td class=formPrompt>How to Pay:</td>";
-	x += "<td><select id=top_up_method><option value=''>--- Select Method ---"
-	for(let i in payments) {
-		if ((i in gbl.config.payment)&&(payments[i].single))
-			x += `<option value='${i}'>${payments[i].desc}`;
-		}
-	x += "</select></td></tr>";
+	x += "<td>"+make_pay_by_select("top_up_method")+"</td></tr>";
 	x += "<tr><td colspan=2 class=btmBtnBar>"
 	x += btn("hideAllPopUp()","Cancel","Cancel this top-up",80);
 	x += "<input class=myBtn type=submit value='Top-Up' title='Make top-up payment now' style='width: 120px;'></td></tr>";
@@ -1375,16 +1353,6 @@ function payment_methods(with_push)
 	callApi("payments/list",(ok,reply) => {
 		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><td class=btmBtnBar>";
-
-		x += generic_popup_btn({
-			"name": "AddPayment",
-			"label": "Add Payment",
-			"width": 120,
-			"timeout": null,
-			"title": "Add a payment method",
-			"internal": add_payment_form,
-			"style": "overflow: auto; margin-left: -250;"
-			});
 
 		x += generic_popup_btn({
 			"name": "TopUpAcct",
@@ -1449,7 +1417,7 @@ function userDetails()
 	x += `<tr><td class=promptCell>Account Balance :</td><td class=dataCell>${show_bal}</td></tr>`;
 	x += "</td></tr></table>";
 
-	if ((ctx.orders)&&(ctx.orders.length > 0)) x += order_details(false);
+	if ((ctx.orders)&&(ctx.orders.length)) x += order_details(false);
 
 	return x + "</table>"
 }
@@ -1491,8 +1459,25 @@ function order_details(as_first)
 		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
 	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
 
+	x += "<tr><td colspan=6 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
+
+	x += "<tr><td colspan=6><div id='payment-whole'>&nbsp;</div></td></tr>";
 	return x+"</table></td></tr>";
 }
+
+
+
+function pay_for_order(pay_by)
+{
+	if (!((pay_by.value in payments)&&(payments[pay_by.value].single)))
+		return errMsg("Unable to find payment handler for this payment provider","payment-whole");
+
+	let total = 0;
+	for(let order of ctx.orders) total += order.price_paid;
+
+	payments[pay_by.value].single(`${policy("business_name","Registrar")}: Domain Names`,total);
+}
+
 
 
 
@@ -1557,7 +1542,7 @@ function place_order()
 
 		user_info();
 		let fn = show_new_orders
-		if ((ctx.orders.length==0)&&(!gbl.basket)) {
+		if ((!ctx.orders.length)&&(!gbl.basket)) {
 			delete ctx.orders;
 			fn = show_all_orders_processed;
 			}
@@ -1566,12 +1551,27 @@ function place_order()
 }
 
 
+function orders_icon()
+{
+	callApi("orders/details",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to load orders",reply,"errorSpan");
+		catch_user_data(reply);
+		show_one_space("userSpace");
+		if ((ctx.orders)&&(ctx.orders.length)) {
+			elm.userSpace.innerHTML = "<table align=center width=75% border=0>"+order_details(true)+"</table>";
+			size_one_space();
+			}
+		else show_all_orders_processed();
+		});
+}
+
 
 function show_all_orders_processed()
 {
 	let x = "<table align=center width=50% border=0><tr><td>"
 	x += "<h2>All orders processed</h2></td></tr></table>";
 	elm.userSpace.innerHTML = x;
+	show_one_space("userSpace");
 	size_one_space();
 }
 
@@ -2871,7 +2871,7 @@ function searchFocus()
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
 <tr><td><span id="errorSpan">&nbsp;</span></td>
 <td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
-<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="load_domains_list(myAccount);">&#x1F4B3;</span></td>
+<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="orders_icon();">&#x1F4B3;</span></td>
 <td align=center>
 <span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>

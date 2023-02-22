@@ -35,7 +35,7 @@ function paypal_single_payment(description, amount)
 		let e = document.getElementById("payment-whole");
 		e.innerHTML = x;
 
-		initPayPalButton(description, amount, reply.token);
+		initPayPalButton(description, format_amount(amount,true), reply.token);
 		},{ json:{ "provider":"paypal"}})
 }
 
@@ -49,29 +49,64 @@ function test_single_paypal() // this is for debugging
 
 
 
-function initPayPalButton(description, amount, custom_id) {
-  paypal.Buttons({
-	style: {
-	  shape: 'rect',
-	  color: 'gold',
-	  layout: 'horizontal',
-	  label: 'paypal',
-	  
-	},
+function make_paypal_order(description, amount, custom_id)
+{
+	let this_value = {
+		"currency_code": gbl.config.currency.iso,
+		"value": amount
+		};
 
-	createOrder: function(data, actions) {
-	  return actions.order.create({
+	let ret_js = {
 		purchase_units: [
 			{
 			"description": description,
 			"custom_id": custom_id,
-			"amount":{
-				"currency_code": gbl.config.currency.iso,
-				"value": amount
-				}
+			"amount": { ...this_value, ...{ "breakdown": { "item_total": this_value } } }
 			}
-		]
-	  });
+		] };
+
+	if ((ctx.orders)&&(ctx.orders.length > 0)) {
+		let item_list = [];
+		for(let order of ctx.orders) {
+			let dom = domain_of(order.domain_id);
+			let yrs = `${order.num_years} yrs`;
+			if (order.num_years==1) yrs=`${order.num_years} yr`;
+			item_list.push({
+				"name": `${order.order_type} ${dom.display_name} for ${yrs}`,
+				"quantity": 1,
+				"unit_amount": {
+					"currency_code": gbl.config.currency.iso,
+					"value": format_amount(order.price_paid,true)
+					}
+				});
+			}
+		ret_js.purchase_units[0].items = item_list;
+		return ret_js;
+		}
+
+	ret_js.purchase_units[0].items = [ {
+		"name": description,
+		"quantity": 1,
+		"unit_amount": this_value
+		} ];
+
+	return ret_js;
+}
+
+
+function initPayPalButton(description, amount, custom_id) {
+  paypal.Buttons({
+		style: {
+			shape: 'rect',
+			color: 'gold',
+			layout: 'horizontal',
+			label: 'paypal',
+		},
+
+	createOrder: function(data, actions) {
+		post_data = make_paypal_order(description, amount, custom_id);
+		console.log(post_data);
+		return actions.order.create(post_data);
 	},
 
 	onApprove: function(data, actions) {
@@ -84,7 +119,9 @@ function initPayPalButton(description, amount, custom_id) {
 	  });
 	},
 
-	onError: function(err) { errMsg(err,"payment-whole"); }
+	onError: function(err) { 
+		console.log(err);
+		}
 
   }).render('#payment-button');
 }

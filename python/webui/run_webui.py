@@ -130,19 +130,21 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if flask.request.path.find("/pyrar/v1.0/webhook/") == 0:
+    if flask.request.path.find("/pyrar/v1.0/webhook/") == 0 or not WANT_REFERRER_CHECK:
         return None
 
-    if not WANT_REFERRER_CHECK:
+    strict_referrer = policy.policy("strict_referrer")
+    if strict_referrer is not None and not strict_referrer:
         return None
 
-    if not policy.policy("strict_referrer"):
+    allowable_referrer = policy.policy("allowable_referrer")
+    if allowable_referrer is not None and isinstance(allowable_referrer,(dict,list)):
+        if flask.request.referrer in allowable_referrer:
+            return None
+    elif flask.request.referrer == policy.policy("website_name"):
         return None
 
-    if flask.request.referrer != policy.policy("website_name"):
-        return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
-
-    return None
+    return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
 
 @application.route('/pyrar/v1.0/config', methods=['GET'])
@@ -447,6 +449,7 @@ def users_close():
 
     sql.sql_delete_one("session_keys", {"user_id": req.user_id})
     sql.sql_delete("orders", {"user_id": req.user_id})
+    sql.sql_delete("payments", {"user_id": req.user_id})
     req.user_id = None
     req.sess_code = None
 
@@ -465,6 +468,8 @@ def users_password():
     new_pass = passwd.crypt(req.post_js["new_password"])
     if not sql.sql_update_one("users", {"password": new_pass, "amended_dt": None}, {"user_id": req.user_id}):
         return req.abort("Failed")
+
+    spool_email.spool("password_changed", [["users", {"user_id": req.user_id}]])
 
     return req.response("OK")
 

@@ -40,4 +40,4 @@ def make_session_key(session_code, user_agent):
 
 
 if __name__ == "__main__":
-    print(make_hash())
+    print(make_hash(chars_needed=30))

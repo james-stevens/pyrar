@@ -41,6 +41,7 @@ policy_defaults = {
     "backend_retry_timeout": 300,
     "backend_retry_attempts": 3,
     "renew_limit": 10,
+    "max_checks": 5,
     "max_basket_size": 10,
     "trans_per_page": 25,
     "orders_expire_hrs": int(6.5 * 24),

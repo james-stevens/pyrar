@@ -41,8 +41,10 @@ def paypal_startup():
         return None
 
     payapl_conf = pay_conf[THIS_MODULE]
-    if "webhook" in payapl_conf:
-        pay_handler.pay_webhooks[payapl_conf["webhook"]] = THIS_MODULE
+    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
+
+    if paypal_mode in payapl_conf and "webhook" in payapl_conf[paypal_mode]:
+        pay_handler.pay_webhooks[payapl_conf[paypal_mode]["webhook"]] = THIS_MODULE
     return True
 
 

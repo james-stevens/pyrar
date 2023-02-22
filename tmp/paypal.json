@@ -7,14 +7,14 @@
       "reference_id": "default",
       "amount": {
         "currency_code": "USD",
-        "value": "18.99"
+        "value": "59.60"
       },
       "payee": {
         "email_address": "sb-irmqn24007482@business.example.com",
         "merchant_id": "8ABGNSC8Q2SY2"
       },
       "description": "Test Description",
-      "custom_id": "28D2:FTwO34faV3T5SMuzwC3gvXRFkBt4yQ",
+      "custom_id": "28D4:ZFCMZA1iUrcPJHDSOPYN58OPPoYlud",
       "shipping": {
         "name": {
           "full_name": "John Doe"
@@ -35,7 +35,7 @@
             "status": "COMPLETED",
             "amount": {
               "currency_code": "USD",
-              "value": "18.99"
+              "value": "59.60"
             },
             "final_capture": true,
             "seller_protection": {
