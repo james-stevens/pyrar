@@ -1252,7 +1252,7 @@ function show_transactions(with_more)
 function click_add_payment()
 {
 	let data = {}
-	for(let i of ["provider","provider_tag","single_use","can_pull"]) {
+	for(let i of ["provider","token","token_type"]) {
 		let e = document.getElementById("pay."+i);
 		if (!e) {
 			errMsg("Failure in payment plugin, see console","add_pay_div");
@@ -1352,12 +1352,19 @@ function top_up_account_form()
 
 
 
-function remove_payment(provider,provider_tag)
+function remove_payment(provider,token)
 {
-	callApi("payments/delete",(ok,reply) => {
+	callApi("payments/single",(ok,reply) => {
 		if (!ok) return def_errMsg("Delete payment method failed",reply,"add_pay_div");
 		payment_methods(true);
-		}, { json: { "provider":provider, "provider_tag":provider_tag }});
+		}, { 
+			method: "delete",
+			json: {
+				"provider": provider,
+				"token": token
+				}
+			}
+		);
 }
 
 
@@ -1395,8 +1402,8 @@ function payment_methods(with_push)
 			x += "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 			x += "<tr><th>Payment Method</th><th>Payment Data</th></tr>"
 			for(let i of reply) {
-				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment record"><td>${i.provider}</td>`;
-				x += `<td>${i.provider_tag}</td></tr>`;
+				x += `<tr onClick='remove_payment("${i.provider}","${i.token}");' class=dataRow title="Click to remove this payment record"><td>${i.provider}</td>`;
+				x += `<td>${i.token}</td></tr>`;
 				}
 			x += "</table>";
 			}

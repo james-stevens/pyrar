@@ -13,8 +13,6 @@
 
 debugAPI = false;
 
-const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:10000, 6:100000, 7:1000000, 8:10000000, 9:100000000 };
-
 const pre_get_elm = [ "tableDrops","emailSearch","zoneSearch","domainSearch","topMsg","myMsgPop","userInfo","moreInfo","businessName" ];
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
@@ -32,7 +30,7 @@ const list_columns = {
 	"actions": [ "execute_dt","action","domain_id"],
 	"sales": [ "created_dt","sales_type","num_years","price_charged","price_paid" ],
 	"transactions": [ "created_dt","description","amount","pre_balance","post_balance" ],
-	"payments": [ "created_dt","provider","provider_tag" ],
+	"payments": [ "created_dt","provider","token" ],
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
 	"sysadmins": ["login","htpasswd","amended_dt" ],
 	"class_by_regexp": ["name_regexp","zone","class","amended_dt" ],

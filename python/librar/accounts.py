@@ -54,10 +54,10 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 
 
 def find_payment_record(injs):
-    if "provider_tag" not in injs or not validate.is_valid_display_name(injs["provider_tag"]):
+    if "token" not in injs or not validate.is_valid_display_name(injs["token"]):
         return False, "Insufficient or invalid data"
 
-    where = {"provider_tag": injs["provider_tag"]}
+    where = {"token": injs["token"]}
     if "provider" in injs:
         where["provider"] = injs["provider"]
 
@@ -106,14 +106,8 @@ def admin_trans(injs):
     if not ok:
         return False, trans_id
 
-    if pay_db is not None:
-        if pay_db["single_use"]:
-            sql.sql_update_one(
-                "payments", {
-                    "provider": "DONE:" + pay_db["provider"],
-                    "provider_tag": "DONE:" + pay_db["provider_tag"],
-                    "amended_dt": None
-                }, {"payment_id": pay_db["payment_id"]})
+    if pay_db is not None and pay_db["token_type"] == static.PAY_TOKEN_SINGLE:
+        sql.sql_delete_one("payments", {"payment_id": pay_db["payment_id"]})
 
     return True, True
 

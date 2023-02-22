@@ -254,12 +254,12 @@ def basket_submit():
     return req.response(req.user_data)
 
 
-@application.route('/pyrar/v1.0/payments/delete', methods=['POST'])
+@application.route('/pyrar/v1.0/payments/single', methods=['DELETE'])
 def payments_delete():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, ["provider", "provider_tag"]):
+    if not sql.has_data(req.post_js, ["provider", "token"]):
         return req.abort("Missing or invalid payment method data")
 
     provider = req.post_js["provider"]
@@ -270,8 +270,8 @@ def payments_delete():
 
     pay_db = {
         "provider": req.post_js["provider"],
-        "provider_tag": req.post_js["provider_tag"],
-        "single_use": False,
+        "token": req.post_js["token"],
+        "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL],
         "user_id": req.user_id
     }
 
@@ -293,11 +293,9 @@ def payments_single():
 
     pay_db = {
         "provider": f"{req.post_js['provider']}:single",
-        "provider_tag": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
-        "single_use": True,
+        "token": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
+        "token_type": static.PAY_TOKEN_SINGLE,
         "user_id": req.user_id,
-        "can_pull": 0,
-        "verified": 0,
         "created_dt": None,
         "amended_dt": None
     }
@@ -331,7 +329,7 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments", {"user_id": req.user_id, "single_use": False})
+    ok, reply = sql.sql_select("payments", { "user_id": req.user_id, "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL] })
     if not ok and reply is None:
         return req.abort("Failed to load payment data")
 

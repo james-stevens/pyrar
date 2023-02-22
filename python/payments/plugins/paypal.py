@@ -8,6 +8,7 @@ from librar.policy import this_policy as policy
 from librar.log import log, init as log_init
 from librar import mysql as sql
 from librar import misc
+from librar import static
 from librar import accounts
 from mailer import spool_email
 
@@ -46,15 +47,15 @@ def paypal_startup():
 
 
 class PayPalWebHook:
-    def __init__(self, sent_json):
+    def __init__(self, sent_json, filename):
         self.input = sent_json
+        self.filename = filename
         self.currency = None
         self.amount = None
         self.email = None
         self.payer_id = None
-        self.provider_tag = None
+        self.token = None
         self.user_id = None
-        self.pay_db = None
         self.desc = None
         self.paypal_trans_id = None
         self.msg = None
@@ -89,8 +90,8 @@ class PayPalWebHook:
             return self.err_exit(f"ERROR: PayPal status '{captured['status']}' is not 'COMPLETED'")
 
         if "custom_id" in pay_unit:
-            self.provider_tag = pay_unit["custom_id"]
-        self.paypal_trans_id = self.input["id"] if "id" in self.input else self.provider_tag
+            self.token = pay_unit["custom_id"]
+        self.paypal_trans_id = self.input["id"] if "id" in self.input else self.token
 
         if "payer" in self.input:
             if "email_address" in self.input["payer"]:
@@ -100,38 +101,40 @@ class PayPalWebHook:
 
         self.desc = pay_unit["description"] if "description" in pay_unit else f"PayPal Credit"
 
-        return self.provider_tag is not None or self.email is not None or self.payer_id is not None
+        return self.token is not None or self.email is not None or self.payer_id is not None
 
-    def try_this_where(self, prov_ext, provider_tag, delete_after=False):
-        where = {"provider": f"{THIS_MODULE}:{prov_ext}", "provider_tag": provider_tag}
-        ok, self.pay_db = sql.sql_select_one("payments", where)
+    def try_match_user(self, prov_ext, token, single_use=False):
+        where = {
+            "provider": f"{THIS_MODULE}:{prov_ext}",
+            "token": token,
+            "token_type": static.PAY_TOKEN_SINGLE if single_use else static.PAY_TOKEN_VERIFIED
+        }
+        ok, pay_db = sql.sql_select_one("payments", where)
         if ok:
-            self.user_id = self.pay_db["user_id"]
-            if delete_after:
-                sql.sql_delete_one("payments", where)
+            self.user_id = pay_db["user_id"]
+            if single_use:
+                sql.sql_delete_one("payments", {"payment_id": pay_db["payment_id"]})
             return True
         return False
 
     def get_user_id(self):
-        if self.provider_tag is not None and self.try_this_where("single", self.provider_tag, delete_after=True):
+        if self.token is not None and self.try_match_user("single", self.token, single_use=True):
             return True
-        if self.email is not None and self.try_this_where("email", self.email):
+        if self.email is not None and self.try_match_user("email", self.email):
             return True
-        if self.payer_id is not None and self.try_this_where("payer_id", self.payer_id):
+        if self.payer_id is not None and self.try_match_user("payer_id", self.payer_id):
             return True
         self.msg = "Failed to get user identity"
         return False
 
-    def store_one_identity(self, prov_ext, provider_tag):
+    def store_one_identity(self, prov_ext, token):
         if self.user_id is None:
             return False
         pay_db = {
             "provider": f"{THIS_MODULE}:{prov_ext}",
-            "provider_tag": provider_tag,
-            "single_use": False,
+            "token": token,
+            "token_type": static.PAY_TOKEN_VERIFIED,
             "user_id": self.user_id,
-            "can_pull": 0,
-            "verified": True,
             "created_dt": None,
             "amended_dt": None
         }
@@ -160,17 +163,31 @@ class PayPalWebHook:
             return True
         return False
 
+    def event_log(self, notes):
+        misc.event_log({
+            "event_type": f"{THIS_MODULE}/payment",
+            "user_id": self.user_id,
+            "who_did_it": "paypal/webhook",
+            "notes": notes,
+            "filename": self.filename
+        })
 
-def paypal_process_webhook(sent_data):
-    hook = PayPalWebHook(sent_data)
-    if not hook.check_data():
-        return False, hook.msg
-    if not hook.get_user_id():
-        return False, hook.msg
-    hook.store_users_identity()
-    if not hook.credit_users_account():
-        return False, hook.msg
-    return True, True
+    def process_webhook(self):
+        if not self.check_data():
+            return False, self.msg
+        if not self.get_user_id():
+            self.event_log("Failed to match user to payment")
+            return False, self.msg
+        self.event_log("Successfully matched user to payment")
+        self.store_users_identity()
+        if not self.credit_users_account():
+            return False, self.msg
+        return True, True
+
+
+def paypal_process_webhook(sent_data, filename):
+    hook = PayPalWebHook(sent_data, filename)
+    return hook.process_webhook()
 
 
 pay_handler.add_plugin(THIS_MODULE, {
@@ -185,20 +202,7 @@ def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
     with open("/opt/github/pyrar/tmp/paypal.json", "r", encoding="utf-8") as fd:
-        hook = PayPalWebHook(json.load(fd))
-    print("check_data", hook.check_data())
-    print("amount", hook.amount)
-    print("currency", hook.currency)
-    print("prov_tag", hook.provider_tag)
-    print("desc", hook.desc)
-    print("email", hook.email)
-    print("payer_id", hook.payer_id)
-    ret = hook.get_user_id()
-    print("get_user_id", ret)
-    print("user_id", hook.user_id)
-    if ret:
-        hook.store_users_identity()
-        hook.credit_users_account()
+        paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json")
 
 
 if __name__ == "__main__":

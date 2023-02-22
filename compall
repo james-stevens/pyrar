@@ -1,0 +1,8 @@
+#! /bin/sh
+
+cd ${BASE}
+if test "$1"
+	then
+		find python -name '*.pyc' -delete
+	fi
+python3 -m compileall python

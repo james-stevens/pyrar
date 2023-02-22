@@ -21,6 +21,10 @@ HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
 DOMAIN_ACTIONS = ["create", "renew", "transfer", "restore"]
 
+PAY_TOKEN_SINGLE = 1
+PAY_TOKEN_VERIFIED = 2
+PAY_TOKEN_CAN_PULL = 3
+
 STATUS_LIVE = 1
 STATUS_WAITING_PAYMENT = 10
 STATUS_WAITING_PROCESSING = 11
@@ -33,14 +37,14 @@ STATUS_RESERVED = 200
 LIVE_STATUS = {1: True}
 
 DOMAIN_STATUS = {
-    1: "Live",
-    10: "Awating Payment",
-    11: "Processing",
-    20: "Expired",
-    100: "Transfer Queued",
-    101: "Transfer Requested",
-    120: "Transfer Failed",
-    200: "Reserved"
+    STATUS_LIVE: "Live",
+    STATUS_WAITING_PAYMENT: "Awating Payment",
+    STATUS_WAITING_PROCESSING: "Processing",
+    STATUS_EXPIRED: "Expired",
+    STATUS_TRANS_QUEUED: "Transfer Queued",
+    STATUS_TRANS_REQ: "Transfer Requested",
+    STATUS_TRANS_FAIL: "Transfer Failed",
+    STATUS_RESERVED: "Reserved"
 }
 
 POW10 = [

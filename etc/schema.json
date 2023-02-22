@@ -637,12 +637,6 @@
             "type": "datetime",
             "null": false
          },
-         "can_pull": {
-            "size": 1,
-            "type": "tinyint",
-            "null": false,
-            "default": 0
-         },
          "created_dt": {
             "type": "datetime",
             "null": false
@@ -659,27 +653,20 @@
             "type": "varchar",
             "null": false
          },
-         "provider_tag": {
+         "token": {
             "size": 100,
             "type": "varchar",
             "null": false
          },
-         "single_use": {
-            "size": 1,
+         "token_type": {
+            "size": 4,
             "type": "tinyint",
-            "null": false,
-            "default": 0
+            "null": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
-            "default": 0
-         },
-         "verified": {
-            "size": 1,
-            "type": "tinyint",
             "null": false,
             "default": 0
          }
@@ -691,9 +678,9 @@
             ],
             "unique": true
          },
-         "by_tag": {
+         "by_token": {
             "columns": [
-               "provider_tag",
+               "token",
                "provider"
             ],
             "unique": true

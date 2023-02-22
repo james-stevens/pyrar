@@ -60,7 +60,7 @@ def process_webhook(pay_module, sent_data):
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
 
-    ok, reply = func(sent_data)
+    ok, reply = func(sent_data,file_name)
     if ok:
         return True, "Processed"
 

@@ -35,7 +35,7 @@ function paypal_single_payment(description, amount)
 		let e = document.getElementById("payment-whole");
 		e.innerHTML = x;
 
-		initPayPalButton(description, amount, reply.provider_tag);
+		initPayPalButton(description, amount, reply.token);
 		},{ json:{ "provider":"paypal"}})
 }
 
