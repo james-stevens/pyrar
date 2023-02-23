@@ -68,10 +68,10 @@ class PayPalWebHook:
         return False
 
     def check_data(self):
-        if len(self.input["purchase_units"]) != 1:
-            return self.err_exit("ERROR: PayPal record does have one 'purchase_units'")
+        if "resource" not in self.input or "purchase_units" not in self.input["resource"] or len(self.input["resource"]["purchase_units"]) != 1:
+            return self.err_exit("ERROR: PayPal record does have one 'resource.purchase_units'")
 
-        pay_unit = self.input["purchase_units"][0]
+        pay_unit = self.input["resource"]["purchase_units"][0]
         if "payments" not in pay_unit or "captures" not in pay_unit["payments"] or not isinstance(
                 pay_unit["payments"]["captures"], list) or len(pay_unit["payments"]["captures"]) != 1:
             return self.err_exit("ERROR: PayPal 'amount' record missing or invalid")
@@ -203,7 +203,7 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/paypal.json", "r", encoding="utf-8") as fd:
+    with open("/opt/github/pyrar/tmp/paypal2.json", "r", encoding="utf-8") as fd:
         paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json")
 
 

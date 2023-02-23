@@ -47,6 +47,7 @@ mkdir -p ${BASE}/storage/shared ${sigs}
 chown daemon: ${sigs} ${perm}/spooler ${perm}/mail_error
 chmod 770 ${sigs}
 rm -f ${sigs}/*
+chmod 777 ${perm}/payments
 
 
 flat ${BASE}/config/registry.json | awk -F. 'BEGIN { n=10000 }

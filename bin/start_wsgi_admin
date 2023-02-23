@@ -12,4 +12,4 @@ exec gunicorn \
         --workers ${ses} \
         --user=daemon \
 		${extra} --bind unix:/run/wsgi_admin.sock \
-        wsgi 2>&1 | logger -t admin_ui
+        wsgi >/tmp/adminui.log 2>&1
