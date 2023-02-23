@@ -20,7 +20,7 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 
     where_clauses = [
         f"user_id = {user_id}", "not account_closed", "not acct_on_hold",
-        f"(acct_current_balance + {amount}) > acct_overdraw_limit"
+        f"(acct_current_balance + {amount}) >= acct_overdraw_limit"
     ]
     admin_where = [f"user_id = {user_id}"]
 

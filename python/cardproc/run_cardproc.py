@@ -24,21 +24,21 @@ def get_next_order_to_clear():
 def process_order(order_db):
     ok, user_db = sql.sql_select_one("users", {"user_id": order_db["user_id"]})
     if not ok:
-        return False
+        return False, f"User {order_db['user_id']} not found"
 
     if order_db["price_paid"] > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
-        return False
+        return False, f"Insufficient balalnce: {order_db['price_paid']} > {user_db['acct_current_balance']} - {user_db['acct_overdraw_limit']}"
 
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"]})
     if not ok:
-        return False
+        return False, f"Domain {order_db['domain_id']} not found"
 
     ok, trans_id = accounts.apply_transaction(
         user_db["user_id"], (-1 * order_db["price_paid"]),
         f"{order_db['order_type']} on {dom_db['name']} for {order_db['num_years']} yrs")
 
-    if not ok or not trans_id:
-        return False
+    if not ok:
+        return False, f"Account debit failed - {trans_id}"
 
     ok, sold_id = sales.sold_item(trans_id, order_db, dom_db, user_db)
     if ok and sold_id:
@@ -46,7 +46,7 @@ def process_order(order_db):
 
     creator.make_backend_job(order_db["order_type"], dom_db, order_db["num_years"], order_db["authcode"])
     sql.sql_delete_one("orders", {"order_item_id": order_db["order_item_id"]})
-    return True
+    return True, "Worked"
 
 
 def run_server(max_wait=DEFAULT_WAIT):
@@ -55,7 +55,9 @@ def run_server(max_wait=DEFAULT_WAIT):
     while True:
         ok, order_db = get_next_order_to_clear()
         if ok and len(order_db) > 0:
-            process_order(order_db[0])
+            ok, reply = process_order(order_db[0])
+            if not ok:
+                log(f"PAY-ENGINE ERR: {reply}")
         else:
             signal_mtime = sigprocs.signal_wait("payeng", signal_mtime, max_wait=max_wait)
             registry.tld_lib.check_for_new_files()

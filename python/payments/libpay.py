@@ -61,6 +61,10 @@ def process_webhook(pay_module, sent_data):
         return False, f"Webhook for'{pay_module}' module is not set up"
 
     ok, reply = func(sent_data,file_name)
+    if ok is None and reply is None:
+        os.remove(file_name)
+        return True, True
+
     if ok:
         return True, "Processed"
 
@@ -72,6 +76,7 @@ def process_webhook(pay_module, sent_data):
                               "message": reply
                           }]])
 
+    log(f"WebHook Processing Error - {reply}")
     return False, f"Call to Webhook for '{pay_module}' failed"
 
 

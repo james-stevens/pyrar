@@ -2,6 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
+import sys
 import json
 
 from librar.policy import this_policy as policy
@@ -67,37 +68,8 @@ class PayPalWebHook:
         log(f"PayPal Err: {msg}")
         return False
 
-    def check_data(self):
-        if "resource" not in self.input:
-            return self.err_exit("ERROR: PayPal record does have one 'resource'")
+    def read_checkout_order(self):
         resource = self.input["resource"]
-        if "purchase_units" not in resource or len(resource["purchase_units"]) != 1:
-            return self.err_exit("ERROR: PayPal record does have one 'resource.purchase_units'")
-
-        pay_unit = self.input["resource"]["purchase_units"][0]
-        if "payments" not in pay_unit or "captures" not in pay_unit["payments"] or not isinstance(
-                pay_unit["payments"]["captures"], list) or len(pay_unit["payments"]["captures"]) != 1:
-            return self.err_exit("ERROR: PayPal 'amount' record missing or invalid")
-
-        captured = pay_unit["payments"]["captures"][0]
-        currency = policy.policy("currency")
-        if "currency_code" not in captured["amount"] or captured["amount"]["currency_code"] != currency["iso"]:
-            return self.err_exit(f"ERROR: PayPal currency missing or doesn't match '{currency['iso']}'")
-
-        self.currency = captured["amount"]["currency_code"]
-
-        if "value" not in captured["amount"]:
-            return self.err_exit(f"ERROR: PayPal amount has no 'value' field")
-
-        self.amount = misc.amt_from_float(captured["amount"]["value"])
-
-        if "status" in captured and captured["status"] != "COMPLETED":
-            return self.err_exit(f"ERROR: PayPal status '{captured['status']}' is not 'COMPLETED'")
-
-        if "custom_id" in pay_unit:
-            self.token = pay_unit["custom_id"]
-        self.paypal_trans_id = self.input["id"] if "id" in self.input else self.token
-
         if "payer" in resource:
             payer = resource["payer"]
             if "email_address" in payer:
@@ -105,14 +77,14 @@ class PayPalWebHook:
             if "payer_id" in payer:
                 self.payer_id = payer["payer_id"]
 
-        self.desc = pay_unit["description"] if "description" in pay_unit else f"PayPal Credit"
+        pay_unit = resource["purchase_units"][0]
+        if "custom_id" in pay_unit:
+            self.token = pay_unit["custom_id"]
+            return True
 
-        if self.token is None or self.email is None or self.payer_id is None:
-            return self.err_exit(f"Failed to find all data items ({self.token},{self.email},{self.payer_id})")
+        return False
 
-        return True
-
-    def try_match_user(self, prov_ext, token, single_use=False):
+    def try_match_user(self, prov_ext, token, with_delete=False, single_use=False):
         where = {
             "provider": f"{THIS_MODULE}:{prov_ext}",
             "token": token,
@@ -121,20 +93,13 @@ class PayPalWebHook:
         ok, pay_db = sql.sql_select_one("payments", where)
         if ok:
             self.user_id = pay_db["user_id"]
-            if single_use:
+            if with_delete and single_use:
                 sql.sql_delete_one("payments", {"payment_id": pay_db["payment_id"]})
             return True
         return False
 
-    def get_user_id(self):
-        if self.token is not None and self.try_match_user("single", self.token, single_use=True):
-            return True
-        if self.email is not None and self.try_match_user("email", self.email):
-            return True
-        if self.payer_id is not None and self.try_match_user("payer_id", self.payer_id):
-            return True
-        self.msg = "Failed to get user identity"
-        return False
+    def get_user_id(self,with_delete):
+        return self.token is not None and self.try_match_user("single", self.token, with_delete, single_use=True)
 
     def store_one_identity(self, prov_ext, token):
         if self.user_id is None:
@@ -157,7 +122,7 @@ class PayPalWebHook:
 
     def credit_users_account(self):
         if self.user_id is None:
-            return False, None
+            return False, "User-id is not set"
         ok, trans_id = accounts.apply_transaction(self.user_id, self.amount, f"PayPal: {self.desc}", as_admin=True)
         if ok:
             spool_email.spool("payment_done", [["users", {
@@ -166,9 +131,13 @@ class PayPalWebHook:
                 "transaction_id": trans_id
             }], [None, {
                 "provider": "PayPal",
-                "paypal_trans_id": self.paypal_trans_id,
-                "paypal_email": self.email
+                "paypal_trans_id": self.paypal_trans_id
             }]])
+            return True
+        return False
+
+    def interesting_webhook(self):
+        if "event_type" in self.input and self.input["event_type"] in ["CHECKOUT.ORDER.APPROVED","PAYMENT.CAPTURE.COMPLETED"]:
             return True
         return False
 
@@ -181,21 +150,57 @@ class PayPalWebHook:
             "filename": self.filename
         })
 
-    def process_webhook(self):
-        if not self.check_data():
+    def read_payment_capture(self):
+        resource = self.input["resource"]
+        if "amount" not in resource or "value" not in resource["amount"] or "currency_code" not in resource["amount"]:
+            return self.err_exit("Amount not found or invalid")
+        amount = resource["amount"]
+        currency = policy.policy("currency")
+        if amount["currency_code"] != currency["iso"]:
+            return self.err_exit("Currency mismatch {amount['currency_code']} is not {currency['iso']}")
+        self.amount = misc.amt_from_float(amount["value"])
+
+        self.desc = self.input["summary"] if "summary" in self.input else "Payment by PayPal"
+
+        if "custom_id" not in resource:
+            return self.err_exit("No custom_id found")
+
+        self.token = resource["custom_id"]
+        self.paypal_trans_id = self.input["id"] if "id" in self.input else self.token
+        return True, True
+
+    def payment_capture_completed(self):
+        if not self.read_payment_capture():
             return False, self.msg
-        if not self.get_user_id():
-            self.event_log("Failed to match user to payment")
-            return False, self.msg
+        if not self.get_user_id(True):
+            return False, "Failed to match user to payment"
         self.event_log("Successfully matched user to payment")
-        self.store_users_identity()
         if not self.credit_users_account():
-            return False, self.msg
+            return False, "Failed to credit users account"
+        self.event_log("Successfully credited users account")
+        return True, True
+
+    def checkout_order_approved(self):
+        if self.read_checkout_order() and self.get_user_id(False):
+            self.store_users_identity()
+        return True, True
+
+    def process_webhook(self):
+        if "resource" not in self.input:
+            return False, "ERROR: PayPal record does not have 'resource'"
+
+        if self.input["event_type"] == "CHECKOUT.ORDER.APPROVED":
+            return self.checkout_order_approved()
+        if self.input["event_type"] == "PAYMENT.CAPTURE.COMPLETED":
+            return self.payment_capture_completed()
+
         return True, True
 
 
 def paypal_process_webhook(sent_data, filename):
     hook = PayPalWebHook(sent_data, filename)
+    if not hook.interesting_webhook():
+        return None, None
     ok, reply = hook.process_webhook()
     if not ok:
         log(f"PayPal Processing Error: {reply}")
@@ -213,7 +218,7 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/paypal4.json", "r", encoding="utf-8") as fd:
+    with open("/opt/github/pyrar/tmp/"+sys.argv[1], "r", encoding="utf-8") as fd:
         print(paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json"))
 
 
