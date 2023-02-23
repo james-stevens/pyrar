@@ -63,12 +63,15 @@ class PayPalWebHook:
         self.msg = None
 
     def err_exit(self, msg):
-        self.error = msg
-        log(msg)
+        self.msg = msg
+        log(f"PayPal Err: {msg}")
         return False
 
     def check_data(self):
-        if "resource" not in self.input or "purchase_units" not in self.input["resource"] or len(self.input["resource"]["purchase_units"]) != 1:
+        if "resource" not in self.input:
+            return self.err_exit("ERROR: PayPal record does have one 'resource'")
+        resource = self.input["resource"]
+        if "purchase_units" not in resource or len(resource["purchase_units"]) != 1:
             return self.err_exit("ERROR: PayPal record does have one 'resource.purchase_units'")
 
         pay_unit = self.input["resource"]["purchase_units"][0]
@@ -95,11 +98,12 @@ class PayPalWebHook:
             self.token = pay_unit["custom_id"]
         self.paypal_trans_id = self.input["id"] if "id" in self.input else self.token
 
-        if "payer" in self.input:
-            if "email_address" in self.input["payer"]:
-                self.email = self.input["payer"]["email_address"]
-            if "payer_id" in self.input["payer"]:
-                self.payer_id = self.input["payer"]["payer_id"]
+        if "payer" in resource:
+            payer = resource["payer"]
+            if "email_address" in payer:
+                self.email = payer["email_address"]
+            if "payer_id" in payer:
+                self.payer_id = payer["payer_id"]
 
         self.desc = pay_unit["description"] if "description" in pay_unit else f"PayPal Credit"
 
@@ -209,7 +213,7 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/paypal3.json", "r", encoding="utf-8") as fd:
+    with open("/opt/github/pyrar/tmp/paypal4.json", "r", encoding="utf-8") as fd:
         print(paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json"))
 
 
