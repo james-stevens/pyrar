@@ -1459,9 +1459,11 @@ function order_details(as_first)
 		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
 	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
 
-	x += "<tr><td colspan=6 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
+	if (total > ctx.user.acct_current_balance) {
+		x += "<tr><td colspan=6 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
+		x += "<tr><td colspan=6><div id='payment-whole'>&nbsp;</div></td></tr>";
+		}
 
-	x += "<tr><td colspan=6><div id='payment-whole'>&nbsp;</div></td></tr>";
 	return x+"</table></td></tr>";
 }
 
@@ -1475,7 +1477,7 @@ function pay_for_order(pay_by)
 	let total = 0;
 	for(let order of ctx.orders) total += order.price_paid;
 
-	payments[pay_by.value].single(`${policy("business_name","Registrar")}: Domain Names`,total);
+	payments[pay_by.value].single(`${policy("business_name","Registrar")}: Domain Names`,(total-ctx.user.acct_current_balance));
 }
 
 
@@ -1551,7 +1553,9 @@ function place_order()
 }
 
 
-function orders_icon()
+function orders_icon() { load_domains_list(do_orders_icon); }
+
+function do_orders_icon()
 {
 	callApi("orders/details",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load orders",reply,"errorSpan");

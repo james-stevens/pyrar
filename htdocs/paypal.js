@@ -61,18 +61,22 @@ function make_paypal_order(description, amount, custom_id)
 			{
 			"description": description,
 			"custom_id": custom_id,
-			"amount": { ...this_value, ...{ "breakdown": { "item_total": this_value } } }
+			"amount": this_value
 			}
 		] };
 
 	if ((ctx.orders)&&(ctx.orders.length > 0)) {
+		let this_total = 0;
 		let item_list = [];
 		for(let order of ctx.orders) {
 			let dom = domain_of(order.domain_id);
-			let yrs = `${order.num_years} yrs`;
-			if (order.num_years==1) yrs=`${order.num_years} yr`;
+			this_total += order.price_paid;
+
+			let yrs = `${order.num_years} yr`;
+			if (order.num_years>1) yrs += "s";
+
 			item_list.push({
-				"name": `${order.order_type} ${dom.display_name} for ${yrs}`,
+				"name": `${order.order_type} '${dom.display_name}' for ${yrs}`,
 				"quantity": 1,
 				"unit_amount": {
 					"currency_code": gbl.config.currency.iso,
@@ -81,6 +85,16 @@ function make_paypal_order(description, amount, custom_id)
 				});
 			}
 		ret_js.purchase_units[0].items = item_list;
+		ret_js.purchase_units[0].amount.breakdown = {
+			"item_total": {
+				"currency_code": gbl.config.currency.iso,
+				"value": format_amount(this_total,true)
+				},
+			"discount": {
+				"currency_code": gbl.config.currency.iso,
+				"value": format_amount(ctx.user.acct_current_balance,true)
+				}
+			};
 		return ret_js;
 		}
 

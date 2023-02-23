@@ -132,7 +132,7 @@ def process_emails_waiting(server=None):
         try:
             ok, records = spool_email_file(path, server)
         except Exception as e:
-            log(f"ERROR: Failed to email '{path}' - {e}")
+            log(f"ERROR: Exception running spool_email_file '{path}' - {type(e)}:{str(e)}")
             ok = False
 
         if ok:

@@ -103,7 +103,10 @@ class PayPalWebHook:
 
         self.desc = pay_unit["description"] if "description" in pay_unit else f"PayPal Credit"
 
-        return self.token is not None or self.email is not None or self.payer_id is not None
+        if self.token is None or self.email is None or self.payer_id is None:
+            return self.err_exit(f"Failed to find all data items ({self.token},{self.email},{self.payer_id})")
+
+        return True
 
     def try_match_user(self, prov_ext, token, single_use=False):
         where = {
@@ -189,7 +192,10 @@ class PayPalWebHook:
 
 def paypal_process_webhook(sent_data, filename):
     hook = PayPalWebHook(sent_data, filename)
-    return hook.process_webhook()
+    ok, reply = hook.process_webhook()
+    if not ok:
+        log(f"PayPal Processing Error: {reply}")
+    return ok, reply
 
 
 pay_handler.add_plugin(THIS_MODULE, {
@@ -203,8 +209,8 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/paypal2.json", "r", encoding="utf-8") as fd:
-        paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json")
+    with open("/opt/github/pyrar/tmp/paypal3.json", "r", encoding="utf-8") as fd:
+        print(paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json"))
 
 
 if __name__ == "__main__":

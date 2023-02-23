@@ -101,7 +101,7 @@ def admin_trans(injs):
         if not ok or not user_db or len(user_db) <= 0:
             return False, "Invalid user_id given"
 
-    amount = amt_from_float(amount)
+    amount = misc.amt_from_float(amount)
     ok, trans_id = apply_transaction(user_id, amount, "Admin: " + injs["description"], as_admin=True)
     if not ok:
         return False, trans_id
