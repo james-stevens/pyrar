@@ -122,7 +122,7 @@ class PayPalWebHook:
 
     def credit_users_account(self):
         if self.user_id is None:
-            return False, "User-id is not set"
+            return err_exit("credit_users_account: user_id is missing")
         ok, trans_id = accounts.apply_transaction(self.user_id, self.amount, f"PayPal: {self.desc}", as_admin=True)
         if ok:
             spool_email.spool("payment_done", [["users", {
@@ -173,7 +173,7 @@ class PayPalWebHook:
         if not self.read_payment_capture():
             return False, self.msg
         if not self.get_user_id(True):
-            return False, "Failed to match user to payment"
+            return False, f"Failed to match user to payment - {self.token}"
         self.event_log("Successfully matched user to payment")
         if not self.credit_users_account():
             return False, "Failed to credit users account"
@@ -186,6 +186,7 @@ class PayPalWebHook:
         return True, True
 
     def process_webhook(self):
+        log(f"PayPal Webhook: {self.input['event_type']}")
         if "resource" not in self.input:
             return False, "ERROR: PayPal record does not have 'resource'"
 
