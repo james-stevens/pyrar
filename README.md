@@ -138,24 +138,24 @@ can be supprted without `fee-1.0`.
 - Money Managment fully woking with push-pay via PayPal fully working
 
 ## Domains
-- Search for available domains
-	- Built-in emoji search option
+- Search for available domains (very fast)
+	- Built-in emoji search option (super-cool feature)
+- IDN & Emoji Domain fully supported
 - Buy domains
 - Renew domains
 - Auto-Renew domains (partly working)
-- Gift a domain to a user on the same platform
+- Gift a domain to another user on the same platform
 - Transfer domains using the standard AuthCode mechanism
 - Edit NS and DS records (in the parent zone)
 - Edit locally hosted client zone data
 - Sign / Unsign locally hosted client zone file
 - Offer domains for sale to others users (partly working)
-- Event log to give a history of the domain (for admin use)
-- Support for the four standard domain locks
+- Support for the four EPP standard domain locks
 
 
 # Engine
 - All function required to support an EPP registry (delayed transfers needs work)
-- All functions required to support running a simple registry locally
+- All functions required to support running a registry locally (see below)
 - Schedule and process event jobs for aging domains (renewal reminders, auto-renew, expire, delete)
 - Cronjob for routine maintenance
 - Background processing pending payments after credit comes in
@@ -172,6 +172,7 @@ can be supprted without `fee-1.0`.
 - Add, edit, remove SysAdmins
 - One click view of the P/DNS data for TLDs/SLDs
 - Check domain data held at a remote EPP registry, shown in EPP format
+- View event log to give a history of the domain
 
 
 ## EMails
