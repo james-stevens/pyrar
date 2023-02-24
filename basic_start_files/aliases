@@ -14,6 +14,6 @@ operator:	root
 abuse:		postmaster
 decode:		root
 
-webhook: "| /usr/local/bin/webhook_wrapper"
+# webhook: "| /usr/local/bin/webhook_wrapper"
 noreply: "| cat >/dev/null"
-drs-ticket: "| /usr/local/bin/process_ticket_email > /tmp/ticket.log 2>&1"
+# drs-ticket: "| /usr/local/bin/process_ticket_email > /tmp/ticket.log 2>&1"

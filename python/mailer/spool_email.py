@@ -19,29 +19,25 @@ SPOOL_BASE = f"{os.environ['BASE']}/storage/perm/spooler"
 ERROR_BASE = f"{os.environ['BASE']}/storage/perm/mail_error"
 TEMPLATE_DIR = f"{os.environ['BASE']}/emails"
 
-REQUIRE_FORMATTING = ["price_paid", "acct_current_balance"]
+REQUIRE_FORMATTING = [
+    "price_paid", "price_charged", "acct_current_balance", "amount", "pre_balance", "post_balance",
+    "acct_current_balance", "acct_previous_balance", "acct_overdraw_limit", "acct_warn_low_balance", "for_sale_amount"
+]
 
 
-def format_currency(number, currency):
-    num = number
-    pfx = currency["symbol"]
-    if num < 0:
-        pfx += "-"
-        num *= -1
-    num = str(num)
-    places = currency["decimal"]
-    if len(num) < (places + 1):
-        num = ("000000000000000" + num)[(places + 1) * -1:]
-    neg_places = -1 * places
-    start = num[:neg_places]
-    use_start = ""
-    while len(start) > 3:
-        use_start += currency["separator"][0] + start[-3:]
-        start = start[:-3]
-    if len(start) > 0:
-        use_start = start + use_start
-
-    return pfx + use_start + currency["separator"][1] + num[neg_places:]
+def event_log(prefix, records):
+    email = records["user"]["email"] if "user" in records else None
+    user_id = records["user"]["user_id"] if "user" in records else None
+    domain_id = records["domain"]["domain_id"] if "domain" in records else None
+    msg_type = records["email"]["message"] if "email" in records else None
+    misc.event_log({
+        "event_type": f"{prefix}/{msg_type}",
+        "domain_id": domain_id,
+        "user_id": user_id,
+        "who_did_it": "emailer",
+        "from_where": "localhost",
+        "notes": f"{prefix} message '{msg_type}' to '{email}'"
+    })
 
 
 def load_records(which_message, request_list):
@@ -60,8 +56,8 @@ def load_records(which_message, request_list):
             return None
 
         for fmt in REQUIRE_FORMATTING:
-            if fmt in reply:
-                reply[fmt + "_fmt"] = format_currency(reply[fmt], my_currency)
+            if fmt in reply and reply[fmt] is not None:
+                reply[fmt + "_fmt"] = misc.format_currency(reply[fmt], my_currency)
 
         if table == "users":
             if not reply["email_verified"] and which_message != "verify_email":
@@ -101,6 +97,7 @@ def spool(which_message, request_list):
                                      prefix=which_message + "_") as fd:
         fd.write(json.dumps(request_data))
 
+    event_log("Queued", request_data)
     return True
 
 
@@ -114,8 +111,8 @@ def debug_formatter():
         "decimal": 6,
     }
 
-    print(format_currency(int(sys.argv[1]), def_cur))
-    print(format_currency(int(sys.argv[1]), cur))
+    print(misc.format_currency(int(sys.argv[1]), def_cur))
+    print(misc.format_currency(int(sys.argv[1]), cur))
     sys.exit(0)
 
 

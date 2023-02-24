@@ -10,17 +10,16 @@ sqlsh "CREATE TABLE payments (
     payment_id      ${auto},
 
     user_id			${row_id},
+
     provider		varchar(50) not null,
-    provider_tag	varchar(100) not null,
-    single_use		boolean not null default 0,
-    can_pull		boolean not null default 0,
-    verified		boolean not null default 0,
+    token			varchar(100) not null,
+    token_type		tinyint not null,
 
 	created_dt      datetime not null,
 	amended_dt      datetime not null,
 
 	primary key by_id (payment_id),
-	unique key by_tag(provider_tag,provider)'
+	unique key by_token(token,provider)
     ) ${utf8}"
 
 sqlsh "ALTER TABLE payments AUTO_INCREMENT = 10450"

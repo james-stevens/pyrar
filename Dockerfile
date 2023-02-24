@@ -15,7 +15,7 @@ RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml py3-requests
 RUN pip install apscheduler
 
 RUN apk add postfix
-COPY conf/aliases /etc/postfix/aliases
+COPY basic_start_files/aliases /etc/postfix/aliases
 
 RUN apk add ldns-tools openssl
 
@@ -43,21 +43,21 @@ COPY pems/myCA-2.pem /opt/pyrar/pems/myCA-2.pem
 RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
-COPY python /opt/pyrar/python/
-RUN python3 -m compileall /opt/pyrar/python/
-
-RUN ln -fns /opt/pyrar/python/bin/sqlsh.py /usr/bin/sqlsh
-RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
 RUN ln -fns /usr/local/bin/run_actions /etc/periodic/15min/run_actions
 RUN ln -fns /usr/local/bin/run_cron_jobs /etc/periodic/hourly/run_cron_jobs
 RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pem
 
-COPY policy_subst /opt/pyrar/policy_subst/
-COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY emails /opt/pyrar/emails/
 COPY etc /opt/pyrar/etc/
-
+COPY policy_subst /opt/pyrar/policy_subst/
 COPY bin /usr/local/bin/
+
+COPY python /opt/pyrar/python/
+RUN python3 -m compileall /opt/pyrar/python/
+RUN ln -fns /opt/pyrar/python/bin/sqlsh.py /usr/bin/sqlsh
+RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
+
+COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY htdocs /opt/pyrar/htdocs/
 
 CMD [ "/usr/local/bin/run_init" ]

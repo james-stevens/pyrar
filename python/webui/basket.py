@@ -15,6 +15,7 @@ from librar import sales
 from librar import mysql as sql
 from librar.policy import this_policy as policy
 from librar import domobj
+from backend import creator
 
 from backend import dom_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -42,15 +43,13 @@ def make_blank_domain(name, user_db, status_id):
 
 
 def event_log(req, order):
-    event_db = misc.where_event_log()
-    event_db.update(req.base_event)
+    event_db = req.base_event.copy()
     event_db.update({
+        "domain_id": order["dom_db"]["domain_id"] if "dom_db" in order else None,
         "event_type": f"order/{order['action']}",
-        "notes":
-        f"Order: {order['domain']} order for {order['action']} for {order['num_years']} yrs - {'failed' not in order}",
-        "domain_id": order["dom_db"]["domain_id"] if "dom_db" in order else None
+        "notes": f"Order: {order['domain']} of {order['action']} for {order['num_years']} yrs"
     })
-    sql.sql_insert("events", event_db)
+    misc.event_log(event_db)
 
 
 def webui_basket(basket, req):
@@ -175,7 +174,7 @@ def paid_for_basket_item(req, order, user_db):
 
     event_log(req, order)
     order["paid-for"] = True
-    sales.make_backend_job(order_db)
+    creator.make_backend_job(order_db["order_type"], order_db, order_db["num_years"], order_db["authcode"])
     return True
 
 
@@ -273,13 +272,13 @@ def get_order_domain_id(order, user_db):
 
     if order["action"] == "transfer":
         if dom_db["user_id"] == user_db["user_id"]:
-            return False, "Domain is already yours: {order['domain']}/{order['action']}"
+            return False, f"Domain is already yours: {order['domain']}/{order['action']}"
     elif order["action"] in ["recover", "renew"]:
         if dom_db["user_id"] != user_db["user_id"]:
             return False, f"{dom_db['name']} is not your domain ({order['action']})"
     elif order["action"] == "create":
         if len(dom_db) >= 1:
-            return False, "Domain already exists: {order['domain']}/{order['action']}"
+            return False, f"Domain already exists: {order['domain']}/{order['action']}"
         return True, -1
 
     if "domain_id" in dom_db:

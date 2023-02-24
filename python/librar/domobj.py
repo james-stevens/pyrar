@@ -32,9 +32,9 @@ class Domain:
         if user_id is not None:
             where["user_id"] = user_id
 
-        if not (reply := sql.sql_select_one("domains", where))[0]:
+        ok, self.dom_db = sql.sql_select_one("domains", where)
+        if not ok:
             return False, "Domain not found"
-        self.dom_db = reply[1]
         self.set_locks()
         return self.set_name(self.dom_db["name"])
 
@@ -73,9 +73,10 @@ class Domain:
         if user_id is not None:
             where["user_id"] = user_id
 
-        if not (reply := sql.sql_select_one("domains", where))[0]:
+        ok, reply = sql.sql_select_one("domains", where)
+        if not ok:
             return False, "Domain failed to load"
-        self.dom_db = reply[1]
+        self.dom_db = reply
         return self.set_locks()
 
     def set_locks(self):
@@ -153,11 +154,11 @@ class DomainList:
         if self.domobjs is None:
             return False, "Use `set_list` before `load_all`"
 
-        if (reply := sql.sql_select("domains",
-                                    {"name": [dom.name for __, dom in self.domobjs.items()]}))[0] and reply[1] is None:
+        ok, dom_dbs = sql.sql_select("domains",{"name": [dom.name for __, dom in self.domobjs.items()]},limit=len(self.domobjs))
+        if not ok or not dom_dbs:
             return False, "Failed to load domains from database"
 
-        domdb_by_name = {dom_db["name"]: dom_db for dom_db in reply[1]}
+        domdb_by_name = {dom_db["name"]: dom_db for dom_db in dom_dbs}
         for __, dom in self.domobjs.items():
             dom.dom_db = None
             if dom.name in domdb_by_name:

@@ -19,8 +19,8 @@ sqlsh "create table orders (
 	num_years			int not null,
 	authcode			varchar(50),
 
-	created_dt			datetime null,
-	amended_dt			datetime null,
+	created_dt			datetime not null,
+	amended_dt			datetime not null,
 
 	primary key (order_item_id),
 	key by_user(user_id)

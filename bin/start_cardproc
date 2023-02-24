@@ -2,5 +2,5 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-cd ${BASE}/python/pay_engine
-exec su daemon -s /bin/sh -c "exec ./run_payments.py  2>&1 | logger -t payments"
+cd ${BASE}/python/cardproc
+exec su daemon -s /bin/sh -c "exec ./run_cardproc.py  2>&1 | logger -t cardproc"

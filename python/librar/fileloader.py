@@ -3,24 +3,27 @@
 # Alternative license arrangements possible, contact me for more information
 """ load / reload JSON config files """
 
+import sys
 import os
 import json
 import inspect
+import syslog
 
-from librar.log import log, init as log_init
 from librar import static
 
 
 def load_file_json(filename):
-    context = inspect.stack()[1]
-    log(f"Reloading file '{filename}'", context)
+    where = inspect.stack()[1]
+    fname = where.filename.split("/")[-1].split(".")[0]
+    txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
+    syslog.syslog(syslog.LOG_NOTICE,f"{txt} -> Reloading file '{filename}'")
     try:
         with open(filename, "r", encoding='UTF-8') as file_fd:
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
     except (ValueError, IOError) as err:
-        log(f"load_file_json: {filename} : {str(err)}", context)
+        syslog.syslog(syslog.LOG_ERR,f"{txt} -> load_file_json: {filename} : {str(err)}")
 
     return None
 
@@ -65,6 +68,6 @@ class FileLoader:
 
 
 if __name__ == "__main__":
-    log_init(with_debug=True)
-    file = FileLoader(static.LOGINS_FILE)
+    syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
+    file = FileLoader(sys.argv[1])
     print(json.dumps(file.json, indent=4))

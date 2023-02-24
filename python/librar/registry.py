@@ -7,6 +7,7 @@ import json
 import random
 import requests
 
+from librar import misc
 from librar import static
 from librar import fileloader
 from librar import mysql as sql
@@ -14,7 +15,7 @@ from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
-MANDATORY_REGS_ITEMS = ["locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008"]
+MANDATORY_REGS_ITEMS = ["max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008"]
 
 DEFAULT_XMLNS = {
     "contact": "urn:ietf:params:xml:ns:contact-1.0",
@@ -270,16 +271,10 @@ def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     if dom[action] is None or dom[action] == 0:
         our_price *= float(num_years)
 
-    site_currency = policy.policy("currency")
-    our_price *= static.POW10[site_currency["decimal"]]
-    our_price = round(float(our_price), 0)
-
+    currency = policy.policy("currency")
     if retain_reg_price:
-        regs_price *= static.POW10[site_currency["decimal"]]
-        regs_price = round(float(regs_price), 0)
-        dom["reg_" + action] = int(regs_price)
-
-    dom[action] = int(our_price)
+        dom["reg_" + action] = misc.amt_from_float(regs_price, currency)
+    dom[action] = misc.amt_from_float(our_price, currency)
 
 
 def start_up():

@@ -11,8 +11,8 @@ sqlsh "CREATE TABLE zones (
 	zone			${domain_name} not null,
 	registry		varchar(50) not null,
 	price_info		varchar(3500),
-	enabled			${flag} not null default 1,
-	allow_sales		${flag} not null default 1,
+	enabled			boolean not null default 1,
+	allow_sales		boolean not null default 1,
 	renew_limit		int,
 
 	owner_user_id		${row_id_null},

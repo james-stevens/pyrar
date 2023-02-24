@@ -20,7 +20,7 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 
     where_clauses = [
         f"user_id = {user_id}", "not account_closed", "not acct_on_hold",
-        f"(acct_current_balance + {amount}) > acct_overdraw_limit"
+        f"(acct_current_balance + {amount}) >= acct_overdraw_limit"
     ]
     admin_where = [f"user_id = {user_id}"]
 
@@ -54,10 +54,10 @@ def apply_transaction(user_id, amount, desc, as_admin=False):
 
 
 def find_payment_record(injs):
-    if "provider_tag" not in injs or not validate.is_valid_display_name(injs["provider_tag"]):
+    if "token" not in injs or not validate.is_valid_display_name(injs["token"]):
         return False, "Insufficient or invalid data"
 
-    where = {"provider_tag": injs["provider_tag"]}
+    where = {"token": injs["token"]}
     if "provider" in injs:
         where["provider"] = injs["provider"]
 
@@ -78,36 +78,36 @@ def admin_trans(injs):
         return False, "Invalid description"
 
     pay_db = None
+    user_db = None
     if "user_id" in injs:
         user_id = injs["user_id"]
         if not isinstance(user_id, int):
             return False, "Missing or invalid data"
+    elif "email" in injs:
+        if not validate.is_valid_email(injs["email"]):
+            return False, "Invalid email address given"
+        ok, user_db = sql.sql_select_one("users", {"email": injs["email"]})
+        if not ok or not user_db or not len(user_db) or not sql.has_data(user_db, "user_id"):
+            return False, f"No user matching '{injs['email']}' could be found"
+        user_id = user_db["user_id"]
     else:
         ok, pay_db = find_payment_record(injs)
         if not ok:
             return False, pay_db
         user_id = pay_db["user_id"]
 
-    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
-    if not ok or not user_db or len(user_db) <= 0:
-        return False, "Invalid user_id given"
+    if user_db is None:
+        ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
+        if not ok or not user_db or len(user_db) <= 0:
+            return False, "Invalid user_id given"
 
-    site_currency = policy.policy("currency")
-    amount *= static.POW10[site_currency["decimal"]]
-    amount = int(round(amount, 0))
-
+    amount = misc.amt_from_float(amount)
     ok, trans_id = apply_transaction(user_id, amount, "Admin: " + injs["description"], as_admin=True)
     if not ok:
         return False, trans_id
 
-    if pay_db is not None:
-        if pay_db["single_use"]:
-            sql.sql_update_one(
-                "payments", {
-                    "provider": "DONE:" + pay_db["provider"],
-                    "provider_tag": "DONE:" + pay_db["provider_tag"],
-                    "amended_dt": None
-                }, {"payment_id": pay_db["payment_id"]})
+    if pay_db is not None and pay_db["token_type"] == static.PAY_TOKEN_SINGLE:
+        sql.sql_delete_one("payments", {"payment_id": pay_db["payment_id"]})
 
     return True, True
 

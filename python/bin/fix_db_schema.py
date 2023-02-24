@@ -131,5 +131,5 @@ for table, table_data in save_schema.items():
                 unique = f"unique index {index}"
             else:
                 unique = f"index {index}"
-            query = f"alter table {table} add {unique} ({'.'.join(idx_data['columns'])})"
+            query = f"alter table {table} add {unique} ({','.join(idx_data['columns'])})"
             run_query(query)

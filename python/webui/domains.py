@@ -81,11 +81,10 @@ def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
 
 
 def check_domain_is_mine(user_id, domain, require_live):
-    dom = domobj.Domain()
-    if (not sql.has_data(domain, ["domain_id", "name"]) or not isinstance(domain["domain_id"], int)
-            or not validate.is_valid_fqdn(domain["name"])):
+    if not sql.has_data(domain, "name") or not validate.is_valid_fqdn(domain["name"]):
         return False, "Domain data missing or invalid"
 
+    dom = domobj.Domain()
     if not dom.load_name(domain["name"], user_id)[0]:
         return False, "Domain not found or not yours"
 
@@ -203,20 +202,23 @@ def webui_gift_domain(req):
     if "dest_email" not in req.post_js or not validate.is_valid_email(req.post_js["dest_email"]):
         return False, "Recipient email missing or invalid"
 
-    if not (reply := sql.sql_select_one("users", {"email": req.post_js["dest_email"]}))[0]:
+    ok, new_user_db = sql.sql_select_one("users", {"email": req.post_js["dest_email"]})
+    if not ok:
         return False, "Recipient email invalid"
-    new_user_id = reply[1]["user_id"]
 
     where = {col: req.post_js[col] for col in ["domain_id", "name", "user_id"]}
-    if not sql.sql_update_one("domains", {"user_id": new_user_id}, where):
+    if not sql.sql_update_one("domains", {"user_id": new_user_db["user_id"]}, where):
         return False, "Gifting domain failed"
+
+    pdns.delete_from_catalog(dom.dom_db["name"])
+    pdns.delete_zone(dom.dom_db["name"])
 
     spool_email.spool("gifted_domain", [["domains", {
         "domain_id": req.post_js["domain_id"]
     }], ["users", {
-        "user_id": new_user_id
+        "user_id": new_user_db["user_id"]
     }]])
-    return True, {"new_user_id": new_user_id}
+    return True, {"new_user_id": new_user_db["user_id"]}
 
 
 def webui_update_domains_flags(req):

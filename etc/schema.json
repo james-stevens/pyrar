@@ -50,7 +50,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 50,
@@ -66,7 +66,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "domain_id": {
             "unsigned": true,
@@ -77,7 +77,7 @@
          },
          "execute_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "failures": {
             "size": 11,
@@ -357,7 +357,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 100,
@@ -376,7 +376,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "domain_id": {
             "unsigned": true,
@@ -413,7 +413,7 @@
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": false
+            "null": true
          },
          "reg_create_dt": {
             "type": "datetime",
@@ -429,8 +429,7 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
-            "default": 0
+            "null": false
          }
       },
       "indexes": {
@@ -551,7 +550,7 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "authcode": {
             "size": 50,
@@ -560,7 +559,7 @@
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "currency_charged": {
             "size": 3,
@@ -638,12 +637,6 @@
             "type": "datetime",
             "null": false
          },
-         "can_pull": {
-            "size": 1,
-            "type": "tinyint",
-            "null": false,
-            "default": 0
-         },
          "created_dt": {
             "type": "datetime",
             "null": false
@@ -660,27 +653,20 @@
             "type": "varchar",
             "null": false
          },
-         "provider_tag": {
+         "token": {
             "size": 100,
             "type": "varchar",
             "null": false
          },
-         "single_use": {
-            "size": 1,
+         "token_type": {
+            "size": 4,
             "type": "tinyint",
-            "null": false,
-            "default": 0
+            "null": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
-            "default": 0
-         },
-         "verified": {
-            "size": 1,
-            "type": "tinyint",
             "null": false,
             "default": 0
          }
@@ -692,9 +678,9 @@
             ],
             "unique": true
          },
-         "by_tag": {
+         "by_token": {
             "columns": [
-               "provider_tag",
+               "token",
                "provider"
             ],
             "unique": true
@@ -773,10 +759,9 @@
             "null": false
          },
          "sales_type": {
-            "size": 20,
+            "size": 50,
             "type": "varchar",
-            "null": false,
-            "default": "none"
+            "null": false
          },
          "transaction_id": {
             "unsigned": true,
@@ -1003,11 +988,11 @@
          },
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": false
          },
          "default_auto_renew": {
             "size": 1,
@@ -1023,7 +1008,7 @@
          "email": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": false
          },
          "email_verified": {
             "size": 1,
@@ -1043,7 +1028,7 @@
          "password": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": false
          },
          "password_reset": {
             "size": 100,
@@ -1087,8 +1072,7 @@
    "zones": {
       "columns": {
          "allow_sales": {
-            "unsigned": true,
-            "size": 3,
+            "size": 1,
             "type": "tinyint",
             "null": false,
             "default": 1
@@ -1102,8 +1086,7 @@
             "null": true
          },
          "enabled": {
-            "unsigned": true,
-            "size": 3,
+            "size": 1,
             "type": "tinyint",
             "null": false,
             "default": 1

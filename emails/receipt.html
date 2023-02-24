@@ -1,5 +1,5 @@
 {% include "start.inc" %}
-Subject: Order processed for {{sale.sales_type}} on {{domain.display_name}} ({{domain.name}})
+Subject: {{policy.business_name}}: Order processed for {{sale.sales_type}} on {{domain.display_name}} ({{domain.name}})
 
 <html>
 <style type='text/css'>
@@ -23,4 +23,3 @@ Your order for `{{sale.sales_type}}` for {{sale.num_years}} years, has been succ
 
 
 {% include "end.html" %}
-</body></html>

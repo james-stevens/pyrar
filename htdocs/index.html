@@ -46,6 +46,7 @@ const pre_get_elm = [
 	"userSpace","output","topSpan","search","businessName"
 	];
 
+payments = {};
 elm = {};
 gbl = {
 	"theme": window.localStorage.theme,
@@ -66,11 +67,12 @@ gbl = {
 	credit: "&#x1F4B3;",
 	lock: "&#x1F512;",
 	unlock: "&#x1F513;",
+	thumb: "&#x1F44d;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
 
-	def_max_checks: 2
+	def_max_checks: 5
 	};
 
 ctx = {};
@@ -172,6 +174,7 @@ function togglePopUp(name,tmout)
 	if (name=="AddRRwin") e = document.getElementById("rr_name");
 	if (name=="AddTLSAwin") e = document.getElementById("tlsa_o");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
+	if (name=="TopUpAcct") e = document.getElementById("top_up_amount");
 	if (e) { e.focus(); e.select(); }
 
 	return false;
@@ -523,8 +526,11 @@ function go_welcome(with_push)
 			changeTheme(gbl.config.policy.default_theme);
 
 		gbl.config.ok_tlds = {};
-		gbl.currency = policy("currency",gbl.config.default_currency);
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
+
+		if (gbl.config.payment) {
+			for(let i in gbl.config.payment) add_payment_script(i);
+			}
 
 		let my_icon = policy("icon",null);
 		let site_name = policy("business_name","Registrar");
@@ -550,6 +556,7 @@ function go_welcome(with_push)
 				check_router_path();
 				});
 			} else { loggedOut(); check_router_path(); }
+
 		});
 }
 
@@ -682,7 +689,9 @@ function check_router_path()
 function catch_user_data(reply)
 {
 	["failed_basket","transactions","user","domains","orders"].forEach((item) => {
-		if (item in reply) ctx[item] = reply[item];
+		if (item in reply) {
+			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
+			}
 		})
 }
 
@@ -832,7 +841,7 @@ function searchNext()
 
 	let max = gbl.def_max_checks;
 
-	if ((first.registry in gbl.config.registry)&&("max_checks" in gbl.config.registry[first.registry]))
+	if ((first.registry in gbl.config.registry)&&(gbl.config.registry[first.registry].max_checks))
 		max = gbl.config.registry[first.registry].max_checks;
 
 	while((ctx.search.todo.length > 0)&&(srch.length < max)&&(first.registry == ctx.search.todo[0].registry)) {
@@ -905,6 +914,7 @@ function postDomainTransfer()
 		f.trans_domain_name.focus();
 		return errMsg("Invalid domain name","trans_domain_name");
 		}
+
 	callApi("domain/transfer",(ok,reply) => {
 		// # CODE
 		console.log(ok,reply);
@@ -915,6 +925,7 @@ function postDomainTransfer()
 				}
 			}
 		);
+
 	return false;
 }
 
@@ -943,7 +954,7 @@ function request_transfer(with_push)
 
 function userDomainList()
 {
-	let x = "<table align=center cellspacing=1 cellpadding=0 border=0>";
+	let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
 	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
 	x += "</td></tr>";
@@ -1110,13 +1121,13 @@ function postCloseAccount()
 
 function goMarketPlace()
 {
-	errMsg("Not yet implemented","marketPlaceBtn");
+	errMsg(gbl.thumb+"&nbsp;Coming Soon","marketPlaceBtn");
 }
 
 
 
-function enable_two_fa() { errMsg("Not yet implemented","edit2FA"); }
-function disable_two_fa() { errMsg("Not yet implemented","edit2FA"); }
+function enable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
+function disable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
 
 
 
@@ -1140,14 +1151,14 @@ function user_settings(with_push)
 
 
 	x += settings_header("Control Two-Factor Authentication");
-	x += "<table id=edit2FA width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
+	x += "<table width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	if (("two_fa" in ctx.user) && (ctx.user.two_fa != null) && (ctx.user.two_fa != "")) {
 		x += "<tr><td colspan=2>Disable Google Authenticator two-factor authentication</td></tr>";
-		x += "<tr><td colspan=2></td><td align=right>"+btn("disable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		x += "<tr><td colspan=2></td><td id=2fa_section align=right>"+btn("disable_two_fa()","Disable 2FA","Disable Google Authenticator two-factor authentication",100)+"</td></tr>";
 		}
 	else {
 		x += "<tr><td colspan=2>Enable Google Authenticator two-factor authentication</td></tr>";
-		x += "<tr><td colspan=2></td><td align=right>"+btn("enable_two_fa()","Enable 2FA","Enable Google Authenticator two-factor authentication",100)+"</td></tr>";
+		x += "<tr><td colspan=2></td><td id=2fa_section align=right>"+btn("enable_two_fa()","Enable 2FA","Enable Google Authenticator two-factor authentication",100)+"</td></tr>";
 		}
 	x += "</table></form></td></tr>";
 
@@ -1156,11 +1167,11 @@ function user_settings(with_push)
 	x += "<form name=editUserPassword method=post action=# onSubmit='postUserPassword(); return false;'>";
 	x += "<table id=editUserPassword width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += form_prompt("Current Password");
-	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
-	x += form_prompt("New Password");
-	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Your new password" type=password id='new_password'></td></tr>`;
-	x += form_prompt("Confirm Password");
-	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm your new password" type=password id='confirm_password'></td></tr>`;
+	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Current password" type=password id='password'></td></tr>`;
+	x += form_prompt("<b>New</b> Password");
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="New password" type=password id='new_password'></td></tr>`;
+	x += form_prompt("Confirm <b>New</b> Password");
+	x += `<input style="width: 300px;" autocomplete="new-password" placeholder="Confirm New Password" type=password id='confirm_password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Change'></td></tr>";
 	x += "</table></form></td></tr>";
 
@@ -1244,7 +1255,7 @@ function show_transactions(with_more)
 function click_add_payment()
 {
 	let data = {}
-	for(let i of ["provider","provider_tag","single_use","can_pull"]) {
+	for(let i of ["provider","token","token_type"]) {
 		let e = document.getElementById("pay."+i);
 		if (!e) {
 			errMsg("Failure in payment plugin, see console","add_pay_div");
@@ -1262,50 +1273,76 @@ function click_add_payment()
 
 
 
-function add_payment()
+
+function top_up_account()
 {
-	hidePopUp();
-
-	let e = document.getElementById("add_payment_type");
-	if (!e) return;
-
-	callApi("payments/html",(ok,reply) => {
-		let p = document.getElementById("add_pay_div");
-		if ((ok)&&(p)) {
-			let x="<table align=center border=0>";
-			x += settings_header(`Add Payment Method - ${gbl.config.payments[e.value]}`)+"<tr><td>"+reply+"</td></tr></table>";
-			p.innerHTML = x;
-			let f = document.getElementById("pay.provider_tag");
-			if (f) f.focus();
-			return;
-			}
-		def_errMsg("Error getting HTML for payment",reply,"add_pay_div");
-		},{ json: {"method":e.value}});
-}
-
-
-
-function add_payment_form()
-{
-	let x = "<table>";
-	x += "<tr><td class=fpormPromt>Select method to add:</td>";
-	x += "<td><select id=add_payment_type>"
-	for(let i in gbl.config.payments) {
-		x += `<option value='${i}'>${gbl.config.payments[i]}`;
+	let f = document.top_up_form;
+	if ((!f.top_up_method.value)||(!(f.top_up_method.value in payments))||(!payments[f.top_up_method.value].single)) {
+		errMsg("Please select a payment method","TopUpAcct");
+		f.top_up_method.focus();
+		return false;
 		}
-	x += "</select></td></tr>";
-	x += "<tr><td colspan=2 class=btmBtnBar>"+btn("add_payment()","Add","Add payment method",75)+"</td></tr>";
-	return x +"</table>";
+
+	if ((!f.top_up_amount.value)||(isNaN(f.top_up_amount.value))) {
+		errMsg("Please enter a top-up amount","TopUpAcct");
+		f.top_up_amount.focus();
+		return false;
+		}
+
+	let raw_amt = from_float(f.top_up_amount.value)
+	let x = `<center><h3>Top-Up Amount: ${format_amount(raw_amt)}</h3></center>`;
+	x += "<div id='payment-whole'></div>";
+	elm.userSpace.innerHTML = x;
+
+	payments[f.top_up_method.value].single(`${policy("business_name","Registrar")}: Top-Up`,raw_amt);
+
+	return false;
 }
 
 
 
-function remove_payment(provider,provider_tag)
+function make_pay_by_select(name,onchange)
 {
-	callApi("payments/delete",(ok,reply) => {
+	let extra="", x="";
+	if (onchange) extra = `onChange="${onchange}(this);"`;
+	x += `<select ${extra} id=top_up_method><option value=''>--- Select Payment Method ---`;
+	for(let i in payments)
+		if ((i in gbl.config.payment)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
+	x += "</select>";
+	return x;
+}
+
+
+
+function top_up_account_form()
+{
+	let x = "<form name=top_up_form onSubmit='return top_up_account();' action=# method=post><table>";
+	x += "<tr><td class=formPrompt>Top-Up Amount:</td>";
+	x += `<td>${gbl.config.currency.symbol}<input id='top_up_amount' style="width: 250px;"></td></tr>`;
+	x += "<tr><td class=formPrompt>How to Pay:</td>";
+	x += "<td>"+make_pay_by_select("top_up_method")+"</td></tr>";
+	x += "<tr><td colspan=2 class=btmBtnBar>"
+	x += btn("hideAllPopUp()","Cancel","Cancel this top-up",80);
+	x += "<input class=myBtn type=submit value='Top-Up' title='Make top-up payment now' style='width: 120px;'></td></tr>";
+
+	return x +"</form></table>";
+}
+
+
+
+function remove_payment(provider,token)
+{
+	callApi("payments/single",(ok,reply) => {
 		if (!ok) return def_errMsg("Delete payment method failed",reply,"add_pay_div");
 		payment_methods(true);
-		}, { json: { "provider":provider, "provider_tag":provider_tag }});
+		}, { 
+			method: "delete",
+			json: {
+				"provider": provider,
+				"token": token
+				}
+			}
+		);
 }
 
 
@@ -1316,23 +1353,25 @@ function payment_methods(with_push)
 	callApi("payments/list",(ok,reply) => {
 		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><td class=btmBtnBar>";
+
 		x += generic_popup_btn({
-			"name": "AddPayment",
-			"label": "Add Payment",
-			"width": 100,
+			"name": "TopUpAcct",
+			"label": "Top-Up Account",
+			"width": 120,
 			"timeout": null,
-			"title": "Add a payment method",
-			"internal": add_payment_form,
+			"title": "Add a credit to your account for future payments",
+			"internal": top_up_account_form,
 			"style": "overflow: auto; margin-left: -250;"
 			});
+
 		x += "</td></tr></table>";
 		x += "<div id='add_pay_div'>"+gbl.gap;
 		if (reply.length>0) {
 			x += "<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 			x += "<tr><th>Payment Method</th><th>Payment Data</th></tr>"
 			for(let i of reply) {
-				x += `<tr onClick='remove_payment("${i.provider}","${i.provider_tag}");' class=dataRow title="Click to remove this payment method"><td>${gbl.config.payments[i.provider]}</td>`;
-				x += `<td>${i.provider_tag}</td></tr>`;
+				x += `<tr onClick='remove_payment("${i.provider}","${i.token}");' class=dataRow title="Click to remove this payment record"><td>${i.provider}</td>`;
+				x += `<td>${i.token}</td></tr>`;
 				}
 			x += "</table>";
 			}
@@ -1378,7 +1417,7 @@ function userDetails()
 	x += `<tr><td class=promptCell>Account Balance :</td><td class=dataCell>${show_bal}</td></tr>`;
 	x += "</td></tr></table>";
 
-	if ((ctx.orders)&&(ctx.orders.length > 0)) x += order_details(false);
+	if ((ctx.orders)&&(ctx.orders.length)) x += order_details(false);
 
 	return x + "</table>"
 }
@@ -1420,8 +1459,27 @@ function order_details(as_first)
 		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
 	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
 
+	if (total > ctx.user.acct_current_balance) {
+		x += "<tr><td colspan=6 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
+		x += "<tr><td colspan=6><div id='payment-whole'>&nbsp;</div></td></tr>";
+		}
+
 	return x+"</table></td></tr>";
 }
+
+
+
+function pay_for_order(pay_by)
+{
+	if (!((pay_by.value in payments)&&(payments[pay_by.value].single)))
+		return errMsg("Unable to find payment handler for this payment provider","payment-whole");
+
+	let total = 0;
+	for(let order of ctx.orders) total += order.price_paid;
+
+	payments[pay_by.value].single(`${policy("business_name","Registrar")}: Domain Names`,(total-ctx.user.acct_current_balance));
+}
+
 
 
 
@@ -1486,7 +1544,7 @@ function place_order()
 
 		user_info();
 		let fn = show_new_orders
-		if ((ctx.orders.length==0)&&(!gbl.basket)) {
+		if ((!ctx.orders.length)&&(!gbl.basket)) {
 			delete ctx.orders;
 			fn = show_all_orders_processed;
 			}
@@ -1495,12 +1553,29 @@ function place_order()
 }
 
 
+function orders_icon() { load_domains_list(do_orders_icon); }
+
+function do_orders_icon()
+{
+	callApi("orders/details",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to load orders",reply,"errorSpan");
+		catch_user_data(reply);
+		show_one_space("userSpace");
+		if ((ctx.orders)&&(ctx.orders.length)) {
+			elm.userSpace.innerHTML = "<table align=center width=75% border=0>"+order_details(true)+"</table>";
+			size_one_space();
+			}
+		else show_all_orders_processed();
+		});
+}
+
 
 function show_all_orders_processed()
 {
 	let x = "<table align=center width=50% border=0><tr><td>"
 	x += "<h2>All orders processed</h2></td></tr></table>";
 	elm.userSpace.innerHTML = x;
+	show_one_space("userSpace");
 	size_one_space();
 }
 
@@ -2800,7 +2875,7 @@ function searchFocus()
 <colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
 <tr><td><span id="errorSpan">&nbsp;</span></td>
 <td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
-<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="load_domains_list(myAccount);">&#x1F4B3;</span></td>
+<td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="orders_icon();">&#x1F4B3;</span></td>
 <td align=center>
 <span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>

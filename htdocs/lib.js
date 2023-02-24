@@ -21,11 +21,21 @@ const validations = {
 	  rrDS: /^(([123456]?[0-9]{1,4}|[0-9]1,4) ([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]) [1234] [0-9A-F ]{40,100})$/i,
 	};
 
+const pow10 = { 0:1, 1:10, 2:100, 3:1000, 4:10000, 5:100000, 6:1000000, 7:10000000, 8:100000000, 9:1000000000, 10:10000000000 };
+
+function from_float(amount)
+{
+	return Math.round(parseFloat(amount)*pow10[gbl.config.currency.decimal]);
+}
+
 
 function callApi(sfx,callback,inData)
 {
 	document.body.style.cursor="progress";
 	elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
+
+	function default_callback(ok,reply) { console.log("CALLBACK:",ok,reply); return; }
+	if (!callback) callback = default_callback;
 
 	function we_are_done(ok,reply)
 	{
@@ -168,24 +178,27 @@ function supported_tld(fqdn)
 
 
 
-function format_amount(num)
+function format_amount(num,omit_symbol)
 {
-	let pfx = gbl.currency.symbol;
+	if (num==null) return "";
+	let cur = gbl.config.currency;
+	let pfx = cur.symbol;
+	if (omit_symbol) pfx = "";
 	if (num < 0) { pfx += "-"; num *= -1; }
 	num = num.toString();
-	if (num.length < (gbl.currency.decimal+1))
-		num = ("000000000000000"+num).slice((gbl.currency.decimal+1)*-1);
+	if (num.length < (cur.decimal+1))
+		num = ("000000000000000"+num).slice((cur.decimal+1)*-1);
 
-	let neg_places = -1 * gbl.currency.decimal;
+	let neg_places = -1 * cur.decimal;
 	let use_start="";
 	let start = num.slice(0,neg_places);
 	while(start.length > 3) {
-		use_start += gbl.currency.separator[0]+start.slice(-3);
+		use_start += cur.separator[0]+start.slice(-3);
 		start = start.slice(0,-3);
 		}
 
 	if (start.length) use_start = start+use_start;
-	return pfx+use_start+gbl.currency.separator[1]+num.slice(neg_places);
+	return pfx+use_start+cur.separator[1]+num.slice(neg_places);
 }
 
 
@@ -331,4 +344,23 @@ function generic_popup_btn(config)
     x += `<span class="popuptext" ${pop_style} id="${config["name"]}">`;
     x += config["internal"](config["param"]);
     return x + `</span></div>`;
+}
+
+
+
+function add_payment_script(module) {
+    let s = document.createElement('script');
+    s.setAttribute("src", "/"+module+".js" );
+    s.setAttribute("type", 'text/javascript');
+    s.onload = () => { eval(module+"_startup()"); };
+    document.body.appendChild( s );
+}
+
+
+
+function rand_tag(want_char)
+{
+	if (!want_char) want_char = 30
+	let myar = new Uint8Array(10);
+    return btoa(window.crypto.getRandomValues(myar)).slice(0,want_char);
 }

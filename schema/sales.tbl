@@ -20,7 +20,7 @@ sqlsh "create table sales (
 	zone_name			${domain_name},
 	registry            varchar(50) not null,
 	user_email			${email},
-	sales_type			varchar(20) not null default 'none',
+	sales_type			varchar(50) not null,
 	num_years			int not null,
 
 	is_refund_of		${row_id_null},

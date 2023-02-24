@@ -150,9 +150,10 @@ def run_sql(sql, func):
                 return func()
             except Exception as exc:
                 this_exc = exc
+        log(f"SQL: {sql}")
         log("SQL-ERROR:" + str(this_exc))
         print("SQL-ERROR:" + str(this_exc))
-        return None, None
+        return False, this_exc.args[1]
 
 
 def run_select(sql):
@@ -185,12 +186,13 @@ def sql_delete_one(table, where):
     return ok is not None
 
 
-def sql_insert(table, column_vals):
+def sql_insert(table, column_vals, ignore=False):
     if table in static.AUTO_CREATED_AMENDED_DT:
         for col in ["amended_dt", "created_dt"]:
             if col not in column_vals:
                 column_vals[col] = None
-    return sql_exec(f"insert into {table} set " + data_set(column_vals, ","))
+    with_ignore = "ignore" if ignore else ""
+    return sql_exec(f"insert {with_ignore} into {table} set " + data_set(column_vals, ","))
 
 
 def sql_exists(table, where):

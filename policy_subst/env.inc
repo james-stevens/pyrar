@@ -1,9 +1,11 @@
-export LOG_PYTHON_REQ="{{policy.log_python_req}}"
-export LOGLEVEL_PYTHON="{{policy.loglevel_python}}"
-export FACILITY_PYTHON="{{policy.facility_python}}"
-export LOGLEVEL_NGINX="{{policy.loglevel_nginx}}"
-export FACILITY_NGINX="{{policy.facility_nginx}}"
+export LOGLEVEL_PYTHON="{{policy.logging_python_level}}"
+export FACILITY_PYTHON="{{policy.logging_python}}"
+
+export LOGLEVEL_NGINX="{{policy.logging_nginx_level}}"
+export FACILITY_NGINX="{{policy.logging_nginx}}"
+
 export SYSLOG_SERVER="{{policy.syslog_server}}"
+
 export WEBUI_SESSIONS="{{policy.webui_sessions}}"
 export ADMIN_SESSIONS="{{policy.admin_sessions}}"
 

@@ -3,38 +3,33 @@
 # Alternative license arrangements possible, contact me for more information
 """ used by both the user & admin ui's """
 
-from webui import pay_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
-from webui.pay_plugins import *
+import json
 
 from librar.policy import this_policy as policy
 from librar import static
 from librar import mysql as sql
 from librar import registry
+from payments import libpay
 
 
 def ui_config():
-    if (payment_methods := policy.policy("payment_methods")) is None:
-        payment_methods = list(pay_handler.pay_plugins)
-
-    return {
-        "default_currency": policy.policy("currency"),
+    full_conf = {
+        "currency": policy.policy("currency"),
         "registry": registry.tld_lib.regs_send(),
         "dom_flags": static.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
         "status": static.DOMAIN_STATUS,
-        "payments": {
-            pay: pay_handler.pay_plugins[pay]["desc"]
-            for pay in payment_methods if "desc" in pay_handler.pay_plugins[pay]
-        },
+        "payment": libpay.config(),
         "policy": policy.data()
     }
+
+    return full_conf
 
 
 def main():
     sql.connect("webui")
     registry.start_up()
-    print(ui_config())
+    print(json.dumps(ui_config(), indent=3))
 
 
 if __name__ == "__main__":
