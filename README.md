@@ -102,6 +102,8 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Maintain payment options e.g. card / account details etc (some done, still needs work)
 - Close account
 
+- Account Managment fully woking with push-pay via PayPal fully working
+
 ## Domains
 - Search for available domains
 	- Built-in emoji search option
@@ -134,6 +136,10 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 	- view domain history
 	- view transaction history
 	- view activity history
+- Search, Add, Edit, Delete rows in any table
+- Quick search by SLD name, SLD id, user's email, user's id, TLD name
+- Add, edit, remove SysAdmins
+- One click view of the P/DNS data for TLDs/SLDs
 
 
 ## EMails
@@ -143,41 +149,49 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Supported email events are...
 	- Password Reset request
 	- Password reset confirmation
+	- Password Changed (warning to user, just in case)
 	- Renewal Reminder
 	- Verify User's email address
 	- Notification when you've been gifted a domain
 	- Receipt for all payments
 	- Domain transfer request succeeded (by EPP)
+	- Payment received
+	- Order processed
 
+
+## Internal Registry
+- Maintain the TLD zone file, automatically signed
+- Support premium domain pricing
+	- By individually named domain
+	- By wildcard/regular expression, e.g
+		- "all one/two letter SLDs" = `^(.|..)$`
+		- "all unicode / punycode / emoji domain" = `^xn--`
 
 
 # What doesn't work, yet
 
-It's getting pretty close to ready to use !
+It's probably now ready to go live in a limited installation - so long as yoyu're happy with only being paid by PayPal.
 
 
 ## Users
 - 2fA (enable & disable)
-- Make payments - e.g. PayPal, Stripe, Coinbase
+- Make payments - e.g. Stripe, Coinbase
 
 ## Domains
 - UI to request transfers (some done)
 - Auto-renewals
 - Ability to "recover" an expired domain
 
-
 ## Contacts
 Right now there is no support for contact records & attaching contact record to domains.
 This may be required to be allowed to work with some EPP registries, but my preferance is for privacy!
 So there is a `contacts` table, in case this functionality needs to be added, but right now its not used.
 
-
 ## EPP
 - Poll for messages and know what some mean!!
 
-
 ## Admin Web/UI
-- refunds
+- refunds (partly done)
 - check data held at registry (in EPP)
 - add & remove users for the admin system
 
