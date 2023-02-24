@@ -29,7 +29,8 @@ policy_defaults = {
     "logging_default": "local0",
     "logging_python": "local0",
     "logging_nginx": "local0",
-    "logging_pdns": "local0",
+    "logging_nginx_level": "warn",
+    "logging_pdns": "0",
 
     "log_python_code": True,
     "session_timeout": 60,

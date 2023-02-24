@@ -4,6 +4,9 @@
 
 . /run/policy_subst/env.inc
 
+severity="${LOGLEVEL_NGINX:-warn}"
+facility="${FACILITY_NGINX:-local0}"
+
 
 function if_has_pem()
 {
@@ -35,7 +38,7 @@ pid /run/nginx.pid;
 events { worker_connections  1024; }
 
 user nginx;
-error_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx error;
+error_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx error;
 
 http {
 	fastcgi_intercept_errors on;
@@ -51,7 +54,7 @@ http {
 	upstream wsgi_admin { server unix:/run/wsgi_admin.sock; }
 
 	server {
-		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_webui,severity=${LOGLEVEL_NGINX};
+		access_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx_webui,severity=${severity};
 		error_page 404 =200 /;
 
 
@@ -65,7 +68,7 @@ echo "
 		}
 
 	server {
-		access_log syslog:server=unix:/dev/log,facility=${FACILITY_NGINX},tag=nginx_admin,severity=${LOGLEVEL_NGINX};
+		access_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx_admin,severity=${severity};
 		error_page 404 =200 /;
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
@@ -83,7 +86,7 @@ echo "
 			}
 	}"
 
-awk 'BEGIN { fac="'"${FACILITY_NGINX}"'"; lvl="'"${LOGLEVEL_NGINX}"'"; }
+awk 'BEGIN { fac="'"${facility}"'"; lvl="'"${severity}"'"; }
 	{
 	printf "\tupstream epp_%s {\n",$1
 	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$1
