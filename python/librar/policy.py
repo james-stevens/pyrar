@@ -18,18 +18,24 @@ policy_defaults = {
     "strict_referrer": True,
     "pdns_log_facility": 0,
     "pdns_log_level": 5,
+
     "website_name": "https://example.com/",
+
     "name_sender": "Customer Support",
+	"admin_email": "pyrar@example.com",
     "email_sender": "support@example.com",
     "email_return": "no_reply@example.com",
-    "facility_backend": "local0",
-    "facility_python_code": "local0",
+
+    "logging_default": "local0",
+    "logging_python": "local0",
+    "logging_nginx": "local0",
+    "logging_pdns": "local0",
+
     "log_python_code": True,
     "session_timeout": 60,
     "webui_sessions": 5,
     "admin_sessions": 3,
     "currency": static.DEFAULT_CURRENCY,
-    "facility_epp_api": "local0",
     "log_epp_api": True,
     "business_name": "Registry",
     "dnssec_algorithm": "ecdsa256",

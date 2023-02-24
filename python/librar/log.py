@@ -3,9 +3,12 @@
 # Alternative license arrangements possible, contact me for more information
 """ functions for sys-logging """
 
+import sys
 import syslog
 import inspect
 import datetime
+
+from librar.policy import this_policy as policy
 
 DONE_INIT = False
 
@@ -78,25 +81,42 @@ def log(line, where=None, default_level=syslog.LOG_NOTICE):
             syslog.syslog(default_level, txt + " " + line)
 
 
-def init(facility="local0", with_debug=False, with_logging=True):
+def check_off(this_facility, also_check_none=False):
+    global HOLD_WITH_LOGGING
+    global DONE_INIT
+    if this_facility in ["None","Off"] or (also_check_none and this_facility is None):
+        HOLD_WITH_LOGGING = False
+        DONE_INIT = True
+        return True
+    return False
+
+
+def init(inp_facility=None, with_debug=False, with_logging=True):
     global HOLD_DEBUG
     global HOLD_WITH_LOGGING
     global DONE_INIT
 
-    if facility is None:
-        HOLD_WITH_LOGGING = False
-        DONE_INIT = True
+    if check_off(inp_facility):
         return
 
-    if isinstance(facility, str):
-        facility = facility_options[facility]
+    if inp_facility in facility_options:
+        this_facility = facility_options[inp_facility]
+    else:
+        if (this_facility := policy.policy(inp_facility)) is None:
+            this_facility = policy.policy("logging_default")
 
-    syslog.openlog(logoption=syslog.LOG_PID, facility=facility)
+    if check_off(this_facility, True):
+        return
+
+    if this_facility in facility_options:
+        this_facility = facility_options[this_facility]
+
+    syslog.openlog(logoption=syslog.LOG_PID, facility=this_facility)
     HOLD_WITH_LOGGING = with_logging
     HOLD_DEBUG = with_debug
     DONE_INIT = True
 
 
 if __name__ == "__main__":
-    init("local5", with_debug=True)
+    init(sys.argv[1], with_debug=True)
     debug("Hello")

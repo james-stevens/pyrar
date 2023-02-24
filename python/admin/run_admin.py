@@ -407,7 +407,7 @@ def run_backend_start_ups():
 
 
 application = flask.Flask("MySQL-Rest/API")
-log_init(policy.policy("facility_python_code"))
+log_init("logging_admin")
 sql.connect("admin")
 schema = load_schema.load_db_schema()
 set_amended_and_created()

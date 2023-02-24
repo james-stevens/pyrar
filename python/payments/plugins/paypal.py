@@ -98,7 +98,7 @@ class PayPalWebHook:
             return True
         return False
 
-    def get_user_id(self,with_delete):
+    def get_user_id(self, with_delete):
         return self.token is not None and self.try_match_user("single", self.token, with_delete, single_use=True)
 
     def store_one_identity(self, prov_ext, token):
@@ -137,7 +137,9 @@ class PayPalWebHook:
         return False
 
     def interesting_webhook(self):
-        if "event_type" in self.input and self.input["event_type"] in ["CHECKOUT.ORDER.APPROVED","PAYMENT.CAPTURE.COMPLETED"]:
+        if "event_type" in self.input and self.input["event_type"] in [
+                "CHECKOUT.ORDER.APPROVED", "PAYMENT.CAPTURE.COMPLETED"
+        ]:
             return True
         return False
 
@@ -219,8 +221,8 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/"+sys.argv[1], "r", encoding="utf-8") as fd:
-        print(paypal_process_webhook(json.load(fd),"/opt/github/pyrar/tmp/paypal.json"))
+    with open("/opt/github/pyrar/tmp/" + sys.argv[1], "r", encoding="utf-8") as fd:
+        print(paypal_process_webhook(json.load(fd), "/opt/github/pyrar/tmp/paypal.json"))
 
 
 if __name__ == "__main__":

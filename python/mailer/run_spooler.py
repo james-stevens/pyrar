@@ -141,7 +141,7 @@ def process_emails_waiting(server=None):
             os.remove(path)
         else:
             log(f"ERROR: Failed to process email '{path}'")
-            os.replace(path, os.path.join(spool_email.ERROR_BASE, file))
+            os.replace(path, os.path.join(misc.make_year_month_day_dir(spool_email.ERROR_BASE), file))
 
 
 def run_server():

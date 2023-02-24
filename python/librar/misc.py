@@ -3,7 +3,9 @@
 # Alternative license arrangements possible, contact me for more information
 """ functions that didn't belong elsewhere """
 
+import os
 import inspect
+import datetime
 import idna
 import sys
 
@@ -86,8 +88,18 @@ def format_currency(number, currency, with_symbol=True):
     return pfx + use_start + currency["separator"][1] + num[neg_places:]
 
 
+def make_year_month_day_dir(start_dir):
+    for dir in datetime.datetime.now().strftime("%Y,%m,%d").split(","):
+        start_dir = os.path.join(start_dir, dir)
+        if not os.path.isdir(start_dir):
+            os.mkdir(start_dir)
+            os.chmod(start_dir, 0o777)
+    return start_dir
+
+
 if __name__ == "__main__":
-    print(amt_from_float(sys.argv[1]))
+    print(make_year_month_day_dir("/tmp/dt"))
+    #print(amt_from_float(sys.argv[1]))
     #print(ashex(int(sys.argv[1])))
 
     # print(puny_to_utf8("frog.xn--k3h"))

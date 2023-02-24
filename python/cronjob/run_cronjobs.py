@@ -10,7 +10,7 @@ from librar.policy import this_policy as policy
 
 
 def remove_old_one_time_payment_keys():
-    query = f"delete from payments where token_type={static.PAY_TOKEN_SINGLE} and created_dt < date_sub(now(), interval 3 day)"
+    query = f"delete from payments where token_type={static.PAY_TOKEN_SINGLE} and created_dt < date_sub(now(), interval 1 day)"
     return sql.sql_exec(query)
 
 

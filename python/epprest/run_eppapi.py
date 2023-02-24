@@ -53,7 +53,7 @@ client_pem = f"{CLIENT_PEM_DIR}/{this_reg}.pem"
 if not os.path.isfile(client_pem):
     raise ValueError(f"Client PEM file for '{this_reg}' at '{client_pem}' not found")
 
-log_init(policy.policy("facility_epp_api"), False, policy.policy("log_epp_api"))
+log_init("logging_epp_api")
 
 jobInterval = this_login["keep_alive"] if "keep_alive" in this_login else 20
 

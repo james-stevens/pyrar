@@ -45,7 +45,7 @@ REMOVE_TO_SECURE = {
     "transactions": ["sales_item_id"]
 }
 
-log_init(policy.policy("facility_python_code"), with_logging=policy.policy("log_python_code"))
+log_init("logging_webui")
 sql.connect("webui")
 application = flask.Flask("EPP Registrar")
 registry.start_up()

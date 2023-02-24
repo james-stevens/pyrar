@@ -132,7 +132,7 @@ def run_server():
 def start_up(is_live):
     """ run the plug-in's start-up fns """
     if is_live:
-        log_init(policy.policy("facility_backend"), with_logging=True)
+        log_init("logging_backend")
     else:
         log_init(with_debug=True)
 

@@ -6,7 +6,6 @@
 import os
 import json
 import tempfile
-import datetime
 
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
@@ -40,15 +39,12 @@ def config():
 
 
 def process_webhook(pay_module, sent_data):
-    save_dir = os.path.join(os.environ["BASE"], "storage/perm/payments")
-    for dir in datetime.datetime.now().strftime("%Y,%m,%d").split(","):
-        save_dir = os.path.join(save_dir, dir)
-        if not os.path.isdir(save_dir):
-            os.mkdir(save_dir)
-            os.chmod(save_dir, 0o777)
-
     file_name = None
-    with tempfile.NamedTemporaryFile("w+", encoding="utf-8", dir=save_dir, delete=False,
+    with tempfile.NamedTemporaryFile("w+",
+                                     encoding="utf-8",
+                                     dir=misc.make_year_month_day_dir(
+                                         os.path.join(os.environ["BASE"], "storage/perm/payments")),
+                                     delete=False,
                                      prefix=pay_module + "_") as fd:
         file_name = fd.name
         os.chmod(file_name, 0o755)
@@ -60,7 +56,7 @@ def process_webhook(pay_module, sent_data):
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
 
-    ok, reply = func(sent_data,file_name)
+    ok, reply = func(sent_data, file_name)
     if ok is None and reply is None:
         os.remove(file_name)
         return True, True
