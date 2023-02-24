@@ -29,11 +29,14 @@ Or you can sponsor me [through GitHub](https://github.com/sponsors/james-stevens
 To help users go live with this system, either as a registry or registrar (or both), we plan to offer a
 fully hosted & supported service that (we hope) will be price competative with public cloud.
 
-The service will be graded by the level of performance you want and be on an unmetered basis - i.e.
-no surcharges for extra usage ever - the price quoted is the price you pay.
+The service will be graded by the level of performance you want, and will always be on an unmetered basis - i.e.
+no surcharges for extra usage ever - the price quoted is the price you pay. Anti-D/DoS measures will be applied.
 
-Optional extra would include additonal Name Servers and the option of "off-shore" hosting at locations
-like Iceland, The Seychelles or Morocco - with the option of a local "off-short" domain name for your site.
+Optional extras include additonal Name Servers (e.g. in almost any part of the world, to improve DNS performance)
+and the option of "off-shore" hosting at locations like Iceland, The Seychelles or Morocco.
+With the option of a local "off-shore" domain name for your site.
+
+Two Name Servers will be included in the price of all services.
 
 
 ## You Will
@@ -43,9 +46,10 @@ like Iceland, The Seychelles or Morocco - with the option of a local "off-short"
 - Handle first level support - generally this means payment & refund issues
 
 ## We Will
-- Host the PyRar Server & its require MySQL databases
+- Host the PyRar Server & its required MySQL databases
 - Give you full access to daily backups of the databases to download
 - Provide technical back-up support
+- Give you access to the Admin Web/UI for your system (but **not** command line access)
 
 
 # Hosting on Public Cloud
