@@ -1,7 +1,5 @@
 # Open Source EPP DNS Registrar & self-contained Registry
-Python engine & rest/api with JS webui to provide a complete Domain Name Registrar
-
-### This software is still undergoing constant & rapid development, so please come back later
+Python engine & rest/api with JS webui to provide a complete Domain Name Registry & Registrar
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
