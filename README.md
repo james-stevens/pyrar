@@ -92,15 +92,19 @@ If you want to run external name servers, the PowerDNS can be configured to `NOT
 and allow zone transfers to them.
 
 
-## A Basic Registry
+## Using PyRar as a Registry System
 
 PyRar can also run as a self-contained registry platform. It does **not** (yet) support
-in-bound EPP connections (e.g. from other registrars), but connecting between other PyRar Systems
+in-bound EPP connections (e.g. from other registrars), but connecting between other PyRar Registry Systems
 should be available shortly.
 
 It maintains the TLD in PowerDNS, adding & removing SLDs as they are bought / expire. By default
 TLDs are signed `NSEC3+OptOut KSK+ZSK ECDSA256`. This can be reconfigured, or you can pre-create
 the TLD with the DNSSEC options of your choice.
+
+If SLD owners chose to host their DNS withing the system, then their `DS` records will be automatically
+updated in the TLD if they Sign/Unsign their SLD zone data. This makes running their SLD signed extremely easy.
+
 
 ## Plug-Ins
 
@@ -137,6 +141,7 @@ can be supprted without `fee-1.0`.
 - Close account
 - Money Managment fully woking with push-pay via PayPal fully working
 
+
 ## Domains
 - Search for available domains (very fast)
 	- Built-in emoji search option (super-cool feature)
@@ -151,6 +156,7 @@ can be supprted without `fee-1.0`.
 - Sign / Unsign locally hosted client zone file
 - Offer domains for sale to others users (partly working)
 - Support for the four EPP standard domain locks
+- Automatic securing of hosts, using TLSA records & generating PEM files, for locally hosted DNS in a signed zones
 
 
 # Engine
