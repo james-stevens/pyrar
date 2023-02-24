@@ -54,7 +54,7 @@ Two Name Servers will be included in the price of all services.
 
 If you would prefer, I'm sure it would not be hard to find a tech-guru on Fiverr (etc) who could
 get this all set up & running for you on any public cloud of your choice. Its just a single docker container
-so there are **many** places you cna host it.
+so there are **many** places you can host it.
 
 If you opt to host with us to begin with, but become unhappy with the service, then the daily database backups
 should make it relatively simple for you to switch to public cloud at a later date.
