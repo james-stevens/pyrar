@@ -2,16 +2,13 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-set -x
 . /run/policy_subst/env.inc
+
+lvl="${LOGLEVEL_PYTHON:-info}"
+fac="${FACILITY_PYTHON:-local0}"
+
 if test "${FACILITY_PYTHON}"
 	then
-		lvl="info"
-		if test "${LOGLEVEL_PYTHON}"
-			then
-				lvl="${LOGLEVEL_PYTHON}"
-			fi
-		fac="${FACILITY_PYTHON}"
 		extra="--log-syslog --log-syslog-to udp://127.0.0.1:514"
 		extra="${extra} --log-syslog-facility ${fac} --log-level ${lvl}"
 	fi

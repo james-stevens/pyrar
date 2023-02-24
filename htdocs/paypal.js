@@ -51,17 +51,14 @@ function test_single_paypal() // this is for debugging
 
 function make_paypal_order(description, amount, custom_id)
 {
-	let this_value = {
-		"currency_code": gbl.config.currency.iso,
-		"value": amount
-		};
+	function paypal_amount(amount) { return { "currency_code": gbl.config.currency.iso, "value": format_amount(amount,true) }; }
 
 	let ret_js = {
 		purchase_units: [
 			{
 			"description": description,
 			"custom_id": custom_id,
-			"amount": this_value
+			"amount": paypal_amount(amount)
 			}
 		] };
 
@@ -78,22 +75,13 @@ function make_paypal_order(description, amount, custom_id)
 			item_list.push({
 				"name": `${order.order_type} '${dom.display_name}' for ${yrs}`,
 				"quantity": 1,
-				"unit_amount": {
-					"currency_code": gbl.config.currency.iso,
-					"value": format_amount(order.price_paid,true)
-					}
+				"unit_amount": paypal_amount(order.price_paid)
 				});
 			}
 		ret_js.purchase_units[0].items = item_list;
 		ret_js.purchase_units[0].amount.breakdown = {
-			"item_total": {
-				"currency_code": gbl.config.currency.iso,
-				"value": format_amount(this_total,true)
-				},
-			"discount": {
-				"currency_code": gbl.config.currency.iso,
-				"value": format_amount(ctx.user.acct_current_balance,true)
-				}
+			"item_total": paypal_amount(this_total),
+			"discount": paypal_amount(ctx.user.acct_current_balance)
 			};
 		return ret_js;
 		}
@@ -101,7 +89,7 @@ function make_paypal_order(description, amount, custom_id)
 	ret_js.purchase_units[0].items = [ {
 		"name": description,
 		"quantity": 1,
-		"unit_amount": this_value
+		"unit_amount": paypal_amount(amount)
 		} ];
 
 	return ret_js;

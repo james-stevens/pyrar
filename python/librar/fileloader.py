@@ -3,6 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 """ load / reload JSON config files """
 
+import sys
 import os
 import json
 import inspect
@@ -22,7 +23,7 @@ def load_file_json(filename):
                 data = json.load(file_fd)
                 return data
     except (ValueError, IOError) as err:
-        syslog.syslog(syslog.LOG_ERROR,f"{txt} -> load_file_json: {filename} : {str(err)}")
+        syslog.syslog(syslog.LOG_ERR,f"{txt} -> load_file_json: {filename} : {str(err)}")
 
     return None
 
@@ -68,5 +69,5 @@ class FileLoader:
 
 if __name__ == "__main__":
     syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
-    file = FileLoader(static.LOGINS_FILE)
+    file = FileLoader(sys.argv[1])
     print(json.dumps(file.json, indent=4))

@@ -12,4 +12,4 @@ exec gunicorn \
         --workers ${ses} \
         --user=daemon \
 		${extra} --bind unix:/run/wsgi_webui.sock \
-        wsgi >/tmp/web_ui.log 2>&1
+        wsgi 2>&1 | logger -p ${fac}.${lvl} -t webui

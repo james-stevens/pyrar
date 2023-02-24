@@ -34,6 +34,9 @@ function callApi(sfx,callback,inData)
 	document.body.style.cursor="progress";
 	elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
 
+	function default_callback(ok,reply) { console.log("CALLBACK:",ok,reply); return; }
+	if (!callback) callback = default_callback;
+
 	function we_are_done(ok,reply)
 	{
 		document.body.style.cursor="auto";

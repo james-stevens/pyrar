@@ -7,6 +7,7 @@ import os
 import json
 import tempfile
 
+from librar import misc
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
 from payments import payfile

@@ -17,4 +17,4 @@ exec gunicorn \
         --workers ${ses} \
         --user=daemon \
         ${extra} --bind unix:/run/epp/wsgi_epprest_${registry}_${session}.sock \
-        wsgi >/tmp/eppapi.${registry}_${session} 2>&1
+        wsgi 2>&1 | logger -p ${fac}.${lvl} -t epprest_${registry}_${session}

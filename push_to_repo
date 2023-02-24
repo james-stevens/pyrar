@@ -10,11 +10,4 @@ do
 	docker push docker.jrcs.net/${img}
 done
 
-while test "$(docker ps -aq)"
-    do
-        docker rm $(docker ps -aq)
-    done
-while test "$(docker images -f "dangling=true" -q)"
-    do
-        docker rmi $(docker images -f "dangling=true" -q)
-    done
+yes | docker image prune
