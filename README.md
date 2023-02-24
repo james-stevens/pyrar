@@ -1,4 +1,4 @@
-# Open Source EPP DNS Registrar & simple self-contained Registry
+# Open Source EPP DNS Registrar & self-contained Registry
 Python engine & rest/api with JS webui to provide a complete Domain Name Registrar
 
 ### This software is still undergoing constant & rapid development, so please come back later
@@ -211,6 +211,7 @@ It's probably now ready to go live in a limited installation - so long as you're
 - 2fA (enable & disable)
 - Make payments - Stripe, Crypto via Coinbase (PayPal is done)
 - Pull Payments for auto-renew (Stripe & PayPal only)
+- Ability to opt out of emails, by type of message
 
 ## Domains
 - UI to request transfers (some done)
