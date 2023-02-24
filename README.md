@@ -101,8 +101,7 @@ By "differential prices", I mean different prices for different domains (e.g. mo
 - Password reset
 - Maintain payment options e.g. card / account details etc (some done, still needs work)
 - Close account
-
-- Account Managment fully woking with push-pay via PayPal fully working
+- Money Managment fully woking with push-pay via PayPal fully working
 
 ## Domains
 - Search for available domains
