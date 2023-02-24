@@ -35,7 +35,7 @@ function paypal_single_payment(description, amount)
 		let e = document.getElementById("payment-whole");
 		e.innerHTML = x;
 
-		initPayPalButton(description, format_amount(amount,true), reply.token);
+		initPayPalButton(description, amount, reply.token);
 		},{ json:{ "provider":"paypal"}})
 }
 
@@ -48,10 +48,17 @@ function test_single_paypal() // this is for debugging
 }
 
 
+function paypal_amount(amount) {
+	let ret_js = {
+		"currency_code": gbl.config.currency.iso,
+		"value": format_amount(amount,true)
+		};
+	return ret_js;
+}
+
 
 function make_paypal_order(description, amount, custom_id)
 {
-	function paypal_amount(amount) { return { "currency_code": gbl.config.currency.iso, "value": format_amount(amount,true) }; }
 
 	let ret_js = {
 		purchase_units: [
@@ -91,6 +98,9 @@ function make_paypal_order(description, amount, custom_id)
 		"quantity": 1,
 		"unit_amount": paypal_amount(amount)
 		} ];
+	ret_js.purchase_units[0].amount.breakdown = {
+		"item_total": paypal_amount(amount)
+		};
 
 	return ret_js;
 }

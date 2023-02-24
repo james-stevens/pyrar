@@ -178,14 +178,14 @@ function supported_tld(fqdn)
 
 
 
-function format_amount(num,omit_symbol)
+function format_amount(in_num,omit_symbol)
 {
-	if (num==null) return "";
+	if (in_num==null) return "";
 	let cur = gbl.config.currency;
 	let pfx = cur.symbol;
 	if (omit_symbol) pfx = "";
-	if (num < 0) { pfx += "-"; num *= -1; }
-	num = num.toString();
+	if (in_num < 0) { pfx += "-"; in_num *= -1; }
+	num = in_num.toString();
 	if (num.length < (cur.decimal+1))
 		num = ("000000000000000"+num).slice((cur.decimal+1)*-1);
 
