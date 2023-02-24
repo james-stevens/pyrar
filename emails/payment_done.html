@@ -18,6 +18,8 @@ now be automatically processed.
 
 {% if paypal_trans_id is defined and paypal_trans_id %}
 <tr><Td class=promptCell>PayPal Transaction Refrence :</td><td class=dataCell>{{paypal_trans_id}}</td></tr>
+{% endif %}
+{% if paypal_email is defined and paypal_email %}
 <tr><Td class=promptCell>PayPal Account EMail :</td><td class=dataCell>{{paypal_email}}</td></tr>
 {% endif %}
 
