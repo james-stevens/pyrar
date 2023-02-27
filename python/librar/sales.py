@@ -7,7 +7,7 @@ from mailer import spool_email
 from librar import sigprocs
 from librar import registry
 from librar import misc
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 
 
 def sold_item(trans_id, order_db, dom_db, user_db):

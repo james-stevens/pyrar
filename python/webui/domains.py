@@ -10,7 +10,7 @@ import base64
 from librar import registry
 from librar import validate
 from librar.log import log
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import sigprocs
 from librar import domobj
 from librar import pdns
@@ -72,7 +72,7 @@ def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
         dom_price["yours"] = True
     dom_price["reason"] = "Already registered"
 
-    if sql.has_data(dom_db, "for_sale_msg"):
+    if misc.has_data(dom_db, "for_sale_msg"):
         dom_price["avail"] = True
         dom_price["for_sale_msg"] = dom_db["for_sale_msg"]
 
@@ -81,7 +81,7 @@ def futher_process_price_item(this_domobj, dom_price, num_years, user_id):
 
 
 def check_domain_is_mine(user_id, domain, require_live):
-    if not sql.has_data(domain, "name") or not validate.is_valid_fqdn(domain["name"]):
+    if not misc.has_data(domain, "name") or not validate.is_valid_fqdn(domain["name"]):
         return False, "Domain data missing or invalid"
 
     dom = domobj.Domain()
@@ -123,7 +123,7 @@ def check_update_ns(post_dom, dom_db, update_cols):
     if "ns" not in post_dom or post_dom["ns"] == dom_db["ns"]:
         return True, None
 
-    if not sql.has_data(post_dom, "ns"):
+    if not misc.has_data(post_dom, "ns"):
         update_cols["ns"] = ""
         return True, None
 
@@ -140,7 +140,7 @@ def check_update_ds(post_dom, dom_db, update_cols):
     if "ds" not in post_dom or post_dom["ds"] == dom_db["ds"]:
         return True, None
 
-    if not sql.has_data(post_dom, "ds"):
+    if not misc.has_data(post_dom, "ds"):
         update_cols["ds"] = ""
         return True, None
 
@@ -158,7 +158,7 @@ def domain_backend_update(dom_db, request_type="dom/update"):
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
         "job_type": request_type,
-        "execute_dt": sql.now(),
+        "execute_dt": misc.now(),
         "created_dt": None
     }
 
@@ -181,7 +181,7 @@ def webui_set_auth_code(req):
         "user_id": req.user_id,
         "job_type": "dom/authcode",
         "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
-        "execute_dt": sql.now(),
+        "execute_dt": misc.now(),
         "created_dt": None
     }
 
@@ -226,7 +226,7 @@ def webui_update_domains_flags(req):
     if not ok:
         return False, dom
 
-    if not sql.has_data(req.post_js, "flags"):
+    if not misc.has_data(req.post_js, "flags"):
         return False, "Missing or invalid data"
 
     new_flags = dom.locks.copy()

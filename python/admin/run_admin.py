@@ -10,7 +10,7 @@ import json
 
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import pdns
 from librar import accounts
@@ -429,7 +429,7 @@ def before_request():
 @application.route("/adm/v1", methods=['GET'])
 def hello():
     """ respond with a `hello` to confirm working """
-    return f"MySql-Auto-Rest/API: {sql.MY_DATABASE}\n\n"
+    return f"MySql-Auto-Rest/API: {sql.credentials['database']}\n\n"
 
 
 @application.route("/adm/v1/meta/schema/<table>", methods=['GET'])

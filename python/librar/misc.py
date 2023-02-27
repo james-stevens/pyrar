@@ -4,40 +4,30 @@
 """ functions that didn't belong elsewhere """
 
 import os
-import inspect
 import datetime
-import idna
 import sys
+import idna
+from dateutil.relativedelta import relativedelta
 
 from librar.policy import this_policy as policy
-from librar import mysql as sql
 from librar import static
 
 
-def event_log(other_items, stack_pos=2):
-    where = inspect.stack()[stack_pos]
-    event_db = {
-        "program": where.filename.split("/")[-1].split(".")[0],
-        "function": where.function,
-        "line_num": where.lineno,
-        "when_dt": None
-    }
-    event_db.update(other_items)
-    sql.sql_insert("events", event_db)
+HEXLIB = "0123456789ABCDEF"
 
 
 def ashex(line):
     if isinstance(line, int):
         out_hex = ""
         while line > 0:
-            out_hex = static.HEXLIB[line & 0xf] + out_hex
+            out_hex = HEXLIB[line & 0xf] + out_hex
             line = line >> 4
         return out_hex if len(out_hex) > 0 else "0"
     if isinstance(line, str):
         line = line.encode("utf-8")
     ret = ""
     for asc in line:
-        ret += static.HEXLIB[asc >> 4] + static.HEXLIB[asc & 0xf]
+        ret += HEXLIB[asc >> 4] + HEXLIB[asc & 0xf]
     return ret
 
 
@@ -88,9 +78,30 @@ def format_currency(number, currency, with_symbol=True):
     return pfx + use_start + currency["separator"][1] + num[neg_places:]
 
 
+def has_data(row, col):
+    if isinstance(col, list):
+        all_ok = True
+        for item in col:
+            all_ok = all_ok and has_data(row, item)
+        return all_ok
+    return row is not None and len(row) > 0 and col in row and row[col] is not None and row[col] != ""
+
+
+def now(offset=0):
+    time_now = datetime.datetime.now()
+    time_now += datetime.timedelta(seconds=offset)
+    return time_now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def date_add(mysql_time, days=0, hours=0, years=0):
+    time_now = datetime.datetime.strptime(mysql_time, "%Y-%m-%d %H:%M:%S")
+    time_now += relativedelta(days=days, hours=hours, years=years)
+    return time_now.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def make_year_month_day_dir(start_dir):
-    for dir in datetime.datetime.now().strftime("%Y,%m,%d").split(","):
-        start_dir = os.path.join(start_dir, dir)
+    for date_part in datetime.datetime.now().strftime("%Y,%m,%d").split(","):
+        start_dir = os.path.join(start_dir, date_part)
         if not os.path.isdir(start_dir):
             os.mkdir(start_dir)
             os.chmod(start_dir, 0o777)
@@ -112,3 +123,4 @@ if __name__ == "__main__":
     # print(puny_to_utf8("xn--e28h.xn--dp8h", True))
     # print(puny_to_utf8("xn--strae-oqa.com", True))
     # print(puny_to_utf8("xn--st-rae-oqa.com", True))
+    sys.exit(0)

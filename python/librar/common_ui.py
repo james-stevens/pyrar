@@ -7,7 +7,7 @@ import json
 
 from librar.policy import this_policy as policy
 from librar import static
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from payments import libpay
 

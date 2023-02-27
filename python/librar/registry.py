@@ -10,7 +10,7 @@ import requests
 from librar import misc
 from librar import static
 from librar import fileloader
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 
@@ -101,7 +101,7 @@ class ZoneLib:
         self.zone_data = {}
         for row in self.zones_from_db:
             self.zone_data[row["zone"]] = {col: row[col] for col in ["registry", "renew_limit"] if row[col]}
-            if sql.has_data(row, "price_info"):
+            if misc.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
                 except ValueError:

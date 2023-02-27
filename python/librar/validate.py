@@ -192,14 +192,10 @@ def is_valid_ds(ds_rec):
     if ints["alg"] in [4, 9, 11]:
         return False
 
-    for character in ds_rec["digest"]:
-        if character not in static.HEXLIB:
-            return False
-
     if VALID_DS_LEN[ints["digestType"]] != len(ds_rec["digest"]):
         return False
 
-    return True
+    return re.fullmatch(r'^[0-9a-fA-F]+$', ds_rec["digest"])
 
 
 def validate_binary(val):

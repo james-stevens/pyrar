@@ -6,7 +6,7 @@ import inspect
 
 from librar.log import log
 from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import validate
 from librar import misc
 
@@ -24,7 +24,7 @@ def event_log(notes, bke_job):
 
 def check_have_data(job_id, dom_db, items):
     for item in items:
-        if not sql.has_data(dom_db, item):
+        if not misc.has_data(dom_db, item):
             log(f"BKE-{job_id} '{item}' missing or blank")
             return False
     return True
@@ -46,10 +46,10 @@ def check_num_years(bke_job):
 def get_domain_lists(dom_db):
     ds_list = []
     ns_list = []
-    if sql.has_data(dom_db, "ns"):
+    if misc.has_data(dom_db, "ns"):
         ns_list = dom_db["ns"].lower().split(",")
 
-    if sql.has_data(dom_db, "ds"):
+    if misc.has_data(dom_db, "ds"):
         ds_list = [validate.frag_ds(item) for item in dom_db["ds"].upper().split(",")]
 
     return ns_list, ds_list
@@ -72,7 +72,7 @@ def get_dom_from_db(bke_job):
         return None
 
     name_ok = validate.check_domain_name(dom_db["name"])
-    if (not sql.has_data(dom_db, "name")) or (name_ok is not None):
+    if (not misc.has_data(dom_db, "name")) or (name_ok is not None):
         log(f"BKE-{job_id}: DOM-{domain_id} domain name missing or invalid ({name_ok})")
         return None
 

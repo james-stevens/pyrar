@@ -7,7 +7,7 @@ import sys
 import argparse
 import inspect
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import static
 from librar import sigprocs
 from librar import registry
@@ -126,7 +126,7 @@ def main():
             debug(f"ERROR: action '{args.action}' not possible")
             sys.exit(1)
 
-        act_db = {"domain_id": dom_db["domain_id"], "execute_dt": sql.now(), "action": args.action}
+        act_db = {"domain_id": dom_db["domain_id"], "execute_dt": misc.now(), "action": args.action}
         print(">>>> RUNNING", args.action, "on", dom_db["name"])
         print(">>>> ACTION", action_exec[args.action](act_db, dom_db))
         sys.exit(0)

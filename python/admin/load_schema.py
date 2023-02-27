@@ -5,7 +5,7 @@ import json
 import os
 import yaml
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar.log import init as log_init
 
 INTS = ["tinyint", "int", "bigint"]
@@ -121,7 +121,7 @@ def get_db_schema(new_schema):
     if not ok:
         raise ValueError("Could not get list of tables")
 
-    tbl_title = "Tables_in_" + sql.MY_DATABASE
+    tbl_title = "Tables_in_" + sql.credentials["database"]
     for table in reply:
         new_schema[table[tbl_title]] = {}
 

@@ -5,7 +5,7 @@
 
 import sys
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import validate
 from librar import passwd
 from librar import misc
@@ -121,7 +121,7 @@ def logout(ses_code, user_id, user_agent):
 
 
 def update_user_login_dt(user_id):
-    sql.sql_update_one("users", {"last_login_dt": sql.now()}, {"user_id": int(user_id)})
+    sql.sql_update_one("users", {"last_login_dt": misc.now()}, {"user_id": int(user_id)})
 
 
 def login(data, user_agent):
@@ -172,7 +172,7 @@ def update_user(user_id, post_json):
 
 
 def check_password(user_id, data, user_db=None):
-    if not sql.has_data(data, "password"):
+    if not misc.has_data(data, "password"):
         return False
 
     if user_db is None:

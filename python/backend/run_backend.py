@@ -7,7 +7,7 @@ import sys
 import json
 import argparse
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import pdns
 from librar import domobj
@@ -42,7 +42,7 @@ def job_failed(bke_job):
     """ job failed, but should be retried """
     sql.sql_update_one("backend", {
         "failures": bke_job["failures"] + 1,
-        "execute_dt": sql.now(policy.policy("backend_retry_timeout"))
+        "execute_dt": misc.now(policy.policy("backend_retry_timeout"))
     }, {"backend_id": bke_job["backend_id"]})
 
 
@@ -73,7 +73,7 @@ def run_backend_item(bke_job):
     if not dom.set_by_id(bke_job["domain_id"]):
         return job_abort(bke_job)
 
-    if sql.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer":
+    if misc.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer":
         if bke_job["user_id"] != dom.dom_db["user_id"]:
             log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
             return job_abort(bke_job)

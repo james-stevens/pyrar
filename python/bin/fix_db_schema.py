@@ -9,7 +9,7 @@ import sys
 import argparse
 import filecmp
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import schema
 from librar.policy import this_policy as policy
 
@@ -46,7 +46,7 @@ parser.add_argument("-l", '--login', default="admin")
 args = parser.parse_args()
 
 sql.connect(args.login)
-live_schema = schema.make_schema(sql.MY_DATABASE)
+live_schema = schema.make_schema(sql.credentials["database"])
 
 filename = SCHEMA_FILE
 if args.login == "pdns":

@@ -12,7 +12,7 @@ from librar import static
 from librar import registry
 from librar import accounts
 from librar import sales
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
 from librar import domobj
 from backend import creator
@@ -110,7 +110,7 @@ def capture_basket(req, whole_basket):
     if not ok or sum_db is None:
         return False, "Failed to read database"
 
-    sum_orders = sum_db["sum_orders"] if sql.has_data(sum_db, "sum_orders") else 0
+    sum_orders = sum_db["sum_orders"] if misc.has_data(sum_db, "sum_orders") else 0
 
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
         return False, "Please pay for your existing orders before placing more orders"
@@ -295,7 +295,7 @@ def make_order_record(site_currency, order, user_db):
     if "prices" not in order:
         return False, "Failed to verify price"
 
-    now = sql.now()
+    now = misc.now()
     prices = order["prices"]
 
     return True, {

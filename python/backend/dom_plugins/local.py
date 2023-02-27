@@ -7,7 +7,7 @@ import base64
 
 from librar.log import log, init as log_init
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import pdns
 from librar import static
@@ -75,7 +75,7 @@ def create_update_request(bke_job):
     new_bke = {
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],
-        "execute_dt": sql.now(),
+        "execute_dt": misc.now(),
         "created_dt": None,
         "amended_dt": None,
         "job_type": "dom/update",
@@ -109,13 +109,13 @@ def domain_update_from_db(bke_job, dom_db):
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
-    if sql.has_data(dom_db, "ns"):
+    if misc.has_data(dom_db, "ns"):
         rrs["data"] = [d.strip(".") + "." for d in dom_db["ns"].split(",")]
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
-    if sql.has_data(dom_db, "ds"):
+    if misc.has_data(dom_db, "ds"):
         rrs["data"] = dom_db["ds"].split(",")
 
     ok_ds, __ = pdns.update_rrs(tld, rrs)
@@ -125,7 +125,7 @@ def domain_update_from_db(bke_job, dom_db):
 
 def domain_request_transfer(bke_job, dom_db):
     """ run dom/transfer request """
-    if not sql.has_data(bke_job, "authcode") or not sql.has_data(dom_db, "authcode"):
+    if not misc.has_data(bke_job, "authcode") or not misc.has_data(dom_db, "authcode"):
         return None
 
     if dom_db["user_id"] == bke_job["user_id"]:
@@ -177,7 +177,7 @@ def domain_info(bke_job, dom_db):
 
 def set_authcode(bke_job, dom_db):
     """ run dom/authcode request """
-    password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if sql.has_data(bke_job, "authcode") else None
+    password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if misc.has_data(bke_job, "authcode") else None
     return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
 
 

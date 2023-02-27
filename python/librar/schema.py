@@ -5,7 +5,7 @@
 """ read the database schema as JSON """
 
 import json
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 
 numbers = {"tinyint", "int", "decimal"}
 
@@ -75,7 +75,7 @@ def make_schema(database):
 
 def main():
     sql.connect("admin")
-    live_schema = make_schema(sql.MY_DATABASE)
+    live_schema = make_schema(sql.credentials["database"])
     print(json.dumps(live_schema, indent=3))
 
 

@@ -4,7 +4,7 @@
 
 import argparse
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar.log import log, debug, init as log_init
 from librar import sigprocs
 from librar import accounts

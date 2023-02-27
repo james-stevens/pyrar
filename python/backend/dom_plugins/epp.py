@@ -8,7 +8,7 @@ import json
 import base64
 import requests
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
@@ -223,7 +223,7 @@ def domain_update_flags(bke_job, dom_db):
         return False
 
     client_locks = {}
-    if sql.has_data(dom_db, "client_locks"):
+    if misc.has_data(dom_db, "client_locks"):
         client_locks = ["client" + lock for lock in dom_db["client_locks"].split(",")]
 
     add_flags = [item for item in client_locks if item not in epp_info["status"]]
@@ -272,7 +272,7 @@ def domain_update_from_db(bke_job, dom_db):
     if len(add_ns) > 0:
         run_host_create(this_reg, add_ns)
 
-    if not sql.has_data(dom_db, "reg_create_dt") or dom_db["reg_create_dt"] != epp_info["created_dt"]:
+    if not misc.has_data(dom_db, "reg_create_dt") or dom_db["reg_create_dt"] != epp_info["created_dt"]:
         sql.sql_update_one("domains", {"reg_create_dt": epp_info["created_dt"]}, {"domain_id": dom_db["domain_id"]})
 
     update_xml = dom_req_xml.domain_update(name, add_ns, del_ns, add_ds, del_ds)

@@ -7,7 +7,7 @@ import os
 import sys
 import argparse
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import fileloader
 from librar import static
 

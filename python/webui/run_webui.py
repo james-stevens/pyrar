@@ -18,7 +18,7 @@ from librar import sigprocs
 from librar import hashstr
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from mailer import spool_email
 
 from webui import users
@@ -261,7 +261,7 @@ def payments_delete():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, ["provider", "token"]):
+    if not misc.has_data(req.post_js, ["provider", "token"]):
         return req.abort("Missing or invalid payment method data")
 
     provider = req.post_js["provider"]
@@ -287,7 +287,7 @@ def payments_single():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, "provider"):
+    if not misc.has_data(req.post_js, "provider"):
         return req.abort("Missing or invalid payment method data")
 
     if req.post_js["provider"] not in pay_handler.pay_plugins:
@@ -366,7 +366,7 @@ def domain_transfer():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not sql.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
+    if not misc.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
         return req.abort("Missing or invalid data")
 
     name = req.post_js["name"].lower()
@@ -542,7 +542,7 @@ def users_verify():
     if req.post_js is None:
         return req.abort("No JSON posted")
 
-    if not sql.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
+    if not misc.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
                                                                             int) or len(req.post_js["hash"]) != 20:
         return req.abort("Invalid verification data")
     if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
@@ -555,7 +555,7 @@ def request_reset_password():
     req = WebuiReq()
     if req.post_js is None:
         return req.abort("No JSON posted")
-    if not sql.has_data(req.post_js, ["pin", "email"]):
+    if not misc.has_data(req.post_js, ["pin", "email"]):
         return req.abort("Missing data")
     if not validate.is_valid_pin(req.post_js["pin"]) or not validate.is_valid_email(req.post_js["email"]):
         return req.abort("Invalid data")
@@ -568,7 +568,7 @@ def users_reset_password():
     req = WebuiReq()
     if req.post_js is None:
         return req.abort("No JSON posted")
-    if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
+    if not misc.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
         return req.abort("Missing data")
     if req.post_js["password"] != req.post_js["confirm"] or len(
             req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
@@ -603,7 +603,7 @@ def users_register():
 
 def pdns_action(func, action):
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name"):
+    if req.post_js is None or not misc.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:
@@ -716,7 +716,7 @@ def pdns_update_rrs(req, dom_db):
 @application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
 def make_tlsa():
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
+    if req.post_js is None or not misc.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
         return req.abort("No JSON posted or data is missing")
 
     if not req.is_logged_in:
@@ -792,7 +792,7 @@ def domain_authcode():
 def run_user_domain_task(domain_function, func_name):
     """ start a {domain_function} & complete it by running {func_name}() """
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name"):
+    if req.post_js is None or not misc.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:

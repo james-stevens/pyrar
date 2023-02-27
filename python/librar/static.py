@@ -15,7 +15,6 @@ PORTS_LIST_FILE = "/run/regs_ports"
 DEFAULT_CURRENCY = {"desc": "US Dollars", "iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2}
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
-HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
