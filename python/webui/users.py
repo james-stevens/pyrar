@@ -5,6 +5,7 @@
 
 import sys
 
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar import validate
 from librar import passwd
@@ -21,7 +22,7 @@ USER_REQUIRED = ["email", "password"]
 def event_log(req, more_event_items):
     event_db = req.base_event.copy()
     event_db.update(more_event_items)
-    misc.event_log(event_db)
+    mysql.event_log(event_db)
 
 
 def start_session(user_db, user_agent):

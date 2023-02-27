@@ -85,7 +85,7 @@ def main():
     log_init(with_debug=True)
     startup()
     print(json.dumps(config(), indent=3))
-    print(json.dumps(pay_handler.pay_webhooks,indent=3))
+    print(json.dumps(pay_handler.pay_webhooks, indent=3))
 
 
 if __name__ == "__main__":

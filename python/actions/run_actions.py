@@ -7,6 +7,7 @@ import sys
 import argparse
 import inspect
 
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar import static
 from librar import misc
@@ -24,7 +25,7 @@ COPY_DEL_DOM_COLS = [
 
 
 def event_log(notes, action):
-    misc.event_log({
+    mysql.event_log({
         "event_type": "Action:" + action["action"],
         "domain_id": action["domain_id"],
         "user_id": None,

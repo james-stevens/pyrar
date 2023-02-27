@@ -7,6 +7,7 @@ import json
 
 from librar.policy import this_policy as policy
 from librar.log import log, init as log_init
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar import misc
 from librar import static
@@ -46,13 +47,13 @@ def paypal_startup():
     payapl_conf = pay_conf[THIS_MODULE]
     paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
 
-    if paypal_mode in payapl_conf and misc.has_data(payapl_conf[paypal_mode],["webhook","client_id"]):
+    if paypal_mode in payapl_conf and misc.has_data(payapl_conf[paypal_mode], ["webhook", "client_id"]):
         mode_conf = payapl_conf[paypal_mode]
         pay_handler.pay_webhooks[mode_conf["webhook"]] = {
             "name": THIS_MODULE,
             "client_id": mode_conf["client_id"],
             "mode": paypal_mode
-            }
+        }
     return True
 
 
@@ -152,7 +153,7 @@ class PayPalWebHook:
         return False
 
     def event_log(self, notes):
-        misc.event_log({
+        mysql.event_log({
             "event_type": f"{THIS_MODULE}/payment",
             "user_id": self.user_id,
             "who_did_it": "paypal/webhook",

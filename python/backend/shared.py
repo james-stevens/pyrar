@@ -6,13 +6,14 @@ import inspect
 
 from librar.log import log
 from librar.policy import this_policy as policy
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar import validate
 from librar import misc
 
 
 def event_log(notes, bke_job):
-    misc.event_log({
+    mysql.event_log({
         "event_type": "BackEnd:" + bke_job["job_type"],
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],

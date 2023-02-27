@@ -6,6 +6,7 @@
 import sys
 import json
 
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar import static
 from librar import misc
@@ -38,7 +39,7 @@ def domain_actions_pending_order(dom_db):
 
 
 def recreate_domain_actions(dom_db, who_did_it="sales"):
-    misc.event_log(
+    mysql.event_log(
         {
             "event_type": "actions/recreate",
             "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt'].split()[0]}",

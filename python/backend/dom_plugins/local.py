@@ -3,8 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 """ bacnend call-backs for running as registry locally """
 
-import base64
-
 from librar.log import log, init as log_init
 
 from librar.mysql import sql_server as sql
@@ -166,27 +164,22 @@ def domain_recover(bke_job, dom_db):
     return ok_add
 
 
-# pylint: disable=unused-argument
-def domain_info(bke_job, dom_db):
-    """ noting to do for type=local """
-    return dom_db
-
-
-# pylint: enable=unused-argument
-
-
-def set_authcode(bke_job, dom_db):
-    """ run dom/authcode request """
-    password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if misc.has_data(bke_job, "authcode") else None
-    return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
-
-
 def my_hello(__):
     """ test fn """
     return "LOCAL: Hello"
 
 
 # pylint: disable=unused-argument
+def domain_info(bke_job, dom_db):
+    """ noting to do for type=local """
+    return dom_db
+
+
+def set_authcode(bke_job, dom_db):
+    """ nothing to do, set by webui/domains code """
+    return True
+
+
 def domain_update_flags(bke_job, dom_db):
     """ nothing to do for `local` """
     return True
@@ -196,9 +189,10 @@ def domain_update_flags(bke_job, dom_db):
 
 
 def get_class_from_name(name):
+    """ support for domain:class, premium pricing. Return class for {name} """
     ok, class_db = sql.sql_select_one("class_by_name", {"name": name})
     if ok and class_db and len(class_db) > 0:
-        return class_db["class"]
+        return class_db["class"].lower()
 
     if (idx := name.find(".")) < 0:
         return "standard"
@@ -206,7 +200,7 @@ def get_class_from_name(name):
     where = f"(unhex('{misc.ashex(name[:idx])}') regexp name_regexp) and zone = unhex('{misc.ashex(name[idx+1:])}')"
     ok, class_db = sql.sql_select_one("class_by_regexp", where)
     if ok and class_db and len(class_db) > 0:
-        return class_db["class"]
+        return class_db["class"].lower()
 
     return "standard"
 

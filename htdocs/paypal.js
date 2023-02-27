@@ -3,8 +3,8 @@
 
 function paypal_startup() // {module}_startup() is a mandatory func in a JS payment module
 {
-	if ((gbl.config.payment)&&(gbl.config.payment.paypal)&&(gbl.config.payment.paypal.client_id))
-		add_paypal_script(gbl.config.payment.paypal.client_id,gbl.config.currency.iso);
+	if ((gbl.config.payments)&&(gbl.config.payments.paypal)&&(gbl.config.payments.paypal.client_id))
+		add_paypal_script(gbl.config.payments.paypal.client_id,gbl.config.currency.iso);
 
 	payments["paypal"] = {
 		"desc": "Pay by PayPal",
@@ -48,7 +48,7 @@ function test_single_paypal() // this is for debugging
 {
 	show_one_space("userSpace")
 	elm.userSpace.innerHTML = "<div id='payment-whole'></div>";
-	payments.paypal.single("Test Description",18.99);
+	payments.paypal.single("Test Description",1899);
 }
 
 
@@ -89,11 +89,21 @@ function make_paypal_order(description, amount, custom_id)
 				"unit_amount": paypal_amount(order.price_paid)
 				});
 			}
+
+		if (ctx.user.acct_current_balance < 0) {
+			item_list.push({
+				"name": "Account Debt",
+				"quantity": 1,
+				"unit_amount": paypal_amount(-1 * ctx.user.acct_current_balance)
+				});
+			this_total -= ctx.user.acct_current_balance;
+			}
+
 		ret_js.purchase_units[0].items = item_list;
-		ret_js.purchase_units[0].amount.breakdown = {
-			"item_total": paypal_amount(this_total),
-			"discount": paypal_amount(ctx.user.acct_current_balance)
-			};
+		ret_js.purchase_units[0].amount.breakdown = { "item_total": paypal_amount(this_total) };
+		if (ctx.user.acct_current_balance > 0)
+			ret_js.purchase_units[0].amount.breakdown.discount = paypal_amount(ctx.user.acct_current_balance)
+
 		return ret_js;
 		}
 
@@ -121,7 +131,6 @@ function initPayPalButton(description, amount, custom_id) {
 
 	createOrder: function(data, actions) {
 		post_data = make_paypal_order(description, amount, custom_id);
-		console.log(post_data);
 		return actions.order.create(post_data);
 	},
 
@@ -136,6 +145,7 @@ function initPayPalButton(description, amount, custom_id) {
 	},
 
 	onError: function(err) { 
+		errMsg("PayPal processing error","errorSpan");
 		console.log(err);
 		}
 

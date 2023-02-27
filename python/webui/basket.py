@@ -12,6 +12,7 @@ from librar import static
 from librar import registry
 from librar import accounts
 from librar import sales
+from librar import mysql
 from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
 from librar import domobj
@@ -49,7 +50,7 @@ def event_log(req, order):
         "event_type": f"order/{order['action']}",
         "notes": f"Order: {order['domain']} of {order['action']} for {order['num_years']} yrs"
     })
-    misc.event_log(event_db)
+    mysql.event_log(event_db)
 
 
 def webui_basket(basket, req):
@@ -113,10 +114,13 @@ def capture_basket(req, whole_basket):
     sum_orders = sum_db["sum_orders"] if misc.has_data(sum_db, "sum_orders") else 0
 
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
-        return False, "Please pay for your existing orders before placing more orders"
+        if user_db["acct_current_balance"] < 0:
+            return False, "Please pay off your existing account debt before placing more orders"
+        else:
+            return False, "Please pay for your existing orders before placing more orders"
 
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
-        return False, "Please clear your debt before placing more orders"
+        return False, "Please clear your account debt before placing more orders"
 
     if not (reply := parse_basket(whole_basket))[0]:
         return False, reply[1]

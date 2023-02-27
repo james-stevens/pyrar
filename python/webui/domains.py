@@ -177,6 +177,9 @@ def webui_set_auth_code(req):
 
     auth_code = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
 
+    password = passwd.crypt(base64.b64decode(auth_code))
+    sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
+
     bke_job = {
         "domain_id": dom.dom_db["domain_id"],
         "user_id": req.user_id,

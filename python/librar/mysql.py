@@ -96,6 +96,7 @@ def first_not_mysql():
 
 def log_sql(sql):
     debug(" SQL " + sql, first_not_mysql())
+    # log(f" SQL: {sql}")
 
 
 class MariaDB:
