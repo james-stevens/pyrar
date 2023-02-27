@@ -17,11 +17,8 @@ const pre_get_elm = [ "tableDrops","emailSearch","zoneSearch","domainSearch","to
 const money_format = [ "acct_current_balance","acct_previous_balance","acct_overdraw_limit","acct_warn_low_balance",
 	"amount","pre_balance","post_balance","price_charged","price_paid"];
 
-const hide_from_add = [ "created_dt","amended_dt","last_login_dt","acct_sequence_id","reg_create_dt",
-	"users.user_id","domains.domain_id","event_id","transactions.transaction_id","action_id",
-	"backend_id","sales.sales_item_id","payment_id", "acct_previous_balance","acct_current_balance" ];
-
-const hide_from_edit = ["domains.name"].concat(hide_from_add);
+hide_from_add = [ "created_dt","amended_dt","last_login_dt","acct_sequence_id","reg_create_dt","acct_previous_balance","acct_current_balance" ];
+hide_from_edit = ["domains.name"].concat(hide_from_add);
 
 const show_as_json = [ "price_info" ];
 
@@ -748,8 +745,8 @@ function html_one_record(table, db_rec, where)
 	x += "</table></td>";
 
 	x += "<td id=btnBarMore><table>";
-	x += `<tr><td><button onClick="delete_row();" style="width:140px" class=myBtn>Delete</button></td></tr>`;
-	x += `<tr><td><button onClick="edit_row();" style="width:140px" class=myBtn>Edit</button></td></tr>`;
+	x += `<tr><td><button onClick="delete_row();" style="width:150px" class=myBtn>Delete</button></td></tr>`;
+	x += `<tr><td><button onClick="edit_row();" style="width:150px" class=myBtn>Edit</button></td></tr>`;
 	x += "<tr><td>"+gbl.gap+"</td></tr>";
 
 	let add_ending = false, with_pdns = null;
@@ -759,18 +756,18 @@ function html_one_record(table, db_rec, where)
 
 	if (table=="domains") {
 		if (registry_type(db_rec.name)=="epp")
-			x += `<tr><td><button style="width:140px" onClick="show_regs_data('${db_rec.name}');" class=myBtn>Reg's Data</button></td></tr>`;
+			x += `<tr><td><button style="width:150px" onClick="show_regs_data('${db_rec.name}');" class=myBtn>Reg's Data</button></td></tr>`;
 		with_pdns = db_rec.name; add_ending = true; }
 
 	if (with_pdns)
-		x += `<tr><td><button style="width:140px" onClick="show_dns_data('${with_pdns}');" class=myBtn>P/DNS Data</button></td></tr>`;
+		x += `<tr><td><button style="width:150px" onClick="show_dns_data('${with_pdns}');" class=myBtn>P/DNS Data</button></td></tr>`;
 
 	if (table=="sales"){
-		x += `<tr><td><button style="width:140px" class=myBtn>Refund</button></td></tr>`;
+		x += `<tr><td><button style="width:150px" class=myBtn>Refund</button></td></tr>`;
 		add_ending = true; }
 
 	if (table=="users"){
-		x += `<tr><td><button onClick="user_cr_db(${db_rec.user_id});" style="width:140px" class=myBtn>Credit/Debit</button></td></tr>`;
+		x += `<tr><td><button onClick="user_cr_db(${db_rec.user_id});" style="width:150px" class=myBtn>Credit/Debit</button></td></tr>`;
 		add_ending = true; }
 
 	if (add_ending) x += "<tr><td>"+gbl.gap+"</td></tr>";
@@ -778,7 +775,7 @@ function html_one_record(table, db_rec, where)
 	if (table in linked_tables) {
 		for(let i of linked_tables[table]) {
 			s = i[1].split(".");
-			x += `<tr><td><button style="width:140px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}","${db_rec[i[0]]}");' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
+			x += `<tr><td><button style="width:150px" title="${table_desc[s[0]]}" onClick='link_col_val("${i[1]}","${db_rec[i[0]]}");' class=myBtn>${pretty_prompt(s[0])}</button></td></tr>`;
 			}
 		}
 
@@ -1028,6 +1025,7 @@ function go_welcome(with_push)
 				}
 
 			for(let col in gbl.config.schema[i].columns) {
+				if (gbl.config.schema[i].columns[col].serial) hide_from_add.push(`${i}.${col}`);
 				if (col in gbl.config.schema[":more:"].joins) {
 					full_col = i+"."+col;
 					if (full_col == gbl.config.schema[":more:"].joins[col]) continue;
@@ -1039,6 +1037,15 @@ function go_welcome(with_push)
 					}
 				}
 			}
+
+		let all_zones = [];
+		for(let z in gbl.config.zones) 
+			all_zones.push([gbl.config.zones[z].name,gbl.config.zones[z].name]);
+
+		pick_lists.class_by_regexp = { "zone" : all_zones };
+		pick_lists.sales = { "zone_name": all_zones };
+
+		hide_from_edit = ["domains.name"].concat(hide_from_add);
 		elm.tableDrops.innerHTML = add_drop+"</select>&nbsp;"+search_drop+"</select>&nbsp;";
 		elm.moreInfo.innerHTML = "<h2>Welcome</h2>";
 		pick_lists.zones.registry = []

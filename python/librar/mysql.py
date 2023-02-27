@@ -250,7 +250,7 @@ class MariaDB:
             self.credentials["username"] = mysql_json[self.which_connector][0]
             self.credentials["password"] = mysql_json[self.which_connector][1]
         elif isinstance(mysql_json[self.which_connector], dict) and misc.has_data(mysql_json[self.which_connector],
-                                                                             ["username", "password"]):
+                                                                                  ["username", "password"]):
             self.credentials["username"] = mysql_json[self.which_connector]["username"]
             self.credentials["password"] = mysql_json[self.which_connector]["password"]
 

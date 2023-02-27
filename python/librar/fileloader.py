@@ -16,14 +16,14 @@ def load_file_json(filename):
     where = inspect.stack()[1]
     fname = where.filename.split("/")[-1].split(".")[0]
     txt = f"[{fname}:{str(where.lineno)}/{where.function}]"
-    syslog.syslog(syslog.LOG_NOTICE,f"{txt} -> Reloading file '{filename}'")
+    syslog.syslog(syslog.LOG_NOTICE, f"{txt} -> Reloading file '{filename}'")
     try:
         with open(filename, "r", encoding='UTF-8') as file_fd:
             if file_fd.readable():
                 data = json.load(file_fd)
                 return data
     except (ValueError, IOError) as err:
-        syslog.syslog(syslog.LOG_ERR,f"{txt} -> load_file_json: {filename} : {str(err)}")
+        syslog.syslog(syslog.LOG_ERR, f"{txt} -> load_file_json: {filename} : {str(err)}")
 
     return None
 

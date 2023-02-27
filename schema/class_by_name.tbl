@@ -6,12 +6,14 @@
 
 sqlsh "drop table if exists class_by_name"
 sqlsh "create table class_by_name (
+	class_by_name_id	${auto},
 	name				${domain_name} not null,
 	class				varchar(50) not null,
 
 	amended_dt			datetime not null,
 
-	primary key (name)
+	primary key (class_by_name_id),
+	unique key (name)
 )"
 
 sqlsh "grant select on class_by_name to engine,webui"

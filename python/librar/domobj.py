@@ -10,6 +10,7 @@ from librar import registry
 from librar import static
 from librar import validate
 from librar import log
+from librar import misc
 from librar.policy import this_policy as policy
 
 
@@ -154,7 +155,8 @@ class DomainList:
         if self.domobjs is None:
             return False, "Use `set_list` before `load_all`"
 
-        ok, dom_dbs = sql.sql_select("domains",{"name": [dom.name for __, dom in self.domobjs.items()]},limit=len(self.domobjs))
+        ok, dom_dbs = sql.sql_select("domains", {"name": [dom.name for __, dom in self.domobjs.items()]},
+                                     limit=len(self.domobjs))
         if not ok or not dom_dbs:
             return False, "Failed to load domains from database"
 

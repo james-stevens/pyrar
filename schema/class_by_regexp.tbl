@@ -6,13 +6,15 @@
 
 sqlsh "drop table if exists class_by_regexp"
 sqlsh "create table class_by_regexp (
+	name_regexp_id		${auto} not null,
 	name_regexp			${domain_name} not null,
 	zone				${domain_name} not null,
 	class				varchar(50) not null,
 
 	amended_dt			datetime not null,
 
-	primary key (zone, name_regexp)
+	primary key (name_regexp_id),
+	unique key (zone, name_regexp)
 )"
 
 sqlsh "grant select on class_by_regexp to engine,webui"

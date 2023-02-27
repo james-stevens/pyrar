@@ -17,8 +17,8 @@ def sort_elm(fld_elm):
 def make_schema(database):
     schema = {}
 
-    sql.cnx.query("show tables")
-    res = sql.cnx.store_result()
+    sql.tcp_cnx.query("show tables")
+    res = sql.tcp_cnx.store_result()
     ret = res.fetch_row(maxrows=0, how=1)
 
     this_db = "Tables_in_" + database
@@ -27,8 +27,8 @@ def make_schema(database):
 
     for table in schema:
         this_tbl = schema[table]
-        sql.cnx.query("describe " + table)
-        res = sql.cnx.store_result()
+        sql.tcp_cnx.query("describe " + table)
+        res = sql.tcp_cnx.store_result()
         ret = res.fetch_row(maxrows=0, how=1)
         this_tbl["columns"] = {}
         cols = list(ret)
@@ -59,8 +59,8 @@ def make_schema(database):
                 else:
                     this_tbl["columns"][each_col["Field"]]["default"] = each_col["Default"]
 
-        sql.cnx.query("show index from " + table)
-        res = sql.cnx.store_result()
+        sql.tcp_cnx.query("show index from " + table)
+        res = sql.tcp_cnx.store_result()
         ret = res.fetch_row(maxrows=0, how=1)
         this_tbl["indexes"] = {}
         for each_idx in ret:

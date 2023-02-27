@@ -12,7 +12,6 @@ from dateutil.relativedelta import relativedelta
 from librar.policy import this_policy as policy
 from librar import static
 
-
 HEXLIB = "0123456789ABCDEF"
 
 

@@ -13,6 +13,7 @@ import argparse
 
 from librar.mysql import sql_server as sql
 from librar import registry
+from librar import misc
 from librar import policy
 from librar.log import log, debug, init as log_init
 

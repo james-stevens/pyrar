@@ -4,6 +4,7 @@
 """ run job requests queued in table `backend` """
 
 from librar import sigprocs
+from librar import misc
 from librar.mysql import sql_server as sql
 
 

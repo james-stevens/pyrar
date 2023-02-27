@@ -129,6 +129,13 @@
             "type": "varchar",
             "null": false
          },
+         "class_by_name_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
          "name": {
             "size": 260,
             "type": "varchar",
@@ -137,6 +144,12 @@
       },
       "indexes": {
          "PRIMARY": {
+            "columns": [
+               "class_by_name_id"
+            ],
+            "unique": true
+         },
+         "name": {
             "columns": [
                "name"
             ],
@@ -160,6 +173,13 @@
             "type": "varchar",
             "null": false
          },
+         "name_regexp_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
          "zone": {
             "size": 260,
             "type": "varchar",
@@ -168,6 +188,12 @@
       },
       "indexes": {
          "PRIMARY": {
+            "columns": [
+               "name_regexp_id"
+            ],
+            "unique": true
+         },
+         "zone": {
             "columns": [
                "zone",
                "name_regexp"

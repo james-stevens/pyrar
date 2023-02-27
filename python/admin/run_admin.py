@@ -719,7 +719,7 @@ def get_config():
 def main():
     log_init(with_debug=True)
     application.run()
-    sql.cnx.close()
+    sql.close()
 
 
 if __name__ == "__main__":

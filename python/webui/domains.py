@@ -13,6 +13,7 @@ from librar.log import log
 from librar.mysql import sql_server as sql
 from librar import sigprocs
 from librar import domobj
+from librar import misc
 from librar import pdns
 from librar import tlsa
 from librar import static

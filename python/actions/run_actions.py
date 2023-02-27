@@ -9,6 +9,7 @@ import inspect
 
 from librar.mysql import sql_server as sql
 from librar import static
+from librar import misc
 from librar import sigprocs
 from librar import registry
 from librar import pdns

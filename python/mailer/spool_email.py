@@ -79,7 +79,7 @@ def load_records(which_message, request_list):
     if "domain" in return_data and "sale" in return_data and "expiry_dt" in return_data[
             "domain"] and "num_years" in return_data["sale"]:
         return_data["domain"]["new_expiry_dt"] = misc.date_add(return_data["domain"]["expiry_dt"],
-                                                              years=int(return_data["sale"]["num_years"]))
+                                                               years=int(return_data["sale"]["num_years"]))
 
     return return_data
 

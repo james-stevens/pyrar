@@ -138,7 +138,7 @@ def before_request():
         return None
 
     allowable_referrer = policy.policy("allowable_referrer")
-    if allowable_referrer is not None and isinstance(allowable_referrer,(dict,list)):
+    if allowable_referrer is not None and isinstance(allowable_referrer, (dict, list)):
         if flask.request.referrer in allowable_referrer:
             return None
     elif flask.request.referrer == policy.policy("website_name"):
@@ -273,7 +273,7 @@ def payments_delete():
     pay_db = {
         "provider": req.post_js["provider"],
         "token": req.post_js["token"],
-        "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL],
+        "token_type": [static.PAY_TOKEN_VERIFIED, static.PAY_TOKEN_CAN_PULL],
         "user_id": req.user_id
     }
 
@@ -331,7 +331,10 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments", { "user_id": req.user_id, "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL] })
+    ok, reply = sql.sql_select("payments", {
+        "user_id": req.user_id,
+        "token_type": [static.PAY_TOKEN_VERIFIED, static.PAY_TOKEN_CAN_PULL]
+    })
     if not ok and reply is None:
         return req.abort("Failed to load payment data")
 
@@ -543,7 +546,7 @@ def users_verify():
         return req.abort("No JSON posted")
 
     if not misc.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
-                                                                            int) or len(req.post_js["hash"]) != 20:
+                                                                             int) or len(req.post_js["hash"]) != 20:
         return req.abort("Invalid verification data")
     if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
         return req.response(True)

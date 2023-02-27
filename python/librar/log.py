@@ -84,7 +84,7 @@ def log(line, where=None, default_level=syslog.LOG_NOTICE):
 def check_off(this_facility, also_check_none=False):
     global HOLD_WITH_LOGGING
     global DONE_INIT
-    if this_facility in ["None","Off"] or (also_check_none and this_facility is None):
+    if this_facility in ["None", "Off"] or (also_check_none and this_facility is None):
         HOLD_WITH_LOGGING = False
         DONE_INIT = True
         return True
