@@ -11,8 +11,8 @@ sqlsh "CREATE TABLE payments (
 
     user_id			${row_id},
 
-    provider		varchar(50) not null,
-    token			varchar(100) not null,
+    provider		varchar(1000) not null,
+    token			varchar(3000) not null,
     token_type		tinyint not null,
 
 	created_dt      datetime not null,

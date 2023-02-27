@@ -675,12 +675,12 @@
             "null": false
          },
          "provider": {
-            "size": 50,
+            "size": 1000,
             "type": "varchar",
             "null": false
          },
          "token": {
-            "size": 100,
+            "size": 3000,
             "type": "varchar",
             "null": false
          },

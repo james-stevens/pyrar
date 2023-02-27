@@ -221,10 +221,7 @@ function do_size_one_space()
 {
 	let sz = 0;
 	for (let item of ["userSpace","marketPlace","search","basketSpace"])
-		if (elm[item].style.display != "none") {
-			sz = elm[item].clientHeight+400;
-			}
-
+		if (elm[item].style.display != "none") sz = elm[item].clientHeight+200;
     if (sz < window.innerHeight) sz = window.innerHeight;
     document.body.style.height = sz;
 }
@@ -1226,7 +1223,7 @@ function user_statement(with_push,from_start)
 
 function show_transactions(with_more)
 {
-	let x = "<table align=center width=100% border=0>";
+	let x = "<table align=center style='min-width: 75%;' border=0>";
 	x += "<tr>";
 	["When","Description","Credit","Debit","Balance"].forEach((item) => { x += `<th>${item}</th>`; })
 	x += "</tr>";
