@@ -551,7 +551,6 @@ def insert_table_row(table):
     ok, set_list = process_one_set(sent["set"], table)
     if not ok:
         return json_abort(set_list)
-    log(f"set_list={set_list}")
     query = f"insert into {table} set " + ",".join(set_list)
 
     num_rows, row_id = sql.sql_exec(query)

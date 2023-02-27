@@ -426,23 +426,22 @@ function show_dns_data(domain)
 		sort_rr_sets(reply);
 
 		let x = "<table border=0 cellspacing=1 cellpadding=0 width=100%>";
+		x += "<colgroup><col/><col/><col/><col width=90%/></colgroup>";
 		x += "<tr><th>Host</th><th>Type</th><th>TTL</th><th>Value</th></tr>";
 
 		for(let i in reply.dns.rrsets) {
 			let rrs = reply.dns.rrsets[i];
-			for(let c in rrs.records) {
-			let each_rr = rrs.records[c];
-			let func = "edit_rr";
-
-			let show_name = clean_host_name(domain,rrs.name);
-
 			x += `<tr class=dataRow>`;
-			x += `<td title='${rrs.name}'>${show_name}</td><td>${rrs.type}</td>`;
-			x += `<td>${rrs.ttl}</td><td class=dnsData>${each_rr.content}</td></tr>`;
-
-			if ((rrs.type=="SOA")&&(reply.dns.dnssec)&&(reply.dns.ds))
-				x += `<tr class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${reply.dns.ds}</td></tr>`;
-			}
+			x += `<td title='${rrs.name}'>${clean_host_name(domain,rrs.name)}</td><td>${rrs.type}</td>`;
+			x += `<td align=right>${rrs.ttl}</td>`;
+			let first = true;
+			for(let c in rrs.records) {
+				let each_rr = rrs.records[c];
+				if (!first) x += "<tr class=dataRow><td colspan=3></td>"; else first=false;
+				x += `<td class=dnsData>${each_rr.content}</td></tr>`;
+				if ((rrs.type=="SOA")&&(reply.dns.dnssec)&&(reply.dns.ds))
+					x += `<tr class=dataRow><td>@</td><td>DS</td><td>${rrs.ttl}</td><td>${reply.dns.ds}</td></tr>`;
+				}
 		}
 
 		x += "</table>";
