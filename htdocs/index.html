@@ -525,9 +525,8 @@ function go_welcome(with_push)
 		gbl.config.ok_tlds = {};
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
-		if (gbl.config.payment) {
-			for(let i in gbl.config.payment) add_payment_script(i);
-			}
+		if (gbl.config.payments)
+			for(let i in gbl.config.payments) add_payment_script(i);
 
 		let my_icon = policy("icon",null);
 		let site_name = policy("business_name","Registrar");
@@ -1304,7 +1303,7 @@ function make_pay_by_select(name,onchange)
 	if (onchange) extra = `onChange="${onchange}(this);"`;
 	x += `<select ${extra} id=top_up_method><option value=''>--- Select Payment Method ---`;
 	for(let i in payments)
-		if ((i in gbl.config.payment)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
+		if ((i in gbl.config.payments)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
 	x += "</select>";
 	return x;
 }

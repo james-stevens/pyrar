@@ -53,7 +53,7 @@
             "null": false
          },
          "authcode": {
-            "size": 50,
+            "size": 100,
             "type": "varchar",
             "null": true
          },
@@ -579,7 +579,7 @@
             "null": false
          },
          "authcode": {
-            "size": 50,
+            "size": 100,
             "type": "varchar",
             "null": true
          },
@@ -633,6 +633,11 @@
             "type": "decimal",
             "null": false,
             "default": 0
+         },
+         "status": {
+            "size": 100,
+            "type": "varchar",
+            "null": true
          },
          "user_id": {
             "unsigned": true,

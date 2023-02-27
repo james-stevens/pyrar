@@ -39,7 +39,11 @@ def config():
     return all_config
 
 
-def process_webhook(pay_module, sent_data):
+def process_webhook(webhook_data, sent_data):
+    if "name" not in webhook_data:
+        return False, "Webhook data has no 'name' property"
+
+    pay_module = webhook_data["name"]
     file_name = None
     with tempfile.NamedTemporaryFile("w+",
                                      encoding="utf-8",
@@ -57,7 +61,7 @@ def process_webhook(pay_module, sent_data):
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
 
-    ok, reply = func(sent_data, file_name)
+    ok, reply = func(webhook_data, sent_data, file_name)
     if ok is None and reply is None:
         os.remove(file_name)
         return True, True
@@ -81,7 +85,7 @@ def main():
     log_init(with_debug=True)
     startup()
     print(json.dumps(config(), indent=3))
-    print(pay_handler.pay_webhooks)
+    print(json.dumps(pay_handler.pay_webhooks,indent=3))
 
 
 if __name__ == "__main__":

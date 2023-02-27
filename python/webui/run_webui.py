@@ -170,7 +170,7 @@ def catch_webhook(webhook):
     req = WebuiReq()
     if webhook is None or webhook not in pay_handler.pay_webhooks:
         return req.abort(f"Webhook not recognised - '{webhook}'")
-    pay_mod = pay_handler.pay_webhooks[webhook]
+    webhook_data = pay_handler.pay_webhooks[webhook]
 
     sent_data = None
     if flask.request.json:
@@ -180,7 +180,7 @@ def catch_webhook(webhook):
     elif flask.request.method == "GET":
         sent_data = flask.request.args
 
-    ok, reply = libpay.process_webhook(pay_mod, sent_data)
+    ok, reply = libpay.process_webhook(webhook_data, sent_data)
     if not ok:
         return req.abort(reply)
     return req.response(reply)

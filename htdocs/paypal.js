@@ -10,6 +10,10 @@ function paypal_startup() // {module}_startup() is a mandatory func in a JS paym
 		"desc": "Pay by PayPal",
 		"single": paypal_single_payment
 		};
+
+	if ((gbl.config.payments.paypal)&&(gbl.config.payments.paypal.desc))
+		payments.paypal.desc = gbl.config.payments.paypal.desc;
+
 }
 
 

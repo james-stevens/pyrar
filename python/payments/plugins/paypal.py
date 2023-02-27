@@ -24,9 +24,11 @@ def paypal_config():
     if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
         return None
 
-    return_conf = {"desc": "PayPal"}
+    return_conf = {"desc": "Pay by PayPal"}
     payapl_conf = pay_conf[THIS_MODULE]
     paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
+    if paypal_mode == "test":
+        return_conf["desc"] = "Pay by PayPal SandBox"
     if paypal_mode in payapl_conf and "client_id" in payapl_conf[paypal_mode]:
         return_conf["client_id"] = payapl_conf[paypal_mode]["client_id"]
     elif "client_id" in payapl_conf:
@@ -44,14 +46,20 @@ def paypal_startup():
     payapl_conf = pay_conf[THIS_MODULE]
     paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
 
-    if paypal_mode in payapl_conf and "webhook" in payapl_conf[paypal_mode]:
-        pay_handler.pay_webhooks[payapl_conf[paypal_mode]["webhook"]] = THIS_MODULE
+    if paypal_mode in payapl_conf and misc.has_data(payapl_conf[paypal_mode],["webhook","client_id"]):
+        mode_conf = payapl_conf[paypal_mode]
+        pay_handler.pay_webhooks[mode_conf["webhook"]] = {
+            "name": THIS_MODULE,
+            "client_id": mode_conf["client_id"],
+            "mode": paypal_mode
+            }
     return True
 
 
 class PayPalWebHook:
-    def __init__(self, sent_json, filename):
+    def __init__(self, webhook_data, sent_json, filename):
         self.input = sent_json
+        self.webhook_data = webhook_data
         self.filename = filename
         self.currency = None
         self.amount = None
@@ -200,8 +208,8 @@ class PayPalWebHook:
         return True, True
 
 
-def paypal_process_webhook(sent_data, filename):
-    hook = PayPalWebHook(sent_data, filename)
+def paypal_process_webhook(webhook_data, sent_data, filename):
+    hook = PayPalWebHook(webhook_data, sent_data, filename)
     if not hook.interesting_webhook():
         return None, None
     ok, reply = hook.process_webhook()
@@ -220,6 +228,11 @@ pay_handler.add_plugin(THIS_MODULE, {
 
 def run_debug():
     log_init(with_debug=True)
+    paypal_startup()
+    print(pay_handler.pay_webhooks)
+    print(paypal_config())
+    sys.exit(0)
+
     sql.connect("engine")
     with open("/opt/github/pyrar/tmp/" + sys.argv[1], "r", encoding="utf-8") as fd:
         print(paypal_process_webhook(json.load(fd), "/opt/github/pyrar/tmp/paypal.json"))
