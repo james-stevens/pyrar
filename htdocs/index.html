@@ -1539,7 +1539,7 @@ function place_order()
 
 		user_info();
 		let fn = show_new_orders
-		if ((!ctx.orders.length)&&(!gbl.basket)) {
+		if ((!ctx.orders)&&(!gbl.basket)) {
 			delete ctx.orders;
 			fn = show_all_orders_processed;
 			}
@@ -1555,6 +1555,7 @@ function do_orders_icon()
 	callApi("orders/details",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load orders",reply,"errorSpan");
 		catch_user_data(reply);
+		user_info();
 		show_one_space("userSpace");
 		if ((ctx.orders)&&(ctx.orders.length)) {
 			elm.userSpace.innerHTML = "<table align=center width=75% border=0>"+order_details(true)+"</table>";
