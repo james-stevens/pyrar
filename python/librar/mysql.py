@@ -59,7 +59,7 @@ def format_col(column, value):
         return f"{column}=now()"
 
     if value is None:
-        return f"{column}=NULL"
+        return f"{column} is NULL"
 
     if isinstance(value, int):
         return (column + "=" + str(int(value))) if column else str(int(value))

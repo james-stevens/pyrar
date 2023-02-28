@@ -115,4 +115,4 @@ def admin_trans(injs):
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
-    print(">>>>>>", apply_transaction(10450, 90000, "Here's some fake money"))
+    print(">>>>>>", apply_transaction(10452, 90000, "Here's some fake money"))

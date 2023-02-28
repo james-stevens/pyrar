@@ -13,7 +13,6 @@ ${cmd} "flush tables"
 
 {
 echo "webui BWB39B9M1c1ig"
-echo "raradm 132wSQI9Qik76"
 echo "engine P0tsOvAJ2iMqo"
 } | while read user pass
 do

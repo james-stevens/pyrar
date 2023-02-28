@@ -1,6 +1,7 @@
 #! /bin/sh
 
 docker run \
+	-m 1g \
 	--env PDNS_API_KEY=Some-Api-Key \
 	-v /opt/github/pyrar/config:/opt/pyrar/config \
 	-v /opt/github/pyrar/htdocs:/opt/pyrar/htdocs \

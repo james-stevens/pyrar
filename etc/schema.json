@@ -572,6 +572,56 @@
          }
       }
    },
+   "messages": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": false
+         },
+         "is_read": {
+            "size": 1,
+            "type": "tinyint",
+            "null": false
+         },
+         "message": {
+            "size": 3000,
+            "type": "varchar",
+            "null": false
+         },
+         "message_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "default": 0
+         }
+      },
+      "indexes": {
+         "PRIMARY": {
+            "columns": [
+               "message_id"
+            ],
+            "unique": true
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
    "orders": {
       "columns": {
          "amended_dt": {

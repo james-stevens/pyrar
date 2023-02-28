@@ -17,4 +17,6 @@ sqlsh "create table class_by_regexp (
 	unique key (zone, name_regexp)
 )"
 
+sqlsh "ALTER TABLE class_by_regexp AUTO_INCREMENT = 10450"
+
 sqlsh "grant select on class_by_regexp to engine,webui"

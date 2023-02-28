@@ -81,17 +81,17 @@ class PayPalWebHook:
         resource = self.input["resource"]
         if "payer" in resource:
             payer = resource["payer"]
-            if "email_address" in payer:
-                self.email = payer["email_address"]
-            if "payer_id" in payer:
-                self.payer_id = payer["payer_id"]
+            self.email = payer["email_address"] if "email_address" in payer else None
+            self.payer_id = payer["payer_id"] if "payer_id" in payer else None
 
         pay_unit = resource["purchase_units"][0]
-        if "custom_id" in pay_unit:
-            self.token = pay_unit["custom_id"]
-            return True
+        self.token = pay_unit["custom_id"] if "custom_id" in pay_unit else None
+        if "amount" in pay_unit:
+            amt = pay_unit["amount"]
+            self.amount = amt["amount"] if "amount" in amt else None
+            self.currency = amt["currency_code"] if "currency_code" in amt else None
 
-        return False
+        return self.email is not None and self.payer_id is not None
 
     def try_match_user(self, prov_ext, token, with_delete=False, single_use=False):
         where = {
@@ -192,8 +192,10 @@ class PayPalWebHook:
         return True, True
 
     def checkout_order_approved(self):
-        if self.read_checkout_order() and self.get_user_id(False):
-            self.store_users_identity()
+        if self.read_checkout_order():
+            print(">>>>",self.amount,self.currency)
+            if self.get_user_id(False):
+                self.store_users_identity()
         return True, True
 
     def process_webhook(self):
@@ -230,13 +232,10 @@ pay_handler.add_plugin(THIS_MODULE, {
 def run_debug():
     log_init(with_debug=True)
     paypal_startup()
-    print(pay_handler.pay_webhooks)
-    print(paypal_config())
-    sys.exit(0)
-
     sql.connect("engine")
-    with open("/opt/github/pyrar/tmp/" + sys.argv[1], "r", encoding="utf-8") as fd:
-        print(paypal_process_webhook(json.load(fd), "/opt/github/pyrar/tmp/paypal.json"))
+    file = "/opt/github/pyrar/tmp/" + sys.argv[1]
+    with open(file, "r", encoding="utf-8") as fd:
+        print(paypal_process_webhook({},json.load(fd), file))
 
 
 if __name__ == "__main__":
