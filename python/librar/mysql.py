@@ -53,7 +53,7 @@ def event_log(other_items, stack_pos=2):
     sql_server.sql_insert("events", event_db)
 
 
-def format_col(column, value, is_set = False):
+def format_col(column, value, is_set=False):
     """ convert {value} to SQL string """
     if column is not None and value is None and (column in static.NOW_DATE_FIELDS or column[-3:] == "_dt"):
         return f"{column}=now()"
@@ -80,7 +80,7 @@ def format_col(column, value, is_set = False):
     return ret
 
 
-def data_set(data, joiner, is_set = False):
+def data_set(data, joiner, is_set=False):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
     if data is None:
         return None
