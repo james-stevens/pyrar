@@ -53,12 +53,14 @@ def event_log(other_items, stack_pos=2):
     sql_server.sql_insert("events", event_db)
 
 
-def format_col(column, value):
+def format_col(column, value, is_set = False):
     """ convert {value} to SQL string """
     if column is not None and value is None and (column in static.NOW_DATE_FIELDS or column[-3:] == "_dt"):
         return f"{column}=now()"
 
     if value is None:
+        if is_set:
+            return f"{column} = NULL"
         return f"{column} is NULL"
 
     if isinstance(value, int):
@@ -78,13 +80,13 @@ def format_col(column, value):
     return ret
 
 
-def data_set(data, joiner):
+def data_set(data, joiner, is_set = False):
     """ create list of `col=val` from dict {data}, joined by {joiner} """
     if data is None:
         return None
     if isinstance(data, str):
         return data
-    return joiner.join([format_col(item, data[item]) for item in data])
+    return joiner.join([format_col(item, data[item], is_set) for item in data])
 
 
 def first_not_mysql():
@@ -178,7 +180,7 @@ class MariaDB:
                 if col not in column_vals:
                     column_vals[col] = None
         with_ignore = "ignore" if ignore else ""
-        return self.sql_exec(f"insert {with_ignore} into {table} set " + data_set(column_vals, ","))
+        return self.sql_exec(f"insert {with_ignore} into {table} set " + data_set(column_vals, ",", is_set=True))
 
     def sql_exists(self, table, where):
         sql = f"select 1 from {table} where " + data_set(where, " and ") + " limit 1"
@@ -191,7 +193,7 @@ class MariaDB:
         return self.sql_update(table, column_vals, where, 1)
 
     def sql_update(self, table, column_vals, where, limit=None):
-        update_cols = data_set(column_vals, ",")
+        update_cols = data_set(column_vals, ",", is_set=True)
         where_clause = data_set(where, " and ")
         sql = f"update {table} set {update_cols} where {where_clause}"
         if limit is not None:

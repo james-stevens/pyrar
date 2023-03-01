@@ -6,21 +6,10 @@ import sys
 import json
 
 from librar.log import log, debug, init as log_init
-from librar import validate
-from librar import misc
-from librar import static
-from librar import registry
-from librar import accounts
-from librar import sales
-from librar import mysql
+from librar import validate, misc, static, registry, accounts, sales, domobj, mysql
 from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
-from librar import domobj
-from backend import creator
-
-from backend import dom_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
-from backend.dom_plugins import *
+from backend import creator, libback
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
@@ -116,8 +105,7 @@ def capture_basket(req, whole_basket):
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
         if user_db["acct_current_balance"] < 0:
             return False, "Please pay off your existing account debt before placing more orders"
-        else:
-            return False, "Please pay for your existing orders before placing more orders"
+        return False, "Please pay for your existing orders before placing more orders"
 
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
         return False, "Please clear your account debt before placing more orders"
@@ -245,10 +233,7 @@ def price_order_item(order):
     if not doms.domobjs[order["domain"]].valid_expiry_limit(order["num_years"]):
         return False, "Expiry limit exceeded"
 
-    if (plugin_func := dom_handler.run(doms.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar: {doms.registry['name']}"
-
-    ok, prices = plugin_func(doms, order["num_years"], [order["action"]])
+    ok, prices = libback.get_prices(doms, order["num_years"], [order["action"]])
     if not ok or prices is None or len(prices) != 1:
         return False, "Price check failed"
 

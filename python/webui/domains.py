@@ -7,23 +7,12 @@ import sys
 import json
 import base64
 
-from librar import registry
-from librar import validate
 from librar.log import log
 from librar.mysql import sql_server as sql
-from librar import sigprocs
-from librar import domobj
-from librar import misc
-from librar import pdns
-from librar import tlsa
-from librar import static
-from librar import hashstr
+from librar import sigprocs, domobj, misc, pdns, tlsa, static, hashstr, registry, validate
 
 from mailer import spool_email
-
-from backend import dom_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
-from backend.dom_plugins import *
+from backend import libback
 
 
 def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
@@ -34,10 +23,7 @@ def get_domain_prices(domlist, num_years=1, qry_type=None, user_id=None):
     if not domlist.registry or "type" not in domlist.registry:
         return False, "Registrar not supported"
 
-    if (plugin_func := dom_handler.run(domlist.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar '{domlist.registry['name']}/{domlist.registry['type']}'"
-
-    ok, prices = plugin_func(domlist, num_years, qry_type)
+    ok, prices = libback.get_prices(domlist, num_years, qry_type)
     if not ok or prices is None:
         return False, "Price check failed"
 
@@ -89,7 +75,7 @@ def check_domain_is_mine(user_id, domain, require_live):
     if not dom.load_name(domain["name"], user_id)[0]:
         return False, "Domain not found or not yours"
 
-    if require_live and dom.dom_db["status_id"] not in static.LIVE_STATUS:
+    if require_live and dom.dom_db["status_id"] not in static.IS_LIVE_STATUS:
         return False, "Operation only supported on live domains"
 
     return True, dom
@@ -114,9 +100,7 @@ def webui_update_domain(req):
     if not sql.sql_update_one("domains", update_cols, {"domain_id": dom.dom_db["domain_id"], "user_id": req.user_id}):
         return False, "Domain update failed"
 
-    if dom.dom_db["status_id"] == static.LIVE_STATUS:
-        domain_backend_update(dom.dom_db)
-
+    domain_backend_update(dom.dom_db)
     return True, update_cols
 
 
@@ -155,6 +139,8 @@ def check_update_ds(post_dom, dom_db, update_cols):
 
 
 def domain_backend_update(dom_db, request_type="dom/update"):
+    if dom.dom_db["status_id"] not in static.IS_LIVE_STATUS:
+        return
     bke_job = {
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],
@@ -162,7 +148,6 @@ def domain_backend_update(dom_db, request_type="dom/update"):
         "execute_dt": misc.now(),
         "created_dt": None
     }
-
     sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
 

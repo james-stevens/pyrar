@@ -19,12 +19,13 @@ from payments.plugins import *
 
 HAS_RUN_START_UP = False
 
-def set_orders_status(user_id,amount_paid,new_status):
-    ok, user_db = sql.sql_select_one("users",{"user_id":user_id})
+
+def set_orders_status(user_id, amount_paid, new_status):
+    ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
 
-    ok, orders_db = sql.sql_select("orders",{ "user_id":user_id,"status":None },order_by="order_item_id")
+    ok, orders_db = sql.sql_select("orders", {"user_id": user_id, "status": None}, order_by="order_item_id")
     if not ok or len(orders_db) <= 0:
         return False
 
@@ -36,7 +37,11 @@ def set_orders_status(user_id,amount_paid,new_status):
             break
         cur_bal = next_bal
         change_status.append(order_db["order_item_id"])
-    sql.sql_update("orders",{"status":new_status},{"user_id":user_id,"status":None,"order_item_id":change_status})
+    sql.sql_update("orders", {"status": new_status}, {
+        "user_id": user_id,
+        "status": None,
+        "order_item_id": change_status
+    })
 
 
 def startup():
@@ -105,7 +110,7 @@ def main():
     log_init(with_debug=True)
     sql.connect("engine")
     startup()
-    set_orders_status(10452,10000,"authorised")
+    set_orders_status(10452, 10000, "authorised")
 
 
 if __name__ == "__main__":

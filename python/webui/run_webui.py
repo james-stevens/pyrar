@@ -403,7 +403,7 @@ def users_domains():
         dom.set_name(dom_db["name"])
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
-        dom_db["is_live"] = dom_db["status_id"] in static.LIVE_STATUS
+        dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
 
     req.user_data["domains"] = reply
 

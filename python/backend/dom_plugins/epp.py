@@ -9,19 +9,11 @@ import base64
 import requests
 
 from librar.mysql import sql_server as sql
-from librar import registry
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
-from librar import parse_dom_resp
-from librar import parsexml
-from librar import domobj
-from librar import static
-from librar import misc
+from librar import domobj, static, misc, registry
 from mailer import spool_email
-from backend import whois_priv
-from backend import dom_req_xml
-from backend import xmlapi
-from backend import shared
+from backend import whois_priv, dom_req_xml, xmlapi, shared, parsexml, parse_dom_resp
 
 from backend import dom_handler
 
@@ -70,7 +62,7 @@ def ds_in_list(ds_data, ds_list):
     return False
 
 
-def domain_renew(bke_job, dom_db):
+def domain_renew(this_reg, bke_job, dom_db):
     """ Renew a domain at an EPP registry """
     name = dom_db["name"]
     job_id = bke_job["backend_id"]
@@ -83,7 +75,6 @@ def domain_renew(bke_job, dom_db):
     if (years := shared.check_num_years(bke_job)) is None:
         return None
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     xml = run_epp_request(this_reg, dom_req_xml.domain_renew(name, years, dom_db["expiry_dt"].split()[0]))
 
     if not xml_check_code(job_id, "renew", xml):
@@ -101,7 +92,7 @@ def transfer_failed(domain_id):
     return False
 
 
-def domain_request_transfer(bke_job, dom_db):
+def domain_request_transfer(this_reg, bke_job, dom_db):
     """ EPP transfer requested """
     name = dom_db["name"]
     job_id = bke_job["backend_id"]
@@ -113,7 +104,6 @@ def domain_request_transfer(bke_job, dom_db):
         transfer_failed(dom_db["domain_id"])
         return None
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     xml = run_epp_request(
         this_reg,
         dom_req_xml.domain_request_transfer(name,
@@ -139,7 +129,7 @@ def domain_request_transfer(bke_job, dom_db):
     return True
 
 
-def domain_create(bke_job, dom_db):
+def domain_create(this_reg, bke_job, dom_db):
     """ EPP create requested """
     name = dom_db["name"]
     job_id = bke_job["backend_id"]
@@ -152,7 +142,6 @@ def domain_create(bke_job, dom_db):
     if (years := shared.check_num_years(bke_job)) is None:
         return None
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if len(ns_list) > 0:
         run_host_create(this_reg, ns_list)
 
@@ -171,19 +160,18 @@ def domain_create(bke_job, dom_db):
     return True
 
 
-def domain_info(bke_job, dom_db):
+def domain_info(this_reg, bke_job, dom_db):
     """ Get domain info """
-    return epp_get_domain_info(bke_job["job_id"], dom_db["name"])
+    return epp_get_domain_info(this_reg, bke_job["job_id"], dom_db["name"])
 
 
-def domain_info_raw(bke_job, dom_db):
+def domain_info_raw(this_reg, bke_job, dom_db):
     """ Get domain info """
-    return epp_get_domain_info(bke_job["job_id"], dom_db["name"], True)
+    return epp_get_domain_info(this_reg, bke_job["job_id"], dom_db["name"], True)
 
 
-def epp_get_domain_info(job_id, domain_name, as_raw=False):
+def epp_get_domain_info(this_reg, job_id, domain_name, as_raw=False):
     """ Get domain info from EPP svr & return cooked result """
-    this_reg = registry.tld_lib.reg_record_for_domain(domain_name)
     if this_reg is None or "url" not in this_reg:
         log(f"EPP-{job_id} '{domain_name}' this_reg or url not given")
         return None
@@ -193,17 +181,15 @@ def epp_get_domain_info(job_id, domain_name, as_raw=False):
     if xml_check_code(job_id, "info", xml):
         if as_raw:
             return xml
-        else:
-            return parse_dom_resp.parse_domain_info_xml(xml, "inf")
+        return parse_dom_resp.parse_domain_info_xml(xml, "inf")
     return None
 
 
-def set_authcode(bke_job, dom_db):
+def set_authcode(this_reg, bke_job, dom_db):
     """ Set AUthCode on domain """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if this_reg is None or "url" not in this_reg:
         log(f"Odd: this_reg or url returned None for '{name}")
         return None
@@ -216,11 +202,11 @@ def set_authcode(bke_job, dom_db):
     return xml_check_code(job_id, "info", run_epp_request(this_reg, req))
 
 
-def domain_update_flags(bke_job, dom_db):
+def domain_update_flags(this_reg, bke_job, dom_db):
     """ Update domain client flags to match database """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
-    if (epp_info := epp_get_domain_info(job_id, name)) is None:
+    if (epp_info := epp_get_domain_info(this_reg, job_id, name)) is None:
         return False
 
     client_locks = {}
@@ -233,7 +219,6 @@ def domain_update_flags(bke_job, dom_db):
     if len(add_flags) == 0 and len(del_flags) == 0:
         return True
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     update_xml = dom_req_xml.domain_update_flags(name, add_flags, del_flags)
 
     return xml_check_code(job_id, "update", run_epp_request(this_reg, update_xml))
@@ -246,14 +231,13 @@ def run_host_create(this_reg, host_list):
         run_epp_request(this_reg, dom_req_xml.host_add(host))
 
 
-def domain_update_from_db(bke_job, dom_db):
+def domain_update_from_db(this_reg, bke_job, dom_db):
     """ Update DS & NS records at EPP registry to match database """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
-    if (epp_info := epp_get_domain_info(job_id, name)) is None:
+    if (epp_info := epp_get_domain_info(this_reg, job_id, name)) is None:
         return False
 
-    this_reg = registry.tld_lib.reg_record_for_domain(name)
     if this_reg is None or "url" not in this_reg:
         return None
 
@@ -294,12 +278,12 @@ def xml_check_code(job_id, desc, xml):
 
 
 # pylint: disable=unused-argument
-def domain_expired(bke_job, dom_db):
+def domain_expired(this_reg, bke_job, dom_db):
     """ nothing to do here """
     return True
 
 
-def domain_delete(bke_job, dom_db):
+def domain_delete(this_reg, bke_job, dom_db):
     """ nothing to do here """
     return True
 
@@ -384,6 +368,7 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("engine")
     registry.start_up()
+    # this_reg = registry.tld_lib.reg_record_for_domain(name)
     start_up_check()
     # print(json.dumps(domain_info(None, {"name": "pant.to.glass"}), indent=3))
     # print(domain_update_flags({"backend_id": 999}, {"name": "pant.to.glass", "client_locks": None}))

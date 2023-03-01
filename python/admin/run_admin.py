@@ -6,23 +6,13 @@
 from datetime import datetime
 import subprocess
 import flask
-import json
 
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
-from librar import registry
-from librar import pdns
-from librar import accounts
-from librar import domobj
-from librar import passwd
-from librar import validate
-from librar import common_ui
-from backend import creator
+from librar import registry, pdns, accounts, domobj, passwd, validate, common_ui
 
-# pylint: disable=unused-wildcard-import, wildcard-import
-from backend import dom_handler
-from backend.dom_plugins import *
+from backend import creator, libback
 
 from admin import load_schema
 
@@ -31,7 +21,7 @@ CHECK_HAS_COLUMN = ["amended_dt", "created_dt"]
 DOMAIN_JOB_TYPES = {"PUT": "dom/create", "PATCH": "dom/update", "DELETE": "dom/delete"}
 
 schema = {}
-has_column = {}
+HAS_COLUMN = {}
 
 
 def find_serial_column(table):
@@ -44,15 +34,15 @@ def find_serial_column(table):
 
 
 def set_amended_and_created():
-    global has_column
-    has_column = {col: {} for col in CHECK_HAS_COLUMN}
+    global HAS_COLUMN
+    HAS_COLUMN = {col: {} for col in CHECK_HAS_COLUMN}
     for table, tbl_data in schema.items():
         if "columns" not in tbl_data:
             continue
 
         for col in CHECK_HAS_COLUMN:
             if col in tbl_data["columns"]:
-                has_column[col][table] = True
+                HAS_COLUMN[col][table] = True
 
 
 def post_table_trigger(table, action, row_id=None, where=None):
@@ -61,7 +51,10 @@ def post_table_trigger(table, action, row_id=None, where=None):
         return
 
     if table == "sysadmins":
-        subprocess.run(["/usr/local/bin/make_admin_logins"])
+        subprocess.run(["/usr/local/bin/make_admin_logins"],
+                       stderr=subprocess.DEVNULL,
+                       stdout=subprocess.DEVNULL,
+                       check=False)
         return
 
     this_where = None
@@ -72,8 +65,8 @@ def post_table_trigger(table, action, row_id=None, where=None):
             return
         this_where = {col: row_id}
 
-    if table == "domains":
-        return post_trigger_domains(action, this_where)
+    if table == "domains" and this_where is not None:
+        post_trigger_domains(action, this_where)
 
 
 def post_trigger_domains(action, this_where):
@@ -395,15 +388,7 @@ def check_supplied_modifiers(sent, allowed):
     """ check the {sent} modifiers are in the {allowed} list """
     for modifier in sent:
         if modifier not in allowed:
-            return json_abort(f"The modifier '{modifier}' is not supported in this request")
-
-
-def run_backend_start_ups():
-    all_regs = registry.tld_lib.regs_file.data()
-    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
-    for this_type, funcs in dom_handler.backend_plugins.items():
-        if this_type in have_types and "start_up" in funcs:
-            funcs["start_up"]()
+            json_abort(f"The modifier '{modifier}' is not supported in this request")
 
 
 application = flask.Flask("MySQL-Rest/API")
@@ -413,7 +398,7 @@ schema = load_schema.load_db_schema()
 set_amended_and_created()
 registry.start_up()
 pdns.start_up()
-run_backend_start_ups()
+libback.start_ups()
 
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
@@ -423,7 +408,7 @@ if not validate.valid_currency(site_currency):
 @application.before_request
 def before_request():
     if registry.tld_lib.check_for_new_files():
-        run_backend_start_ups()
+        libback.start_ups()
 
 
 @application.route("/adm/v1", methods=['GET'])
@@ -496,7 +481,7 @@ def process_one_set(set_clause, table):
     cols = schema[table]["columns"]
     for col in set_clause:
         if col not in cols:
-            False, "Column {col} not in table {table}"
+            return False, f"Column {col} not in table {table}"
         val = add_data(set_clause[col], cols[col])
         if col in ["amended_dt", "created_dt"]:
             val = "now()"
@@ -545,7 +530,7 @@ def insert_table_row(table):
         return json_abort("In an INSERT, the `set` clause must be an object or list type")
 
     for col in ["amended_dt", "created_dt"]:
-        if table in has_column[col] and col not in sent["set"]:
+        if table in HAS_COLUMN[col] and col not in sent["set"]:
             sent["set"][col] = None
 
     ok, set_list = process_one_set(sent["set"], table)
@@ -580,7 +565,7 @@ def update_table_row(table):
     if not isinstance(sent["set"], dict):
         return json_abort("In an UPDATE, the `set` clause must be an object type")
 
-    if table in has_column["amended_dt"] and "amended_dt" not in sent["set"]:
+    if table in HAS_COLUMN["amended_dt"] and "amended_dt" not in sent["set"]:
         sent["set"]["amended_dt"] = None
 
     ok, set_list = process_one_set(sent["set"], table)
@@ -645,11 +630,7 @@ def get_registry_data(domain):
         "num_years": 1,
         "domain_id": dom.dom_db["domain_id"]
     }
-    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
-    if action not in this_handler:
-        return json_abort(f"Unsupport action '{action}' for type='{dom.registry['type']}'")
-
-    if (reply := this_handler[action](bke_job, dom.dom_db)) is None:
+    if (reply := libback.run(action, dom.registry, bke_job, dom.dom_db)) is None:
         return json_abort("Error getting domain info from backend")
     return response(200, reply)
 

@@ -92,7 +92,7 @@ function theme_css(theme) {
 	font-size: 22px;
 	}
 
-.botSapce {
+.botSpace {
 	min-width: 75%;
 	margin-left: auto;
 	margin-right: auto;

@@ -193,7 +193,7 @@ class PayPalWebHook:
 
     def checkout_order_approved(self):
         if self.read_checkout_order():
-            print(">>>>",self.amount,self.currency)
+            print(">>>>", self.amount, self.currency)
             if self.get_user_id(False):
                 self.store_users_identity()
         return True, True
@@ -235,7 +235,7 @@ def run_debug():
     sql.connect("engine")
     file = "/opt/github/pyrar/tmp/" + sys.argv[1]
     with open(file, "r", encoding="utf-8") as fd:
-        print(paypal_process_webhook({},json.load(fd), file))
+        print(paypal_process_webhook({}, json.load(fd), file))
 
 
 if __name__ == "__main__":
