@@ -28,8 +28,10 @@ PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 def start_up():
     """ Initalisation """
     global CLIENT
-    CLIENT = requests.Session()
-    CLIENT.headers.update(headers)
+    if CLIENT is None:
+        CLIENT = requests.Session()
+        CLIENT.headers.update(headers)
+
     catalog_zone = policy.policy("catalog_zone")
     try:
         create_zone(catalog_zone, False, ensure_zone=True)

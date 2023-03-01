@@ -26,7 +26,7 @@ def tld_pdns_check(name):
 
 def domain_delete(__, bke_job, dom_db):
     """ run dom/delete request """
-    return remove_parent_records(bke_job, dom_db)
+    return remove_parent_records(None, bke_job, dom_db)
 
 
 def remove_parent_records(__, bke_job, dom_db):
@@ -52,7 +52,7 @@ def remove_parent_records(__, bke_job, dom_db):
 
 def domain_expired(__, bke_job, dom_db):
     """ run dom/expired request for type=local"""
-    return remove_parent_records(bke_job, dom_db)
+    return remove_parent_records(None, bke_job, dom_db)
 
 
 def domain_create(__, bke_job, dom_db):

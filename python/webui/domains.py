@@ -139,7 +139,7 @@ def check_update_ds(post_dom, dom_db, update_cols):
 
 
 def domain_backend_update(dom_db, request_type="dom/update"):
-    if dom.dom_db["status_id"] not in static.IS_LIVE_STATUS:
+    if dom_db["status_id"] not in static.IS_LIVE_STATUS:
         return
     bke_job = {
         "domain_id": dom_db["domain_id"],
