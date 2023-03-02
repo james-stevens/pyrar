@@ -9,8 +9,8 @@ import sys
 import argparse
 import filecmp
 
+from librar import mysql
 from librar.mysql import sql_server as sql
-from librar import schema
 from librar.policy import this_policy as policy
 
 SCHEMA_FILE = f"{os.environ['BASE']}/etc/schema.json"
@@ -45,8 +45,8 @@ parser.add_argument("-D", '--debug', action="store_true")
 parser.add_argument("-l", '--login', default="admin")
 args = parser.parse_args()
 
-sql.connect(args.login)
-live_schema = schema.make_schema(sql.credentials["database"])
+sql.connect(args.login, with_schema = True)
+live_schema = sql.schema
 
 filename = SCHEMA_FILE
 if args.login == "pdns":
@@ -84,7 +84,7 @@ def get_column_type(prefix, column_data):
     else:
         query += " NOT NULL"
         if "default" in column_data:
-            if column_data['type'] in schema.numbers:
+            if column_data['type'] in mysql.numbers:
                 query += f" default {column_data['default']}"
             else:
                 query += f" default \"{column_data['default']}\""

@@ -11,12 +11,15 @@ from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
-from librar import fileloader
-from librar import misc
-from librar import static
+from librar import fileloader, misc, static
 from librar.log import log, debug, init as log_init
 
 ALL_CREDENTIALS = ["database", "username", "password", "server"]
+
+numbers = {"tinyint", "int", "decimal"}
+
+def sort_elm(fld_elm):
+    return fld_elm["Field"]
 
 
 def convert_string(data):
@@ -106,6 +109,7 @@ class MariaDB:
         self.which_connector = None
         self.credentials = None
         self.tcp_cnx = None
+        self.schema = None
         self.logins = fileloader.FileLoader(static.LOGINS_FILE)
 
     def close(self):
@@ -264,16 +268,19 @@ class MariaDB:
 
         return True
 
-    def connect(self, login=None):
+    def connect(self, login=None, with_schema = False):
         """ Connect to MySQL based on ENV vars """
 
         if login:
             self.which_connector = login
-        else:
-            if self.which_connector is None:
-                raise ValueError("Reconnect, but no initial login set")
+        if self.which_connector is None:
+            raise ValueError("Reconnect, but no initial login set")
 
-        return self.actually_connect()
+        if not self.actually_connect():
+            return Flase
+        if with_schema:
+            self.make_schema()
+        return True
 
     def actually_connect(self):
 
@@ -311,15 +318,67 @@ class MariaDB:
 
         return self.tcp_cnx is not None
 
+    def make_schema(self):
+        schema = {}
+        ok, ret = self.run_select("show tables")
+        this_db = "Tables_in_" + self.credentials["database"]
+        schema = {table[this_db]: {} for table in ret}
+        for table in schema:
+            this_tbl = schema[table]
+            ok, ret = self.run_select("describe " + table)
+            this_tbl["columns"] = {}
+            cols = list(ret)
+            cols.sort(key=sort_elm)
+            for each_col in cols:
+                this_tbl["columns"][each_col["Field"]] = {}
+                fld_type = each_col["Type"]
+                if fld_type.find(" unsigned") >= 0:
+                    fld_type = fld_type.split()[0]
+                    this_tbl["columns"][each_col["Field"]]["unsigned"] = True
+
+                pos = fld_type.find("(")
+                if pos >= 0:
+                    fld_sz = fld_type[pos + 1:-1]
+                    if fld_sz[-2:] == ",0":
+                        fld_sz = fld_sz[:-2]
+                    this_tbl["columns"][each_col["Field"]]["size"] = int(fld_sz)
+                    fld_type = fld_type[:pos]
+
+                this_tbl["columns"][each_col["Field"]]["type"] = fld_type
+                if each_col["Extra"] == "auto_increment":
+                    this_tbl["columns"][each_col["Field"]]["serial"] = True
+
+                this_tbl["columns"][each_col["Field"]]["null"] = each_col["Null"] == "YES"
+                if each_col["Default"] is not None:
+                    if fld_type in numbers:
+                        this_tbl["columns"][each_col["Field"]]["default"] = int(each_col["Default"])
+                    else:
+                        this_tbl["columns"][each_col["Field"]]["default"] = each_col["Default"]
+
+            ok, ret = self.run_select("show index from " + table)
+            this_tbl["indexes"] = {}
+            for each_idx in ret:
+                if each_idx["Key_name"] not in this_tbl["indexes"]:
+                    this_tbl["indexes"][each_idx["Key_name"]] = {}
+                    this_tbl["indexes"][each_idx["Key_name"]]["columns"] = []
+                this_tbl["indexes"][each_idx["Key_name"]]["columns"].append(each_idx["Column_name"])
+                this_tbl["indexes"][each_idx["Key_name"]]["unique"] = each_idx["Non_unique"] == 0
+
+        self.schema = schema
+
+
 
 sql_server = MariaDB()
 
 
 def main():
     log_init(with_debug=True)
-    # sql_server.connect("engine")
-    # sql_server.tcp_cnx.ping(True)
-    # sys.exit(0)
+    sql_server.connect("admin")
+    print(sql_server.sql_select_one("domains", {"domain_id": sys.argv[1]}))
+    sql_server.tcp_cnx.ping(True)
+    sql_server.make_schema()
+    print(json.dumps(sql_server.schema,indent=3))
+    sys.exit(0)
 
     sql_server.connect("pdns")
     print(sql_server.sql_select("domains", {"1": "1"}))
