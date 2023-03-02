@@ -9,6 +9,7 @@ sqlsh "create table domains (
 	domain_id			${auto},
 	name				${domain_name} not null default '',
 	user_id				${row_id} not null,
+	contact_id			${row_id},
 
 	status_id			int not null default 0,
 	auto_renew			boolean,

@@ -400,6 +400,12 @@
             "type": "varchar",
             "null": true
          },
+         "contact_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
+         },
          "created_dt": {
             "type": "datetime",
             "null": false
@@ -1070,6 +1076,12 @@
          "amended_dt": {
             "type": "datetime",
             "null": false
+         },
+         "contact_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true
          },
          "created_dt": {
             "type": "datetime",
