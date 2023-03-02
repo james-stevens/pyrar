@@ -45,7 +45,7 @@ parser.add_argument("-D", '--debug', action="store_true")
 parser.add_argument("-l", '--login', default="admin")
 args = parser.parse_args()
 
-sql.connect(args.login, with_schema = True)
+sql.connect(args.login)
 live_schema = sql.schema
 
 filename = SCHEMA_FILE

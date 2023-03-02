@@ -268,7 +268,7 @@ class MariaDB:
 
         return True
 
-    def connect(self, login=None, with_schema = False):
+    def connect(self, login=None):
         """ Connect to MySQL based on ENV vars """
 
         if login:
@@ -278,8 +278,7 @@ class MariaDB:
 
         if not self.actually_connect():
             return Flase
-        if with_schema:
-            self.make_schema()
+        self.make_schema()
         return True
 
     def actually_connect(self):
@@ -373,10 +372,7 @@ sql_server = MariaDB()
 
 def main():
     log_init(with_debug=True)
-    sql_server.connect("admin")
-    print(sql_server.sql_select_one("domains", {"domain_id": sys.argv[1]}))
-    sql_server.tcp_cnx.ping(True)
-    sql_server.make_schema()
+    sql_server.connect("webui")
     print(json.dumps(sql_server.schema,indent=3))
     sys.exit(0)
 
