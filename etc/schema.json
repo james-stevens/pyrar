@@ -580,10 +580,6 @@
    },
    "messages": {
       "columns": {
-         "amended_dt": {
-            "type": "datetime",
-            "null": false
-         },
          "created_dt": {
             "type": "datetime",
             "null": false
