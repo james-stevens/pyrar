@@ -1,0 +1,7 @@
+#! /bin/sh
+
+
+for db in pdns pyrar
+do
+	mysqldump -h ${MYSQL_CONNECT} -u root -p"${MYSQL_ROOT_PASSWORD}" --no-data ${db} > ${db}.sql
+done

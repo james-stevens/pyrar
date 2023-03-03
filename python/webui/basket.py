@@ -297,6 +297,7 @@ def make_order_record(site_currency, order, user_db):
         "order_type": f"dom/{order['action']}",
         "num_years": order["num_years"],
         "authcode": order["authcode"] if "autocode" in order else None,
+        "status": "unpaid",
         "created_dt": now,
         "amended_dt": now
     }

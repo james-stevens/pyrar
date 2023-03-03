@@ -117,9 +117,7 @@ class PayPalWebHook:
             "provider": f"{THIS_MODULE}:{prov_ext}",
             "token": token,
             "token_type": static.PAY_TOKEN_VERIFIED,
-            "user_id": self.user_id,
-            "created_dt": None,
-            "amended_dt": None
+            "user_id": self.user_id
         }
         return sql.sql_insert("payments", pay_db, ignore=True)
 

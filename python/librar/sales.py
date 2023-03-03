@@ -26,9 +26,7 @@ def sold_item(trans_id, order_db, dom_db, user_db):
         "user_id": user_db["user_id"],
         "user_email": user_db["email"],
         "sales_type": order_db['order_type'],
-        "num_years": order_db['num_years'],
-        "created_dt": None,
-        "amended_dt": None
+        "num_years": order_db['num_years']
     }
 
     ok, row_id = sql.sql_insert("sales", sales)

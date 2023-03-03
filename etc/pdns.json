@@ -4,41 +4,52 @@
          "account": {
             "size": 40,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "comment": {
             "type": "text",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "domain_id": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "id": {
             "size": 11,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "modified_at": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "name": {
             "size": 255,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "type": {
             "size": 10,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -63,39 +74,47 @@
    "cryptokeys": {
       "columns": {
          "active": {
-            "size": 1,
-            "type": "tinyint",
-            "null": true
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
          },
          "content": {
             "type": "text",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "domain_id": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "flags": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "id": {
             "size": 11,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "published": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": true,
-            "default": 1
+            "is_plain_int": false,
+            "default": true
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -113,27 +132,35 @@
       "columns": {
          "content": {
             "type": "text",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "domain_id": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "id": {
             "size": 11,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "kind": {
             "size": 32,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -153,53 +180,62 @@
          "account": {
             "size": 40,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "catalog": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "id": {
             "size": 11,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "last_check": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "master": {
             "size": 128,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "name": {
             "size": 255,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "notified_serial": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "options": {
             "size": 64000,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "type": {
             "size": 8,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -222,61 +258,73 @@
    "records": {
       "columns": {
          "auth": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": true,
-            "default": 1
+            "is_plain_int": false,
+            "default": true
          },
          "content": {
             "size": 64000,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "disabled": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": true,
-            "default": 0
+            "is_plain_int": false,
+            "default": false
          },
          "domain_id": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "id": {
             "size": 20,
             "type": "bigint",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "name": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "ordername": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "prio": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "ttl": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "type": {
             "size": 10,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -308,21 +356,24 @@
          "account": {
             "size": 40,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "ip": {
             "size": 64,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "nameserver": {
             "size": 255,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "ip",
                "nameserver"
@@ -336,27 +387,31 @@
          "algorithm": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "id": {
             "size": 11,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "name": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "secret": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "id"
             ],
@@ -369,6 +424,15 @@
             ],
             "unique": true
          }
+      }
+   },
+   ":more:": {
+      "joins": {
+         "user_id": "users.user_id",
+         "domain_id": "domains.domain_id",
+         "sales_item_id": "sales.sales_item_id",
+         "transaction_id": "transactions.transaction_id",
+         "zone": "zones.zone"
       }
    }
 }

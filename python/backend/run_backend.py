@@ -118,7 +118,7 @@ def start_up(is_live):
     sql.connect("engine")
     registry.start_up()
     libback.start_ups()
-    pdns.start_ups()
+    pdns.start_up()
 
 
 def main():
