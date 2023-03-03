@@ -483,9 +483,8 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
-            "is_plain_int": true,
-            "default": 0
+            "null": true,
+            "is_plain_int": true
          },
          "created_dt": {
             "type": "datetime",
@@ -534,7 +533,7 @@
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": false,
+            "null": true,
             "is_plain_int": false
          },
          "reg_create_dt": {
@@ -1043,6 +1042,17 @@
             "type": "varchar",
             "null": true,
             "is_plain_int": false
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          },
          "zone_name": {
             "size": 260,

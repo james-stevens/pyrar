@@ -9,6 +9,7 @@ sqlsh "create table sales (
 	sales_item_id		${auto},
 
 	transaction_id		${row_id},
+	user_id				${row_id_null},
 
 	price_charged		${money},
 	currency_charged	${currency},

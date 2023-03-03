@@ -18,4 +18,4 @@ sqlsh "CREATE TABLE messages (
 
 sqlsh "ALTER TABLE messages AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert, delete on payments to webui,engine'
+sqlsh 'grant select, insert, delete on messages to webui,engine'

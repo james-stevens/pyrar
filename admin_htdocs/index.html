@@ -935,6 +935,7 @@ function process_search_form(table)
 				if (!("where" in qry_js)) qry_js.where = {};
 				if (!(ops[pfx] in qry_js.where)) qry_js.where[ops[pfx]] = {};
 				if (cols[col].is_plain_int) value = parseInt(value);
+				if (ops[pfx] == "like") value = value.replace("*","%");
 				qry_js.where[ops[pfx]][col] = value;
 				}
 			}

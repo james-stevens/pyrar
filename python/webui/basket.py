@@ -21,8 +21,6 @@ def make_blank_domain(name, user_db, status_id):
         "ns": policy.policy("dns_servers"),
         "auto_renew": user_db["default_auto_renew"],
         "status_id": status_id,
-        "created_dt": None,
-        "amended_dt": None,
         "expiry_dt": None
     }
     ok, dom_id = sql.sql_insert("domains", dom_db)

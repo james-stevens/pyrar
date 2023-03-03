@@ -55,7 +55,9 @@ def amt_from_float(amt, currency=None):
     return int(round(float(amt), 0))
 
 
-def format_currency(number, currency, with_symbol=True):
+def format_currency(number, currency=None, with_symbol=True):
+    if currency is None:
+        currency = policy.policy("currency")
     num = number
     pfx = currency["symbol"] if with_symbol else ""
     if num < 0:

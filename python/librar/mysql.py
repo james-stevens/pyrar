@@ -281,7 +281,7 @@ class MariaDB:
 
     def sql_insert(self, table, column_vals, ignore=False):
         if (cols := self.get_cols(table)) is not None:
-            for col in static.NOW_DATE_FIELDS:
+            for col in [ c for c in static.NOW_DATE_FIELDS if c in cols and c not in column_vals]:
                 column_vals[col] = None
         with_ignore = "ignore" if ignore else ""
         return self.sql_exec(f"insert {with_ignore} into {table} set " + data_set(column_vals, ",", is_set=True))

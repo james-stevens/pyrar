@@ -12,9 +12,7 @@ import smtplib
 import argparse
 
 from librar.mysql import sql_server as sql
-from librar import registry
-from librar import misc
-from librar import policy
+from librar import registry, misc, policy, messages
 from librar.log import log, debug, init as log_init
 
 from email.mime.multipart import MIMEMultipart
@@ -82,13 +80,19 @@ def spool_email_file(filename, server=None):
     if "To" not in header and "user" in data:
         header["To"] = data["user"]["email"]
 
-    del header["From"]
     if "From" not in header:
         name = policy.this_policy.policy("name_sender")
         if name is None:
             name = policy.this_policy.policy("business_name")
         email = policy.this_policy.policy("email_return")
         header["From"] = f"{name} <{email}>"
+
+    message = None
+    if "Subject" in header and "user" in data:
+        message = header["Subject"]
+        name = policy.this_policy.policy("business_name")+": "
+        if message.find(name)==0:
+            message = message[len(name):]
 
     for tag in header:
         if tag not in DO_NOT_INCLUDE_TAGS:
@@ -119,6 +123,9 @@ def spool_email_file(filename, server=None):
     with smtplib.SMTP(server, 25) as smtp_cnx:
         smtp_cnx.sendmail(smtp_from_addr, all_rcpt.split(","), msg.as_string())
         smtp_cnx.quit()
+
+    if message is not None:
+        messages.send(data["user"]["user_id"],message)
 
     return True, data
 
