@@ -483,8 +483,9 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true,
-            "is_plain_int": true
+            "null": false,
+            "is_plain_int": true,
+            "default": 0
          },
          "created_dt": {
             "type": "datetime",
@@ -533,7 +534,7 @@
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": true,
+            "null": false,
             "is_plain_int": false
          },
          "reg_create_dt": {
@@ -554,6 +555,7 @@
             "type": "int",
             "null": false,
             "is_plain_int": true,
+            "default": 0,
             "join": {
                "table": "users",
                "column": "user_id"
@@ -696,11 +698,6 @@
    },
    "messages": {
       "columns": {
-         "amended_dt": {
-            "type": "datetime",
-            "null": false,
-            "is_plain_int": false
-         },
          "created_dt": {
             "type": "datetime",
             "null": false,
@@ -833,7 +830,7 @@
             "default": 0
          },
          "status": {
-            "size": 100,
+            "size": 50,
             "type": "varchar",
             "null": true,
             "is_plain_int": false
@@ -966,8 +963,9 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true,
+            "null": false,
             "is_plain_int": true,
+            "default": 0,
             "join": {
                "table": "domains",
                "column": "domain_id"
@@ -1045,17 +1043,6 @@
             "type": "varchar",
             "null": true,
             "is_plain_int": false
-         },
-         "user_id": {
-            "unsigned": true,
-            "size": 10,
-            "type": "int",
-            "null": true,
-            "is_plain_int": true,
-            "join": {
-               "table": "users",
-               "column": "user_id"
-            }
          },
          "zone_name": {
             "size": 260,
@@ -1295,7 +1282,7 @@
             "type": "int",
             "null": false,
             "is_plain_int": true,
-            "default": 0
+            "default": 1
          },
          "acct_warn_low_balance": {
             "size": 10,
