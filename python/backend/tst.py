@@ -6,13 +6,10 @@ import sys
 import json
 
 from librar.mysql import sql_server as sql
-from librar.log import log, init as log_init
-from librar import registry
-from librar import domobj
-
+from librar import registry, log, domobj
 from backend import libback
 
-log_init(with_debug=True)
+log.init(with_debug=True)
 sql.connect("engine")
 registry.start_up()
 my_domlist = domobj.DomainList()

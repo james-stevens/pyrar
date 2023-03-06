@@ -6,27 +6,15 @@
 import inspect
 import flask
 
-from librar import registry
-from librar import validate
-from librar import passwd
-from librar import pdns
-from librar import common_ui
-from librar import static
-from librar import misc
-from librar import domobj
-from librar import sigprocs
-from librar import hashstr
+from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs, hashstr
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
 from mailer import spool_email
 
-from webui import users
-from webui import domains
-from webui import basket
+from webui import users, domains, basket
 
-from payments import libpay
-from payments import pay_handler
+from payments import libpay, pay_handler, payfuncs
 
 WANT_REFERRER_CHECK = True
 
@@ -273,12 +261,23 @@ def payments_delete():
     pay_db = {
         "provider": req.post_js["provider"],
         "token": req.post_js["token"],
-        "token_type": [static.PAY_TOKEN_VERIFIED, static.PAY_TOKEN_CAN_PULL],
+        "user_can_delete": True,
         "user_id": req.user_id
     }
 
     if not sql.sql_delete_one("payments", pay_db):
         return req.abort("Failed to remove payment method")
+    return req.response(True)
+
+
+@application.route('/pyrar/v1.0/payments/submitted', methods=['POST'])
+def payments_update_status():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if not misc.has_data(req.post_js, "amount") or not isinstance(req.post_js["amount"], int):
+        return req.abort("Missing or invalid payment method data")
+    payfuncs.set_orders_status(req.user_id, req.post_js["amount"], "submitted")
     return req.response(True)
 
 
@@ -298,8 +297,7 @@ def payments_single():
         "token": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
         "token_type": static.PAY_TOKEN_SINGLE,
         "user_id": req.user_id,
-        "created_dt": None,
-        "amended_dt": None
+        "user_can_delete": False
     }
 
     ok, __ = sql.sql_insert("payments", pay_db)
@@ -331,10 +329,7 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments", {
-        "user_id": req.user_id,
-        "token_type": [static.PAY_TOKEN_VERIFIED, static.PAY_TOKEN_CAN_PULL]
-    })
+    ok, reply = sql.sql_select("payments", {"user_id": req.user_id, "user_can_delete": True})
     if not ok and reply is None:
         return req.abort("Failed to load payment data")
 

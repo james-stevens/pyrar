@@ -364,3 +364,12 @@ function rand_tag(want_char)
 	let myar = new Uint8Array(10);
     return btoa(window.crypto.getRandomValues(myar)).slice(0,want_char);
 }
+
+
+function pretty_prompt(tag)
+{
+    let s = tag.split("_");
+    for(let i in s)
+        s[i] = s[i][0].toUpperCase() + s[i].substr(1);
+    return s.join(" ");
+}

@@ -3,11 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 """ run job requests queued in table `backend` """
 
-import sys
-import json
-import argparse
-
-from librar.log import log, init as log_init
+from librar.log import log
 from librar import registry
 
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -28,8 +24,8 @@ def run(action, this_reg, bke_job, dom_db):
 def get_prices(domlist, num_years, qry_type):
     this_handler = dom_handler.backend_plugins[domlist.registry["type"]]
     if "dom/price" not in this_handler:
-        log(f"Action 'dom/price' not supported by Plugin '{this_reg['type']}'")
-        return False, f"Action 'dom/price' not supported by plugin '{this_reg['type']}'"
+        log(f"Action 'dom/price' not supported by Plugin '{domlist.reg['type']}'")
+        return False, f"Action 'dom/price' not supported by plugin '{domlist.reg['type']}'"
     return this_handler["dom/price"](domlist, num_years, qry_type)
 
 

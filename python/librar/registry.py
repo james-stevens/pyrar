@@ -11,7 +11,7 @@ from librar import misc
 from librar import static
 from librar import fileloader
 from librar.mysql import sql_server as sql
-from librar.log import log, debug, init as log_init
+from librar.log import init as log_init
 from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
@@ -225,15 +225,14 @@ class ZoneLib:
         return self.tld_of_name(name) in self.zone_data
 
     def get_mulitple(self, this_reg, tld, cls, action):
-        if "prices" in self.zone_data[tld]:
-            if (ret := get_price_from_json(self.zone_data[tld]["prices"], cls, action)) is not None:
-                return ret
-        if "prices" in this_reg:
-            if (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
-                return ret
-        if (price_policy := policy.policy("prices")) is not None:
-            if (ret := get_price_from_json(price_policy, cls, action)) is not None:
-                return ret
+        if ("prices" in self.zone_data[tld]
+                and (ret := get_price_from_json(self.zone_data[tld]["prices"], cls, action)) is not None):
+            return ret
+        if "prices" in this_reg and (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
+            return ret
+        if ((price_policy := policy.policy("prices")) is not None
+                and (ret := get_price_from_json(price_policy, cls, action)) is not None):
+            return ret
         return None
 
     def multiply_values(self, check_dom_data, num_years, retain_reg_price=False):
@@ -248,9 +247,9 @@ class ZoneLib:
                 if action not in dom:
                     continue
 
-                if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    if action in ["transfer", "restore"] and dom[action] is None or dom[action] == 0:
-                        factor = self.get_mulitple(this_reg, tld, cls, "renew")
+                if ((factor := self.get_mulitple(this_reg, tld, cls, action)) is None
+                        and action in ["transfer", "restore"] and (dom[action] is None or dom[action] == 0)):
+                    factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
                 if factor is None:
                     del dom[action]

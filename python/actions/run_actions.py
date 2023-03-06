@@ -5,15 +5,9 @@
 
 import sys
 import argparse
-import inspect
 
-from librar import mysql
+from librar import static, misc, registry, pdns, mysql
 from librar.mysql import sql_server as sql
-from librar import static
-from librar import misc
-from librar import sigprocs
-from librar import registry
-from librar import pdns
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
 from backend import creator

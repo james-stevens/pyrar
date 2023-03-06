@@ -6,13 +6,14 @@
 from librar import static, fileloader, messages, misc
 from librar.mysql import sql_server as sql
 
+
 def set_orders_status(user_id, amount_paid, new_status):
     """ mark payments {new_status} up to {amount_paid} """
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
     if not ok:
         return False
 
-    ok, orders_db = sql.sql_select("orders", {"user_id": user_id, "status": "unpaid"}, order_by="order_item_id")
+    ok, orders_db = sql.sql_select("orders", {"user_id": user_id}, order_by="order_item_id")
     if not ok or len(orders_db) <= 0:
         return False
 
@@ -25,12 +26,8 @@ def set_orders_status(user_id, amount_paid, new_status):
         cur_bal = next_bal
         change_status.append(order_db["order_item_id"])
 
-    sql.sql_update("orders", {"status": new_status}, {
-        "user_id": user_id,
-        "status": "unpaid",
-        "order_item_id": change_status
-    })
-    messages.send(user_id,f"Payment of {misc.format_currency(amount_paid)} authorised")
+    sql.sql_update("orders", {"status": new_status}, {"user_id": user_id, "order_item_id": change_status})
+    messages.send(user_id, f"Payment of {misc.format_currency(amount_paid)} authorised")
     return True
 
 

@@ -5,10 +5,9 @@
 import sys
 import os
 import json
-import datetime
 import tempfile
 
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import mysql
 from librar.mysql import sql_server as sql

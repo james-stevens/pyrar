@@ -1444,16 +1444,16 @@ function order_details(as_first)
 {
 	let x = settings_header("Pending Orders",as_first);
 	x += "<table width=100%>";
-	x += "<tr><th colspan=2>Domain</th><th>When</th><th>Status</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
+	x += "<tr><th colspan=2>Status</th><th>When</th><th>Domain</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
 	let total = 0;
 	for(let order of ctx.orders) {
 		total += order.price_paid;
 		let dom = domain_of(order.domain_id);
 		x += `<tr id=orderRow${order.order_item_id} onClick="cancel_order(${order.order_item_id});" title='Click to cancel this order' class=dataRow>`;
 		x += "<td align=center>"+gbl.cut+"</td>";
-		x += `<td align=center>${dom.display_name}</td>`
+		x += `<td align=center>${pretty_prompt(order.status)}</td>`
 		x += `<td align=center>${order.created_dt}</td>`
-		x += `<td align=center>${order.status}</td>`
+		x += `<td align=center>${dom.display_name}</td>`
 		x += `<td align=center>${order.order_type}</td>`
 		x += `<td align=center>${order.num_years}</td>`
 		x += `<td align=right>${format_amount(order.price_paid)}</td>`

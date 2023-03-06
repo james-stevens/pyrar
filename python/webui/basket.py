@@ -5,7 +5,7 @@
 import sys
 import json
 
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar import validate, misc, static, registry, accounts, sales, domobj, mysql
 from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
@@ -122,9 +122,8 @@ def live_process_basket(req, whole_basket):
         if "failed" in order:
             continue
 
-        if (ok := paid_for_basket_item(req, order, user_db)) is None:
-            if ok is None:
-                order["failed"] = "Pay for failed"
+        if not paid_for_basket_item(req, order, user_db):
+            order["failed"] = "Pay for failed"
 
 
 def paid_for_basket_item(req, order, user_db):

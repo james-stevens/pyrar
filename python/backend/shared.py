@@ -2,14 +2,10 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-import inspect
-
 from librar.log import log
 from librar.policy import this_policy as policy
-from librar import mysql
+from librar import mysql, validate, misc
 from librar.mysql import sql_server as sql
-from librar import validate
-from librar import misc
 
 
 def event_log(notes, bke_job):

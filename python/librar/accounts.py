@@ -3,7 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 
 from librar.log import init as log_init
-from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
 from librar import misc
 from librar import sigprocs

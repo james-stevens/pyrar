@@ -9,8 +9,6 @@ import json
 import inspect
 import syslog
 
-from librar import static
-
 
 def load_file_json(filename):
     where = inspect.stack()[1]

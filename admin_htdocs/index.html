@@ -200,16 +200,6 @@ function do_theme_change(value)
 }
 
 
-function pretty_prompt(tag)
-{
-	let s = tag.split("_");
-	for(let i in s)
-		s[i] = s[i][0].toUpperCase() + s[i].substr(1);
-	return s.join(" ");
-}
-
-
-
 function table_col_val(col,val)
 {
 	let s = col.split(".");

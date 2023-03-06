@@ -5,6 +5,7 @@
 
 from librar.mysql import sql_server as sql
 
-def send(user_id,message):
+
+def send(user_id, message):
     """ send {message} to {user_id} """
-    sql.sql_insert("messages",{"user_id":user_id,"message":message,"is_read":False})
+    sql.sql_insert("messages", {"user_id": user_id, "message": message, "is_read": False})

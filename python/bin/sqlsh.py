@@ -3,7 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 """ script for running SQL in shell """
 
-import os
 import sys
 import argparse
 

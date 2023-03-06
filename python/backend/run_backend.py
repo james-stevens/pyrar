@@ -69,10 +69,10 @@ def run_backend_item(bke_job):
     if not dom.set_by_id(bke_job["domain_id"]):
         return job_abort(bke_job)
 
-    if misc.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer":
-        if bke_job["user_id"] != dom.dom_db["user_id"]:
-            log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
-            return job_abort(bke_job)
+    if (misc.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer"
+            and bke_job["user_id"] != dom.dom_db["user_id"]):
+        log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
+        return job_abort(bke_job)
 
     job_run = libback.run(bke_job["job_type"], dom.registry, bke_job, dom.dom_db)
 
@@ -168,7 +168,6 @@ def main():
         print("ERROR", reply)
         sys.exit(1)
 
-    show_name = args.domain
     if dom.dom_db:
         bke_job = {
             "job_id": 99,
@@ -178,7 +177,6 @@ def main():
             "num_years": 1,
             "domain_id": dom.dom_db["domain_id"]
         }
-        show_name = dom.dom_db["name"]
 
     if args.action == "dom/price":
         out_js = libback.get_prices(domlist, 1, ["create", "renew"])

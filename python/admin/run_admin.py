@@ -6,7 +6,6 @@
 from datetime import datetime
 import subprocess
 import flask
-import json
 
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
@@ -332,11 +331,7 @@ def handle_joins(rows, which, basic_format):
     need = {}
     for table in rows:
         for row in rows[table]:
-            if isinstance(rows[table], list):
-                cols = row
-            else:
-                cols = rows[table][row]
-
+            cols = row if isinstance(rows[table], list) else rows[table][row]
             for col in cols:
                 if not include_for_join(cols[col]):
                     continue
@@ -364,17 +359,12 @@ def add_join_data(rows, join_data, which):
     """ replace a columns data with retrived foreign record """
     for table in rows:
         for row in list(rows[table]):
-            if isinstance(rows[table], list):
-                cols = row
-            else:
-                cols = rows[table][row]
-
+            cols = row if isinstance(rows[table], list) else rows[table][row]
             for col in list(cols):
-                target = join_this_column(table, col, which)
-                if target is not None and target in join_data:
-                    if cols[col] in join_data[target]:
-                        cols[col] = join_data[target][cols[col]]
-                        cols[col][":join:"] = target
+                if ((target := join_this_column(table, col, which)) is not None and target in join_data
+                        and cols[col] in join_data[target]):
+                    cols[col] = join_data[target][cols[col]]
+                    cols[col][":join:"] = target
 
 
 def unique_id(best_idx, row):

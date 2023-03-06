@@ -116,10 +116,7 @@ def is_valid_display_name(name):
     for illegal in "\\/:%=&'\";)({}#][<>\n\t":
         if name.find(illegal) >= 0:
             return False
-    for illegal in ["--", ".."]:
-        if name.find(illegal) >= 0:
-            return False
-    return True
+    return all(name.find(illegal) < 0 for illegal in ['--', '..'])
 
 
 def is_valid_email(name):

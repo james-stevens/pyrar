@@ -17,7 +17,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
 from librar.log import log, init as log_init
-from librar.policy import this_policy as policy
 from librar import static
 
 CLIENT_PEM_DIR = os.environ["BASE"] + "/pems"
@@ -177,6 +176,7 @@ def xmlRequest(js):
         conn.sendall(xml)
         return jsonReply(conn, clTRID)
     except Exception as e:
+        log(str(e))
         return None, None
 
 
@@ -223,7 +223,7 @@ def jsonRequest(in_js, addr):
     ret, js = xmlRequest(in_js)
 
     if ret is None or js is None:
-        log(f"Reconnecting to EPP")
+        log("Reconnecting to EPP")
         conn.close()
         conn = None
         connectToEPP()

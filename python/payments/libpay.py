@@ -8,7 +8,7 @@ import json
 import tempfile
 
 from librar import misc
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar.mysql import sql_server as sql
 from mailer import spool_email
 from payments import payfuncs

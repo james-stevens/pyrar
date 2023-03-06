@@ -94,11 +94,7 @@ class PayPalWebHook:
         return self.email is not None and self.payer_id is not None
 
     def try_match_user(self, prov_ext, token, token_types, with_delete=False):
-        where = {
-            "provider": f"{THIS_MODULE}:{prov_ext}",
-            "token": token,
-            "token_type": token_types
-        }
+        where = {"provider": f"{THIS_MODULE}:{prov_ext}", "token": token, "token_type": token_types}
         ok, pay_db = sql.sql_select_one("payments", where)
         if ok:
             self.user_id = pay_db["user_id"]
@@ -117,6 +113,7 @@ class PayPalWebHook:
             "provider": f"{THIS_MODULE}:{prov_ext}",
             "token": token,
             "token_type": static.PAY_TOKEN_VERIFIED,
+            "user_can_delete": True,
             "user_id": self.user_id
         }
         return sql.sql_insert("payments", pay_db, ignore=True)
@@ -129,7 +126,7 @@ class PayPalWebHook:
 
     def credit_users_account(self):
         if self.user_id is None:
-            return err_exit("credit_users_account: user_id is missing")
+            return self.err_exit("credit_users_account: user_id is missing")
         ok, trans_id = accounts.apply_transaction(self.user_id, self.amount, f"PayPal: {self.desc}", as_admin=True)
         if ok:
             spool_email.spool("payment_done", [["users", {
@@ -179,12 +176,16 @@ class PayPalWebHook:
         return True, True
 
     def set_token_seen(self):
-        sql.sql_update_one("payments",{"token_type":static.PAY_TOKEN_SEEN_SINGLE},{"user_id":self.user_id,"token":self.token,"provider": f"{THIS_MODULE}:single"})
+        sql.sql_update_one("payments", {"token_type": static.PAY_TOKEN_SEEN_SINGLE}, {
+            "user_id": self.user_id,
+            "token": self.token,
+            "provider": f"{THIS_MODULE}:single"
+        })
 
     def payment_capture_completed(self):
         if not self.read_payment_capture():
             return False, self.msg
-        if not self.get_user_id([static.PAY_TOKEN_SINGLE,static.PAY_TOKEN_SEEN_SINGLE],True):
+        if not self.get_user_id([static.PAY_TOKEN_SINGLE, static.PAY_TOKEN_SEEN_SINGLE], True):
             return False, f"Failed to match user to payment - {self.token}"
         self.event_log("Successfully matched user to payment")
         if not self.credit_users_account():
@@ -196,7 +197,7 @@ class PayPalWebHook:
         if not self.read_checkout_order():
             return True, True
 
-        if not self.get_user_id(static.PAY_TOKEN_SINGLE,False):
+        if not self.get_user_id(static.PAY_TOKEN_SINGLE, False):
             return True, True
 
         self.store_users_identity()
@@ -204,7 +205,7 @@ class PayPalWebHook:
         if self.amount and self.currency:
             currency = policy.policy("currency")
             if self.currency == currency["iso"]:
-                payfuncs.set_orders_status(self.user_id,self.amount,"authorised")
+                payfuncs.set_orders_status(self.user_id, self.amount, "authorised")
         return True, True
 
     def process_webhook(self):

@@ -136,7 +136,12 @@ function initPayPalButton(description, amount, custom_id) {
 
 	onApprove: function(data, actions) {
 	  return actions.order.capture().then(function(orderData) {
-		// console.log(orderData);
+		console.log(orderData);
+		if ((orderData)&&(orderData.purchase_units[0])&&(orderData.purchase_units[0].amount)&&(orderData.purchase_units[0].amount.value)) {
+			callApi("payments/submitted",(ok,reply)=>{
+				if (ok) do_orders_icon();
+				},{ json: { "amount":from_float(orderData.purchase_units[0].amount.value) } });
+			}
 		let e = document.getElementById("payment-whole");
 		let x = '<center><h3>Thank you for your payment!</h3>'
 		x += "Your payment will be processed when PayPal notifies us they have completed the transfer</center>";

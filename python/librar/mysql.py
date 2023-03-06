@@ -20,6 +20,7 @@ ALL_CREDENTIALS = ["database", "username", "password", "server"]
 
 INTS = {"tinyint", "int", "decimal"}
 
+
 def sort_elm(fld_elm):
     return fld_elm["Field"]
 
@@ -77,7 +78,6 @@ def load_more_schema(new_schema):
             data = file.read()
             new_schema[":more:"] = yaml.load(data, Loader=yaml.FullLoader)
             return
-
 
 
 def schema_of_col(new_schema, col):
@@ -256,7 +256,7 @@ class MariaDB:
         self.tcp_cnx.commit()
         return affected_rows, lastrowid
 
-    def get_cols(self,table):
+    def get_cols(self, table):
         if self.schema is None:
             self.make_schema()
             if self.schema is None:
@@ -281,7 +281,7 @@ class MariaDB:
 
     def sql_insert(self, table, column_vals, ignore=False):
         if (cols := self.get_cols(table)) is not None:
-            for col in [ c for c in static.NOW_DATE_FIELDS if c in cols and c not in column_vals]:
+            for col in [c for c in static.NOW_DATE_FIELDS if c in cols and c not in column_vals]:
                 column_vals[col] = None
         with_ignore = "ignore" if ignore else ""
         return self.sql_exec(f"insert {with_ignore} into {table} set " + data_set(column_vals, ",", is_set=True))
@@ -377,7 +377,7 @@ class MariaDB:
             raise ValueError("Reconnect, but no initial login set")
 
         if not self.actually_connect():
-            return Flase
+            return False
         self.make_schema()
         return True
 
@@ -454,14 +454,13 @@ class MariaDB:
         self.schema = schema
 
 
-
 sql_server = MariaDB()
 
 
 def main():
     log_init(with_debug=True)
     sql_server.connect("admin")
-    print(json.dumps(sql_server.schema,indent=3))
+    print(json.dumps(sql_server.schema, indent=3))
     sys.exit(0)
 
     sql_server.connect("pdns")

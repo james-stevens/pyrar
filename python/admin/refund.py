@@ -4,21 +4,18 @@
 """ Refund a sale """
 
 import sys
-import inspect
 
-from librar import mysql
+from librar import mysql, accounts
 from librar.mysql import sql_server as sql
-from librar import accounts
-from librar import misc
 
 
 class Refund:
     def __init__(self):
-        sale_db = None
-        dom_db = None
-        user_db = None
-        trans_db = None
-        refund_db = None
+        self.sale_db = None
+        self.dom_db = None
+        self.user_db = None
+        self.trans_db = None
+        self.refund_db = None
 
     def run_refund(self, sales_item_id):
         ok, reply = self.load_data(sales_item_id)
@@ -84,13 +81,18 @@ class Refund:
 
     def log_event(self):
         mysql.event_log({
-            "event_type": self.refund_db['sales_type'],
-            "notes":
-            f"Refund: {self.dom_db['name']} refund {self.refund_db['sales_type']} for {self.refund_db['num_years']} yrs",
-            "domain_id": self.dom_db["domain_id"],
-            "user_id": self.dom_db["user_id"],
-            "who_did_it": "admin",
-            "from_where": "localhost"
+            "event_type":
+            self.refund_db['sales_type'],
+            "notes": (f"Refund: {self.dom_db['name']} refund {self.refund_db['sales_type']}" +
+                      f"for {self.refund_db['num_years']} yrs"),
+            "domain_id":
+            self.dom_db["domain_id"],
+            "user_id":
+            self.dom_db["user_id"],
+            "who_did_it":
+            "admin",
+            "from_where":
+            "localhost"
         })
 
 

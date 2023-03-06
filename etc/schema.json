@@ -900,6 +900,11 @@
             "null": false,
             "is_plain_int": true
          },
+         "user_can_delete": {
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
+         },
          "user_id": {
             "unsigned": true,
             "size": 10,
