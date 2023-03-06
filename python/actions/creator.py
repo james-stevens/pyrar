@@ -6,7 +6,8 @@
 import sys
 import json
 
-from librar import mysql as sql
+from librar import mysql
+from librar.mysql import sql_server as sql
 from librar import static
 from librar import misc
 from librar import registry
@@ -20,25 +21,25 @@ def add_domain_action(dom_db, when, action):
 
 def domain_actions_live(dom_db):
     if dom_db["auto_renew"]:
-        add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=-1 * policy.policy("auto_renew_before")),
+        add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=-1 * policy.policy("auto_renew_before")),
                           "dom/auto-renew")
     else:
         if (reminders_at := policy.policy("renewal_reminders")) is not None:
             for days in reminders_at.split(","):
-                add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=-1 * int(days)), "dom/reminder")
+                add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=-1 * int(days)), "dom/reminder")
 
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     add_domain_action(dom_db, dom_db["expiry_dt"], "dom/expired")
-    add_domain_action(dom_db, sql.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]), "dom/delete")
+    add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]), "dom/delete")
 
 
 def domain_actions_pending_order(dom_db):
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
-    add_domain_action(dom_db, sql.date_add(dom_db["created_dt"], hours=this_reg["orders_expire_hrs"]), "order/cancel")
+    add_domain_action(dom_db, misc.date_add(dom_db["created_dt"], hours=this_reg["orders_expire_hrs"]), "order/cancel")
 
 
 def recreate_domain_actions(dom_db, who_did_it="sales"):
-    misc.event_log(
+    mysql.event_log(
         {
             "event_type": "actions/recreate",
             "notes": f"Recreate domain actions for '{dom_db['name']}', Exp {dom_db['expiry_dt'].split()[0]}",

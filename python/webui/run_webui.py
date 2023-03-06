@@ -6,27 +6,15 @@
 import inspect
 import flask
 
-from librar import registry
-from librar import validate
-from librar import passwd
-from librar import pdns
-from librar import common_ui
-from librar import static
-from librar import misc
-from librar import domobj
-from librar import sigprocs
-from librar import hashstr
+from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs, hashstr
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from mailer import spool_email
 
-from webui import users
-from webui import domains
-from webui import basket
+from webui import users, domains, basket
 
-from payments import libpay
-from payments import pay_handler
+from payments import libpay, pay_handler, payfuncs
 
 WANT_REFERRER_CHECK = True
 
@@ -138,7 +126,7 @@ def before_request():
         return None
 
     allowable_referrer = policy.policy("allowable_referrer")
-    if allowable_referrer is not None and isinstance(allowable_referrer,(dict,list)):
+    if allowable_referrer is not None and isinstance(allowable_referrer, (dict, list)):
         if flask.request.referrer in allowable_referrer:
             return None
     elif flask.request.referrer == policy.policy("website_name"):
@@ -170,7 +158,7 @@ def catch_webhook(webhook):
     req = WebuiReq()
     if webhook is None or webhook not in pay_handler.pay_webhooks:
         return req.abort(f"Webhook not recognised - '{webhook}'")
-    pay_mod = pay_handler.pay_webhooks[webhook]
+    webhook_data = pay_handler.pay_webhooks[webhook]
 
     sent_data = None
     if flask.request.json:
@@ -180,7 +168,7 @@ def catch_webhook(webhook):
     elif flask.request.method == "GET":
         sent_data = flask.request.args
 
-    ok, reply = libpay.process_webhook(pay_mod, sent_data)
+    ok, reply = libpay.process_webhook(webhook_data, sent_data)
     if not ok:
         return req.abort(reply)
     return req.response(reply)
@@ -261,7 +249,7 @@ def payments_delete():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, ["provider", "token"]):
+    if not misc.has_data(req.post_js, ["provider", "token"]):
         return req.abort("Missing or invalid payment method data")
 
     provider = req.post_js["provider"]
@@ -273,7 +261,7 @@ def payments_delete():
     pay_db = {
         "provider": req.post_js["provider"],
         "token": req.post_js["token"],
-        "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL],
+        "user_can_delete": True,
         "user_id": req.user_id
     }
 
@@ -282,12 +270,23 @@ def payments_delete():
     return req.response(True)
 
 
+@application.route('/pyrar/v1.0/payments/submitted', methods=['POST'])
+def payments_update_status():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    if not misc.has_data(req.post_js, "amount") or not isinstance(req.post_js["amount"], int):
+        return req.abort("Missing or invalid payment method data")
+    payfuncs.set_orders_status(req.user_id, req.post_js["amount"], "submitted")
+    return req.response(True)
+
+
 @application.route('/pyrar/v1.0/payments/single', methods=['POST'])
 def payments_single():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not sql.has_data(req.post_js, "provider"):
+    if not misc.has_data(req.post_js, "provider"):
         return req.abort("Missing or invalid payment method data")
 
     if req.post_js["provider"] not in pay_handler.pay_plugins:
@@ -298,8 +297,7 @@ def payments_single():
         "token": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
         "token_type": static.PAY_TOKEN_SINGLE,
         "user_id": req.user_id,
-        "created_dt": None,
-        "amended_dt": None
+        "user_can_delete": False
     }
 
     ok, __ = sql.sql_insert("payments", pay_db)
@@ -331,7 +329,7 @@ def payments_list():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("payments", { "user_id": req.user_id, "token_type": [static.PAY_TOKEN_VERIFIED,static.PAY_TOKEN_CAN_PULL] })
+    ok, reply = sql.sql_select("payments", {"user_id": req.user_id, "user_can_delete": True})
     if not ok and reply is None:
         return req.abort("Failed to load payment data")
 
@@ -366,7 +364,7 @@ def domain_transfer():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
 
-    if not sql.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
+    if not misc.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
         return req.abort("Missing or invalid data")
 
     name = req.post_js["name"].lower()
@@ -400,7 +398,7 @@ def users_domains():
         dom.set_name(dom_db["name"])
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
-        dom_db["is_live"] = dom_db["status_id"] in static.LIVE_STATUS
+        dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
 
     req.user_data["domains"] = reply
 
@@ -542,8 +540,8 @@ def users_verify():
     if req.post_js is None:
         return req.abort("No JSON posted")
 
-    if not sql.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
-                                                                            int) or len(req.post_js["hash"]) != 20:
+    if not misc.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
+                                                                             int) or len(req.post_js["hash"]) != 20:
         return req.abort("Invalid verification data")
     if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
         return req.response(True)
@@ -555,7 +553,7 @@ def request_reset_password():
     req = WebuiReq()
     if req.post_js is None:
         return req.abort("No JSON posted")
-    if not sql.has_data(req.post_js, ["pin", "email"]):
+    if not misc.has_data(req.post_js, ["pin", "email"]):
         return req.abort("Missing data")
     if not validate.is_valid_pin(req.post_js["pin"]) or not validate.is_valid_email(req.post_js["email"]):
         return req.abort("Invalid data")
@@ -568,7 +566,7 @@ def users_reset_password():
     req = WebuiReq()
     if req.post_js is None:
         return req.abort("No JSON posted")
-    if not sql.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
+    if not misc.has_data(req.post_js, ["pin", "code", "password", "confirm"]):
         return req.abort("Missing data")
     if req.post_js["password"] != req.post_js["confirm"] or len(
             req.post_js["code"]) != 30 or not validate.is_valid_pin(req.post_js["pin"]):
@@ -603,7 +601,7 @@ def users_register():
 
 def pdns_action(func, action):
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name"):
+    if req.post_js is None or not misc.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:
@@ -716,7 +714,7 @@ def pdns_update_rrs(req, dom_db):
 @application.route('/pyrar/v1.0/dns/tlsa', methods=['POST'])
 def make_tlsa():
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
+    if req.post_js is None or not misc.has_data(req.post_js, ["name", "fqdn", "o", "ou", "l", "st", "c"]):
         return req.abort("No JSON posted or data is missing")
 
     if not req.is_logged_in:
@@ -792,7 +790,7 @@ def domain_authcode():
 def run_user_domain_task(domain_function, func_name):
     """ start a {domain_function} & complete it by running {func_name}() """
     req = WebuiReq()
-    if req.post_js is None or not sql.has_data(req.post_js, "name"):
+    if req.post_js is None or not misc.has_data(req.post_js, "name"):
         return req.abort("No JSON posted or domain is missing")
 
     if not req.is_logged_in:

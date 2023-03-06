@@ -5,12 +5,12 @@
 import sys
 import os
 import json
-import datetime
 import tempfile
 
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar import mysql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import misc
 from librar import hashstr
@@ -30,7 +30,7 @@ def event_log(prefix, records):
     user_id = records["user"]["user_id"] if "user" in records else None
     domain_id = records["domain"]["domain_id"] if "domain" in records else None
     msg_type = records["email"]["message"] if "email" in records else None
-    misc.event_log({
+    mysql.event_log({
         "event_type": f"{prefix}/{msg_type}",
         "domain_id": domain_id,
         "user_id": user_id,
@@ -67,7 +67,7 @@ def load_records(which_message, request_list):
 
         tag = request[3] if len(request) == 3 else table.rstrip("s")
 
-        if table == "domains" and sql.has_data(reply, "name"):
+        if table == "domains" and misc.has_data(reply, "name"):
             if (idn := misc.puny_to_utf8(reply["name"])) is not None:
                 reply["display_name"] = idn
             else:
@@ -78,8 +78,8 @@ def load_records(which_message, request_list):
 
     if "domain" in return_data and "sale" in return_data and "expiry_dt" in return_data[
             "domain"] and "num_years" in return_data["sale"]:
-        return_data["domain"]["new_expiry_dt"] = sql.date_add(return_data["domain"]["expiry_dt"],
-                                                              years=int(return_data["sale"]["num_years"]))
+        return_data["domain"]["new_expiry_dt"] = misc.date_add(return_data["domain"]["expiry_dt"],
+                                                               years=int(return_data["sale"]["num_years"]))
 
     return return_data
 

@@ -92,8 +92,8 @@ function theme_css(theme) {
 	font-size: 22px;
 	}
 
-.botSapce {
-	width: 75%;
+.botSpace {
+	min-width: 75%;
 	margin-left: auto;
 	margin-right: auto;
 	background-color: #${cols[4]};
@@ -253,9 +253,10 @@ input {
 	}
 
 #allBottom {
+	display: flex;
+	justify-content: center;
+	margin-top: 20px;
 	background-size: 100% 100%;
-	height: 100%;
-	width: 100%;
 	}
 
 body {

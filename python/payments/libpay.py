@@ -8,9 +8,10 @@ import json
 import tempfile
 
 from librar import misc
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
+from librar.mysql import sql_server as sql
 from mailer import spool_email
-from payments import payfile
+from payments import payfuncs
 
 from payments import pay_handler
 # pylint: disable=unused-wildcard-import, wildcard-import
@@ -21,7 +22,7 @@ HAS_RUN_START_UP = False
 
 def startup():
     global HAS_RUN_START_UP
-    for module in [mod for mod in payfile.payment_file.data() if mod in pay_handler.pay_plugins]:
+    for module in [mod for mod in payfuncs.payment_file.data() if mod in pay_handler.pay_plugins]:
         if (func := pay_handler.run(module, "startup")) is not None:
             func()
     HAS_RUN_START_UP = True
@@ -32,14 +33,18 @@ def config():
         startup()
 
     all_config = {}
-    for module in [mod for mod in payfile.payment_file.data() if mod in pay_handler.pay_plugins]:
+    for module in [mod for mod in payfuncs.payment_file.data() if mod in pay_handler.pay_plugins]:
         all_config[module] = None
         if (func := pay_handler.run(module, "config")) is not None:
             all_config[module] = func()
     return all_config
 
 
-def process_webhook(pay_module, sent_data):
+def process_webhook(webhook_data, sent_data):
+    if "name" not in webhook_data:
+        return False, "Webhook data has no 'name' property"
+
+    pay_module = webhook_data["name"]
     file_name = None
     with tempfile.NamedTemporaryFile("w+",
                                      encoding="utf-8",
@@ -57,7 +62,7 @@ def process_webhook(pay_module, sent_data):
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
 
-    ok, reply = func(sent_data, file_name)
+    ok, reply = func(webhook_data, sent_data, file_name)
     if ok is None and reply is None:
         os.remove(file_name)
         return True, True
@@ -79,9 +84,8 @@ def process_webhook(pay_module, sent_data):
 
 def main():
     log_init(with_debug=True)
+    sql.connect("engine")
     startup()
-    print(json.dumps(config(), indent=3))
-    print(pay_handler.pay_webhooks)
 
 
 if __name__ == "__main__":

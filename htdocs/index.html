@@ -202,8 +202,8 @@ function do_theme_change(value)
 }
 
 
-function toggleLogin() { togglePopUp("loginPopup",30000); }
-function toggleRegister() { togglePopUp("registerPopup",30000); }
+function toggleLogin() { togglePopUp("loginPopup",0); }
+function toggleRegister() { togglePopUp("registerPopup",0); }
 function toggleTheme() { togglePopUp("themePopup",5000); }
 
 
@@ -221,10 +221,7 @@ function do_size_one_space()
 {
 	let sz = 0;
 	for (let item of ["userSpace","marketPlace","search","basketSpace"])
-		if (elm[item].style.display != "none") {
-			sz = elm[item].clientHeight+400;
-			}
-
+		if (elm[item].style.display != "none") sz = elm[item].clientHeight+200;
     if (sz < window.innerHeight) sz = window.innerHeight;
     document.body.style.height = sz;
 }
@@ -528,9 +525,7 @@ function go_welcome(with_push)
 		gbl.config.ok_tlds = {};
 		for(let item of gbl.config.zones) gbl.config.ok_tlds[item.name] = true;
 
-		if (gbl.config.payment) {
-			for(let i in gbl.config.payment) add_payment_script(i);
-			}
+		for(let i in gbl.config.payments) add_payment_script(i);
 
 		let my_icon = policy("icon",null);
 		let site_name = policy("business_name","Registrar");
@@ -1226,7 +1221,10 @@ function user_statement(with_push,from_start)
 
 function show_transactions(with_more)
 {
-	let x = "<table align=center width=100% border=0>";
+	let x = "<table align=center style='min-width: 75%;' border=0>";
+	x += "<tr><td colspan=5 class=btmBtnBar>";
+	x += top_up_button();
+	x += "</td></tr>";
 	x += "<tr>";
 	["When","Description","Credit","Debit","Balance"].forEach((item) => { x += `<th>${item}</th>`; })
 	x += "</tr>";
@@ -1307,7 +1305,7 @@ function make_pay_by_select(name,onchange)
 	if (onchange) extra = `onChange="${onchange}(this);"`;
 	x += `<select ${extra} id=top_up_method><option value=''>--- Select Payment Method ---`;
 	for(let i in payments)
-		if ((i in gbl.config.payment)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
+		if ((i in gbl.config.payments)&&(payments[i].single)) x += `<option value='${i}'>${payments[i].desc}`;
 	x += "</select>";
 	return x;
 }
@@ -1346,6 +1344,20 @@ function remove_payment(provider,token)
 }
 
 
+function top_up_button()
+{
+	return generic_popup_btn({
+		"name": "TopUpAcct",
+		"label": "Top-Up Account",
+		"width": 120,
+		"timeout": null,
+		"title": "Add a credit to your account for future payments",
+		"internal": top_up_account_form,
+		"style": "overflow: auto; margin-left: -250;"
+		});
+}
+
+
 
 function payment_methods(with_push)
 {
@@ -1353,17 +1365,7 @@ function payment_methods(with_push)
 	callApi("payments/list",(ok,reply) => {
 		let x="<table width=75% align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><td class=btmBtnBar>";
-
-		x += generic_popup_btn({
-			"name": "TopUpAcct",
-			"label": "Top-Up Account",
-			"width": 120,
-			"timeout": null,
-			"title": "Add a credit to your account for future payments",
-			"internal": top_up_account_form,
-			"style": "overflow: auto; margin-left: -250;"
-			});
-
+		x += top_up_button();
 		x += "</td></tr></table>";
 		x += "<div id='add_pay_div'>"+gbl.gap;
 		if (reply.length>0) {
@@ -1399,6 +1401,7 @@ function userDetails()
 		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
+	x += top_up_button();
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
 	x += btn("user_settings(true)","Settings","Change this accounts settings",100)
 	x += "</td></tr>";
@@ -1415,6 +1418,10 @@ function userDetails()
 	let show_bal = format_amount(ctx.user.acct_current_balance);
 	if (ctx.user.acct_on_hold) show_bal = "Account on hold";
 	x += `<tr><td class=promptCell>Account Balance :</td><td class=dataCell>${show_bal}</td></tr>`;
+
+	if ((!ctx.user.acct_on_hold)&&((ctx.user.acct_overdraw_limit)))
+		x += `<tr><td class=promptCell>Credit Limit :</td><td class=dataCell>${format_amount(ctx.user.acct_overdraw_limit)}</td></tr>`;
+
 	x += "</td></tr></table>";
 
 	if ((ctx.orders)&&(ctx.orders.length)) x += order_details(false);
@@ -1437,31 +1444,32 @@ function order_details(as_first)
 {
 	let x = settings_header("Pending Orders",as_first);
 	x += "<table width=100%>";
-	x += "<tr><th colspan=2>Domain</th><th>When</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
+	x += "<tr><th colspan=2>Status</th><th>When</th><th>Domain</th><th>Type</th><th>Yrs</th><th>Amount</th></tr>";
 	let total = 0;
 	for(let order of ctx.orders) {
 		total += order.price_paid;
 		let dom = domain_of(order.domain_id);
 		x += `<tr id=orderRow${order.order_item_id} onClick="cancel_order(${order.order_item_id});" title='Click to cancel this order' class=dataRow>`;
 		x += "<td align=center>"+gbl.cut+"</td>";
-		x += `<td align=center>${dom.display_name}</td>`
+		x += `<td align=center>${pretty_prompt(order.status)}</td>`
 		x += `<td align=center>${order.created_dt}</td>`
+		x += `<td align=center>${dom.display_name}</td>`
 		x += `<td align=center>${order.order_type}</td>`
 		x += `<td align=center>${order.num_years}</td>`
 		x += `<td align=right>${format_amount(order.price_paid)}</td>`
 		x += "</tr>";
 		}
 
-	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
-	x += `<tr><td colspan=5 class=promptCell>Order Total :</td><td align=right>${format_amount(total)}</td></tr>`;
-	x += `<tr><td colspan=5 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
+	x += `<tr><td colspan=7><div class="line"/></td></tr>`;
+	x += `<tr><td colspan=6 class=promptCell>Order Total :</td><td align=right>${format_amount(total)}</td></tr>`;
+	x += `<tr><td colspan=6 class=promptCell>Account Balance :</td><td align=right>${format_amount(ctx.user.acct_current_balance)}</td></tr>`;
 	if (total > ctx.user.acct_current_balance)
-		x += `<tr><td colspan=5 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
-	x += `<tr><td colspan=6><div class="line"/></td></tr>`;
+		x += `<tr><td colspan=6 class=promptCell>Amount to Pay :</td><td align=right>${format_amount(total-ctx.user.acct_current_balance)}</td></tr>`;
+	x += `<tr><td colspan=7><div class="line"/></td></tr>`;
 
 	if (total > ctx.user.acct_current_balance) {
-		x += "<tr><td colspan=6 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
-		x += "<tr><td colspan=6><div id='payment-whole'>&nbsp;</div></td></tr>";
+		x += "<tr><td colspan=7 align=right>Pay Now: "+make_pay_by_select("order_pay_by","pay_for_order")+"</td></tr>";
+		x += "<tr><td colspan=7><div id='payment-whole'>&nbsp;</div></td></tr>";
 		}
 
 	return x+"</table></td></tr>";
@@ -1544,7 +1552,7 @@ function place_order()
 
 		user_info();
 		let fn = show_new_orders
-		if ((!ctx.orders.length)&&(!gbl.basket)) {
+		if ((!ctx.orders)&&(!gbl.basket)) {
 			delete ctx.orders;
 			fn = show_all_orders_processed;
 			}
@@ -1560,6 +1568,7 @@ function do_orders_icon()
 	callApi("orders/details",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load orders",reply,"errorSpan");
 		catch_user_data(reply);
+		user_info();
 		show_one_space("userSpace");
 		if ((ctx.orders)&&(ctx.orders.length)) {
 			elm.userSpace.innerHTML = "<table align=center width=75% border=0>"+order_details(true)+"</table>";
@@ -2904,9 +2913,9 @@ function searchFocus()
 				<tr><td><div id="output"></div></td></tr>
 			</table>
 		</div>
-	<span class="botSapce" id="userSpace" style="display: none;"></span>
-	<span class="botSapce" id="basketSpace" style="display: none;"></span>
-	<span class="botSapce" id="marketPlace" style="display: none;"></span>
+	<span class="botSpace" id="userSpace" style="display: none;"></span>
+	<span class="botSpace" id="basketSpace" style="display: none;"></span>
+	<span class="botSpace" id="marketPlace" style="display: none;"></span>
 </div>
 
 <div><table><tr><td><div onClick="unerrMsg();" id=myMsgPop class='msgPop msgPopNo'></div></td></tr></table></div>

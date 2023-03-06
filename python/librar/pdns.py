@@ -11,9 +11,8 @@ import secrets
 import hashlib
 import dns.name
 import requests
-import inspect
 
-from librar.log import log, debug, init as log_init
+from librar.log import log, init as log_init
 from librar import misc
 from librar import static
 from librar.policy import this_policy as policy
@@ -28,8 +27,10 @@ PDNS_BASE_URL = "http://127.0.0.1:8081/api/v1/servers/localhost"
 def start_up():
     """ Initalisation """
     global CLIENT
-    CLIENT = requests.Session()
-    CLIENT.headers.update(headers)
+    if CLIENT is None:
+        CLIENT = requests.Session()
+        CLIENT.headers.update(headers)
+
     catalog_zone = policy.policy("catalog_zone")
     try:
         create_zone(catalog_zone, False, ensure_zone=True)
@@ -332,11 +333,8 @@ def update_rrs(zone, rrs):
 def main():
     log_init(with_debug=True)
     start_up()
-    name = "r.zz."
     print(create_zone(sys.argv[1],with_dnssec=True,ensure_zone=True))
     #print("ZONE>>>>", json.dumps(load_zone(sys.argv[1]),indent=3))
-    # ds = {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '256 3 13 gRj3zFi3p549gW3PhcBNEnmoyGU+WzOvGVl4BBDJQDXLvGEBNpSyPrSK4BrtCEXGlBi3waYwWFJvA+88Aeaykw==', 'flags': 256, 'id': 99, 'keytype': 'zsk', 'published': True, 'type': 'Cryptokey'}, {'active': True, 'algorithm': 'ECDSAP256SHA256', 'bits': 256, 'dnskey': '257 3 13 H+/+r2nHSgLgzHdZI/wt8hc+UVbEQP02BvvIYg9SalPn0O5QzpalrA6VB0Ns7KtavYllGHXrtJU7Gm9HBUsJhg==', 'ds': ['29301 13 1 f4493b0b1fa9985a0c89d4ee78027b5bf27546cc', '29301 13 2 ca2d1f3a267344bb16722c423876e4298f837a58d3ae094901ab674ff8b7eb5e', '29301 13 4 fe612ae33772f57032978b81af7e5ec27a3c9ef7307e114a9a6b9f1ec91005cafc65f20ec16e0211881b1b9d3f9a76c0'], 'flags': 257, 'id': 98, 'keytype': 'ksk', 'published': True, 'type': 'Cryptokey'}
-    # print(find_best_ds(ds))
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))

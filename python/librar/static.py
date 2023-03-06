@@ -15,7 +15,6 @@ PORTS_LIST_FILE = "/run/regs_ports"
 DEFAULT_CURRENCY = {"desc": "US Dollars", "iso": "USD", "separator": [",", "."], "symbol": "$", "decimal": 2}
 DEFAULT_NS = "ns1.example.com,ns2.exmaple.com"
 
-HEXLIB = "0123456789ABCDEF"
 HEADER = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 CLIENT_DOM_FLAGS = ["DeleteProhibited", "RenewProhibited", "TransferProhibited", "UpdateProhibited"]
@@ -24,6 +23,8 @@ DOMAIN_ACTIONS = ["create", "renew", "transfer", "restore"]
 PAY_TOKEN_SINGLE = 1
 PAY_TOKEN_VERIFIED = 2
 PAY_TOKEN_CAN_PULL = 3
+PAY_TOKEN_USER_ENTERED = 4
+PAY_TOKEN_SEEN_SINGLE = 10
 
 STATUS_LIVE = 1
 STATUS_WAITING_PAYMENT = 10
@@ -34,7 +35,7 @@ STATUS_TRANS_REQ = 101
 STATUS_TRANS_FAIL = 120
 STATUS_RESERVED = 200
 
-LIVE_STATUS = {1: True}
+IS_LIVE_STATUS = {1: True}
 
 DOMAIN_STATUS = {
     STATUS_LIVE: "Live",
@@ -52,6 +53,3 @@ POW10 = [
 ]
 
 NOW_DATE_FIELDS = ["when_dt", "amended_dt", "created_dt", "deleted_dt"]
-AUTO_CREATED_AMENDED_DT = [
-    "paymwnts", "domains", "backend", "order_items", "orders", "sales_items", "session_keys", "users"
-]

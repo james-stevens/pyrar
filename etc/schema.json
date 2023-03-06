@@ -4,29 +4,37 @@
          "action": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "action_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "domain_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "execute_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "action_id"
             ],
@@ -50,61 +58,79 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "authcode": {
-            "size": 50,
+            "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "backend_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "created_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "domain_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "execute_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "failures": {
             "size": 11,
             "type": "int",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "job_type": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "num_years": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "backend_id"
             ],
@@ -122,21 +148,38 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "class": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
+         },
+         "class_by_name_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false,
+            "is_plain_int": true
          },
          "name": {
             "size": 260,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
+            "columns": [
+               "class_by_name_id"
+            ],
+            "unique": true
+         },
+         "name": {
             "columns": [
                "name"
             ],
@@ -148,26 +191,48 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "class": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "name_regexp": {
             "size": 260,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
+         },
+         "name_regexp_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false,
+            "is_plain_int": true
          },
          "zone": {
             "size": 260,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false,
+            "join": {
+               "table": "zones",
+               "column": "zone"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
+            "columns": [
+               "name_regexp_id"
+            ],
+            "unique": true
+         },
+         "zone": {
             "columns": [
                "zone",
                "name_regexp"
@@ -180,79 +245,97 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "city": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "contact_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "country": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "email": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "fax": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "name": {
             "size": 250,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "org_name": {
             "size": 250,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "phone": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "postcode": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "state": {
             "size": 200,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "street": {
             "size": 350,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "contact_id"
             ],
@@ -270,58 +353,72 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "auto_renew": {
-            "size": 1,
-            "type": "tinyint",
-            "null": true
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
          },
          "client_locks": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "deleted_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "domain_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "ds": {
             "size": 3500,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "expiry_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "name": {
             "size": 260,
             "type": "varchar",
             "null": false,
+            "is_plain_int": false,
             "default": ""
          },
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "status_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "user_id": {
@@ -329,7 +426,12 @@
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
@@ -357,83 +459,110 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "authcode": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "auto_renew": {
-            "size": 1,
-            "type": "tinyint",
-            "null": true
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
          },
          "client_locks": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
+         },
+         "contact_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true,
+            "is_plain_int": true
          },
          "created_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "domain_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "ds": {
             "size": 3500,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "expiry_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "for_sale_amount": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "for_sale_msg": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "name": {
             "size": 260,
             "type": "varchar",
             "null": false,
+            "is_plain_int": false,
             "default": ""
          },
          "ns": {
             "size": 3500,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "reg_create_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "status_id": {
             "size": 11,
             "type": "int",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "name"
             ],
@@ -465,68 +594,88 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "event_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "event_type": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "filename": {
             "size": 1024,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "from_where": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "function": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "line_num": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "notes": {
             "size": 1024,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "program": {
             "size": 50,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          },
          "when_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "who_did_it": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "event_id"
             ],
@@ -546,78 +695,160 @@
          }
       }
    },
-   "orders": {
+   "messages": {
       "columns": {
-         "amended_dt": {
-            "type": "datetime",
-            "null": false
-         },
-         "authcode": {
-            "size": 50,
-            "type": "varchar",
-            "null": true
-         },
          "created_dt": {
             "type": "datetime",
-            "null": false
-         },
-         "currency_charged": {
-            "size": 3,
-            "type": "char",
-            "null": true
-         },
-         "currency_paid": {
-            "size": 3,
-            "type": "char",
-            "null": true
-         },
-         "domain_id": {
-            "unsigned": true,
-            "size": 10,
-            "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": false
          },
-         "num_years": {
-            "size": 11,
-            "type": "int",
-            "null": false
+         "is_read": {
+            "type": "boolean",
+            "null": false,
+            "is_plain_int": false
          },
-         "order_item_id": {
+         "message": {
+            "size": 3000,
+            "type": "varchar",
+            "null": false,
+            "is_plain_int": false
+         },
+         "message_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
-         },
-         "order_type": {
-            "size": 20,
-            "type": "varchar",
             "null": false,
-            "default": "none"
-         },
-         "price_charged": {
-            "size": 10,
-            "type": "decimal",
-            "null": false,
-            "default": 0
-         },
-         "price_paid": {
-            "size": 10,
-            "type": "decimal",
-            "null": false,
-            "default": 0
+            "is_plain_int": true
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
+            "columns": [
+               "message_id"
+            ],
+            "unique": true
+         },
+         "by_user": {
+            "columns": [
+               "user_id"
+            ],
+            "unique": false
+         }
+      }
+   },
+   "orders": {
+      "columns": {
+         "amended_dt": {
+            "type": "datetime",
+            "null": false,
+            "is_plain_int": false
+         },
+         "authcode": {
+            "size": 100,
+            "type": "varchar",
+            "null": true,
+            "is_plain_int": false
+         },
+         "created_dt": {
+            "type": "datetime",
+            "null": false,
+            "is_plain_int": false
+         },
+         "currency_charged": {
+            "size": 3,
+            "type": "char",
+            "null": true,
+            "is_plain_int": false
+         },
+         "currency_paid": {
+            "size": 3,
+            "type": "char",
+            "null": true,
+            "is_plain_int": false
+         },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
+         },
+         "num_years": {
+            "size": 11,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true
+         },
+         "order_item_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "serial": true,
+            "null": false,
+            "is_plain_int": true
+         },
+         "order_type": {
+            "size": 20,
+            "type": "varchar",
+            "null": false,
+            "is_plain_int": false,
+            "default": "none"
+         },
+         "price_charged": {
+            "size": 10,
+            "places": 0,
+            "type": "decimal",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0
+         },
+         "price_paid": {
+            "size": 10,
+            "places": 0,
+            "type": "decimal",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0
+         },
+         "status": {
+            "size": 50,
+            "type": "varchar",
+            "null": true,
+            "is_plain_int": false
+         },
+         "user_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
+         }
+      },
+      "indexes": {
+         ":primary:": {
             "columns": [
                "order_item_id"
             ],
@@ -635,44 +866,60 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "payment_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "provider": {
-            "size": 50,
+            "size": 1000,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "token": {
-            "size": 100,
+            "size": 3000,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "token_type": {
             "size": 4,
             "type": "tinyint",
-            "null": false
+            "null": false,
+            "is_plain_int": true
+         },
+         "user_can_delete": {
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "payment_id"
             ],
@@ -691,104 +938,136 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "been_refunded": {
-            "size": 1,
-            "type": "tinyint",
-            "null": true
+            "type": "boolean",
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "currency_charged": {
             "size": 3,
             "type": "char",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "currency_paid": {
             "size": 3,
             "type": "char",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "domain_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": false,
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
          },
          "domain_name": {
             "size": 260,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "is_refund_of": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "num_years": {
             "size": 11,
             "type": "int",
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "price_charged": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "price_paid": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "registry": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "sales_item_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "sales_type": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "transaction_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "transactions",
+               "column": "transaction_id"
+            }
          },
          "user_email": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          },
          "zone_name": {
             "size": 260,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "sales_item_id"
             ],
@@ -800,27 +1079,35 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "session_key": {
             "size": 100,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "session_key"
             ],
@@ -838,25 +1125,29 @@
       "columns": {
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "htpasswd": {
             "size": 100,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "login": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "login"
             ],
@@ -871,58 +1162,78 @@
             "size": 10,
             "type": "int",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "amount": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "description": {
             "size": 255,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "post_balance": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "pre_balance": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "sales_item_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "sales",
+               "column": "sales_item_id"
+            }
          },
          "transaction_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 0,
+            "join": {
+               "table": "users",
+               "column": "user_id"
+            }
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "user_id",
                "acct_sequence_id"
@@ -940,37 +1251,44 @@
    "users": {
       "columns": {
          "account_closed": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 0
+            "is_plain_int": false,
+            "default": false
          },
          "acct_current_balance": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "acct_next_warning_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "acct_on_hold": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 0
+            "is_plain_int": false,
+            "default": false
          },
          "acct_overdraw_limit": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "acct_previous_balance": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "acct_sequence_id": {
@@ -978,78 +1296,98 @@
             "size": 10,
             "type": "int",
             "null": false,
-            "default": 0
+            "is_plain_int": true,
+            "default": 1
          },
          "acct_warn_low_balance": {
             "size": 10,
+            "places": 0,
             "type": "decimal",
             "null": false,
+            "is_plain_int": true,
             "default": 0
          },
          "amended_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
+         },
+         "contact_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true,
+            "is_plain_int": true
          },
          "created_dt": {
             "type": "datetime",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "default_auto_renew": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 1
+            "is_plain_int": false,
+            "default": true
          },
          "discount_percent": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "email": {
             "size": 100,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "email_verified": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 0
+            "is_plain_int": false,
+            "default": false
          },
          "last_login_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "name": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "password": {
             "size": 100,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "password_reset": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "two_fa": {
             "size": 100,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
             "serial": true,
-            "null": false
+            "null": false,
+            "is_plain_int": true
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "user_id"
             ],
@@ -1072,59 +1410,67 @@
    "zones": {
       "columns": {
          "allow_sales": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 1
+            "is_plain_int": false,
+            "default": true
          },
          "amended_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "created_dt": {
             "type": "datetime",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "enabled": {
-            "size": 1,
-            "type": "tinyint",
+            "type": "boolean",
             "null": false,
-            "default": 1
+            "is_plain_int": false,
+            "default": true
          },
          "owner_royalty_rate": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "owner_user_id": {
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "price_info": {
             "size": 3500,
             "type": "varchar",
-            "null": true
+            "null": true,
+            "is_plain_int": false
          },
          "registry": {
             "size": 50,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          },
          "renew_limit": {
             "size": 11,
             "type": "int",
-            "null": true
+            "null": true,
+            "is_plain_int": true
          },
          "zone": {
             "size": 260,
             "type": "varchar",
-            "null": false
+            "null": false,
+            "is_plain_int": false
          }
       },
       "indexes": {
-         "PRIMARY": {
+         ":primary:": {
             "columns": [
                "zone"
             ],
@@ -1138,6 +1484,15 @@
             ],
             "unique": false
          }
+      }
+   },
+   ":more:": {
+      "joins": {
+         "user_id": "users.user_id",
+         "domain_id": "domains.domain_id",
+         "sales_item_id": "sales.sales_item_id",
+         "transaction_id": "transactions.transaction_id",
+         "zone": "zones.zone"
       }
    }
 }

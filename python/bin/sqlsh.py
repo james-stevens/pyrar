@@ -3,11 +3,10 @@
 # Alternative license arrangements possible, contact me for more information
 """ script for running SQL in shell """
 
-import os
 import sys
 import argparse
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import fileloader
 from librar import static
 

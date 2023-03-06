@@ -9,8 +9,8 @@ import sys
 import argparse
 import filecmp
 
-from librar import mysql as sql
-from librar import schema
+from librar import mysql
+from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
 
 SCHEMA_FILE = f"{os.environ['BASE']}/etc/schema.json"
@@ -46,7 +46,6 @@ parser.add_argument("-l", '--login', default="admin")
 args = parser.parse_args()
 
 sql.connect(args.login)
-live_schema = schema.make_schema(sql.MY_DATABASE)
 
 filename = SCHEMA_FILE
 if args.login == "pdns":
@@ -58,7 +57,7 @@ if args.recreate:
         os.remove(new_file)
 
     with open(new_file, "w", encoding="UTF-8") as fd:
-        fd.write(json.dumps(live_schema, indent=3))
+        fd.write(json.dumps(sql.schema, indent=3))
 
     if os.path.isfile(filename) and filecmp.cmp(new_file, filename):
         os.remove(new_file)
@@ -84,7 +83,7 @@ def get_column_type(prefix, column_data):
     else:
         query += " NOT NULL"
         if "default" in column_data:
-            if column_data['type'] in schema.numbers:
+            if column_data['type'] in mysql.numbers:
                 query += f" default {column_data['default']}"
             else:
                 query += f" default \"{column_data['default']}\""
@@ -99,17 +98,19 @@ def run_query(query):
 
 
 for table, table_data in save_schema.items():
-    if table not in live_schema:
+    if table == ":more:":
+        continue
+    if table not in sql.schema:
         query = f"create table {table} "
         pfx = "( "
         for column, column_data in table_data["columns"].items():
             query += get_column_type(pfx + column + " ", column_data)
             pfx = ","
         run_query(query + ")")
-        live_schema[table] = {"columns": table_data["columns"], "indexes": {}}
-        live_table = live_schema[table]
+        sql.schema[table] = {"columns": table_data["columns"], "indexes": {}}
+        live_table = sql.schema[table]
     else:
-        live_table = live_schema[table]
+        live_table = sql.schema[table]
         for column, column_data in table_data["columns"].items():
             if column not in live_table["columns"]:
                 query = get_column_type(f"alter table {table} add column {column}", column_data)

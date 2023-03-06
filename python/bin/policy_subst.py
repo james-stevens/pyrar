@@ -8,7 +8,6 @@ import jinja2
 
 from librar.policy import this_policy as policy
 from librar import fileloader
-from librar import misc
 from librar import static
 
 SRC_DIR = f"{os.environ['BASE']}/policy_subst/"

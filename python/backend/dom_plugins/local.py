@@ -3,11 +3,9 @@
 # Alternative license arrangements possible, contact me for more information
 """ bacnend call-backs for running as registry locally """
 
-import base64
-
 from librar.log import log, init as log_init
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import pdns
 from librar import static
@@ -26,12 +24,12 @@ def tld_pdns_check(name):
     return tld
 
 
-def domain_delete(bke_job, dom_db):
+def domain_delete(__, bke_job, dom_db):
     """ run dom/delete request """
-    return remove_parent_records(bke_job, dom_db)
+    return remove_parent_records(None, bke_job, dom_db)
 
 
-def remove_parent_records(bke_job, dom_db):
+def remove_parent_records(__, bke_job, dom_db):
     """ remove the SLD from the TLD zone (in pdns) """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
@@ -52,12 +50,12 @@ def remove_parent_records(bke_job, dom_db):
     return ok_ns and ok_ds and ok_a and ok_aaaa
 
 
-def domain_expired(bke_job, dom_db):
+def domain_expired(__, bke_job, dom_db):
     """ run dom/expired request for type=local"""
-    return remove_parent_records(bke_job, dom_db)
+    return remove_parent_records(None, bke_job, dom_db)
 
 
-def domain_create(bke_job, dom_db):
+def domain_create(__, bke_job, dom_db):
     """ run dom/create request for type=local """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
@@ -75,7 +73,7 @@ def create_update_request(bke_job):
     new_bke = {
         "domain_id": bke_job["domain_id"],
         "user_id": bke_job["user_id"],
-        "execute_dt": sql.now(),
+        "execute_dt": misc.now(),
         "created_dt": None,
         "amended_dt": None,
         "job_type": "dom/update",
@@ -99,7 +97,7 @@ def check_tlds_exist():
     return True
 
 
-def domain_update_from_db(bke_job, dom_db):
+def domain_update_from_db(__, bke_job, dom_db):
     """ run dom/update request to sync NS & DS into TLD zone """
     job_id = bke_job["backend_id"]
     name = dom_db["name"]
@@ -109,13 +107,13 @@ def domain_update_from_db(bke_job, dom_db):
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
-    if sql.has_data(dom_db, "ns"):
+    if misc.has_data(dom_db, "ns"):
         rrs["data"] = [d.strip(".") + "." for d in dom_db["ns"].split(",")]
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
-    if sql.has_data(dom_db, "ds"):
+    if misc.has_data(dom_db, "ds"):
         rrs["data"] = dom_db["ds"].split(",")
 
     ok_ds, __ = pdns.update_rrs(tld, rrs)
@@ -123,9 +121,9 @@ def domain_update_from_db(bke_job, dom_db):
     return ok_ns and ok_ds
 
 
-def domain_request_transfer(bke_job, dom_db):
+def domain_request_transfer(__, bke_job, dom_db):
     """ run dom/transfer request """
-    if not sql.has_data(bke_job, "authcode") or not sql.has_data(dom_db, "authcode"):
+    if not misc.has_data(bke_job, "authcode") or not misc.has_data(dom_db, "authcode"):
         return None
 
     if dom_db["user_id"] == bke_job["user_id"]:
@@ -150,14 +148,14 @@ def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 
 
-def domain_renew(bke_job, dom_db):
+def domain_renew(__, bke_job, dom_db):
     """ run dom/renew request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
     return add_years_to_expiry(years, dom_db)
 
 
-def domain_recover(bke_job, dom_db):
+def domain_recover(__, bke_job, dom_db):
     """ run dom/recover request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
@@ -166,28 +164,23 @@ def domain_recover(bke_job, dom_db):
     return ok_add
 
 
-# pylint: disable=unused-argument
-def domain_info(bke_job, dom_db):
-    """ noting to do for type=local """
-    return dom_db
-
-
-# pylint: enable=unused-argument
-
-
-def set_authcode(bke_job, dom_db):
-    """ run dom/authcode request """
-    password = passwd.crypt(base64.b64decode(bke_job["authcode"])) if sql.has_data(bke_job, "authcode") else None
-    return sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom_db["domain_id"]})
-
-
 def my_hello(__):
     """ test fn """
     return "LOCAL: Hello"
 
 
 # pylint: disable=unused-argument
-def domain_update_flags(bke_job, dom_db):
+def domain_info(__, bke_job, dom_db):
+    """ noting to do for type=local """
+    return dom_db
+
+
+def set_authcode(__, bke_job, dom_db):
+    """ nothing to do, set by webui/domains code """
+    return True
+
+
+def domain_update_flags(__, bke_job, dom_db):
     """ nothing to do for `local` """
     return True
 
@@ -196,17 +189,18 @@ def domain_update_flags(bke_job, dom_db):
 
 
 def get_class_from_name(name):
-    ok, class_db = sql.sql_select_one("class_by_name", {"name": name})
+    """ support for domain:class, premium pricing. Return class for {name} """
+    ok, class_db = sql.sql_select_one("class_by_name", {"name": name}, "class")
     if ok and class_db and len(class_db) > 0:
-        return class_db["class"]
+        return class_db["class"].lower()
 
     if (idx := name.find(".")) < 0:
         return "standard"
 
     where = f"(unhex('{misc.ashex(name[:idx])}') regexp name_regexp) and zone = unhex('{misc.ashex(name[idx+1:])}')"
-    ok, class_db = sql.sql_select_one("class_by_regexp", where)
+    ok, class_db = sql.sql_select_one("class_by_regexp", where, "class")
     if ok and class_db and len(class_db) > 0:
-        return class_db["class"]
+        return class_db["class"].lower()
 
     return "standard"
 

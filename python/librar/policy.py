@@ -18,20 +18,16 @@ policy_defaults = {
     "strict_referrer": True,
     "pdns_log_facility": 0,
     "pdns_log_level": 5,
-
     "website_name": "https://example.com/",
-
     "name_sender": "Customer Support",
-	"admin_email": "pyrar@example.com",
+    "admin_email": "pyrar@example.com",
     "email_sender": "support@example.com",
     "email_return": "no_reply@example.com",
-
     "logging_default": "local0",
     "logging_python": "local0",
     "logging_nginx": "local0",
     "logging_nginx_level": "warn",
     "logging_pdns": "0",
-
     "log_python_code": True,
     "session_timeout": 60,
     "webui_sessions": 5,

@@ -4,8 +4,8 @@
 
 import argparse
 
-from librar import mysql as sql
-from librar.log import log, debug, init as log_init
+from librar.mysql import sql_server as sql
+from librar.log import log, init as log_init
 from librar import sigprocs
 from librar import accounts
 from librar import sales
@@ -27,7 +27,8 @@ def process_order(order_db):
         return False, f"User {order_db['user_id']} not found"
 
     if order_db["price_paid"] > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
-        return False, f"Insufficient balalnce: {order_db['price_paid']} > {user_db['acct_current_balance']} - {user_db['acct_overdraw_limit']}"
+        return False, (f"Insufficient balalnce: {order_db['price_paid']} > " +
+                       f"{user_db['acct_current_balance']} - {user_db['acct_overdraw_limit']}")
 
     ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"]})
     if not ok:

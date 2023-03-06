@@ -7,7 +7,7 @@ import json
 
 from librar.policy import this_policy as policy
 from librar import static
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from payments import libpay
 
@@ -19,7 +19,7 @@ def ui_config():
         "dom_flags": static.CLIENT_DOM_FLAGS,
         "zones": registry.tld_lib.return_zone_list(),
         "status": static.DOMAIN_STATUS,
-        "payment": libpay.config(),
+        "payments": libpay.config(),
         "policy": policy.data()
     }
 

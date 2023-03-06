@@ -17,7 +17,8 @@ sqlsh "create table orders (
 	domain_id			${row_id},
 	order_type			varchar(20) not null default 'none',
 	num_years			int not null,
-	authcode			varchar(50),
+	authcode			varchar(100),
+	status				varchar(50),
 
 	created_dt			datetime not null,
 	amended_dt			datetime not null,

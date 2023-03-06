@@ -4,7 +4,8 @@
 """ run job requests queued in table `backend` """
 
 from librar import sigprocs
-from librar import mysql as sql
+from librar import misc
+from librar.mysql import sql_server as sql
 
 
 def make_backend_job(job_type, dom_db, num_years=None, authcode=None):
@@ -15,7 +16,7 @@ def make_backend_job(job_type, dom_db, num_years=None, authcode=None):
         "authcode": authcode,
         "job_type": job_type,
         "failures": 0,
-        "execute_dt": sql.now(),
+        "execute_dt": misc.now(),
         "created_dt": None,
         "amended_dt": None
     }

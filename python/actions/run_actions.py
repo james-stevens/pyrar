@@ -5,13 +5,9 @@
 
 import sys
 import argparse
-import inspect
 
-from librar import mysql as sql
-from librar import static
-from librar import sigprocs
-from librar import registry
-from librar import pdns
+from librar import static, misc, registry, pdns, mysql
+from librar.mysql import sql_server as sql
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
 from backend import creator
@@ -23,7 +19,7 @@ COPY_DEL_DOM_COLS = [
 
 
 def event_log(notes, action):
-    misc.event_log({
+    mysql.event_log({
         "event_type": "Action:" + action["action"],
         "domain_id": action["domain_id"],
         "user_id": None,
@@ -115,6 +111,7 @@ def main():
     log_init(with_debug=(args.debug or args.action or args.domain))
 
     sql.connect("engine")
+    pdns.start_up()
     if args.action and args.domain:
         registry.start_up()
         ok, dom_db = sql.sql_select_one("domains", {"name": args.domain})
@@ -126,7 +123,7 @@ def main():
             debug(f"ERROR: action '{args.action}' not possible")
             sys.exit(1)
 
-        act_db = {"domain_id": dom_db["domain_id"], "execute_dt": sql.now(), "action": args.action}
+        act_db = {"domain_id": dom_db["domain_id"], "execute_dt": misc.now(), "action": args.action}
         print(">>>> RUNNING", args.action, "on", dom_db["name"])
         print(">>>> ACTION", action_exec[args.action](act_db, dom_db))
         sys.exit(0)

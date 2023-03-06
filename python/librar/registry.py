@@ -10,12 +10,14 @@ import requests
 from librar import misc
 from librar import static
 from librar import fileloader
-from librar import mysql as sql
-from librar.log import log, debug, init as log_init
+from librar.mysql import sql_server as sql
+from librar.log import init as log_init
 from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
-MANDATORY_REGS_ITEMS = ["max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008"]
+MANDATORY_REGS_ITEMS = [
+    "max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008"
+]
 
 DEFAULT_XMLNS = {
     "contact": "urn:ietf:params:xml:ns:contact-1.0",
@@ -101,7 +103,7 @@ class ZoneLib:
         self.zone_data = {}
         for row in self.zones_from_db:
             self.zone_data[row["zone"]] = {col: row[col] for col in ["registry", "renew_limit"] if row[col]}
-            if sql.has_data(row, "price_info"):
+            if misc.has_data(row, "price_info"):
                 try:
                     self.zone_data[row["zone"]]["prices"] = json.loads(row["price_info"])
                 except ValueError:
@@ -223,15 +225,14 @@ class ZoneLib:
         return self.tld_of_name(name) in self.zone_data
 
     def get_mulitple(self, this_reg, tld, cls, action):
-        if "prices" in self.zone_data[tld]:
-            if (ret := get_price_from_json(self.zone_data[tld]["prices"], cls, action)) is not None:
-                return ret
-        if "prices" in this_reg:
-            if (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
-                return ret
-        if (price_policy := policy.policy("prices")) is not None:
-            if (ret := get_price_from_json(price_policy, cls, action)) is not None:
-                return ret
+        if ("prices" in self.zone_data[tld]
+                and (ret := get_price_from_json(self.zone_data[tld]["prices"], cls, action)) is not None):
+            return ret
+        if "prices" in this_reg and (ret := get_price_from_json(this_reg["prices"], cls, action)) is not None:
+            return ret
+        if ((price_policy := policy.policy("prices")) is not None
+                and (ret := get_price_from_json(price_policy, cls, action)) is not None):
+            return ret
         return None
 
     def multiply_values(self, check_dom_data, num_years, retain_reg_price=False):
@@ -246,9 +247,9 @@ class ZoneLib:
                 if action not in dom:
                     continue
 
-                if (factor := self.get_mulitple(this_reg, tld, cls, action)) is None:
-                    if action in ["transfer", "restore"] and dom[action] is None or dom[action] == 0:
-                        factor = self.get_mulitple(this_reg, tld, cls, "renew")
+                if ((factor := self.get_mulitple(this_reg, tld, cls, action)) is None
+                        and action in ["transfer", "restore"] and (dom[action] is None or dom[action] == 0)):
+                    factor = self.get_mulitple(this_reg, tld, cls, "renew")
 
                 if factor is None:
                     del dom[action]

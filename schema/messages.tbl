@@ -1,0 +1,21 @@
+#! /bin/sh
+#################################################################
+#    (c) Copyright 2009-2022 JRCS Ltd  - All Rights Reserved    #
+#################################################################
+
+. ./database
+
+sqlsh "drop table if exists messages"
+sqlsh "CREATE TABLE messages (
+    message_id      ${auto},
+    user_id			${row_id},
+    message			varchar(3000) not null,
+    is_read			boolean not null,
+	created_dt      datetime not null,
+	primary key by_id (message_id),
+	key by_user(user_id)
+    ) ${utf8}"
+
+sqlsh "ALTER TABLE messages AUTO_INCREMENT = 10450"
+
+sqlsh 'grant select, insert, delete on messages to webui,engine'

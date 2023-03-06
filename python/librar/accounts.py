@@ -3,8 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 from librar.log import init as log_init
-from librar.policy import this_policy as policy
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import misc
 from librar import sigprocs
 from librar import static
@@ -69,7 +68,7 @@ def find_payment_record(injs):
 
 
 def admin_trans(injs):
-    if injs is None or not sql.has_data(injs, ["amount", "description"]):
+    if injs is None or not misc.has_data(injs, ["amount", "description"]):
         return False, "Missing or invalid data"
 
     if (amount := validate.valid_float(injs["amount"])) is None:
@@ -87,7 +86,7 @@ def admin_trans(injs):
         if not validate.is_valid_email(injs["email"]):
             return False, "Invalid email address given"
         ok, user_db = sql.sql_select_one("users", {"email": injs["email"]})
-        if not ok or not user_db or not len(user_db) or not sql.has_data(user_db, "user_id"):
+        if not ok or not user_db or not len(user_db) or not misc.has_data(user_db, "user_id"):
             return False, f"No user matching '{injs['email']}' could be found"
         user_id = user_db["user_id"]
     else:
@@ -115,4 +114,4 @@ def admin_trans(injs):
 if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
-    print(">>>>>>", apply_transaction(10450, 90000, "Here's some fake money"))
+    print(">>>>>>", apply_transaction(10452, 90000, "Here's some fake money"))

@@ -7,22 +7,18 @@ import sys
 import json
 import argparse
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import pdns
 from librar import domobj
+from librar import misc
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import sigprocs
 from actions import creator
 
 from backend import shared
-
-# pylint: disable=unused-wildcard-import, wildcard-import
-from backend import dom_handler
-from backend.dom_plugins import *
-
-JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
+from backend import libback
 
 # dom/update included here in case dom.auto_renew changes
 RECREATE_ACTIONS_FOR = ["dom/update", "dom/renew", "dom/create", "dom/transfer", "dom/recover"]
@@ -42,7 +38,7 @@ def job_failed(bke_job):
     """ job failed, but should be retried """
     sql.sql_update_one("backend", {
         "failures": bke_job["failures"] + 1,
-        "execute_dt": sql.now(policy.policy("backend_retry_timeout"))
+        "execute_dt": misc.now(policy.policy("backend_retry_timeout"))
     }, {"backend_id": bke_job["backend_id"]})
 
 
@@ -73,22 +69,14 @@ def run_backend_item(bke_job):
     if not dom.set_by_id(bke_job["domain_id"]):
         return job_abort(bke_job)
 
-    if sql.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer":
-        if bke_job["user_id"] != dom.dom_db["user_id"]:
-            log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
-            return job_abort(bke_job)
-
-    reg = registry.tld_lib.reg_record_for_domain(dom.dom_db["name"])
-    if reg["type"] not in dom_handler.backend_plugins:
+    if (misc.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer"
+            and bke_job["user_id"] != dom.dom_db["user_id"]):
+        log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
         return job_abort(bke_job)
 
-    if (plugin_func := dom_handler.run(reg["type"], bke_job["job_type"])) is None:
-        log(f"BKE-{job_id}: Missing or invalid job_type for '{reg['type']}'")
-        return job_abort(bke_job)
+    job_run = libback.run(bke_job["job_type"], dom.registry, bke_job, dom.dom_db)
 
-    job_run = plugin_func(bke_job, dom.dom_db)
-
-    notes = (f"{JOB_RESULT[job_run]}: BKE-{job_id} type '{reg['type']}:{bke_job['job_type']}' " +
+    notes = (f"{libback.JOB_RESULT[job_run]}: BKE-{job_id} type '{dom.registry['type']}:{bke_job['job_type']}' " +
              f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
              f"{policy.policy('backend_retry_attempts')}")
 
@@ -104,15 +92,6 @@ def run_backend_item(bke_job):
     return job_failed(bke_job)
 
 
-def run_start_up_checks():
-    """ for each plug-in, if we use it, run its start-up """
-    all_regs = registry.tld_lib.regs_file.data()
-    have_types = {reg_data["type"]: True for __, reg_data in all_regs.items() if "type" in reg_data}
-    for this_type, funcs in dom_handler.backend_plugins.items():
-        if this_type in have_types and "start_up" in funcs:
-            funcs["start_up"]()
-
-
 def run_server():
     """ continuously run the backend processing """
     log("BACK-END SERVER RUNNING")
@@ -126,7 +105,7 @@ def run_server():
         else:
             signal_mtime = sigprocs.signal_wait("backend", signal_mtime)
             if registry.tld_lib.check_for_new_files():
-                run_start_up_checks()
+                libback.start_ups()
 
 
 def start_up(is_live):
@@ -138,7 +117,8 @@ def start_up(is_live):
 
     sql.connect("engine")
     registry.start_up()
-    run_start_up_checks()
+    libback.start_ups()
+    pdns.start_up()
 
 
 def main():
@@ -167,7 +147,7 @@ def main():
         print("Plugin or action or domain not specified")
         sys.exit(1)
 
-    start_up(args.live)
+    start_up(False)
 
     domlist = domobj.DomainList()
     dom = domobj.Domain()
@@ -188,7 +168,6 @@ def main():
         print("ERROR", reply)
         sys.exit(1)
 
-    show_name = args.domain
     if dom.dom_db:
         bke_job = {
             "job_id": 99,
@@ -198,18 +177,11 @@ def main():
             "num_years": 1,
             "domain_id": dom.dom_db["domain_id"]
         }
-        show_name = dom.dom_db["name"]
 
-    this_handler = dom_handler.backend_plugins[this_regs["type"]]
-    if args.action not in this_handler:
-        print(f"Action '{args.action}' not supported by Plugin '{this_regs['type']}'")
-        sys.exit(1)
-
-    print(f"Running {this_regs['type']}:{args.action} on {show_name}")
     if args.action == "dom/price":
-        out_js = this_handler[args.action](domlist)
+        out_js = libback.get_prices(domlist, 1, ["create", "renew"])
     else:
-        out_js = this_handler[args.action](bke_job, dom.dom_db)
+        out_js = libback.run(args.action, dom.registry, bke_job, dom.dom_db)
 
     print(json.dumps(out_js, indent=3))
     return 0
@@ -217,5 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    if sql.cnx is not None:
-        sql.cnx.close()
+    sql.close()

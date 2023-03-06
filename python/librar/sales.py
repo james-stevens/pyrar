@@ -4,10 +4,9 @@
 """ functions for recording & handling sales """
 
 from mailer import spool_email
-from librar import sigprocs
 from librar import registry
-from librar import misc
-from librar import mysql as sql
+from librar import mysql
+from librar.mysql import sql_server as sql
 
 
 def sold_item(trans_id, order_db, dom_db, user_db):
@@ -25,14 +24,12 @@ def sold_item(trans_id, order_db, dom_db, user_db):
         "user_id": user_db["user_id"],
         "user_email": user_db["email"],
         "sales_type": order_db['order_type'],
-        "num_years": order_db['num_years'],
-        "created_dt": None,
-        "amended_dt": None
+        "num_years": order_db['num_years']
     }
 
     ok, row_id = sql.sql_insert("sales", sales)
 
-    misc.event_log(
+    mysql.event_log(
         {
             "event_type": order_db['order_type'],
             "notes": f"Sale: {dom_db['name']} sold with {order_db['order_type']} for {order_db['num_years']} yrs",

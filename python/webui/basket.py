@@ -5,21 +5,11 @@
 import sys
 import json
 
-from librar.log import log, debug, init as log_init
-from librar import validate
-from librar import misc
-from librar import static
-from librar import registry
-from librar import accounts
-from librar import sales
-from librar import mysql as sql
+from librar.log import log, init as log_init
+from librar import validate, misc, static, registry, accounts, sales, domobj, mysql
+from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
-from librar import domobj
-from backend import creator
-
-from backend import dom_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
-from backend.dom_plugins import *
+from backend import creator, libback
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
@@ -31,8 +21,6 @@ def make_blank_domain(name, user_db, status_id):
         "ns": policy.policy("dns_servers"),
         "auto_renew": user_db["default_auto_renew"],
         "status_id": status_id,
-        "created_dt": None,
-        "amended_dt": None,
         "expiry_dt": None
     }
     ok, dom_id = sql.sql_insert("domains", dom_db)
@@ -49,7 +37,7 @@ def event_log(req, order):
         "event_type": f"order/{order['action']}",
         "notes": f"Order: {order['domain']} of {order['action']} for {order['num_years']} yrs"
     })
-    misc.event_log(event_db)
+    mysql.event_log(event_db)
 
 
 def webui_basket(basket, req):
@@ -110,13 +98,15 @@ def capture_basket(req, whole_basket):
     if not ok or sum_db is None:
         return False, "Failed to read database"
 
-    sum_orders = sum_db["sum_orders"] if sql.has_data(sum_db, "sum_orders") else 0
+    sum_orders = sum_db["sum_orders"] if misc.has_data(sum_db, "sum_orders") else 0
 
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
+        if user_db["acct_current_balance"] < 0:
+            return False, "Please pay off your existing account debt before placing more orders"
         return False, "Please pay for your existing orders before placing more orders"
 
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
-        return False, "Please clear your debt before placing more orders"
+        return False, "Please clear your account debt before placing more orders"
 
     if not (reply := parse_basket(whole_basket))[0]:
         return False, reply[1]
@@ -132,9 +122,8 @@ def live_process_basket(req, whole_basket):
         if "failed" in order:
             continue
 
-        if (ok := paid_for_basket_item(req, order, user_db)) is None:
-            if ok is None:
-                order["failed"] = "Pay for failed"
+        if not paid_for_basket_item(req, order, user_db):
+            order["failed"] = "Pay for failed"
 
 
 def paid_for_basket_item(req, order, user_db):
@@ -241,10 +230,7 @@ def price_order_item(order):
     if not doms.domobjs[order["domain"]].valid_expiry_limit(order["num_years"]):
         return False, "Expiry limit exceeded"
 
-    if (plugin_func := dom_handler.run(doms.registry["type"], "dom/price")) is None:
-        return False, f"No plugin for this Registrar: {doms.registry['name']}"
-
-    ok, prices = plugin_func(doms, order["num_years"], [order["action"]])
+    ok, prices = libback.get_prices(doms, order["num_years"], [order["action"]])
     if not ok or prices is None or len(prices) != 1:
         return False, "Price check failed"
 
@@ -295,7 +281,7 @@ def make_order_record(site_currency, order, user_db):
     if "prices" not in order:
         return False, "Failed to verify price"
 
-    now = sql.now()
+    now = misc.now()
     prices = order["prices"]
 
     return True, {
@@ -308,6 +294,7 @@ def make_order_record(site_currency, order, user_db):
         "order_type": f"dom/{order['action']}",
         "num_years": order["num_years"],
         "authcode": order["authcode"] if "autocode" in order else None,
+        "status": "unpaid",
         "created_dt": now,
         "amended_dt": now
     }

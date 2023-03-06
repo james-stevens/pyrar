@@ -13,7 +13,7 @@ sqlsh "create table backend (
 	failures			int not null default 0,
 
 	num_years			int,
-	authcode			varchar(50),
+	authcode			varchar(100),
 
 	execute_dt			datetime not null,
 	created_dt			datetime not null,

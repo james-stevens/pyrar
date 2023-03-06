@@ -5,11 +5,12 @@
 
 import sys
 
-from librar import mysql as sql
+from librar.mysql import sql_server as sql
 from librar import registry
 from librar import static
 from librar import validate
 from librar import log
+from librar import misc
 from librar.policy import this_policy as policy
 
 
@@ -81,7 +82,7 @@ class Domain:
 
     def set_locks(self):
         self.locks = {}
-        if self.dom_db is not None and sql.has_data(self.dom_db, "client_locks"):
+        if self.dom_db is not None and misc.has_data(self.dom_db, "client_locks"):
             self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
         return True, None
 
@@ -95,11 +96,11 @@ class Domain:
         if self.dom_db is None and not self.load_record():
             return num_years <= renew_limit
 
-        if not sql.has_data(self.dom_db, ["name", "expiry_dt"]):
+        if not misc.has_data(self.dom_db, ["name", "expiry_dt"]):
             return num_years <= renew_limit
 
-        limit_dt = sql.date_add(sql.now(), years=renew_limit)
-        new_expiry_dt = sql.date_add(self.dom_db["expiry_dt"], years=num_years)
+        limit_dt = misc.date_add(misc.now(), years=renew_limit)
+        new_expiry_dt = misc.date_add(self.dom_db["expiry_dt"], years=num_years)
         return new_expiry_dt <= limit_dt
 
 
@@ -154,7 +155,8 @@ class DomainList:
         if self.domobjs is None:
             return False, "Use `set_list` before `load_all`"
 
-        ok, dom_dbs = sql.sql_select("domains",{"name": [dom.name for __, dom in self.domobjs.items()]},limit=len(self.domobjs))
+        ok, dom_dbs = sql.sql_select("domains", {"name": [dom.name for __, dom in self.domobjs.items()]},
+                                     limit=len(self.domobjs))
         if not ok or not dom_dbs:
             return False, "Failed to load domains from database"
 

@@ -2,19 +2,16 @@
 # (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
 
-import sys
 import os
 import json
 import jinja2
-import datetime
 import time
 import smtplib
 import argparse
 
-from librar import mysql as sql
-from librar import registry
-from librar import policy
-from librar.log import log, debug, init as log_init
+from librar.mysql import sql_server as sql
+from librar import registry, misc, policy, messages
+from librar.log import log, init as log_init
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -34,7 +31,7 @@ def spool_email_file(filename, server=None):
         data = json.load(fd)
 
     if "email" not in data or "message" not in data["email"]:
-        log(f"ERROR: no message type specified")
+        log("ERROR: no message type specified")
         return False, None
 
     which_message = data["email"]["message"]
@@ -81,13 +78,19 @@ def spool_email_file(filename, server=None):
     if "To" not in header and "user" in data:
         header["To"] = data["user"]["email"]
 
-    del header["From"]
     if "From" not in header:
         name = policy.this_policy.policy("name_sender")
         if name is None:
             name = policy.this_policy.policy("business_name")
         email = policy.this_policy.policy("email_return")
         header["From"] = f"{name} <{email}>"
+
+    message = None
+    if "Subject" in header and "user" in data:
+        message = header["Subject"]
+        name = policy.this_policy.policy("business_name") + ": "
+        if message.find(name) == 0:
+            message = message[len(name):]
 
     for tag in header:
         if tag not in DO_NOT_INCLUDE_TAGS:
@@ -100,7 +103,7 @@ def spool_email_file(filename, server=None):
 
     smtp_from_addr = policy.this_policy.policy("email_return")
     if "X-Env-From" in header:
-        from_addr = header["X-Env-From"]
+        smtp_from_addr = header["X-Env-From"]
 
     all_rcpt = ""
     for hdr_tag in MULTILINE_TAGS:
@@ -118,6 +121,9 @@ def spool_email_file(filename, server=None):
     with smtplib.SMTP(server, 25) as smtp_cnx:
         smtp_cnx.sendmail(smtp_from_addr, all_rcpt.split(","), msg.as_string())
         smtp_cnx.quit()
+
+    if message is not None:
+        messages.send(data["user"]["user_id"], message)
 
     return True, data
 
