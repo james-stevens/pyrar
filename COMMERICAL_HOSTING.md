@@ -13,7 +13,7 @@ Commercial hosting for instances of PyRar are available from https://pyrar.com/
 PyRar enables you to sell SLDs in any of your own TLDs or in any TLD you can interconnect your PyRar instance to (see below).
 
 With a PyRar TLD/SLD sales solution, you are **NOT** required to sign over / stake **YOUR** TLDs to anybody else
-and **ALL** payments for SLDs will come directly to you. What we provide is cloud hosting & technical support, everything else is yours.
+and **ALL** payments for SLDs will come directly to you. What we provide is cloud hosting & technical support (SaaS), everything else is yours.
 
 PyRar is provided as open source to give you the confidence you can continue your business no matter what happens.
 
