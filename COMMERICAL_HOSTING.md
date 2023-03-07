@@ -2,7 +2,7 @@
 
 *** This document is not yet finalised and prices/services may change before going live ***
 
-Commercial hosting for instnces of PyRar are available from https://pyrar.com/
+Commercial hosting for instances of PyRar are available from https://pyrar.com/
 
 # The principals of our hosting are
 - Your TLDs
