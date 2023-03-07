@@ -77,6 +77,9 @@ Payment can be made by Bank Transfer (US, EU, UK & some others), PayPal, Bitcoin
 * Off-Shore instances can include a locally registered domain name. We currently have hosting partners in the location
 specified, if you require a different location, please ask.
 
+If you wish to run your own Additional DNS Servers that's not a problem, we just need you to give us the IP Addresses so we
+can configure the data transfer permissions.
+
 
 # You Getting Paid
 
