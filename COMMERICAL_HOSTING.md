@@ -1,8 +1,8 @@
 # Commerical Hosting for PyRar
 
-*** This document is not yet finalised ***
+*** This document is not yet finalised and prices/services may change before going live ***
 
-Commercial hosting for instnces of PyRar are available from pyrar.com
+Commercial hosting for instnces of PyRar are available from https://pyrar.com/
 
 # The principals of our hosting are
 - Your TLDs
@@ -10,7 +10,9 @@ Commercial hosting for instnces of PyRar are available from pyrar.com
 - Your Data
 - Your Money
 
-With our hosted TLD/SLD sales solution, you are **NOT** required to sign over / stake **YOUR** TLDs to anybody else
+PyRar enables you to sell SLDs in any of your own TLDs or in any TLD you can interconnect your PyRar instance to (see below).
+
+With a PyRar TLD/SLD sales solution, you are **NOT** required to sign over / stake **YOUR** TLDs to anybody else
 and **ALL** payments for SLDs will come directly to you. What we provide is cloud hosting & technical support, everything else is yours.
 
 PyRar is provided as open source to give you the confidence you can continue your business no matter what happens.
@@ -50,7 +52,7 @@ All instances will come with one IPv4 DNS Server, in a geographic location of yo
 The 11th user's PC will automatically wait until the 1st user's query has finished, so all they will
 see an hour-glass for a little longer than otherwise.
 
-Note: All searches are done in batches of a handful at a time (configurable), so users don't have nothing happening for any significant time.
+Note: All searches are done in batches of a handful at a time (configurable, default is 5), so users won't have an hour-glass for any significant time.
 
 Its possible the number of threads can be extended - depending on what other services you want.
 
@@ -73,5 +75,39 @@ Payment can be made by Bank Transfer (US, EU, UK & some others), PayPal, Bitcoin
 | Off-Shore Presence | $50 - your instance will only be accessible from an off-shore jurisdiction, e.g Seychelles, Morocco, Iceland |
 
 * Additional DNS Servers will improve the DNS performance of your TLDs in the geographic location they are hosted
-* Off-Shore instances can include a locally registered domain name
+* Off-Shore instances can include a locally registered domain name. We currently have hosting partners in the location
+specified, if you require a different location, please ask.
+
+
+# You Getting Paid
+
+All payments for SLD will be made to you directly. We will help you set up the appropriate accounts. Currently PyRar will only support PayPal
+but we will shortly support Stripe and crypto, via Coinbase.
+
+After the payment provider deducts their fees, you will receive 100% of the remaining payment from your customer.
+
+PyRar supports a shopping cart to help reduce your transactions costs. It also supports customers holding credit in their
+account to reduce gas fees for crypto payments.
+
+
+# Support
+
+You will be expected to do the first line support. This means you have the direct correspondence with your customers.
+We will support you to support your customers. 
+
+Many customer enquiries are about payments, so only you will be able to answer those. We will have **NO** access to your payment accounts (e.g. PayPal),
+unless you decide otherwise - it's your money.
+
+
+# Interconnect
+
+Phase-2 of PyRar will be to add the ability to inter-connect between separate PyRar Systems (either hosted with us or self-hosted), so that
+TLDs owners can form alliances with each other & sell SLDs in each other's TLDs.
+
+PyRar also already supports the industry standard registry protocol `EPP`, which means a PyRar instance should be able to 
+also resell names from any exernal registry that supports `EPP`. This has been qualified against my `EPP` Server, but
+has not yet been qualified against any third party `EPP` service.
+
+PyRar also supports (Python) plugins on the back-end so it can talk to any registry system, including talking directly to a blockchain/crypto-ledger/dSLD 
+registry, but this requires a plugin to be written for that system.
 
