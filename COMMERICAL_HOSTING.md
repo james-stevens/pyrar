@@ -19,6 +19,7 @@ PyRar is provided as open source to give you the confidence you can continue you
 
 If you are unhappy with the service at any time, we will provide you with all your data (mysql-dump & config files)
 so you can move to a self-hosting instance on any public cloud. PyRar is a docker container, so there are many options for public cloud hosting.
+If you are unsure about getting a public cloud instance set-up yourself, probably the best thing to do is just find a whizz-kid on Fiverr.
 
 While you are using our servce, you will need to point the Name Servers of your TLD to the Name Servers of your instance
 and we will provie you with the appropriate `DS` record so you can add `DNSSEC` security to your TLDs. This is required
