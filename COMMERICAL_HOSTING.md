@@ -113,6 +113,6 @@ PyRar also already supports the industry standard registry protocol `EPP`, which
 also resell names from any exernal registry that supports `EPP`. This has been qualified against my `EPP` Server, but
 has not yet been qualified against any third party `EPP` service.
 
-PyRar also supports (Python) plugins on the back-end so it can talk to any registry system, including talking directly to a blockchain/crypto-ledger/dSLD 
+PyRar also supports (Python) [plugins](https://github.com/james-stevens/pyrar/tree/master/python/backend/dom_plugins) on the back-end so it can talk to any registry system, including talking directly to a blockchain/crypto-ledger/dSLD 
 registry, but this requires a plugin to be written for that system.
 
