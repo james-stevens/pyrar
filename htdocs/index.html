@@ -43,7 +43,7 @@ is_hex = /^[0-9a-fA-F]+$/;
 const pre_get_elm = [
 	"topMsg","searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon",
 	"basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
-	"userSpace","output","topSpan","search","businessName"
+	"userSpace","output","topSpan","search","businessName","messagesIcon"
 	];
 
 payments = {};
@@ -126,6 +126,40 @@ function keyEsc(e) {
 		if (elm.search.style.display != "none")
 			elm.searchEdit.focus();
     	}
+}
+
+
+function check_for_messages()
+{
+	callApi("messages/check",(ok,reply) => {
+		if ((ok)&&(reply)) elm.messagesIcon.style.display = "";
+		else elm.messagesIcon.style.display="none";
+		},{ show_timer: false });
+	gbl.msmTimer = setTimeout(check_for_messages,30000);
+}
+
+
+
+function viewMessages()
+{
+	callApi("messages/read",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
+		console.log(reply);
+		let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
+		x += "<tr><th>When</th><th>Message</th></tr>";
+		for(let i in reply) {
+			let msg = reply[i];
+			let is_bold = [ "<B>","</b>" ];
+			if (msg.is_read) is_bold = ["",""];
+			x += `<tr class=dataRow><Td align=center>${is_bold[0]}${msg.created_dt.slice(0,16)}${is_bold[1]}</td>`;
+			x += `<td>${is_bold[0]}${msg.message}${is_bold[1]}</td>`;
+			x += "</tr>";
+			}
+		x += "</table>";
+		elm.userSpace.innerHTML = x;
+		show_one_space("userSpace");
+		elm.messagesIcon.style.display="none";
+		});
 }
 
 
@@ -301,10 +335,10 @@ function user_info()
 {
 	basket_changed();
 
-	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="block";
+	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="";
 	else elm.emailIcon.style.display="none";
 
-	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="block";
+	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="";
 	else elm.ordersIcon.style.display="none";
 
 	if (("user" in ctx)&&("name" in ctx.user)) {
@@ -496,6 +530,8 @@ function history_back(event)
 function bodyLoaded()
 {
 	window.addEventListener('popstate',history_back);
+	let e = document.getElementById("themePopup");
+	e.innerHTML = make_theme_popup();
 	go_welcome(true);
 }
 
@@ -552,6 +588,7 @@ function go_welcome(with_push)
 				});
 			} else { loggedOut(); check_router_path(); }
 
+		check_for_messages();
 		});
 }
 
@@ -1401,6 +1438,7 @@ function userDetails()
 		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
+	x += btn("viewMessages()","Messages","View all my messages",100)
 	x += top_up_button();
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
 	x += btn("user_settings(true)","Settings","Change this accounts settings",100)
@@ -2791,12 +2829,29 @@ function emojiKey(e)
 }
 
 
+
 function searchFocus()
 {
 	let popup = document.getElementById("emojiPopup");
 	if ((popup)&&(popup.classList.contains("show"))) hideAllPopUp();
 }
 
+
+
+function make_theme_popup()
+{
+	if ((!theme_colours)||(!Object.keys(theme_colours).length)) {
+		let e = document.getElementById("themeButton");
+		e.style.display = "none";
+		return "";
+		}
+
+	let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
+	for(let i in theme_colours)
+		if (i != "default") x += `<tr class=dataRow onClick='do_theme_change("${i}");'><td>${pretty_prompt(i)}</td></tr>`;
+	x += '</table>';
+	return x;
+}
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -2864,32 +2919,26 @@ function searchFocus()
 
 <tr><Td>
 <div class="popBelow">
-<span style='width: 85px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
-<span class="popBelowText" id="themePopup">
-<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>
-<tr class=dataRow onClick='do_theme_change("dark");'><td>dark</td></tr>
-<tr class=dataRow onClick='do_theme_change("light");'><td>light</td></tr>
-<tr class=dataRow onClick='do_theme_change("red");'><td>red</td></tr>
-<tr class=dataRow onClick='do_theme_change("green");'><td>green</td></tr>
-<tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
-</table>
-</span>
+<span style='width: 85px;' id=themeButton tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
+<span class="popBelowText" id="themePopup">&nbsp;</span>
 <span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch(true);">Search</span>
 <span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 </td>
 
 
-<td align=right><table width=100% border=0>
-<colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
-<tr><td><span id="errorSpan">&nbsp;</span></td>
+<td align=right><table width=100% border=0 cellspacing=0 cellpadding=0>
+<colgroup><col width=20%/><col width=5%/><col width=5%/><col width=5%/><col width=5%/><col width=60%/></colgroup>
+<tr>
+<td><span id="errorSpan">&nbsp;</span></td>
+<td><span title="You have new messages" id=messagesIcon class=userIcons style="display: none;" onClick="viewMessages();">&#x1F514;</span></td>
 <td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
 <td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="orders_icon();">&#x1F4B3;</span></td>
 <td align=center>
 <span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
 <span style="margin-left: -250px;" class="popuptext" id="basketPopup">
-</span></span></td><td align=center><span id="userInfo"></span></td></tr></table></td>
+</span></span></td><td align=right><span id="userInfo"></span></td></tr></table></td>
 </tr></table>
 </div>
 

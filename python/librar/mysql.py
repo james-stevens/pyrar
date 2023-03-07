@@ -370,16 +370,11 @@ class MariaDB:
 
     def connect(self, login=None):
         """ Connect to MySQL based on ENV vars """
-
         if login:
             self.which_connector = login
         if self.which_connector is None:
             raise ValueError("Reconnect, but no initial login set")
-
-        if not self.actually_connect():
-            return False
-        self.make_schema()
-        return True
+        return self.actually_connect()
 
     def actually_connect(self):
 

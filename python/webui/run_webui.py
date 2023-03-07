@@ -174,6 +174,26 @@ def catch_webhook(webhook):
     return req.response(reply)
 
 
+@application.route('/pyrar/v1.0/messages/read', methods=['GET'])
+def read_messages():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    ok,reply = sql.sql_select("messages",{"user_id": req.user_id}, order_by="message_id desc")
+    if not ok:
+        return req.abort(reply)
+    sql.sql_update("messages",{"is_read":True},{"user_id": req.user_id,"is_read":False})
+    return req.response(reply)
+
+
+@application.route('/pyrar/v1.0/messages/check', methods=['GET'])
+def check_messages():
+    req = WebuiReq()
+    if not req.is_logged_in:
+        return req.abort(NOT_LOGGED_IN)
+    return req.response(sql.sql_exists("messages",{"user_id": req.user_id, "is_read": False}))
+
+
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
 def orders_details():
     req = WebuiReq()

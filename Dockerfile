@@ -44,7 +44,8 @@ RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
 RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
 RUN ln -fns /usr/local/bin/run_actions /etc/periodic/15min/run_actions
-RUN ln -fns /usr/local/bin/run_cron_jobs /etc/periodic/hourly/run_cron_jobs
+RUN ln -fns /usr/local/bin/run_hourly_jobs /etc/periodic/hourly/run_hourly_jobs
+RUN ln -fns /usr/local/bin/run_daily_jobs /etc/periodic/daily/run_daily_jobs
 RUN ln -fns /usr/local/bin/check_server_pem /etc/periodic/hourly/check_server_pem
 
 COPY emails /opt/pyrar/emails/
