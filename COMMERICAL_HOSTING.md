@@ -71,9 +71,11 @@ Payment can be made by Bank Transfer (US, EU, UK & some others), PayPal, Bitcoin
 
 | Optional Add-On | Price|
 | -- | -- |
+| Failover Server | 50% of the price of your instance - gives you a second PyRar Server, pointing to the same database, for fail-over/load-balancing |
 | Additional DNS Server(s) | $25 per server, any geographic location of your choice, you can add as many as you want |
 | Off-Shore Presence | $50 - your instance will only be accessible from an off-shore jurisdiction, e.g Seychelles, Morocco, Iceland |
 
+* Failover Server - If you have a fail-over PyRar Server, we will automatically do load-balancing & fail-over between your two servers
 * Additional DNS Servers will improve the DNS performance of your TLDs in the geographic location they are hosted
 * Off-Shore instances can include a locally registered domain name. We currently have hosting partners in the location
 specified, if you require a different location, please ask.
