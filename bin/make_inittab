@@ -1,6 +1,16 @@
 #! /bin/sh
-# (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
+# (c) Copyright 2019-2023, James Stevens ... see LICENSE for details
 # Alternative license arrangements possible, contact me for more information
+
+if test "${PYRAR_PDNS_ONLY}" = "Y"
+	then
+		{
+		echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
+		echo "::respawn:/usr/local/bin/start_pdns"
+		} > /run/inittab
+		exit 0
+	fi
+
 
 {
 echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
