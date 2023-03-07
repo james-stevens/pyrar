@@ -49,11 +49,12 @@ All instances will come with one IPv4 DNS Server, in a geographic location of yo
 
 `10 threads` means 10 users can execute queries, e.g. searches, at the **exact** same time.
 The 11th user's PC will automatically wait until the 1st user's query has finished, so all they will
-see an hour-glass for a little longer than otherwise.
+see is an hour-glass for a little longer than otherwise.
+
+10 simultaneous users is a surprisingly good amount. Its possible the number of threads can be extended - depending on what other services you want.
 
 Note: All searches are done in batches of a handful at a time (configurable, default is 5), so users won't have an hour-glass for any significant time.
 
-Its possible the number of threads can be extended - depending on what other services you want.
 
 
 ## Payment
