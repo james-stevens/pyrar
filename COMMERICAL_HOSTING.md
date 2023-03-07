@@ -45,7 +45,7 @@ All prices are per month. All prices include
 | Medium | $150.00 | At least 25 threads |
 | Large | $250.00 | Dedicated physical host, At least 50 threads |
 
-All instances will come with one IPv4 DNS Server, in a geographic location of your choice and one IPv6 only DNS Server.
+All instances will come with one IPv4 DNS Server, in a geographic location of your choice, and one IPv6 DNS Server.
 
 `10 threads` means 10 users can execute queries, e.g. searches, at the **exact** same time.
 The 11th user's PC will automatically wait until the 1st user's query has finished, so all they will
