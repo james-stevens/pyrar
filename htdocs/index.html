@@ -144,7 +144,6 @@ function viewMessages()
 {
 	callApi("messages/read",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
-		console.log(reply);
 		let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
 		x += "<tr><th>When</th><th>Message</th></tr>";
 		for(let i in reply) {
@@ -949,7 +948,7 @@ function postDomainTransfer()
 
 	callApi("domain/transfer",(ok,reply) => {
 		// # CODE
-		console.log(ok,reply);
+		console.log(ok,reply); // # CODE
 		},	{
 			json : {
 				"name": f.trans_domain_name.value,
