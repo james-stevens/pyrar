@@ -32,9 +32,7 @@ Prices are yet to be completely finalised, but are probably going to be as follo
 
 ## Instances
 
-All prices are per month.
-
-All prices include
+All prices are per month. All prices include
 - A PyRar Server **and** a MySQL (MariaDB) Server
 - Unmetered access - you will not receive any additional billing for bandwidth or data transfers.
 - Unlimited 2nd line technical support for PyRar & DNS.
