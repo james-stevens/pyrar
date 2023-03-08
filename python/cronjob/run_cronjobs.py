@@ -11,7 +11,7 @@ from librar.policy import this_policy as policy
 
 
 def remove_old_messages():
-    query = f"delete from messages where created_dt < date_sub(now(), interval 30 day)"
+    query = "delete from messages where created_dt < date_sub(now(), interval 30 day)"
     return sql.sql_exec(query)
 
 

@@ -85,12 +85,16 @@ def spool_email_file(filename, server=None):
         email = policy.this_policy.policy("email_return")
         header["From"] = f"{name} <{email}>"
 
-    message = None
     if "Subject" in header and "user" in data:
         message = header["Subject"]
         name = policy.this_policy.policy("business_name") + ": "
         if message.find(name) == 0:
             message = message[len(name):]
+        messages.send(data["user"]["user_id"], message)
+
+    if "user" in data and "email_verified" in data["user"] and not data["user"]["email_verified"]:
+        data["state"] = "Not Verified"
+        return True, data
 
     for tag in header:
         if tag not in DO_NOT_INCLUDE_TAGS:
@@ -122,9 +126,6 @@ def spool_email_file(filename, server=None):
         smtp_cnx.sendmail(smtp_from_addr, all_rcpt.split(","), msg.as_string())
         smtp_cnx.quit()
 
-    if message is not None:
-        messages.send(data["user"]["user_id"], message)
-
     return True, data
 
 
@@ -143,7 +144,8 @@ def process_emails_waiting(server=None):
 
         if ok:
             if records is not None:
-                spool_email.event_log("Delivered", records)
+                state = records["state"] if "state" in records else "Delivered"
+                spool_email.event_log(state, records)
             os.remove(path)
         else:
             log(f"ERROR: Failed to process email '{path}'")
