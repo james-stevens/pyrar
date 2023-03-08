@@ -368,10 +368,27 @@ function rand_tag(want_char)
 }
 
 
+
 function pretty_prompt(tag)
 {
     let s = tag.split("_");
     for(let i in s)
         s[i] = s[i][0].toUpperCase() + s[i].substr(1);
     return s.join(" ");
+}
+
+
+
+function local_dt(date_time)
+{
+	d = new Date(date_time+" UTC");
+	return d.toLocaleString();
+}
+
+
+
+function local_date(date_time)
+{
+	d = new Date(date_time+" UTC");
+	return d.toLocaleString().split(" ")[0].replace(",","");
 }

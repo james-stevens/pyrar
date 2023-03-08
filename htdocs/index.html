@@ -144,13 +144,13 @@ function viewMessages()
 {
 	callApi("messages/read",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
-		let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
-		x += "<tr><th>When</th><th>Message</th></tr>";
+		let x = "<table style='min-width: 60%;' align=center cellspacing=5 cellpadding=0 border=0>";
+		x += "<colgroup><col width=10px/><col/></colgroup><tr><th>When</th><th>Message</th></tr>";
 		for(let i in reply) {
 			let msg = reply[i];
 			let is_bold = [ "<B>","</b>" ];
 			if (msg.is_read) is_bold = ["",""];
-			x += `<tr class=dataRow><Td align=center>${is_bold[0]}${msg.created_dt.slice(0,16)}${is_bold[1]}</td>`;
+			x += `<tr class=dataRow><Td align=center>${is_bold[0]}${local_dt(msg.created_dt)}${is_bold[1]}</td>`;
 			x += `<td>${is_bold[0]}${msg.message}${is_bold[1]}</td>`;
 			x += "</tr>";
 			}
@@ -208,8 +208,10 @@ function togglePopUp(name,tmout)
 	if (name=="AddTLSAwin") e = document.getElementById("tlsa_o");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (name=="TopUpAcct") e = document.getElementById("top_up_amount");
-	if (e) { e.focus(); e.select(); }
-
+	if (e) {
+		e.focus(); e.select();
+		if (name=="emojiPopup") show_emoji_search();
+		}
 	return false;
 }
 
@@ -735,7 +737,7 @@ function one_search_line(item,block_not_avail)
 		}
 
 	let x = "<tr class=searchDomain>";
-	x += `<td><span title="${item.name}">${fromPuny(item.name)}</span>`;
+	x += `<td width=90px></td><td><span title="${item.name}">${fromPuny(item.name)}</span>`;
 	if ("renew" in item)
 		x += `<br><span class=searchRenew>renew ${format_amount(item.renew)}</span>`;
 	x += "</td>";
@@ -750,7 +752,7 @@ function one_search_line(item,block_not_avail)
 			x += "</td>";
 			}
 		}
-	x += "</tr>";
+	x += "<td width=90px></td></tr>";
 	return x;
 }
 
@@ -899,6 +901,8 @@ function multiSearch(srch,not_me_tld)
 
 function doSearch()
 {
+	hidePopUp();
+
 	function do_end() {
 		f.searchEdit.focus();
 		f.searchEdit.select();
@@ -1007,7 +1011,7 @@ function userDomainList()
 		if (dom.auto_renew) auto_renew = gbl.tick;
 		x += `<td title="Auto-Renew Status" align=center>${auto_renew}</td>`;
 		if (dom.status_id == 1)
-			x += `<td align=center>${dom.expiry_dt.split(" ")[0]}</td>`;
+			x += `<td align=center>${local_date(dom.expiry_dt)}</td>`;
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
 
@@ -1257,7 +1261,8 @@ function user_statement(with_push,from_start)
 
 function show_transactions(with_more)
 {
-	let x = "<table align=center style='min-width: 75%;' border=0>";
+	let x = "<table align=center style='min-width: 75%;' cellspacing=3 cellpadding=0 border=0>";
+	x += "<colgroup><col width=10px/><col/><col width=75px/><col width=75px/><col width=75px/></colgroup>";
 	x += "<tr><td colspan=5 class=btmBtnBar>";
 	x += top_up_button();
 	x += "</td></tr>";
@@ -1265,7 +1270,7 @@ function show_transactions(with_more)
 	["When","Description","Credit","Debit","Balance"].forEach((item) => { x += `<th>${item}</th>`; })
 	x += "</tr>";
 	for(let trans of ctx.transactions) {
-		x += `<tr><Td align=center>${trans.created_dt.slice(0,16)}</td>`;
+		x += `<tr><Td align=center>${local_dt(trans.created_dt)}</td>`;
 		x += `<td>${trans.description}</td>`;
 		if (trans.amount > 0)
 			x += `<td align=right>${format_amount(trans.amount)}</td><td></td>`;
@@ -1447,9 +1452,9 @@ function userDetails()
 	x += `<tr><td class=promptCell>E-Mail :</td><td class=dataCell>${ctx.user.email}</td></tr>`;
 	x += `<tr><td class=promptCell>E-Mail Verified :</td><td class=dataCell>${verified}</td></tr>`;
 	x += `<tr><td class=promptCell>Name :</td><td class=dataCell>${ctx.user.name}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${ctx.user.last_login_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${ctx.user.amended_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${ctx.user.created_dt}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${local_dt(ctx.user.last_login_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${local_dt(ctx.user.amended_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${local_dt(ctx.user.created_dt)}</td></tr>`;
 	x += `<tr><td class=promptCell>Defaut Auto-Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
 
 	let show_bal = format_amount(ctx.user.acct_current_balance);
@@ -1489,7 +1494,7 @@ function order_details(as_first)
 		x += `<tr id=orderRow${order.order_item_id} onClick="cancel_order(${order.order_item_id});" title='Click to cancel this order' class=dataRow>`;
 		x += "<td align=center>"+gbl.cut+"</td>";
 		x += `<td align=center>${pretty_prompt(order.status)}</td>`
-		x += `<td align=center>${order.created_dt}</td>`
+		x += `<td align=center>${local_dt(order.created_dt)}</td>`
 		x += `<td align=center>${dom.display_name}</td>`
 		x += `<td align=center>${order.order_type}</td>`
 		x += `<td align=center>${order.num_years}</td>`
@@ -2686,9 +2691,9 @@ function one_domain_html(idx)
 	if (dom.client_locks) locks = dom.client_locks;
 	x += `<tr><td class=promptCell>Locks :</td><td class=dataCell>${locks}</td></tr>`;
 
-	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;
+	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${local_date(dom.expiry_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${local_date(dom.created_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${local_dt(dom.amended_dt)}</td></tr>`;
 	if (dom.ns) {
 		let ns = dom.ns.toLowerCase().split(",").sort().join("<br>")
 		x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
@@ -2775,11 +2780,7 @@ function resend_password(with_push)
 
 function searchKey(e)
 {
-	if (e.key=="Enter") {
-		hidePopUp();
-		doSearch();
-		return; }
-
+	if (e.key=="Enter") { doSearch(); return; }
 	if (e.key==":") togglePopUp("emojiPopup",0)
 }
 
@@ -2950,8 +2951,12 @@ function make_theme_popup()
 				<form action="#" name=searchForm onSubmit="return doSearch();">
 					<tr><td align=center>
 						<div class="popup">
-							<input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
-							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
+							<table cellspacing=0 cellpadding=0 border=0><tr>
+							<td><span class=emoji onClick='togglePopUp("emojiPopup",0);'>&#x1F600;</span></td>
+							<td><input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit></td>
+							<td><span onClick='doSearch();' class=emoji>&#x1F50d;</span></td>
+							</tr></table>
+							<span class="popupText" style="margin-left: -298; margin-top: 0px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
 								<div style="text-align: left; overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
 							</span>
