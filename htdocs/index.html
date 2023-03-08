@@ -140,8 +140,9 @@ function check_for_messages()
 
 
 
-function viewMessages()
+function viewMessages(with_push)
 {
+	if (with_push) push_hist("viewMessages");
 	callApi("messages/read",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
 		let x = "<table style='min-width: 60%;' align=center cellspacing=5 cellpadding=0 border=0>";
@@ -511,6 +512,7 @@ function history_back(event)
 		"myDomains": myDomains,
 		"request_transfer": request_transfer,
 		"goSearch": goSearch,
+		"viewMessages": viewMessages,
 		"welcome": go_welcome
 		};
 
@@ -1442,7 +1444,7 @@ function userDetails()
 		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
-	x += btn("viewMessages()","Messages","View all my messages",100)
+	x += btn("viewMessages(true)","Messages","View all my messages",100)
 	x += top_up_button();
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
 	x += btn("user_settings(true)","Settings","Change this accounts settings",100)
@@ -2931,7 +2933,7 @@ function make_theme_popup()
 <colgroup><col width=20%/><col width=5%/><col width=5%/><col width=5%/><col width=5%/><col width=60%/></colgroup>
 <tr>
 <td><span id="errorSpan">&nbsp;</span></td>
-<td><span title="You have new messages" id=messagesIcon class=userIcons style="display: none;" onClick="viewMessages();">&#x1F514;</span></td>
+<td><span title="You have new messages" id=messagesIcon class=userIcons style="display: none;" onClick="viewMessages(true);">&#x1F514;</span></td>
 <td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
 <td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="orders_icon();">&#x1F4B3;</span></td>
 <td align=center>
