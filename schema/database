@@ -9,7 +9,7 @@ root="sqlsh -u root -p ${MYSQL_ROOT_PASSWORD} -d mysql"
 cmd="${root}"
 
 row_id_null="int unsigned"
-row_id="${row_id_null} not null default 0"
+row_id="${row_id_null} not null"
 password="varchar(100)"
 language="char(3)"    # ISO639-2/B
 hostname="varchar(260)"

@@ -14,7 +14,6 @@ from mailer import spool_email
 from payments import payfuncs
 
 from payments import pay_handler
-# pylint: disable=unused-wildcard-import, wildcard-import
 from payments.plugins import *
 
 HAS_RUN_START_UP = False

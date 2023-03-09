@@ -4,7 +4,6 @@
 """ functions to handle domains for the UI rest/api """
 
 import sys
-import json
 import base64
 
 from librar import passwd
@@ -157,12 +156,14 @@ def webui_set_auth_code(req):
     if not ok:
         return False, dom
 
+    if not dom.can_transfer:
+        return False, "Domain is too young to transfer"
+
     if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by locks"
 
     auth_code = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
-
-    password = passwd.crypt(base64.b64decode(auth_code))
+    password = passwd.crypt(auth_code)
     sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom.dom_db["domain_id"]})
 
     bke_job = {
@@ -184,6 +185,9 @@ def webui_gift_domain(req):
     ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
     if not ok:
         return False, dom
+
+    if not dom.can_transfer:
+        return False, "Domain is too young to transfer"
 
     if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by flags"
@@ -255,15 +259,23 @@ def webui_add_tlsa_record(req):
     return True, tlsa_data["pem"]
 
 
+def can_transfer(dom, now=None):
+    min_trans_time = dom.registry["domain_transfer_age"] * -86400
+    print(">>>>>", min_trans_time / 86400)
+    if now is None:
+        now = misc.now(min_trans_time)
+    print(">>>>", dom.dom_db["created_dt"], now, misc.now())
+    return dom.dom_db["created_dt"] < now
+
+
 def main():
     sql.connect("webui")
     registry.start_up()
-    my_domlist = domobj.DomainList()
-    ok, reply = my_domlist.set_list(sys.argv[1:])
-    print(ok, reply)
-    if not ok:
-        sys.exit(1)
-    print(json.dumps(get_domain_prices(my_domlist, 11, ["create", "renew"], 10450), indent=3))
+    doms = domobj.DomainList()
+    doms.set_list(sys.argv[1:])
+    doms.load_all()
+    for __, d in doms.domobjs.items():
+        print(">>>>", d.name, d.can_transfer)
 
 
 if __name__ == "__main__":

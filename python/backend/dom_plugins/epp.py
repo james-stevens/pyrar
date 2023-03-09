@@ -277,7 +277,6 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
-# pylint: disable=unused-argument
 def domain_expired(this_reg, bke_job, dom_db):
     """ nothing to do here """
     return True
@@ -286,9 +285,6 @@ def domain_expired(this_reg, bke_job, dom_db):
 def domain_delete(this_reg, bke_job, dom_db):
     """ nothing to do here """
     return True
-
-
-# pylint: enable=unused-argument
 
 
 def my_hello(__):

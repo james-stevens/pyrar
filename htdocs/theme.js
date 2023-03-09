@@ -1,5 +1,17 @@
 
 const theme_colours = {
+	"dark": [
+		"C9D1D9","555555","45505B","010409","15202B",
+		"999999","25303B","464B52","35404B","464B52",
+		"464B52","9898ff","808080","767B92","ffffff",
+		"ffd0d0","C9D1D9","25303B","010409"
+		],
+	"light": [
+		"000000","555555","F0F2F4","F6F8FA","ffffff",
+		"999999","F6F8FA","aaaaaa","F6F8FA","cccccc",
+		"cccccc","9898ff","e0e0e0","303030","ffffff",
+		"000000","000000","F0F2F4","d6d8dA"
+		],
 	"blue": [
 		"000000","383855","4f4f6f","555577","666688",
 		"666699","777799","8888aa","9999bb","a0a0cc",
@@ -17,18 +29,6 @@ const theme_colours = {
 		"669966","779977","88aa88","99bb99","a0cca0",
 		"aaccaa","b0ffb0","80b080","d0ffd0","ddffdd",
 		"d0d0ff","ffffff","88aa88","557755"
-		],
-	"light": [
-		"000000","555555","F0F2F4","F6F8FA","ffffff",
-		"999999","F6F8FA","aaaaaa","F6F8FA","cccccc",
-		"cccccc","9898ff","e0e0e0","303030","ffffff",
-		"000000","000000","F0F2F4","d6d8dA"
-		],
-	"dark": [
-		"C9D1D9","555555","45505B","010409","15202B",
-		"999999","25303B","464B52","35404B","464B52",
-		"464B52","9898ff","808080","767B92","ffffff",
-		"ffd0d0","C9D1D9","25303B","010409"
 		],
 	"default": [
 		"C9D1D9","555555","25303B","010409","15202B",
@@ -158,13 +158,16 @@ h2 { text-align: center; }
 	}
 
 #topSpan{
+	position: fixed;
+	z-index: 100;
+	top: 0;
+	width: 100%;
 	background-color: #${cols[6]};
 	height: 100px;
 	line-height: 100px;
 	margin-top: 0px;
 	padding-left: 0px;
 	padding-top: 1px;
-	top: 0px;
 	}
 
 #businessName {
@@ -399,6 +402,7 @@ td {
 
 
 .msgPop {
+	z-index: 200;
 	position: absolute;
 	font-family:inherit;
 	font-size: 16pt;

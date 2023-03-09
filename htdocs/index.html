@@ -43,7 +43,7 @@ is_hex = /^[0-9a-fA-F]+$/;
 const pre_get_elm = [
 	"topMsg","searchEdit","myMsgPop","errorSpan","emailIcon","ordersIcon",
 	"basketIcon","userInfo","marketPlace","basketSpace","basketPopup",
-	"userSpace","output","topSpan","search","businessName"
+	"userSpace","output","topSpan","search","businessName","messagesIcon"
 	];
 
 payments = {};
@@ -129,6 +129,40 @@ function keyEsc(e) {
 }
 
 
+function check_for_messages()
+{
+	callApi("messages/check",(ok,reply) => {
+		if (ok) ctx.messages = reply;
+		user_info();
+		},{ show_timer: false });
+	gbl.msmTimer = setTimeout(check_for_messages,30000);
+}
+
+
+
+function viewMessages(with_push)
+{
+	if (with_push) push_hist("viewMessages");
+	callApi("messages/read",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
+		let x = "<table style='min-width: 60%;' align=center cellspacing=5 cellpadding=0 border=0>";
+		x += "<colgroup><col width=10px/><col/></colgroup><tr><th>When</th><th>Message</th></tr>";
+		for(let i in reply) {
+			let msg = reply[i];
+			let is_bold = [ "<B>","</b>" ];
+			if (msg.is_read) is_bold = ["",""];
+			x += `<tr class=dataRow><Td align=center>${is_bold[0]}${local_dt(msg.created_dt)}${is_bold[1]}</td>`;
+			x += `<td>${is_bold[0]}${msg.message}${is_bold[1]}</td>`;
+			x += "</tr>";
+			}
+		x += "</table>";
+		elm.userSpace.innerHTML = x;
+		show_one_space("userSpace");
+		elm.messagesIcon.style.display="none";
+		});
+}
+
+
 
 function hideAllPopUp()
 {
@@ -175,8 +209,10 @@ function togglePopUp(name,tmout)
 	if (name=="AddTLSAwin") e = document.getElementById("tlsa_o");
 	if (name=="emojiPopup") e = document.getElementById("emojiSearch");
 	if (name=="TopUpAcct") e = document.getElementById("top_up_amount");
-	if (e) { e.focus(); e.select(); }
-
+	if (e) {
+		e.focus(); e.select();
+		if (name=="emojiPopup") show_emoji_search();
+		}
 	return false;
 }
 
@@ -210,6 +246,7 @@ function toggleTheme() { togglePopUp("themePopup",5000); }
 
 function show_one_space(name)
 {
+	hidePopUp();
 	for (let item of ["userSpace","marketPlace","search","basketSpace"]) {
 		if (item != name) elm[item].style.display = "none";
 		};
@@ -301,11 +338,9 @@ function user_info()
 {
 	basket_changed();
 
-	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="block";
-	else elm.emailIcon.style.display="none";
-
-	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="block";
-	else elm.ordersIcon.style.display="none";
+	elm.messagesIcon.style.display = (ctx.messages)?"":"none";
+	elm.emailIcon.style.display = ((ctx.user)&&(!ctx.user.email_verified))?"":"none";
+	elm.ordersIcon.style.display = (ctx.orders&&ctx.orders.length)?"":"none";
 
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
@@ -462,6 +497,8 @@ function basket_changed()
 
 function history_back(event)
 {
+	if (!event.state) return;
+
 	let router = {
 		"resend_password": resend_password,
 		"basketCheckout": basketCheckout,
@@ -476,18 +513,19 @@ function history_back(event)
 		"myDomains": myDomains,
 		"request_transfer": request_transfer,
 		"goSearch": goSearch,
+		"viewMessages": viewMessages,
 		"welcome": go_welcome
 		};
 
-	let rest = null;
+	let param_value = null;
 	let func_name = event.state;
 	if (func_name.indexOf("/")>=0) {
 		let parts = event.state.split("/");
 		func_name = parts[0];
-		rest = parts.slice(1);
+		param_value = parts.slice(1);
 		}
 
-	if (func_name in router) router[func_name](false,rest);
+	if (func_name in router) router[func_name](false,param_value);
 	return true;
 }
 
@@ -496,6 +534,8 @@ function history_back(event)
 function bodyLoaded()
 {
 	window.addEventListener('popstate',history_back);
+	let e = document.getElementById("themePopup");
+	e.innerHTML = make_theme_popup();
 	go_welcome(true);
 }
 
@@ -552,6 +592,7 @@ function go_welcome(with_push)
 				});
 			} else { loggedOut(); check_router_path(); }
 
+		check_for_messages();
 		});
 }
 
@@ -688,6 +729,7 @@ function catch_user_data(reply)
 			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
 			}
 		})
+	if ("messages" in reply) ctx.messages = reply.messages;
 }
 
 
@@ -699,7 +741,7 @@ function one_search_line(item,block_not_avail)
 		}
 
 	let x = "<tr class=searchDomain>";
-	x += `<td><span title="${item.name}">${fromPuny(item.name)}</span>`;
+	x += `<td width=90px></td><td><span title="${item.name}">${fromPuny(item.name)}</span>`;
 	if ("renew" in item)
 		x += `<br><span class=searchRenew>renew ${format_amount(item.renew)}</span>`;
 	x += "</td>";
@@ -714,7 +756,7 @@ function one_search_line(item,block_not_avail)
 			x += "</td>";
 			}
 		}
-	x += "</tr>";
+	x += "<td width=90px></td></tr>";
 	return x;
 }
 
@@ -863,6 +905,8 @@ function multiSearch(srch,not_me_tld)
 
 function doSearch()
 {
+	hidePopUp();
+
 	function do_end() {
 		f.searchEdit.focus();
 		f.searchEdit.select();
@@ -912,7 +956,7 @@ function postDomainTransfer()
 
 	callApi("domain/transfer",(ok,reply) => {
 		// # CODE
-		console.log(ok,reply);
+		console.log(ok,reply); // # CODE
 		},	{
 			json : {
 				"name": f.trans_domain_name.value,
@@ -971,11 +1015,14 @@ function userDomainList()
 		if (dom.auto_renew) auto_renew = gbl.tick;
 		x += `<td title="Auto-Renew Status" align=center>${auto_renew}</td>`;
 		if (dom.status_id == 1)
-			x += `<td align=center>${dom.expiry_dt.split(" ")[0]}</td>`;
+			x += `<td align=center>${local_date(dom.expiry_dt)}</td>`;
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
 
-		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
+		if (dom.ns == default_dns_servers)
+			x += "<td align=center>DNS hosted here</td>";
+		else
+			x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
 
 		x += "</tr>";
 		}
@@ -1026,8 +1073,8 @@ function show_domains_list()
 function myDomains(with_push)
 {
 	if (with_push) push_hist("myDomains");
-	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
+	show_one_space("userSpace");
 	load_domains_list(show_domains_list)
 	return false;
 }
@@ -1129,6 +1176,7 @@ function disable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section");
 function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
+	hidePopUp();
 
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
@@ -1194,6 +1242,8 @@ function go_user_statement() { return user_statement(false,true); }
 function user_statement(with_push,from_start)
 {
 	if (with_push) push_hist("user_statement");
+	hidePopUp();
+
 	let num = policy("trans_per_page",25);
 	let limit = null;
 
@@ -1221,7 +1271,8 @@ function user_statement(with_push,from_start)
 
 function show_transactions(with_more)
 {
-	let x = "<table align=center style='min-width: 75%;' border=0>";
+	let x = "<table align=center style='min-width: 75%;' cellspacing=3 cellpadding=0 border=0>";
+	x += "<colgroup><col width=10px/><col/><col width=10%/><col width=10%/><col width=10%/></colgroup>";
 	x += "<tr><td colspan=5 class=btmBtnBar>";
 	x += top_up_button();
 	x += "</td></tr>";
@@ -1229,7 +1280,7 @@ function show_transactions(with_more)
 	["When","Description","Credit","Debit","Balance"].forEach((item) => { x += `<th>${item}</th>`; })
 	x += "</tr>";
 	for(let trans of ctx.transactions) {
-		x += `<tr><Td align=center>${trans.created_dt.slice(0,16)}</td>`;
+		x += `<tr><Td align=center>${local_dt(trans.created_dt)}</td>`;
 		x += `<td>${trans.description}</td>`;
 		if (trans.amount > 0)
 			x += `<td align=right>${format_amount(trans.amount)}</td><td></td>`;
@@ -1401,6 +1452,7 @@ function userDetails()
 		x += btn("send_confirm_email()","Resend Verify","Resend e-mail verification",100);
 
 	x += btn("user_statement(true,true)","Statement","View a statement of all your transactions",100)
+	x += btn("viewMessages(true)","Messages","View all my messages",100)
 	x += top_up_button();
 	x += btn("payment_methods(true)","Payment","View / maintain your payment methods",100)
 	x += btn("user_settings(true)","Settings","Change this accounts settings",100)
@@ -1410,9 +1462,9 @@ function userDetails()
 	x += `<tr><td class=promptCell>E-Mail :</td><td class=dataCell>${ctx.user.email}</td></tr>`;
 	x += `<tr><td class=promptCell>E-Mail Verified :</td><td class=dataCell>${verified}</td></tr>`;
 	x += `<tr><td class=promptCell>Name :</td><td class=dataCell>${ctx.user.name}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${ctx.user.last_login_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${ctx.user.amended_dt}</td></tr>`;
-	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${ctx.user.created_dt}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Login :</td><td class=dataCell>${local_dt(ctx.user.last_login_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${local_dt(ctx.user.amended_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Created :</td><td class=dataCell>${local_dt(ctx.user.created_dt)}</td></tr>`;
 	x += `<tr><td class=promptCell>Defaut Auto-Renew :</td><td class=dataCell>${auto_renew}</td></tr>`;
 
 	let show_bal = format_amount(ctx.user.acct_current_balance);
@@ -1452,7 +1504,7 @@ function order_details(as_first)
 		x += `<tr id=orderRow${order.order_item_id} onClick="cancel_order(${order.order_item_id});" title='Click to cancel this order' class=dataRow>`;
 		x += "<td align=center>"+gbl.cut+"</td>";
 		x += `<td align=center>${pretty_prompt(order.status)}</td>`
-		x += `<td align=center>${order.created_dt}</td>`
+		x += `<td align=center>${local_dt(order.created_dt)}</td>`
 		x += `<td align=center>${dom.display_name}</td>`
 		x += `<td align=center>${order.order_type}</td>`
 		x += `<td align=center>${order.num_years}</td>`
@@ -1593,7 +1645,7 @@ function show_all_orders_processed()
 function show_new_orders()
 {
 	let x = "<table align=center width=75% border=0>";
-	x += order_details(true);
+	if ((ctx.orders)&&(ctx.orders.length)) x += order_details(true);
 
 	if (gbl.basket) {
 		x += settings_header("Items that failed")
@@ -1952,7 +2004,13 @@ function removeDS(idx,ds_data)
 
 
 
-function push_domain_transfer_options(idx) { push_hist(`domain_transfer_options/${idx}`); return domain_transfer_options(idx); }
+function push_domain_transfer_options(idx)
+{
+	if (ctx.domains[idx].can_transfer) {
+		push_hist(`domain_transfer_options/${idx}`);
+		return domain_transfer_options(idx);
+	}
+}
 function go_domain_transfer_options(with_push,rest) { domain_transfer_options(parseInt(rest[0])); }
 
 function domain_transfer_options(idx)
@@ -2132,7 +2190,6 @@ function hideAuthCode()
 
 function copyToClip(data)
 {
-	let ac = document.getElementById("editAuthCode");
 	navigator.clipboard.writeText(data).then(
 		() => {
 			errMsg("AuthCode copied to clipboard","editAuthCode")
@@ -2629,7 +2686,7 @@ function one_domain_html(idx)
 	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
-	if ((dom.is_live)&&(!have_locks.TransferProhibited))
+	if ((dom.is_live)&&(!have_locks.TransferProhibited)&&(dom.can_transfer))
 		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {
@@ -2649,9 +2706,9 @@ function one_domain_html(idx)
 	if (dom.client_locks) locks = dom.client_locks;
 	x += `<tr><td class=promptCell>Locks :</td><td class=dataCell>${locks}</td></tr>`;
 
-	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${dom.expiry_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${dom.created_dt.split(" ")[0]}</td></tr>`;
-	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${dom.amended_dt}</td></tr>`;
+	x += `<tr><td class=promptCell>Expiry Date :</td><td class=dataCell>${local_date(dom.expiry_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Create Date :</td><td class=dataCell>${local_date(dom.created_dt)}</td></tr>`;
+	x += `<tr><td class=promptCell>Last Amended :</td><td class=dataCell>${local_dt(dom.amended_dt)}</td></tr>`;
 	if (dom.ns) {
 		let ns = dom.ns.toLowerCase().split(",").sort().join("<br>")
 		x += `<tr><td class=promptCell>Name Servers :</td><td class=dataCell>${ns}</td></tr>`;
@@ -2738,11 +2795,7 @@ function resend_password(with_push)
 
 function searchKey(e)
 {
-	if (e.key=="Enter") {
-		hidePopUp();
-		doSearch();
-		return; }
-
+	if (e.key=="Enter") { doSearch(); return; }
 	if (e.key==":") togglePopUp("emojiPopup",0)
 }
 
@@ -2791,12 +2844,29 @@ function emojiKey(e)
 }
 
 
+
 function searchFocus()
 {
 	let popup = document.getElementById("emojiPopup");
 	if ((popup)&&(popup.classList.contains("show"))) hideAllPopUp();
 }
 
+
+
+function make_theme_popup()
+{
+	if ((!theme_colours)||(!Object.keys(theme_colours).length)) {
+		let e = document.getElementById("themeButton");
+		e.style.display = "none";
+		return "";
+		}
+
+	let x = '<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>';
+	for(let i in theme_colours)
+		if (i != "default") x += `<tr class=dataRow onClick='do_theme_change("${i}");'><td>${pretty_prompt(i)}</td></tr>`;
+	x += '</table>';
+	return x;
+}
 
 </script>
 <body onLoad="bodyLoaded();">
@@ -2864,34 +2934,30 @@ function searchFocus()
 
 <tr><Td>
 <div class="popBelow">
-<span style='width: 85px;' tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
-<span class="popBelowText" id="themePopup">
-<table style="width: 120px;" border=0 cellspacing=2 cellpadding=5>
-<tr class=dataRow onClick='do_theme_change("dark");'><td>dark</td></tr>
-<tr class=dataRow onClick='do_theme_change("light");'><td>light</td></tr>
-<tr class=dataRow onClick='do_theme_change("red");'><td>red</td></tr>
-<tr class=dataRow onClick='do_theme_change("green");'><td>green</td></tr>
-<tr class=dataRow onClick='do_theme_change("blue");'><td>blue</td></tr>
-</table>
-</span>
+<span style='width: 85px;' id=themeButton tabindex=0 title="Change theme" class=myBtn onClick="toggleTheme();">Theme</span>
+<span class="popBelowText" id="themePopup">&nbsp;</span>
 <span style='width: 85px;' tabindex=0 title="Domain name search" class=myBtn onClick="goSearch(true);">Search</span>
 <span id=marketPlaceBtn style='width: 85px;' tabindex=0 title="Go to the domain market place" class=myBtn onClick="goMarketPlace();">Marketplace</span>
 </div>
 </td>
 
 
-<td align=right><table width=100% border=0>
-<colgroup><col width=20%/><col width=20%/><col width=60%/></colgroup>
-<tr><td><span id="errorSpan">&nbsp;</span></td>
+<td align=right><table width=100% border=0 cellspacing=0 cellpadding=0>
+<colgroup><col width=20%/><col width=5%/><col width=5%/><col width=5%/><col width=5%/><col width=60%/></colgroup>
+<tr>
+<td><span id="errorSpan">&nbsp;</span></td>
+<td><span title="You have new messages" id=messagesIcon class=userIcons style="display: none;" onClick="viewMessages(true);">&#x1F514;</span></td>
 <td><span title="Please confirm your email address" id=emailIcon class=userIcons style="display: none;" onClick="confirmEmail();">&#128231;</span></td>
 <td><span title="You have orders waiting to be paid for" id="ordersIcon" class=userIcons style="display: none;" onClick="orders_icon();">&#x1F4B3;</span></td>
 <td align=center>
 <span id="basketIcon" style="display: none;" class="popup">
 <span class=userIcons title="You have items waiting to checkout" ${style} onClick='togglePopUp("basketPopup",30000);'>&#128722;</span>
 <span style="margin-left: -250px;" class="popuptext" id="basketPopup">
-</span></span></td><td align=center><span id="userInfo"></span></td></tr></table></td>
+</span></span></td><td align=right><span id="userInfo"></span></td></tr></table></td>
 </tr></table>
 </div>
+
+<div style="height: 100px;">&nbsp;</div>
 
 <div id="allBottom">
 	<div style='height: 30px;'></div>
@@ -2902,8 +2968,12 @@ function searchFocus()
 				<form action="#" name=searchForm onSubmit="return doSearch();">
 					<tr><td align=center>
 						<div class="popup">
-							<input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit>
-							<span class="popupText" style="margin-left: -600; margin-top: 40px;" id="emojiPopup">
+							<table cellspacing=0 cellpadding=0 border=0><tr>
+							<td><span class=emoji onClick='togglePopUp("emojiPopup",0);'>&#x1F600;</span></td>
+							<td><input onFocus="searchFocus();" onkeydown="searchKey(event);" placeholder="Enter a domain to search for, or hit ':' for emoji search" style="width:600px;" autofocus class=searchBox id=searchEdit></td>
+							<td><span onClick='doSearch();' class=emoji>&#x1F50d;</span></td>
+							</tr></table>
+							<span class="popupText" style="margin-left: -298; margin-top: 0px;" id="emojiPopup">
 								<input onkeyUp="emojiKey(event);" id="emojiSearch" style="width: 100%"><P>
 								<div style="text-align: left; overflow-y: auto; overflow-x: hidden; width: 580px; max-height: 500px; margin-top: 10px; white-space: normal;" id="emojiOutput">&nbsp;</div>
 							</span>

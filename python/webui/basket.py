@@ -101,8 +101,6 @@ def capture_basket(req, whole_basket):
     sum_orders = sum_db["sum_orders"] if misc.has_data(sum_db, "sum_orders") else 0
 
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
-        if user_db["acct_current_balance"] < 0:
-            return False, "Please pay off your existing account debt before placing more orders"
         return False, "Please pay for your existing orders before placing more orders"
 
     if user_db["acct_current_balance"] < user_db["acct_overdraw_limit"]:
@@ -119,14 +117,11 @@ def live_process_basket(req, whole_basket):
     user_db = whole_basket["user_db"]
     basket = whole_basket["basket"]
     for order in basket:
-        if "failed" in order:
-            continue
-
-        if not paid_for_basket_item(req, order, user_db):
-            order["failed"] = "Pay for failed"
+        if "failed" not in order and pay_for_basket_item(req, order, user_db) is None:
+            order["failed"] = "Paying for item failed"
 
 
-def paid_for_basket_item(req, order, user_db):
+def pay_for_basket_item(req, order, user_db):
     if "failed" in order:
         return False
 

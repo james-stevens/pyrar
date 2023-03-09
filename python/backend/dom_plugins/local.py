@@ -169,7 +169,6 @@ def my_hello(__):
     return "LOCAL: Hello"
 
 
-# pylint: disable=unused-argument
 def domain_info(__, bke_job, dom_db):
     """ noting to do for type=local """
     return dom_db
@@ -183,9 +182,6 @@ def set_authcode(__, bke_job, dom_db):
 def domain_update_flags(__, bke_job, dom_db):
     """ nothing to do for `local` """
     return True
-
-
-# pylint: enable=unused-argument
 
 
 def get_class_from_name(name):

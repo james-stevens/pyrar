@@ -30,7 +30,7 @@ CREATE TABLE `actions` (
   PRIMARY KEY (`action_id`),
   KEY `by_dom` (`domain_id`),
   KEY `by_date` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=1006 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1036 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,7 +53,7 @@ CREATE TABLE `backend` (
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`backend_id`),
   KEY `by_user` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=10766 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10460 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -154,7 +154,7 @@ DROP TABLE IF EXISTS `domains`;
 CREATE TABLE `domains` (
   `domain_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `user_id` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `contact_id` int(10) unsigned DEFAULT NULL,
   `status_id` int(11) NOT NULL DEFAULT 0,
   `auto_renew` tinyint(1) DEFAULT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE `domains` (
   UNIQUE KEY `by_id` (`domain_id`),
   KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10681 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10690 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -198,7 +198,7 @@ CREATE TABLE `events` (
   PRIMARY KEY (`event_id`),
   KEY `by_domain` (`domain_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11601 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11659 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -214,10 +214,9 @@ CREATE TABLE `messages` (
   `message` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL,
   `created_dt` datetime NOT NULL,
-  `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`message_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10457 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -238,12 +237,12 @@ CREATE TABLE `orders` (
   `order_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
   `num_years` int(11) NOT NULL,
   `authcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
-  `status` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`order_item_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10480 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10454 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -261,9 +260,10 @@ CREATE TABLE `payments` (
   `token_type` tinyint(4) NOT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
+  `user_can_delete` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`payment_id`),
   UNIQUE KEY `by_token` (`token`,`provider`) USING HASH
-) ENGINE=InnoDB AUTO_INCREMENT=10519 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10471 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -276,16 +276,16 @@ DROP TABLE IF EXISTS `sales`;
 CREATE TABLE `sales` (
   `sales_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `transaction_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `user_id` int(10) unsigned DEFAULT NULL,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
   `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
   `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `domain_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `domain_id` int(10) unsigned DEFAULT NULL,
+  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
   `zone_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `registry` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `user_id` int(10) unsigned DEFAULT NULL,
   `sales_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `num_years` int(11) NOT NULL,
   `is_refund_of` int(10) unsigned DEFAULT NULL,
@@ -293,7 +293,7 @@ CREATE TABLE `sales` (
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`sales_item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10598 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10603 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,7 +348,7 @@ CREATE TABLE `transactions` (
   `created_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`,`acct_sequence_id`),
   UNIQUE KEY `by_id` (`transaction_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10687 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10692 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -370,7 +370,7 @@ CREATE TABLE `users` (
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_percent` int(11) DEFAULT NULL,
-  `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 1,
   `acct_on_hold` tinyint(1) NOT NULL DEFAULT 0,
   `acct_current_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `acct_previous_balance` decimal(10,0) NOT NULL DEFAULT 0,
@@ -418,4 +418,4 @@ CREATE TABLE `zones` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-03-03 15:13:54
+-- Dump completed on 2023-03-06 19:06:01

@@ -6,7 +6,6 @@
 from librar.log import log
 from librar import registry
 
-# pylint: disable=unused-wildcard-import, wildcard-import
 from backend import dom_handler
 from backend.dom_plugins import *
 

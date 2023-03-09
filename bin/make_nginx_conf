@@ -89,7 +89,7 @@ echo "
 awk 'BEGIN { fac="'"${facility}"'"; lvl="'"${severity}"'"; }
 	{
 	printf "\tupstream epp_%s {\n",$1
-	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s_1.sock;\n",$1
+	printf "\t\tserver unix:/run/epp/wsgi_epprest_%s.sock;\n",$1
 	print "\t\t}"
 	printf "\tserver {\n\t\tlisten %d;\n\t\tlocation / {\n",$2
 	printf "\t\t\taccess_log syslog:server=unix:/dev/log,facility=%s,tag=nginx_epp_%s,severity=%s;\n",fac,$1,lvl;

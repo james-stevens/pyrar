@@ -2,8 +2,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-session="${1}"
-registry="${2}"
+registry="${1}"
 
 ses="$(jq .${registry}.sessions ${BASE}/config/registry.json)"
 if test "${ses}" = "null"; then ses="3"; fi
@@ -16,5 +15,5 @@ cd ${BASE}/python/epprest
 exec gunicorn \
         --workers ${ses} \
         --user=daemon \
-        ${extra} --bind unix:/run/epp/wsgi_epprest_${registry}_${session}.sock \
-        wsgi 2>&1 | logger -p ${fac}.${lvl} -t epprest_${registry}_${session}
+        ${extra} --bind unix:/run/epp/wsgi_epprest_${registry}.sock \
+        wsgi 2>&1 | logger -p ${fac}.${lvl} -t epprest_${registry}

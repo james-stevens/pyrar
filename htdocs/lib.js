@@ -32,7 +32,9 @@ function from_float(amount)
 function callApi(sfx,callback,inData)
 {
 	document.body.style.cursor="progress";
-	elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
+	let show_timer = true;
+	if ((inData)&&("show_timer" in inData)) show_timer = inData.show_timer;
+	if (show_timer) elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
 
 	function default_callback(ok,reply) { console.log("CALLBACK:",ok,reply); return; }
 	if (!callback) callback = default_callback;
@@ -40,7 +42,7 @@ function callApi(sfx,callback,inData)
 	function we_are_done(ok,reply)
 	{
 		document.body.style.cursor="auto";
-		elm.topMsg.innerHTML = "";
+		if (show_timer) elm.topMsg.innerHTML = "";
 		return callback(ok,reply);
 	}
 
@@ -366,10 +368,27 @@ function rand_tag(want_char)
 }
 
 
+
 function pretty_prompt(tag)
 {
     let s = tag.split("_");
     for(let i in s)
         s[i] = s[i][0].toUpperCase() + s[i].substr(1);
     return s.join(" ");
+}
+
+
+
+function local_dt(date_time)
+{
+	d = new Date(date_time+" UTC");
+	return d.toLocaleString();
+}
+
+
+
+function local_date(date_time)
+{
+	d = new Date(date_time+" UTC");
+	return d.toLocaleDateString();
 }

@@ -12,10 +12,10 @@ sqlsh "CREATE TABLE messages (
     message			varchar(3000) not null,
     is_read			boolean not null,
 	created_dt      datetime not null,
-	primary key by_id (message_id),
-	key by_user(user_id)
+	primary key by_user (user_id,message_id),
+	unique key by_id(message_id)
     ) ${utf8}"
 
 sqlsh "ALTER TABLE messages AUTO_INCREMENT = 10450"
 
-sqlsh 'grant select, insert, delete on messages to webui,engine'
+sqlsh 'grant select, update, insert, delete on messages to webui,engine'

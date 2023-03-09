@@ -737,15 +737,16 @@
       "indexes": {
          ":primary:": {
             "columns": [
+               "user_id",
                "message_id"
             ],
             "unique": true
          },
-         "by_user": {
+         "by_id": {
             "columns": [
-               "user_id"
+               "message_id"
             ],
-            "unique": false
+            "unique": true
          }
       }
    },
@@ -969,7 +970,6 @@
             "type": "int",
             "null": false,
             "is_plain_int": true,
-            "default": 0,
             "join": {
                "table": "domains",
                "column": "domain_id"
@@ -1036,7 +1036,6 @@
             "type": "int",
             "null": false,
             "is_plain_int": true,
-            "default": 0,
             "join": {
                "table": "transactions",
                "column": "transaction_id"

@@ -382,6 +382,7 @@ def check_supplied_modifiers(sent, allowed):
 application = flask.Flask("MySQL-Rest/API")
 log_init("logging_admin")
 sql.connect("admin")
+sql.make_schema()
 set_amended_and_created()
 registry.start_up()
 pdns.start_up()

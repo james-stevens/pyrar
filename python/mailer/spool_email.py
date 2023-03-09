@@ -60,9 +60,6 @@ def load_records(which_message, request_list):
                 reply[fmt + "_fmt"] = misc.format_currency(reply[fmt], my_currency)
 
         if table == "users":
-            if not reply["email_verified"] and which_message != "verify_email":
-                log(f"User {reply['email']} has not verified their email")
-                return None
             reply["hash_confirm"] = hashstr.make_hash(reply["created_dt"] + ":" + reply["email"])
 
         tag = request[3] if len(request) == 3 else table.rstrip("s")
