@@ -41,6 +41,8 @@ sql.connect("admin")
 for query in args.sql:
     ok, reply = sql.run_select(query)
     FIRST_ROW = sys.stdout.isatty()
+    if not ok:
+        break
     for row in reply:
         if args.output_long:
             verbose_output(row)
