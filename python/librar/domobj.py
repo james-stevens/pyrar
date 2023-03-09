@@ -25,6 +25,7 @@ class Domain:
         self.locks = None
         self.permitted_locks = None
         self.locks = None
+        self.transfer_stop = None
 
     def set_by_id(self, domain_id=None, user_id=None):
         if domain_id is None or not isinstance(domain_id, int):
@@ -53,6 +54,7 @@ class Domain:
         self.tld = tld
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
+        self.transfer_stop = misc.now(self.registry["domain_transfer_age"] * -86400)
         self.permitted_locks = static.CLIENT_DOM_FLAGS
 
         if "locks" in self.registry:
@@ -78,6 +80,8 @@ class Domain:
         if not ok:
             return False, "Domain failed to load"
         self.dom_db = reply
+        self.can_transfer = reply["created_dt"] < self.transfer_stop
+        self.dom_db["can_transfer"] = self.can_transfer
         return self.set_locks()
 
     def set_locks(self):
@@ -112,6 +116,7 @@ class DomainList:
         self.currency = None
         self.xmlns = None
         self.client = None
+        self.transfer_stop = None
 
     def set_list(self, dom_list):
         if isinstance(dom_list, str):
@@ -145,6 +150,7 @@ class DomainList:
                 return False, reply
             if self.registry is None:
                 self.registry = this_domobj.registry
+                self.transfer_stop = misc.now(self.registry["domain_transfer_age"] * -86400)
             else:
                 if self.registry["name"] != this_domobj.registry["name"]:
                     return False, "ERROR: Split registry request"
@@ -165,6 +171,8 @@ class DomainList:
             dom.dom_db = None
             if dom.name in domdb_by_name:
                 dom.dom_db = domdb_by_name[dom.name]
+                dom.can_transfer = dom.dom_db["created_dt"] < self.transfer_stop
+                dom.dom_db["can_transfer"] = dom.can_transfer
                 dom.set_locks()
 
         return True, None

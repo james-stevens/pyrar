@@ -16,7 +16,8 @@ from librar.policy import this_policy as policy
 SCHEMA_FILE = f"{os.environ['BASE']}/etc/schema.json"
 SCHEMA_PDNS = f"{os.environ['BASE']}/etc/pdns.json"
 
-def property_same(name,col1,col2):
+
+def property_same(name, col1, col2):
     if name not in col1 and name not in col2:
         return True
     if name in col1 and name not in col2:
@@ -27,12 +28,13 @@ def property_same(name,col1,col2):
         return False
     return True
 
+
 def type_change(col1, col2):
     """ check to see if the column type or size has changed """
     if col1["type"] != col2["type"]:
         return True
-    for property in ["size","null","default"]:
-        if not property_same(property,col1,col2):
+    for property in ["size", "null", "default"]:
+        if not property_same(property, col1, col2):
             return True
     return False
 
@@ -127,7 +129,7 @@ for table, table_data in save_schema.items():
         query = None
         if index not in live_table["indexes"]:
             unique = "index"
-            if index == "PRIMARY" or index==":primary:":
+            if index == "PRIMARY" or index == ":primary:":
                 unique = "primary key"
             elif "unique" in idx_data and idx_data["unique"]:
                 unique = f"unique index {index}"

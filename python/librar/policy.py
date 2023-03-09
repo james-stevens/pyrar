@@ -49,6 +49,7 @@ policy_defaults = {
     "trans_per_page": 25,
     "orders_expire_hrs": int(6.5 * 24),
     "expire_recover_limit": 30,
+    "domain_transfer_age": 30,
     "auto_renew_before": 14,
     "renewal_reminders": "30,14,7"
 }

@@ -16,7 +16,8 @@ from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
 MANDATORY_REGS_ITEMS = [
-    "max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008"
+    "max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008",
+    "domain_transfer_age"
 ]
 
 DEFAULT_XMLNS = {

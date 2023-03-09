@@ -497,6 +497,8 @@ function basket_changed()
 
 function history_back(event)
 {
+	if (!event.state) return;
+
 	let router = {
 		"resend_password": resend_password,
 		"basketCheckout": basketCheckout,
@@ -515,15 +517,15 @@ function history_back(event)
 		"welcome": go_welcome
 		};
 
-	let rest = null;
+	let param_value = null;
 	let func_name = event.state;
 	if (func_name.indexOf("/")>=0) {
 		let parts = event.state.split("/");
 		func_name = parts[0];
-		rest = parts.slice(1);
+		param_value = parts.slice(1);
 		}
 
-	if (func_name in router) router[func_name](false,rest);
+	if (func_name in router) router[func_name](false,param_value);
 	return true;
 }
 
@@ -1017,7 +1019,10 @@ function userDomainList()
 		else
 			x += `<td align=center>${dom.status_desc}</td>`;
 
-		if (dom.ns == default_dns_servers) x += "<td align=center>DNS hosted here</td>"; else x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
+		if (dom.ns == default_dns_servers)
+			x += "<td align=center>DNS hosted here</td>";
+		else
+			x += `<td style="overflow-x: hidden;text-overflow: clip;">${dom.ns}</td>`;
 
 		x += "</tr>";
 		}
@@ -1999,7 +2004,13 @@ function removeDS(idx,ds_data)
 
 
 
-function push_domain_transfer_options(idx) { push_hist(`domain_transfer_options/${idx}`); return domain_transfer_options(idx); }
+function push_domain_transfer_options(idx)
+{
+	if (ctx.domains[idx].can_transfer) {
+		push_hist(`domain_transfer_options/${idx}`);
+		return domain_transfer_options(idx);
+	}
+}
 function go_domain_transfer_options(with_push,rest) { domain_transfer_options(parseInt(rest[0])); }
 
 function domain_transfer_options(idx)
@@ -2179,7 +2190,6 @@ function hideAuthCode()
 
 function copyToClip(data)
 {
-	let ac = document.getElementById("editAuthCode");
 	navigator.clipboard.writeText(data).then(
 		() => {
 			errMsg("AuthCode copied to clipboard","editAuthCode")
@@ -2676,7 +2686,7 @@ function one_domain_html(idx)
 	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
 
-	if ((dom.is_live)&&(!have_locks.TransferProhibited))
+	if ((dom.is_live)&&(!have_locks.TransferProhibited)&&(dom.can_transfer))
 		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,100)
 
 	if (dom.status_id != 20) {

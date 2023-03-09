@@ -100,7 +100,6 @@ def capture_basket(req, whole_basket):
 
     sum_orders = sum_db["sum_orders"] if misc.has_data(sum_db, "sum_orders") else 0
 
-    log(f"{sum_orders} > {user_db['acct_current_balance']} - {user_db['acct_overdraw_limit']}")
     if sum_orders > (user_db["acct_current_balance"] - user_db["acct_overdraw_limit"]):
         return False, "Please pay for your existing orders before placing more orders"
 

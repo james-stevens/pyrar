@@ -287,7 +287,6 @@ def domain_delete(this_reg, bke_job, dom_db):
     return True
 
 
-
 def my_hello(__):
     """ test function """
     return "EPP: Hello"

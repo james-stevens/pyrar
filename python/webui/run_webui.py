@@ -95,7 +95,7 @@ class WebuiReq:
                         del self.user_data[table][column]
 
     def send_user_data(self):
-        check_messages(self,self.user_data)
+        check_messages(self, self.user_data)
         return self.response(self.user_data)
 
     def response(self, data, code=HTML_CODE_OK):
@@ -183,15 +183,15 @@ def api_messages_read():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok,reply = sql.sql_select("messages",{"user_id": req.user_id}, order_by="message_id desc")
+    ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc")
     if not ok:
         return req.abort(reply)
-    sql.sql_update("messages",{"is_read":True},{"user_id": req.user_id,"is_read":False})
+    sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
     return req.response(reply)
 
 
-def check_messages(req,data):
-    data["messages"] = sql.sql_exists("messages",{"user_id": req.user_id, "is_read": False})
+def check_messages(req, data):
+    data["messages"] = sql.sql_exists("messages", {"user_id": req.user_id, "is_read": False})
 
 
 @application.route('/pyrar/v1.0/messages/check', methods=['GET'])
@@ -199,7 +199,7 @@ def api_messages_check():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    return req.response(sql.sql_exists("messages",{"user_id": req.user_id, "is_read": False}))
+    return req.response(sql.sql_exists("messages", {"user_id": req.user_id, "is_read": False}))
 
 
 @application.route('/pyrar/v1.0/orders/details', methods=['GET'])
@@ -397,6 +397,7 @@ def domain_transfer():
 
     name = req.post_js["name"].lower()
     doms = domobj.DomainList()
+
     ok, reply = doms.set_list(name)
     if not ok:
         return req.abort(reply)
@@ -427,6 +428,7 @@ def users_domains():
         dom_db["registry"] = dom.registry["name"]
         dom_db["locks"] = dom.locks
         dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
+        dom_db["can_transfer"] = (dom_db["created_dt"] < dom.transfer_stop)
 
     req.user_data["domains"] = reply
     return req.send_user_data()
@@ -532,7 +534,7 @@ def users_login():
         return req.abort("Login failed")
 
     req.parse_user_data(ret, data)
-    check_messages(req,data)
+    check_messages(req, data)
 
     return req.response(data)
 
