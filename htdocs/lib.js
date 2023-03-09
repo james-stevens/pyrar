@@ -390,5 +390,5 @@ function local_dt(date_time)
 function local_date(date_time)
 {
 	d = new Date(date_time+" UTC");
-	return d.toLocaleString().split(" ")[0].replace(",","");
+	return d.toLocaleDateString();
 }

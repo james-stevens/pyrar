@@ -158,13 +158,16 @@ h2 { text-align: center; }
 	}
 
 #topSpan{
+	position: fixed;
+	z-index: 100;
+	top: 0;
+	width: 100%;
 	background-color: #${cols[6]};
 	height: 100px;
 	line-height: 100px;
 	margin-top: 0px;
 	padding-left: 0px;
 	padding-top: 1px;
-	top: 0px;
 	}
 
 #businessName {
@@ -399,6 +402,7 @@ td {
 
 
 .msgPop {
+	z-index: 200;
 	position: absolute;
 	font-family:inherit;
 	font-size: 16pt;

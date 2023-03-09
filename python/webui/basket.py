@@ -118,14 +118,11 @@ def live_process_basket(req, whole_basket):
     user_db = whole_basket["user_db"]
     basket = whole_basket["basket"]
     for order in basket:
-        if "failed" in order:
-            continue
-
-        if not paid_for_basket_item(req, order, user_db):
-            order["failed"] = "Pay for failed"
+        if "failed" not in order and pay_for_basket_item(req, order, user_db) is None:
+            order["failed"] = "Paying for item failed"
 
 
-def paid_for_basket_item(req, order, user_db):
+def pay_for_basket_item(req, order, user_db):
     if "failed" in order:
         return False
 

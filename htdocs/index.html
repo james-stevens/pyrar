@@ -132,8 +132,8 @@ function keyEsc(e) {
 function check_for_messages()
 {
 	callApi("messages/check",(ok,reply) => {
-		if ((ok)&&(reply)) elm.messagesIcon.style.display = "";
-		else elm.messagesIcon.style.display="none";
+		if (ok) ctx.messages = reply;
+		user_info();
 		},{ show_timer: false });
 	gbl.msmTimer = setTimeout(check_for_messages,30000);
 }
@@ -246,6 +246,7 @@ function toggleTheme() { togglePopUp("themePopup",5000); }
 
 function show_one_space(name)
 {
+	hidePopUp();
 	for (let item of ["userSpace","marketPlace","search","basketSpace"]) {
 		if (item != name) elm[item].style.display = "none";
 		};
@@ -337,11 +338,9 @@ function user_info()
 {
 	basket_changed();
 
-	if ((ctx.user)&&(!ctx.user.email_verified)) elm.emailIcon.style.display="";
-	else elm.emailIcon.style.display="none";
-
-	if (ctx.orders&&ctx.orders.length) elm.ordersIcon.style.display="";
-	else elm.ordersIcon.style.display="none";
+	elm.messagesIcon.style.display = (ctx.messages)?"":"none";
+	elm.emailIcon.style.display = ((ctx.user)&&(!ctx.user.email_verified))?"":"none";
+	elm.ordersIcon.style.display = (ctx.orders&&ctx.orders.length)?"":"none";
 
 	if (("user" in ctx)&&("name" in ctx.user)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
@@ -728,9 +727,7 @@ function catch_user_data(reply)
 			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
 			}
 		})
-	if ("messages" in reply) {
-		if (reply.messages) elm.messagesIcon.style.display = ""; else elm.messagesIcon.style.display="none";
-		}
+	if ("messages" in reply) ctx.messages = reply.messages;
 }
 
 
@@ -1071,8 +1068,8 @@ function show_domains_list()
 function myDomains(with_push)
 {
 	if (with_push) push_hist("myDomains");
-	show_one_space("userSpace");
 	elm.userSpace.innerHTML = "";
+	show_one_space("userSpace");
 	load_domains_list(show_domains_list)
 	return false;
 }
@@ -1174,6 +1171,7 @@ function disable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section");
 function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
+	hidePopUp();
 
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
@@ -1239,6 +1237,8 @@ function go_user_statement() { return user_statement(false,true); }
 function user_statement(with_push,from_start)
 {
 	if (with_push) push_hist("user_statement");
+	hidePopUp();
+
 	let num = policy("trans_per_page",25);
 	let limit = null;
 
@@ -1640,7 +1640,7 @@ function show_all_orders_processed()
 function show_new_orders()
 {
 	let x = "<table align=center width=75% border=0>";
-	x += order_details(true);
+	if ((ctx.orders)&&(ctx.orders.length)) x += order_details(true);
 
 	if (gbl.basket) {
 		x += settings_header("Items that failed")
@@ -2946,6 +2946,8 @@ function make_theme_popup()
 </span></span></td><td align=right><span id="userInfo"></span></td></tr></table></td>
 </tr></table>
 </div>
+
+<div style="height: 100px;">&nbsp;</div>
 
 <div id="allBottom">
 	<div style='height: 30px;'></div>
