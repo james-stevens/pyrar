@@ -94,6 +94,10 @@ class WebuiReq:
                     if column in self.user_data[table]:
                         del self.user_data[table][column]
 
+    def send_user_data(self):
+        check_messages(self,self.user_data)
+        return self.response(self.user_data)
+
     def response(self, data, code=HTML_CODE_OK):
         """ return OK response & data to caller """
         self.secure_user_data()
@@ -175,7 +179,7 @@ def catch_webhook(webhook):
 
 
 @application.route('/pyrar/v1.0/messages/read', methods=['GET'])
-def read_messages():
+def api_messages_read():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
@@ -186,8 +190,12 @@ def read_messages():
     return req.response(reply)
 
 
+def check_messages(req,data):
+    data["messages"] = sql.sql_exists("messages",{"user_id": req.user_id, "is_read": False})
+
+
 @application.route('/pyrar/v1.0/messages/check', methods=['GET'])
-def check_messages():
+def api_messages_check():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
@@ -261,7 +269,7 @@ def basket_submit():
                 del order[col]
 
     req.user_data["orders"] = [item["order_db"] for item in reply if "order_db" in item]
-    return req.response(req.user_data)
+    return req.send_user_data()
 
 
 @application.route('/pyrar/v1.0/payments/single', methods=['DELETE'])
@@ -375,7 +383,7 @@ def users_transactions():
         return req.abort("Unexpected error loading transactions")
 
     req.user_data["transactions"] = trans_db
-    return req.response(req.user_data)
+    return req.send_user_data()
 
 
 @application.route('/pyrar/v1.0/domain/transfer', methods=['POST'])
@@ -421,8 +429,7 @@ def users_domains():
         dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
 
     req.user_data["domains"] = reply
-
-    return req.response(req.user_data)
+    return req.send_user_data()
 
 
 @application.route('/pyrar/v1.0/users/update', methods=['POST'])
@@ -439,8 +446,7 @@ def users_update():
         return req.abort(user_data)
 
     req.user_data["user"] = user_data
-
-    return req.response(req.user_data)
+    return req.send_user_data()
 
 
 @application.route('/pyrar/v1.0/users/close', methods=['POST'])
@@ -503,7 +509,6 @@ def users_details():
         return req.abort("Failed to load user account")
 
     req.user_data["user"] = user_db
-
     return load_orders_and_reply(req)
 
 
@@ -513,7 +518,7 @@ def load_orders_and_reply(req):
         return req.abort("Orders failed to load")
 
     req.user_data["orders"] = orders_db
-    return req.response(req.user_data)
+    return req.send_user_data()
 
 
 @application.route('/pyrar/v1.0/users/login', methods=['POST'])
@@ -527,6 +532,7 @@ def users_login():
         return req.abort("Login failed")
 
     req.parse_user_data(ret, data)
+    check_messages(req,data)
     return req.response(data)
 
 

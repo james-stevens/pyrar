@@ -728,6 +728,9 @@ function catch_user_data(reply)
 			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
 			}
 		})
+	if ("messages" in reply) {
+		if (reply.messages) elm.messagesIcon.style.display = ""; else elm.messagesIcon.style.display="none";
+		}
 }
 
 
