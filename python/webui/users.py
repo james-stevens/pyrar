@@ -5,15 +5,10 @@
 
 import sys
 
-from librar import mysql
+from librar import mysql, validate, passwd, misc, hashstr
 from librar.mysql import sql_server as sql
-from librar import validate
-from librar import passwd
-from librar import misc
 from librar.policy import this_policy as policy
 from librar.log import log, debug, init as log_init
-from librar import hashstr
-
 from mailer import spool_email
 
 USER_REQUIRED = ["email", "password"]
@@ -159,6 +154,10 @@ def update_user(user_id, post_json):
         return False, "Failed to load user"
 
     if "email" in post_json and user_db["email"] != post_json["email"]:
+        ok, in_use = sql.sql_select_one("users", {"email": post_json["email"]})
+        if ok and len(in_use) > 0:
+            return False, "EMail address already in use"
+        spool_email.spool("email_changed_warn", [["users", {"user_id": user_db["user_id"]}]])
         post_json["email_verified"] = 0
 
     ok = sql.sql_update_one("users", post_json, {"user_id": user_id})
@@ -257,6 +256,8 @@ def reset_users_password(req):
 if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
+    ok, in_use = sql.sql_select_one("users", {"email": sys.argv[1]})
+    print(ok,in_use)
 
     # req = Empty()
     # req.post_js = {}

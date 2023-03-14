@@ -92,7 +92,7 @@ def spool_email_file(filename, server=None):
             message = message[len(name):]
         messages.send(data["user"]["user_id"], message)
 
-    if "user" in data and "email_verified" in data["user"] and not data["user"]["email_verified"]:
+    if which_message != "verify_email" and "user" in data and "email_verified" in data["user"] and not data["user"]["email_verified"]:
         data["state"] = "Not Verified"
         return True, data
 
