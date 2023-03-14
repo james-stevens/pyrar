@@ -235,6 +235,10 @@ def valid_float(num):
     return None
 
 
+def valid_email_opt_out(email_opt_out):
+    return True
+
+
 def main():
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))

@@ -7,6 +7,7 @@
 	<script src="/lib.js"></script>
 	<script src="/emojis.js"></script>
 	<script src="/countries.js"></script>
+	<script src="/picklists.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -342,7 +343,7 @@ function user_info()
 	elm.emailIcon.style.display = ((ctx.user)&&(!ctx.user.email_verified))?"":"none";
 	elm.ordersIcon.style.display = (ctx.orders&&ctx.orders.length)?"":"none";
 
-	if (("user" in ctx)&&("name" in ctx.user)) {
+	if ((ctx.user)&&(ctx.user.name)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
 }
@@ -1094,16 +1095,12 @@ function postUserDetails()
 
 	if (!valid_email.test(data.email)) return regErr("Invalid email address",f.user_email);
 
-	callApi("users/update",(ret,reply) => {
-		if (ret) {
-			if ("user" in reply) {
-				ctx.user = reply.user;
-				user_info();
-				elm.userSpace.innerHTML = userDetails();
-				size_one_space();
-				}
-			}
-		else def_errMsg("Failed",reply,"editUserDetails");
+	callApi("users/update",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed ot update user details",reply,"editUserDetails");
+		if (reply.user) ctx.user = reply.user;
+		user_info();
+		elm.userSpace.innerHTML = userDetails();
+		size_one_space();
 		}, { json: data });
 
 	return false;
@@ -1177,7 +1174,91 @@ function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
 	hidePopUp();
+	user_settings_page(user_general_settings);
+	size_one_space();
+	document.editUserDetails.user_email.focus();
+}
 
+
+
+function user_settings_page(func)
+{
+	let x = "<table align=center style='min-width: 75%;' cellspacing=3 cellpadding=0 border=0>";
+	x += "<tr><td class=btmBtnBar>";
+	x += "<button style='width: 135px;' onClick='user_settings_page(user_general_settings);' class=myBtn>General</button>";
+	x += "<button style='width: 135px;' onClick='start_email_blocking();' class=myBtn>Emails</button>";
+	x += "</td></tr><tr><td>" + func() + "</td></tr></table>";
+	elm.userSpace.innerHTML = x;
+}
+
+
+function start_email_blocking()
+{
+	ctx.change_email_opt_out = ctx.user.email_opt_out;
+	user_settings_page(user_emails_settings);
+}
+
+
+function get_blocked_emails()
+{
+	let blocked_emails = {};
+	if (!ctx.change_email_opt_out) return {};
+
+	let ee = ctx.change_email_opt_out.split(",");
+	for(let i in ee) blocked_emails[ee[i]] = true;
+	return blocked_emails;
+}
+
+
+function toggleEmail(name)
+{
+	let blocked_emails = get_blocked_emails();
+	blocked_emails[name] = !blocked_emails[name];
+	let new_list = [];
+	for(let i in blocked_emails) if (blocked_emails[i]) new_list.push(i);
+	ctx.change_email_opt_out = new_list.join(",");
+	user_settings_page(user_emails_settings);
+}
+
+
+
+function save_email_blocks()
+{
+	callApi("users/update",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed ot update user settings",reply,"save_email_block_btn");
+		if (reply.user) ctx.user = reply.user;
+		user_info();
+		elm.userSpace.innerHTML = userDetails();
+		size_one_space();
+	}, { json: { "email_opt_out": ctx.change_email_opt_out }});
+}
+
+
+function user_emails_settings()
+{
+	let blocked_emails = get_blocked_emails();
+	let x="<table align=center border=0>";
+	x += settings_header("Email Communications from us",true);
+	x += "<tr><td><table>";
+	x += "<tr><th>Email</th><th>Description</th><th>Receive</th></tr>";
+	for (let i in emails_sent) {
+		x += `<tr title='Click to switch receive on/off' onClick="toggleEmail('${i}');" class=dataRow><td>${pretty_prompt(i)}</td><td>${emails_sent[i]}</td>`;
+		if (i in blocked_emails) tick=gbl.cross; else tick="";
+		x += `<td align=center>${tick}</td></tr>`;
+		}
+	x += "</table></td></tr>";
+
+	if (ctx.change_email_opt_out != ctx.user.email_opt_out) {
+		x += "<tr><td align=right><button id=save_email_block_btn onClick='save_email_blocks();' class=myBtn>Save Changes</button></td></tr>";
+		}
+
+	return x+"</table>";
+}
+
+
+
+function user_general_settings()
+{
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
@@ -1229,10 +1310,7 @@ function user_settings(with_push)
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
 	x += "</table></form></td></tr>";
 
-	elm.userSpace.innerHTML = x+"</table>";
-	size_one_space();
-
-	document.editUserDetails.user_email.focus();
+	return x+"</table>";
 }
 
 

@@ -140,7 +140,8 @@ def login(data, user_agent):
 USER_CAN_CHANGE = {
     "default_auto_renew": validate.validate_binary,
     "email": validate.is_valid_email,
-    "name": validate.is_valid_display_name
+    "name": validate.is_valid_display_name,
+    "email_opt_out": validate.valid_email_opt_out
 }
 
 
@@ -160,8 +161,7 @@ def update_user(user_id, post_json):
         spool_email.spool("email_changed_warn", [["users", {"user_id": user_db["user_id"]}]])
         post_json["email_verified"] = 0
 
-    ok = sql.sql_update_one("users", post_json, {"user_id": user_id})
-    if not ok:
+    if not sql.sql_update_one("users", post_json, {"user_id": user_id}):
         return False, "Failed to update user"
 
     ok, user_db = sql.sql_select_one("users", {"user_id": user_id})
