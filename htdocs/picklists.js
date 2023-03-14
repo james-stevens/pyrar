@@ -1,4 +1,15 @@
 
+const emails_sent = {
+	"domain_transferred" : "Domain transfer request has been successful",
+	"email_changed_warn": "Your account email address was just changed",
+	"gifted_domain" : "Recipient of a domain as a gift",
+	"password_changed" : "Your account password was just changed",
+	"payment_done" : "We have received your payment",
+	"receipt" : "Receipt for buying/renewing a domain",
+	"reminder" : "Domain expiry reminder"
+};
+
+
 const yes_no = [ [true,"Yes"], [false,"No"] ];
 
 pick_lists = {

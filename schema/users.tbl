@@ -18,6 +18,8 @@ sqlsh "CREATE TABLE users (
 	default_auto_renew		boolean not null default 1,
 	account_closed			boolean not null default 0,
 
+	email_opt_out			varchar(2000),
+
 	two_fa					varchar(100),
 	password_reset			varchar(100),
 

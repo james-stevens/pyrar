@@ -30,7 +30,7 @@ CREATE TABLE `actions` (
   PRIMARY KEY (`action_id`),
   KEY `by_dom` (`domain_id`),
   KEY `by_date` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=1036 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,7 +53,7 @@ CREATE TABLE `backend` (
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`backend_id`),
   KEY `by_user` (`execute_dt`)
-) ENGINE=InnoDB AUTO_INCREMENT=10460 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +70,7 @@ CREATE TABLE `class_by_name` (
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`class_by_name_id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172,7 +172,7 @@ CREATE TABLE `domains` (
   UNIQUE KEY `by_id` (`domain_id`),
   KEY `by_expdt` (`expiry_dt`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10690 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -198,7 +198,7 @@ CREATE TABLE `events` (
   PRIMARY KEY (`event_id`),
   KEY `by_domain` (`domain_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11659 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -214,9 +214,9 @@ CREATE TABLE `messages` (
   `message` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL,
   `created_dt` datetime NOT NULL,
-  PRIMARY KEY (`message_id`),
-  KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10457 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  PRIMARY KEY (`user_id`,`message_id`),
+  UNIQUE KEY `by_id` (`message_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -242,7 +242,7 @@ CREATE TABLE `orders` (
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`order_item_id`),
   KEY `by_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10454 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -263,7 +263,7 @@ CREATE TABLE `payments` (
   `user_can_delete` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`payment_id`),
   UNIQUE KEY `by_token` (`token`,`provider`) USING HASH
-) ENGINE=InnoDB AUTO_INCREMENT=10471 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -275,14 +275,14 @@ DROP TABLE IF EXISTS `sales`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sales` (
   `sales_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `transaction_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `transaction_id` int(10) unsigned NOT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
   `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
   `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `domain_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
+  `domain_id` int(10) unsigned NOT NULL,
   `zone_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `registry` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -293,7 +293,7 @@ CREATE TABLE `sales` (
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`sales_item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10603 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,7 +348,7 @@ CREATE TABLE `transactions` (
   `created_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`,`acct_sequence_id`),
   UNIQUE KEY `by_id` (`transaction_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10692 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -367,6 +367,7 @@ CREATE TABLE `users` (
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,
   `default_auto_renew` tinyint(1) NOT NULL DEFAULT 1,
   `account_closed` tinyint(1) NOT NULL DEFAULT 0,
+  `email_opt_out` varchar(2000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_percent` int(11) DEFAULT NULL,
@@ -383,7 +384,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `by_login` (`email`),
   UNIQUE KEY `by_pass_rst` (`password_reset`)
-) ENGINE=InnoDB AUTO_INCREMENT=10455 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -418,4 +419,4 @@ CREATE TABLE `zones` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-03-06 19:06:01
+-- Dump completed on 2023-03-14 13:19:00
