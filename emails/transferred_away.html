@@ -1,0 +1,23 @@
+{% include "start.inc" %}
+Subject: {{policy.business_name}}: Domain transferred out of your account, {{domain.display_name}} ({{domain.name}})
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<font size=+1>Hi {{user.name}},</font><p>
+
+The domain {{domain.display_name}} ({{domain.name}}), has just been transferred out of your
+account by another user using the correct AuthCode to authorise the transfer.
+<P>
+If this is not correct, you should contact support immediatly.
+<P>
+
+<table style="margin-left: 100px">
+<tr><Td class=promptCell>Domain Name :</td><td class=dataCell>{{domain.display_name}} ({{domain.name}})</td></tr>
+<tr><Td class=promptCell>Expiry Date :</td><td class=dataCell>{{domain.expiry_dt.split()[0]}}</td></tr>
+</table>
+
+
+{% include "end.html" %}

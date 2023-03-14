@@ -70,7 +70,7 @@ class Domain:
     def load_record(self, user_id=None):
         """ load the domain from the database """
         if self.name is None or self.registry is None or self.tld is None:
-            return False, "Use `set_name` before `load_record`"
+            raise ValueError("Use `set_name` before `load_record`")
         self.dom_db = None
         where = {"name": self.name}
         if user_id is not None:
@@ -159,8 +159,7 @@ class DomainList:
 
     def load_all(self):
         if self.domobjs is None:
-            return False, "Use `set_list` before `load_all`"
-
+            raise ValueError("Use `set_list` before `load_all`")
         ok, dom_dbs = sql.sql_select("domains", {"name": [dom.name for __, dom in self.domobjs.items()]},
                                      limit=len(self.domobjs))
         if not ok or not dom_dbs:

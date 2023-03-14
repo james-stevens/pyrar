@@ -257,7 +257,7 @@ if __name__ == "__main__":
     sql.connect("webui")
     log_init(with_debug=True)
     ok, in_use = sql.sql_select_one("users", {"email": sys.argv[1]})
-    print(ok,in_use)
+    print(ok, in_use)
 
     # req = Empty()
     # req.post_js = {}
