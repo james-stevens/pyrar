@@ -33,10 +33,7 @@ def type_change(col1, col2):
     """ check to see if the column type or size has changed """
     if col1["type"] != col2["type"]:
         return True
-    for property in ["size", "null", "default"]:
-        if not property_same(property, col1, col2):
-            return True
-    return False
+    return any(not property_same(property, col1, col2) for property in ["size", "null", "default"])
 
 
 parser = argparse.ArgumentParser(description='EPP Jobs Runner')
