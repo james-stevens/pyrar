@@ -97,6 +97,11 @@ def spool_email_file(filename, server=None):
         data["state"] = "Not Verified"
         return True, data
 
+    if ("user" in data and misc.has_data(data["user"], "email_opt_out")
+            and which_message in data["user"]["email_opt_out"].split(",")):
+        data["state"] = "User Opt Out"
+        return True, data
+
     for tag in header:
         if tag not in DO_NOT_INCLUDE_TAGS:
             msg[tag] = header[tag]
