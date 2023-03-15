@@ -164,7 +164,7 @@ def domain_transfer(req):
         return False, "Domain is too young to transfer"
 
     if ok and len(dom.dom_db) > 0:
-        return internal_domain_transfer(req,dom.dom_db)
+        return internal_domain_transfer(req, dom.dom_db)
 
     ok, prices = get_domain_prices(doms, 1, ["transfer"], req.user_id)
     if not ok:
@@ -173,31 +173,31 @@ def domain_transfer(req):
     return True, {"name": dom.name, "tld": dom.tld, "authcode": req.post_js["authcode"], "prices": prices}
 
 
-def internal_domain_transfer(req,dom_db):
+def internal_domain_transfer(req, dom_db):
     if dom_db["user_id"] == req.user_id:
         return False, "The domain is already yours"
-    if not (misc.has_data(dom_db, "authcode")
-            and passwd.compare(req.post_js["authcode"], dom_db["authcode"])):
+    if not (misc.has_data(dom_db, "authcode") and passwd.compare(req.post_js["authcode"], dom_db["authcode"])):
         return False, "Authcode provided does not match the one on file"
 
     old_user_id = dom_db["user_id"]
-    if sql.sql_update_one("domains", {
+    if not sql.sql_update_one("domains", {
             "authcode": None,
             "user_id": req.user_id
     }, {"domain_id": dom_db["domain_id"]}):
-        req.event({
-            "domain_id": dom_db["domain_id"],
-            "notes": "Domain transferred away using correct authcode",
-            "event_type": "dom/transfer"
-        })
-        pdns.delete_zone(dom_db["name"])
-        spool_email.spool("transferred_away", [["domains", {
-            "domain_id": dom_db["domain_id"]
-        }], ["users", {
-            "user_id": old_user_id
-        }]])
-        return True, True
-    return False, reply
+        return False, "Domain update failed"
+
+    req.event({
+        "domain_id": dom_db["domain_id"],
+        "notes": "Domain transferred away using correct authcode",
+        "event_type": "dom/transfer"
+    })
+    pdns.delete_zone(dom_db["name"])
+    spool_email.spool("transferred_away", [["domains", {
+        "domain_id": dom_db["domain_id"]
+    }], ["users", {
+        "user_id": old_user_id
+    }]])
+    return True, True
 
 
 def webui_set_authcode(req):

@@ -201,8 +201,8 @@ class ZoneLib:
         return self.registry[registry]["url"]
 
     def reg_record_for_domain(self, domain):
-        if (tld := self.tld_of_name(domain)) is None:
-            return None, None
+        if (tld := self.tld_of_name(domain)) is None or tld not in self.zone_data:
+            return None
         return self.zone_data[tld]["reg_data"] if "reg_data" in self.zone_data[tld] else None
 
     def extract_items(self, dom):
