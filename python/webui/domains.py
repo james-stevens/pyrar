@@ -322,7 +322,7 @@ def main():
     doms.set_list(sys.argv[1:])
     doms.load_all()
     for __, d in doms.domobjs.items():
-        print(">>>>", d.name, d.can_transfer)
+        print(">>D>>", d.name, d.can_transfer)
 
 
 if __name__ == "__main__":

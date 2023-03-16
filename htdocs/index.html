@@ -7,7 +7,6 @@
 	<script src="/lib.js"></script>
 	<script src="/emojis.js"></script>
 	<script src="/countries.js"></script>
-	<script src="/picklists.js"></script>
 </head>
 <style type='text/css'>.msgPop { visibility: hidden;}</style>
 <script language="Javascript">
@@ -69,6 +68,7 @@ gbl = {
 	lock: "&#x1F512;",
 	unlock: "&#x1F513;",
 	thumb: "&#x1F44d;",
+	loading: "Loading ... &#x23f3;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
@@ -774,28 +774,29 @@ function show_selected_domain()
 }
 
 
-function showSearch(ret,data)
+
+function showSearch(ok,reply)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
+	if (ok) {
+		if ((!is_multi_search)&&(reply.length==1)&&(reply[0].yours)) {
+			ctx.show_one = reply[0].name;
+			load_domains_list(show_selected_domain);
+			return;
+			}
 
-	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
-
-	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) {
-		ctx.show_one = data[0].name;
-		load_domains_list(show_selected_domain);
-		return;
+		for(let item of reply) ctx.search.result += one_search_line(item,is_multi_search);
+		elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
+		size_one_space();
 		}
-
-	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
-	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
-	size_one_space()
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
 		}
 	else {
+		if (!ok) return def_errMsg("Search failed",reply,"searchEdit");
 		ctx.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
-		let name = data[0]["name"];
+		let name = reply[0]["name"];
 		let pos = name.indexOf(".");
 		if (pos > 0) multiSearch(name.slice(0,pos),name.slice(pos+1));
 		}
@@ -814,14 +815,10 @@ function buy_one_name(domain,action,show_basket)
 			}
 		}
 
-	callApi("domain/check",(ret,data) => {
-		if (!ret) {
-			errMsg("Unexpected price error","userInfo");
-			return;
-			}
-
+	callApi("domain/check",(ok,reply) => {
+		if (!ok) return errMsg("Unexpected price error","userInfo");
 		let found_it = false;
-		let dom = data.shift();
+		let dom = reply.shift();
 
 		if (!(action in dom)) {
 			let msg = "an error occured";
@@ -1245,8 +1242,8 @@ function user_emails_settings()
 	x += settings_header("Email Communications from us",true);
 	x += "<tr><td><table>";
 	x += "<tr><th>Email</th><th>Description</th><th>Receive</th></tr>";
-	for (let i in emails_sent) {
-		x += `<tr title='Click to switch receive on/off' onClick="toggleEmail('${i}');" class=dataRow><td>${pretty_prompt(i)}</td><td>${emails_sent[i]}</td>`;
+	for (let i in gbl.config.opt_out_emails) {
+		x += `<tr title='Click to switch receive on/off' onClick="toggleEmail('${i}');" class=dataRow><td>${pretty_prompt(i)}</td><td>${gbl.config.opt_out_emails[i]}</td>`;
 		if (i in blocked_emails) tick=gbl.cross; else tick="";
 		x += `<td align=center>${tick}</td></tr>`;
 		}

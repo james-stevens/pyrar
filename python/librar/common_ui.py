@@ -20,7 +20,8 @@ def ui_config():
         "zones": registry.tld_lib.return_zone_list(),
         "status": static.DOMAIN_STATUS,
         "payments": libpay.config(),
-        "policy": policy.data()
+        "policy": policy.data(),
+        "opt_out_emails": static.OPT_OUT_EMAILS
     }
 
     return full_conf

@@ -55,7 +55,7 @@ class Domain:
         self.transfer_stop = misc.now(self.registry["domain_transfer_age"] * -86400)
         self.permitted_locks = self.registry["locks"] if "locks" in self.registry else static.CLIENT_DOM_FLAGS
         self.strict_idna2008 = self.registry["strict_idna2008"] if "strict_idna2008" in self.registry else None
-        print(">>>>", name, self.strict_idna2008)
+
         if not validate.is_valid_fqdn(name, self.strict_idna2008):
             return False, "Invalid domain name"
 

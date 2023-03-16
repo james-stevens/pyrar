@@ -236,21 +236,10 @@ def valid_float(num):
     return None
 
 
-ALL_EMAILS = {
-    "domain_transferred": True,
-    "email_changed_warn": True,
-    "gifted_domain": True,
-    "password_changed": True,
-    "payment_done": True,
-    "receipt": True,
-    "reminder": True,
-}
-
-
 def valid_email_opt_out(email_opt_out):
     if email_opt_out is None or email_opt_out == "":
         return True
-    return all(eml in ALL_EMAILS and ALL_EMAILS[eml] for eml in [x.lower() for x in email_opt_out.split(",")])
+    return all(eml in static.OPT_OUT_EMAILS for eml in [x.lower() for x in email_opt_out.split(",")])
 
 
 def main():
