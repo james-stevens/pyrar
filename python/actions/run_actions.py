@@ -10,7 +10,7 @@ from librar import static, misc, registry, pdns, mysql
 from librar.mysql import sql_server as sql
 from librar.log import log, debug, init as log_init
 from mailer import spool_email
-from backend import creator
+from backend import backend_creator
 
 COPY_DEL_DOM_COLS = [
     "domain_id", "name", "user_id", "status_id", "auto_renew", "ns", "ds", "client_locks", "created_dt", "amended_dt",
@@ -32,7 +32,7 @@ def event_log(notes, action):
 def flag_expired_domain(__, dom_db):
     pdns.delete_from_catalog(dom_db["name"])
     sql.sql_update_one("domains", {"status_id": static.STATUS_EXPIRED}, {"domain_id": dom_db["domain_id"]})
-    return creator.make_backend_job("dom/expired", dom_db)
+    return backend_creator.make_job("dom/expired", dom_db)
 
 
 def order_cancel(act_db, dom_db):
@@ -50,7 +50,18 @@ def delete_domain(__, dom_db):
         del_dom_db["deleted_dt"] = None
         sql.sql_insert("deleted_domains", del_dom_db)
 
-    return creator.make_backend_job("dom/delete", dom_db)
+    return backend_creator.make_job("dom/delete", dom_db)
+
+
+def send_order_reminder(act_db, dom_db):
+    spool_email.spool("payment_reminder", [["users", {
+        "user_id": dom_db["user_id"]
+    }], ["orders", {
+        "domain_id": dom_db["domain_id"]
+    }], ["domains", {
+        "domain_id": dom_db["domain_id"]
+    }]])
+    return True
 
 
 def auto_renew_domain(act_db, dom_db):
@@ -76,7 +87,8 @@ action_exec = {
     "dom/delete": delete_domain,
     "dom/expired": flag_expired_domain,
     "dom/auto-renew": auto_renew_domain,
-    "dom/reminder": send_expiry_reminder
+    "dom/reminder": send_expiry_reminder,
+    "order/reminder": send_order_reminder
 }
 
 

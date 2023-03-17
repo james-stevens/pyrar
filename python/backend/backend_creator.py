@@ -8,7 +8,7 @@ from librar import misc
 from librar.mysql import sql_server as sql
 
 
-def make_backend_job(job_type, dom_db, num_years=None, authcode=None):
+def make_job(job_type, dom_db, num_years=None, authcode=None):
     backend_db = {
         "domain_id": dom_db["domain_id"],
         "user_id": dom_db["user_id"],

@@ -24,8 +24,8 @@ class Domain:
         self.dom_db = None
         self.locks = None
         self.permitted_locks = None
-        self.locks = None
         self.transfer_stop = None
+        self.strict_idna2008 = None
 
     def set_by_id(self, domain_id=None, user_id=None):
         if domain_id is None or not isinstance(domain_id, int):
@@ -43,8 +43,6 @@ class Domain:
     def set_name(self, name):
         """ check the name is valid & find its registry """
         name = name.lower()
-        if not validate.is_valid_fqdn(name):
-            return False, "Invalid domain name"
         if (idx := name.find(".")) < 0:
             return False, "Invalid domain name"
         tld = name[idx + 1:]
@@ -55,10 +53,12 @@ class Domain:
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
         self.transfer_stop = misc.now(self.registry["domain_transfer_age"] * -86400)
-        self.permitted_locks = static.CLIENT_DOM_FLAGS
+        self.permitted_locks = self.registry["locks"] if "locks" in self.registry else static.CLIENT_DOM_FLAGS
+        self.strict_idna2008 = self.registry["strict_idna2008"] if "strict_idna2008" in self.registry else None
 
-        if "locks" in self.registry:
-            self.permitted_locks = self.registry["locks"]
+        if not validate.is_valid_fqdn(name, self.strict_idna2008):
+            return False, "Invalid domain name"
+
         self.name = name
         return True, None
 
@@ -70,7 +70,7 @@ class Domain:
     def load_record(self, user_id=None):
         """ load the domain from the database """
         if self.name is None or self.registry is None or self.tld is None:
-            return False, "Use `set_name` before `load_record`"
+            raise ValueError("Use `set_name` before `load_record`")
         self.dom_db = None
         where = {"name": self.name}
         if user_id is not None:
@@ -159,8 +159,7 @@ class DomainList:
 
     def load_all(self):
         if self.domobjs is None:
-            return False, "Use `set_list` before `load_all`"
-
+            raise ValueError("Use `set_list` before `load_all`")
         ok, dom_dbs = sql.sql_select("domains", {"name": [dom.name for __, dom in self.domobjs.items()]},
                                      limit=len(self.domobjs))
         if not ok or not dom_dbs:
@@ -195,6 +194,6 @@ if __name__ == "__main__":
         print(tst_reply)
         sys.exit(1)
     print("LIST>>>", tst_reply[1])
-    print("load all", my_doms.load_all())
+    print(">>> load all", my_doms.load_all())
     for d, domobj in my_doms.domobjs.items():
         print(d, domobj.name, domobj.dom_db["name"] if domobj.dom_db is not None else "NOPE", domobj.locks)

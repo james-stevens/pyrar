@@ -11,10 +11,9 @@ from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
 from mailer import spool_email
-
 from webui import users, domains, basket
-
 from payments import libpay, pay_handler, payfuncs
+from actions import make_actions
 
 WANT_REFERRER_CHECK = True
 
@@ -244,6 +243,10 @@ def orders_cancel():
             "user_id": req.user_id,
             "status_id": static.STATUS_WAITING_PAYMENT
         })
+    else:
+        ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"]})
+        if ok and len(dom_db) > 0:
+            make_actions.recreate(dom_db)
 
     req.event(event_db)
     return load_orders_and_reply(req)
@@ -395,19 +398,10 @@ def domain_transfer():
     if not misc.has_data(req.post_js, ["name", "authcode"]) or not validate.is_valid_fqdn(req.post_js["name"]):
         return req.abort("Missing or invalid data")
 
-    name = req.post_js["name"].lower()
-    doms = domobj.DomainList()
-
-    ok, reply = doms.set_list(name)
+    ok, reply = domains.domain_transfer(req)
     if not ok:
         return req.abort(reply)
-    dom = doms.domobjs[name]
-
-    ok, prices = domains.get_domain_prices(doms, 1, ["transfer"], req.user_id)
-    if not ok:
-        return req.abort(prices)
-
-    return req.response({"name": dom.name, "tld": dom.tld, "authcode": req.post_js["authcode"], "prices": prices})
+    return req.response(reply)
 
 
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
@@ -813,7 +807,7 @@ def domain_update():
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
     """ set domain authcode """
-    return run_user_domain_task(domains.webui_set_auth_code, "setAuth")
+    return run_user_domain_task(domains.webui_set_authcode, "setAuth")
 
 
 def run_user_domain_task(domain_function, func_name):

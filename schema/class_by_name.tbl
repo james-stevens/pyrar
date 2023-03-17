@@ -16,4 +16,5 @@ sqlsh "create table class_by_name (
 	unique key (name)
 )"
 
+sqlsh "ALTER TABLE class_by_name AUTO_INCREMENT = 10450"
 sqlsh "grant select on class_by_name to engine,webui"

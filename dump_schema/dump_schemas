@@ -3,5 +3,11 @@
 
 for db in pdns pyrar
 do
-	mysqldump -h ${MYSQL_CONNECT} -u root -p"${MYSQL_ROOT_PASSWORD}" --no-data ${db} > ${db}.sql
+	mysqldump -h ${MYSQL_CONNECT} -u root -p"${MYSQL_ROOT_PASSWORD}" --no-data ${db} |
+		awk '{
+			if (index($0," AUTO_INCREMENT=") > 0) {
+				if ("'"${db}"'"=="pyrar") newval="10450"; else newval="1";
+				$3="AUTO_INCREMENT=" newval
+				}
+			print }' | fgrep -v 'Dump completed on' > ${db}.sql
 done

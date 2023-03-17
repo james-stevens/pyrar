@@ -8,9 +8,9 @@ import base64
 import sys
 import re
 
-from librar import registry
-from librar import misc
-from librar import static
+from librar import registry, misc, static, log
+from librar.mysql import sql_server as sql
+from librar.policy import this_policy as policy
 
 IS_HOST = r'^(\*\.|)([\_a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
 IS_FQDN = r'^([a-z0-9]([-a-z-0-9]{0,61}[a-z0-9]){0,1}\.)+[a-z0-9]([-a-z0-9]{0,61}[a-z0-9]){0,1}[.]?$'
@@ -103,9 +103,10 @@ def valid_rr_type(rr_type):
 
 
 def check_domain_name(name):
-    if not registry.tld_lib.supported_tld(name):
+    if (reg := registry.tld_lib.reg_record_for_domain(name)) is None:
         return "Unsupported TLD"
-    if not is_valid_fqdn(name):
+    strict_idna2008 = reg["strict_idna2008"] if "strict_idna2008" in reg else policy.policy("strict_idna2008")
+    if not is_valid_fqdn(name, strict_idna2008):
         return "Domain failed validation"
     return None
 
@@ -134,14 +135,14 @@ def is_valid_tld(name):
     return re.match(IS_TLD, name, re.IGNORECASE) is not None
 
 
-def is_valid_fqdn(name):
+def is_valid_fqdn(name, strict_idna_2008=None):
     if name is None or not isinstance(name, str):
         return False
     if len(name) > 255 or len(name) <= 0:
         return False
     if re.match(IS_FQDN, name, re.IGNORECASE) is None:
         return False
-    if has_idn(name) and misc.puny_to_utf8(name) is None:
+    if has_idn(name) and misc.puny_to_utf8(name, strict_idna_2008) is None:
         return False
     return True
 
@@ -235,18 +236,26 @@ def valid_float(num):
     return None
 
 
+def valid_email_opt_out(email_opt_out):
+    if email_opt_out is None or email_opt_out == "":
+        return True
+    return all(eml in static.OPT_OUT_EMAILS for eml in [x.lower() for x in email_opt_out.split(",")])
+
+
 def main():
+    log.init(with_debug=True)
+    sql.connect("webui")
+    registry.start_up()
     # for host in ["A_A", "www.gstatic.com.", "m.files.bbci.co.uk."]:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))
-    del sys.argv[0]
     # for host in sys.argv:
     #     print(host, "TLD:", is_valid_tld(host), "HOST:", is_valid_fqdn(host))
     # code = "CLLGnM7+xqKvhHmi5sfIIuszEHuqhVxNbV1IHGRVYZtuTkFC6mHUucxU/gSd5U/cExZrsdu9rRK7d0VtY1bW2g"
     # print("SESS",code,is_valid_ses_code(code))
     # for code in sys.argv:
     #     print("SESS",code,is_valid_ses_code(code))
-    for item in sys.argv:
-        print(item, is_valid_hostname(item))
+    for item in sys.argv[1:]:
+        print(item, valid_email_opt_out(item))
 
 
 if __name__ == "__main__":

@@ -1341,6 +1341,12 @@
             "null": false,
             "is_plain_int": false
          },
+         "email_opt_out": {
+            "size": 2000,
+            "type": "varchar",
+            "null": true,
+            "is_plain_int": false
+         },
          "email_verified": {
             "type": "boolean",
             "null": false,

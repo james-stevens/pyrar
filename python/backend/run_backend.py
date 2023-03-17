@@ -15,7 +15,7 @@ from librar import misc
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import sigprocs
-from actions import creator
+from actions import make_actions
 
 from backend import shared
 from backend import libback
@@ -57,7 +57,7 @@ def post_processing(bke_job):
         pdns.delete_zone(dom_db["name"])
 
     if bke_job["job_type"] in RECREATE_ACTIONS_FOR:
-        creator.recreate_domain_actions(dom_db)
+        make_actions.recreate(dom_db)
 
     return True
 

@@ -12,6 +12,7 @@ from librar import static
 
 parser = argparse.ArgumentParser(description='Command line SQL runner')
 parser.add_argument("-o", '--output-long', action="store_true")
+parser.add_argument("-u", '--user', default="admin")
 parser.add_argument("sql", nargs='+')
 args = parser.parse_args()
 
@@ -36,11 +37,13 @@ def verbose_output(this_row):
     print("")
 
 
-sql.connect("admin")
+sql.connect(args.user)
 
 for query in args.sql:
     ok, reply = sql.run_select(query)
     FIRST_ROW = sys.stdout.isatty()
+    if not ok:
+        break
     for row in reply:
         if args.output_long:
             verbose_output(row)

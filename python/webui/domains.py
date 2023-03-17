@@ -151,7 +151,56 @@ def domain_backend_update(dom_db, request_type="dom/update"):
     sigprocs.signal_service("backend")
 
 
-def webui_set_auth_code(req):
+def domain_transfer(req):
+    name = req.post_js["name"].lower()
+    doms = domobj.DomainList()
+    ok, reply = doms.set_list(name)
+    if not ok:
+        return False, reply
+    ok, reply = doms.load_all()
+    dom = doms.domobjs[name]
+
+    if not dom.can_transfer:
+        return False, "Domain is too young to transfer"
+
+    if ok and len(dom.dom_db) > 0:
+        return internal_domain_transfer(req, dom.dom_db)
+
+    ok, prices = get_domain_prices(doms, 1, ["transfer"], req.user_id)
+    if not ok:
+        return req.abort(prices)
+
+    return True, {"name": dom.name, "tld": dom.tld, "authcode": req.post_js["authcode"], "prices": prices}
+
+
+def internal_domain_transfer(req, dom_db):
+    if dom_db["user_id"] == req.user_id:
+        return False, "The domain is already yours"
+    if not (misc.has_data(dom_db, "authcode") and passwd.compare(req.post_js["authcode"], dom_db["authcode"])):
+        return False, "Authcode provided does not match the one on file"
+
+    old_user_id = dom_db["user_id"]
+    if not sql.sql_update_one("domains", {
+            "authcode": None,
+            "user_id": req.user_id
+    }, {"domain_id": dom_db["domain_id"]}):
+        return False, "Domain update failed"
+
+    req.event({
+        "domain_id": dom_db["domain_id"],
+        "notes": "Domain transferred away using correct authcode",
+        "event_type": "dom/transfer"
+    })
+    pdns.delete_zone(dom_db["name"])
+    spool_email.spool("transferred_away", [["domains", {
+        "domain_id": dom_db["domain_id"]
+    }], ["users", {
+        "user_id": old_user_id
+    }]])
+    return True, True
+
+
+def webui_set_authcode(req):
     ok, dom = check_domain_is_mine(req.user_id, req.post_js, True)
     if not ok:
         return False, dom
@@ -162,15 +211,15 @@ def webui_set_auth_code(req):
     if "TransferProhibited" in dom.locks:
         return False, "Gifting / Transfer blocked by locks"
 
-    auth_code = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
-    password = passwd.crypt(auth_code)
+    authcode = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
+    password = passwd.crypt(authcode)
     sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom.dom_db["domain_id"]})
 
     bke_job = {
         "domain_id": dom.dom_db["domain_id"],
         "user_id": req.user_id,
         "job_type": "dom/authcode",
-        "authcode": base64.b64encode(auth_code.encode("utf-8")).decode("utf-8"),
+        "authcode": base64.b64encode(authcode.encode("utf-8")).decode("utf-8"),
         "execute_dt": misc.now(),
         "created_dt": None
     }
@@ -178,7 +227,7 @@ def webui_set_auth_code(req):
     sql.sql_insert("backend", bke_job)
     sigprocs.signal_service("backend")
 
-    return True, {"auth_code": auth_code}
+    return True, {"authcode": authcode}
 
 
 def webui_gift_domain(req):
@@ -261,10 +310,8 @@ def webui_add_tlsa_record(req):
 
 def can_transfer(dom, now=None):
     min_trans_time = dom.registry["domain_transfer_age"] * -86400
-    print(">>>>>", min_trans_time / 86400)
     if now is None:
         now = misc.now(min_trans_time)
-    print(">>>>", dom.dom_db["created_dt"], now, misc.now())
     return dom.dom_db["created_dt"] < now
 
 
@@ -275,7 +322,7 @@ def main():
     doms.set_list(sys.argv[1:])
     doms.load_all()
     for __, d in doms.domobjs.items():
-        print(">>>>", d.name, d.can_transfer)
+        print(">>D>>", d.name, d.can_transfer)
 
 
 if __name__ == "__main__":

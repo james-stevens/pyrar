@@ -16,8 +16,8 @@ from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
 MANDATORY_REGS_ITEMS = [
-    "max_checks", "locks", "renew_limit", "expire_recover_limit", "orders_expire_hrs", "strict_idna2008",
-    "domain_transfer_age"
+    "max_checks", "locks", "renew_limit", "expire_recover_limit", "renew_orders_expire_hrs", "new_orders_expire_hrs",
+    "strict_idna2008", "domain_transfer_age", "renew_order_reminders", "new_order_reminders"
 ]
 
 DEFAULT_XMLNS = {
@@ -201,8 +201,8 @@ class ZoneLib:
         return self.registry[registry]["url"]
 
     def reg_record_for_domain(self, domain):
-        if (tld := self.tld_of_name(domain)) is None:
-            return None, None
+        if (tld := self.tld_of_name(domain)) is None or tld not in self.zone_data:
+            return None
         return self.zone_data[tld]["reg_data"] if "reg_data" in self.zone_data[tld] else None
 
     def extract_items(self, dom):

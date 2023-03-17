@@ -68,6 +68,7 @@ gbl = {
 	lock: "&#x1F512;",
 	unlock: "&#x1F513;",
 	thumb: "&#x1F44d;",
+	loading: "Loading ... &#x23f3;",
 
 	gap: "<div style='height: 7px;'></div>",
 	settings_spacer: "<tr><td><div style='height: 70px;'></div></td></tr>",
@@ -342,7 +343,7 @@ function user_info()
 	elm.emailIcon.style.display = ((ctx.user)&&(!ctx.user.email_verified))?"":"none";
 	elm.ordersIcon.style.display = (ctx.orders&&ctx.orders.length)?"":"none";
 
-	if (("user" in ctx)&&("name" in ctx.user)) {
+	if ((ctx.user)&&(ctx.user.name)) {
 		elm.userInfo.innerHTML = `Logged in as: <b>${ctx.user.name}</b>`;
 		}
 }
@@ -773,28 +774,29 @@ function show_selected_domain()
 }
 
 
-function showSearch(ret,data)
+
+function showSearch(ok,reply)
 {
 	let is_multi_search = (("search" in ctx)&&("todo" in ctx.search));
+	if (ok) {
+		if ((!is_multi_search)&&(reply.length==1)&&(reply[0].yours)) {
+			ctx.show_one = reply[0].name;
+			load_domains_list(show_selected_domain);
+			return;
+			}
 
-	if (!ret) return def_errMsg("Search failed",data,"searchEdit");
-
-	if ((!is_multi_search)&&(data.length==1)&&(data[0].yours)) {
-		ctx.show_one = data[0].name;
-		load_domains_list(show_selected_domain);
-		return;
+		for(let item of reply) ctx.search.result += one_search_line(item,is_multi_search);
+		elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
+		size_one_space();
 		}
-
-	for(let item of data) ctx.search.result += one_search_line(item,is_multi_search);
-	elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
-	size_one_space()
 
 	if (is_multi_search) {
 		if (ctx.search.todo.length <= 0) delete ctx.search.todo; else searchNext();
 		}
 	else {
+		if (!ok) return def_errMsg("Search failed",reply,"searchEdit");
 		ctx.search.result += "<tr><Td>" + gbl.gap + "</td></tr>";
-		let name = data[0]["name"];
+		let name = reply[0]["name"];
 		let pos = name.indexOf(".");
 		if (pos > 0) multiSearch(name.slice(0,pos),name.slice(pos+1));
 		}
@@ -813,14 +815,10 @@ function buy_one_name(domain,action,show_basket)
 			}
 		}
 
-	callApi("domain/check",(ret,data) => {
-		if (!ret) {
-			errMsg("Unexpected price error","userInfo");
-			return;
-			}
-
+	callApi("domain/check",(ok,reply) => {
+		if (!ok) return errMsg("Unexpected price error","userInfo");
 		let found_it = false;
-		let dom = data.shift();
+		let dom = reply.shift();
 
 		if (!(action in dom)) {
 			let msg = "an error occured";
@@ -955,12 +953,16 @@ function postDomainTransfer()
 		}
 
 	callApi("domain/transfer",(ok,reply) => {
-		// # CODE
+		if (!ok) return def_errMsg("Domain transfer failed",reply,"trans_authcode");
+		if ((typeof(reply)=="boolean")&&(reply)) {
+			ctx.show_one = f.trans_domain_name.value;
+			return load_domains_list(show_selected_domain);
+			}
 		console.log(ok,reply); // # CODE
 		},	{
 			json : {
 				"name": f.trans_domain_name.value,
-				"authcode": f.trans_auth_code.value
+				"authcode": f.trans_authcode.value
 				}
 			}
 		);
@@ -979,7 +981,7 @@ function request_transfer(with_push)
 	x += "<form name=requestForm method=post action=# onSubmit='postDomainTransfer(); return false;'>";
 	x += "<table id=requestTable width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
 	x += form_prompt("Domain to transfer to you")+`<input placeholder="Domain name" style="width: 300px;" id='trans_domain_name'></td></tr>`;
-	x += form_prompt("AuthCode")+`<input autocomplete="new-password" placeholder="Domain AuthCode" type=password style="width: 300px;" id='trans_auth_code'></td></tr>`;
+	x += form_prompt("AuthCode")+`<input autocomplete="new-password" placeholder="Domain AuthCode" type=password style="width: 300px;" id='trans_authcode'></td></tr>`;
 
 	x += "<tr><td colspan=2></td><td align=right><input type=submit class=myBtn value='Request Transfer'></td></tr>";
 	x += "</table></form></td></tr>";
@@ -1094,16 +1096,12 @@ function postUserDetails()
 
 	if (!valid_email.test(data.email)) return regErr("Invalid email address",f.user_email);
 
-	callApi("users/update",(ret,reply) => {
-		if (ret) {
-			if ("user" in reply) {
-				ctx.user = reply.user;
-				user_info();
-				elm.userSpace.innerHTML = userDetails();
-				size_one_space();
-				}
-			}
-		else def_errMsg("Failed",reply,"editUserDetails");
+	callApi("users/update",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed ot update user details",reply,"editUserDetails");
+		if (reply.user) ctx.user = reply.user;
+		user_info();
+		elm.userSpace.innerHTML = userDetails();
+		size_one_space();
 		}, { json: data });
 
 	return false;
@@ -1177,7 +1175,91 @@ function user_settings(with_push)
 {
 	if (with_push) push_hist("user_settings");
 	hidePopUp();
+	user_settings_page(user_general_settings);
+	size_one_space();
+	document.editUserDetails.user_email.focus();
+}
 
+
+
+function user_settings_page(func)
+{
+	let x = "<table align=center style='min-width: 75%;' cellspacing=3 cellpadding=0 border=0>";
+	x += "<tr><td class=btmBtnBar>";
+	x += "<button style='width: 135px;' onClick='user_settings_page(user_general_settings);' class=myBtn>General</button>";
+	x += "<button style='width: 135px;' onClick='start_email_blocking();' class=myBtn>Emails</button>";
+	x += "</td></tr><tr><td>" + func() + "</td></tr></table>";
+	elm.userSpace.innerHTML = x;
+}
+
+
+function start_email_blocking()
+{
+	ctx.change_email_opt_out = ctx.user.email_opt_out;
+	user_settings_page(user_emails_settings);
+}
+
+
+function get_blocked_emails()
+{
+	let blocked_emails = {};
+	if (!ctx.change_email_opt_out) return {};
+
+	let ee = ctx.change_email_opt_out.split(",");
+	for(let i in ee) blocked_emails[ee[i]] = true;
+	return blocked_emails;
+}
+
+
+function toggleEmail(name)
+{
+	let blocked_emails = get_blocked_emails();
+	blocked_emails[name] = !blocked_emails[name];
+	let new_list = [];
+	for(let i in blocked_emails) if (blocked_emails[i]) new_list.push(i);
+	ctx.change_email_opt_out = new_list.join(",");
+	user_settings_page(user_emails_settings);
+}
+
+
+
+function save_email_blocks()
+{
+	callApi("users/update",(ok,reply) => {
+		if (!ok) return def_errMsg("Failed ot update user settings",reply,"save_email_block_btn");
+		if (reply.user) ctx.user = reply.user;
+		user_info();
+		elm.userSpace.innerHTML = userDetails();
+		size_one_space();
+	}, { json: { "email_opt_out": ctx.change_email_opt_out }});
+}
+
+
+function user_emails_settings()
+{
+	let blocked_emails = get_blocked_emails();
+	let x="<table align=center border=0>";
+	x += settings_header("Email Communications from us",true);
+	x += "<tr><td><table>";
+	x += "<tr><th>Email</th><th>Description</th><th>Receive</th></tr>";
+	for (let i in gbl.config.opt_out_emails) {
+		x += `<tr title='Click to switch receive on/off' onClick="toggleEmail('${i}');" class=dataRow><td>${pretty_prompt(i)}</td><td>${gbl.config.opt_out_emails[i]}</td>`;
+		if (i in blocked_emails) tick=gbl.cross; else tick="";
+		x += `<td align=center>${tick}</td></tr>`;
+		}
+	x += "</table></td></tr>";
+
+	if (ctx.change_email_opt_out != ctx.user.email_opt_out) {
+		x += "<tr><td align=right><button id=save_email_block_btn onClick='save_email_blocks();' class=myBtn>Save Changes</button></td></tr>";
+		}
+
+	return x+"</table>";
+}
+
+
+
+function user_general_settings()
+{
 	let x="<table align=center border=0>";
 	x += settings_header("Change User Details",true);
 	x += "<form name=editUserDetails method=post action=# onSubmit='postUserDetails(); return false;'>";
@@ -1229,10 +1311,7 @@ function user_settings(with_push)
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
 	x += "</table></form></td></tr>";
 
-	elm.userSpace.innerHTML = x+"</table>";
-	size_one_space();
-
-	document.editUserDetails.user_email.focus();
+	return x+"</table>";
 }
 
 
@@ -2208,8 +2287,8 @@ function getAuthCode(idx)
 	let dom = ctx.domains[idx];
 	let e = document.getElementById("showAuthCode");
 
-	function show_auth_code(code) {
-		dom.authcode = code;
+	function show_authcode(code) {
+		dom.text_authcode = code;
 		let x = `<input id="editAuthCode" style="width: 250px;" value="${code}">`;
 		x += `<a href=# onClick="copyToClip('${code}');">&nbsp;${gbl.copy}</a>`;
 
@@ -2220,12 +2299,11 @@ function getAuthCode(idx)
 		}
 
 	if ((e)&&(e.innerHTML!="")) { e.innerHTML = ""; return; }
-	if (dom.authcode) return show_auth_code(dom.authcode);
+	if (dom.text_authcode) return show_authcode(dom.authcode);
 
 	callApi("domain/authcode",(ok, reply) => {
-		if ((ok)&&("auth_code" in reply)) {
-			show_auth_code(reply["auth_code"]);
-			}
+		console.log(ok,reply);
+		if ((ok)&&(reply.authcode)) show_authcode(reply["authcode"]);
 		else def_errMsg("Get AuthCode failed",reply,"showAuthCode");
 		}, { json: dom });
 }

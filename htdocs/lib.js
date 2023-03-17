@@ -34,7 +34,7 @@ function callApi(sfx,callback,inData)
 	document.body.style.cursor="progress";
 	let show_timer = true;
 	if ((inData)&&("show_timer" in inData)) show_timer = inData.show_timer;
-	if (show_timer) elm.topMsg.innerHTML = `Loading ... ${gbl.timer}`;
+	if (show_timer) elm.topMsg.innerHTML = gbl.loading;
 
 	function default_callback(ok,reply) { console.log("CALLBACK:",ok,reply); return; }
 	if (!callback) callback = default_callback;

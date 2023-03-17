@@ -12,7 +12,7 @@ from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
 from librar import registry, pdns, accounts, domobj, passwd, validate, common_ui
 
-from backend import creator, libback
+from backend import backend_creator, libback
 
 ASKS = ["=", "!=", "<>", "<", ">", ">=", "<=", "like", "regexp"]
 CHECK_HAS_COLUMN = ["amended_dt", "created_dt"]
@@ -73,7 +73,7 @@ def post_trigger_domains(action, this_where):
 
     ok, dom_db = sql.sql_select_one("domains", this_where)
     if ok and dom_db and len(dom_db):
-        creator.make_backend_job(DOMAIN_JOB_TYPES[action], dom_db)
+        backend_creator.make_job(DOMAIN_JOB_TYPES[action], dom_db)
 
 
 def response(code, data):

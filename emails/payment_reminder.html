@@ -1,0 +1,20 @@
+{% include "start.inc" %}
+Subject: {{policy.business_name}}: Payment reminder for domain {{domain.display_name}} ({{domain.name}})
+
+<html>
+<style type='text/css'>
+{% include "dark.css" %}
+</style>
+<body>
+<h2>IMPORTANT - THIS REQUIRES YOUR ATTENTION</h2>
+
+<font size=+1>Hi {{user.name}},</font>
+<P>
+You placed a '{{order.order_type}}' order on the domain {{domain.display_name}} ({{domain.name}})
+but this order has not yet been paid for.
+<P>
+Please log into your account and pay for this order as soon as you can, or it will be automatically cancelled.
+<P>
+If you no longer require this order, you can log into your account and cancel it.
+
+{% include "end.html" %}
