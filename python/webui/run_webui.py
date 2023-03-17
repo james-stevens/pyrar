@@ -11,10 +11,9 @@ from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
 from mailer import spool_email
-
 from webui import users, domains, basket
-
 from payments import libpay, pay_handler, payfuncs
+from actions import make_actions
 
 WANT_REFERRER_CHECK = True
 
@@ -244,6 +243,10 @@ def orders_cancel():
             "user_id": req.user_id,
             "status_id": static.STATUS_WAITING_PAYMENT
         })
+    else:
+        ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"]})
+        if ok and len(dom_db) > 0:
+            make_actions.recreate(dom_db)
 
     req.event(event_db)
     return load_orders_and_reply(req)

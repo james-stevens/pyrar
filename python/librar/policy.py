@@ -47,11 +47,14 @@ policy_defaults = {
     "max_checks": 5,
     "max_basket_size": 10,
     "trans_per_page": 25,
-    "orders_expire_hrs": int(6.5 * 24),
     "expire_recover_limit": 30,
     "domain_transfer_age": 30,
     "auto_renew_before": 14,
-    "renewal_reminders": "30,14,7"
+    "renewal_reminders": "30,14,7",
+    "new_order_reminders": "1,2,6",
+    "new_orders_expire_hrs": int(6.5 * 24),
+    "renew_order_reminders": "1,2,6,10",
+    "renew_orders_expire_days": 14
 }
 
 

@@ -9,7 +9,8 @@ from librar.log import log, init as log_init
 from librar import validate, misc, static, registry, accounts, sales, domobj, mysql
 from librar.mysql import sql_server as sql
 from librar.policy import this_policy as policy
-from backend import creator, libback
+from backend import backend_creator, libback
+from actions import make_actions
 
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
@@ -83,6 +84,7 @@ def save_basket(req, whole_basket):
             return False, order_item_id
         order_db["order_item_id"] = order_item_id
         event_log(req, order)
+        make_actions.recreate(order["dom_db"])
 
     return True, True
 
@@ -158,7 +160,7 @@ def pay_for_basket_item(req, order, user_db):
 
     event_log(req, order)
     order["paid-for"] = True
-    creator.make_backend_job(order_db["order_type"], order_db, order_db["num_years"], order_db["authcode"])
+    backend_creator.make_job(order_db["order_type"], order_db, order_db["num_years"], order_db["authcode"])
     return True
 
 
