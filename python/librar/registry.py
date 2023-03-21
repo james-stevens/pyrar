@@ -136,7 +136,6 @@ class ZoneLib:
         for registry, reg_data in self.registry.items():
             for param in MANDATORY_REGS_ITEMS:
                 if param not in reg_data:
-                    print(">>>REG>>>>",registry,param,policy.policy(param))
                     reg_data[param] = policy.policy(param)
 
             reg_data["name"] = registry

@@ -182,7 +182,7 @@ def api_messages_read():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc")
+    ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
     if not ok:
         return req.abort(reply)
     sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
