@@ -61,5 +61,6 @@ OPT_OUT_EMAILS = {
     "password_changed": "Your account password was just changed",
     "payment_done": "We have received the money from your payment",
     "receipt": "Your receipt for buying/renewing a domain",
-    "reminder": "A reminder that you have a domain about to expire"
+    "reminder": "A reminder that you have a domain about to expire",
+    "payment_reminder": "A reminder you have not yet made payment for an order you placed"
 }

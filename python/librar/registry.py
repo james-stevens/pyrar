@@ -3,21 +3,21 @@
 # Alternative license arrangements possible, contact me for more information
 
 import os
+import time
 import json
 import random
 import requests
+import copy
 
-from librar import misc
-from librar import static
-from librar import fileloader
+from librar import misc, fileloader, static
 from librar.mysql import sql_server as sql
 from librar.log import init as log_init
 from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
 MANDATORY_REGS_ITEMS = [
-    "max_checks", "locks", "renew_limit", "expire_recover_limit", "renew_orders_expire_hrs", "new_orders_expire_hrs",
-    "strict_idna2008", "domain_transfer_age", "renew_order_reminders", "new_order_reminders"
+    "max_checks", "locks", "renew_limit", "expire_recover_limit", "strict_idna2008", "domain_transfer_age",
+    "new_order_remind_cancel", "renew_order_remind_cancel"
 ]
 
 DEFAULT_XMLNS = {
@@ -79,6 +79,7 @@ class ZoneLib:
         self.zones_from_db = []
         self.registry = None
         self.clients = {}
+        self.policy_mtime = fileloader.have_newer(None,static.POLICY_FILE)
 
         self.last_zone_table = None
         self.check_zone_table()
@@ -112,11 +113,13 @@ class ZoneLib:
         return True
 
     def check_for_new_files(self):
+        new_policy_mtime = fileloader.have_newer(self.policy_mtime,static.POLICY_FILE)
         zones_db_is_new = self.check_zone_table()
         regs_file_is_new = self.regs_file.check()
         priority_file_is_new = self.priority_file.check()
 
-        if regs_file_is_new or priority_file_is_new or zones_db_is_new:
+        if regs_file_is_new or priority_file_is_new or zones_db_is_new or new_policy_mtime is not None:
+            self.policy_mtime = new_policy_mtime
             self.process_json()
             return True
 
@@ -129,10 +132,11 @@ class ZoneLib:
 
         self.zone_priority = {idx: pos for pos, idx in enumerate(self.priority_file.json)}
 
-        self.registry = self.regs_file.json
+        self.registry = copy.deepcopy(self.regs_file.json)
         for registry, reg_data in self.registry.items():
             for param in MANDATORY_REGS_ITEMS:
                 if param not in reg_data:
+                    print(">>>REG>>>>",registry,param,policy.policy(param))
                     reg_data[param] = policy.policy(param)
 
             reg_data["name"] = registry
@@ -154,6 +158,7 @@ class ZoneLib:
                 is_epp[name] = True
                 if name not in self.clients:
                     self.clients[name] = requests.Session()
+
         for reg in list(self.clients):
             if reg not in is_epp:
                 self.clients[reg].close()
@@ -291,13 +296,17 @@ if __name__ == "__main__":
     log_init(with_debug=True)
     sql.connect("webui")
     start_up()
+    while True:
+        if tld_lib.check_for_new_files():
+            print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
+        time.sleep(3)
+        print(">>>>")
 
-    dom_data = [{"name": "tiny.zz", "renew": None}]
-    tld_lib.multiply_values(dom_data, 12)
-    print(dom_data)
+    # dom_data = [{"name": "tiny.zz", "renew": None}]
+    # tld_lib.multiply_values(dom_data, 12)
+    # print(dom_data)
 
     # print(tld_lib.registry)
-    # print("REGISTRY", json.dumps(tld_lib.registry, indent=3))
     # print("ZONE_DATA", json.dumps(tld_lib.zone_data, indent=3))
     # print("WHOLE_REG", json.dumps(tld_lib.reg_record_for_domain("fred.of.glass"), indent=3))
     # print("ZONE_LIST", json.dumps(tld_lib.zone_list, indent=3))

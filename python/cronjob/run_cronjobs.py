@@ -34,11 +34,11 @@ def remove_password_reset():
 
 
 def cancel_unpaid_orders():
-    tout = policy.policy('create_expire_days')
+    tout = policy.policy('create_erase_days')
     query = ("delete from orders where order_type = 'dom/create' " +
              f"and created_dt < date_sub(now(), interval {tout} day)")
     sql.sql_exec(query)
-    tout = policy.policy('orders_expire_days')
+    tout = policy.policy('orders_erase_days')
     query = ("delete from orders where order_type <> 'dom/create' " +
              f"and created_dt < date_sub(now(), interval {tout} day)")
     return sql.sql_exec(query)

@@ -12,8 +12,6 @@ policy_defaults = {
     "smtp_tls_security_level": "may",
     "locks": static.CLIENT_DOM_FLAGS,
     "default_theme": "dark",
-    "orders_expire_days": 21,
-    "create_expire_days": 7,
     "strict_idna2008": False,
     "strict_referrer": True,
     "pdns_log_facility": 0,
@@ -51,10 +49,10 @@ policy_defaults = {
     "domain_transfer_age": 30,
     "auto_renew_before": 14,
     "renewal_reminders": "30,14,7",
-    "new_order_reminders": "1,2,6",
-    "new_orders_expire_hrs": int(6.5 * 24),
-    "renew_order_reminders": "1,2,6,10",
-    "renew_orders_expire_days": 14
+    "orders_erase_days": 30,
+    "create_erase_days": 14,
+    "new_order_remind_cancel": "1,2,6,6.75",
+    "renew_order_remind_cancel": "7,14,21,28"
 }
 
 
@@ -85,9 +83,10 @@ class Policy:
 this_policy = Policy()
 
 if __name__ == "__main__":
-    print(">>>TEST>>>:", this_policy.policy("orders_expire_hrs"))
-    print(">>>TEST>>>:", this_policy.policy("business_name"))
-    print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
-    print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
-    print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
+    print(">>>new_order_remind_cancel>>>:", this_policy.policy("new_order_remind_cancel"))
+    # print(">>>TEST>>>:", this_policy.policy("orders_expire_hrs"))
+    # print(">>>TEST>>>:", this_policy.policy("business_name"))
+    # print(">>>TEST>>>:", this_policy.policy("log_python_code", "Unk"))
+    # print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
+    # print(">>>TEST>>>:", this_policy.policy("some_value", "some_def"))
     print(json.dumps(this_policy.data(), indent=3))
