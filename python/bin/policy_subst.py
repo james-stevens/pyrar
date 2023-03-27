@@ -14,8 +14,7 @@ SRC_DIR = f"{os.environ['BASE']}/policy_subst/"
 DEST_DIR = "/run/policy_subst/"
 
 merge_data = {"logins": fileloader.load_file_json(static.LOGINS_FILE), "policy": policy.data()}
-with open("/run/pdns_api_key", "r", encoding="UTF-8") as fd:
-    merge_data["api_key"] = fd.readline().strip()
+merge_data["api_key"] = os.environ["PDNS_API_KEY"]
 
 if not os.path.isdir(DEST_DIR):
     os.mkdir(DEST_DIR, mode=0o755)

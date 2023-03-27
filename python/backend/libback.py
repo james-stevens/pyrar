@@ -12,12 +12,12 @@ from backend.dom_plugins import *
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
 
-def run(action, this_reg, bke_job, dom_db):
-    this_handler = dom_handler.backend_plugins[this_reg["type"]]
+def run(action, dom, bke_job):
+    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
     if action not in this_handler:
-        log(f"Action '{action}' not supported by Plugin '{this_reg['type']}'")
+        log(f"Action '{action}' not supported by Plugin '{dom.registry['type']}'")
         return None
-    return this_handler[action](this_reg, bke_job, dom_db)
+    return this_handler[action](bke_job, dom)
 
 
 def get_prices(domlist, num_years, qry_type):

@@ -11,6 +11,7 @@ docker run \
 	-v /opt/github/pyrar/admin_htdocs:/opt/pyrar/admin_htdocs \
 	--env BASE="/opt/pyrar" \
 	--env PYTHONPATH="/opt/pyrar/python" \
+	--env PDNS_API_KEY="$(cat /run/pdns_api_key)" \
 	-p 10000:10000 \
 	-p 10001:10001 \
 	-p 8081:8081 \
