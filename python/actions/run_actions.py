@@ -132,7 +132,6 @@ def main():
     registry.start_up()
 
     if args.action and args.domain:
-        registry.start_up()
         ok, dom_db = sql.sql_select_one("domains", {"name": args.domain})
         if not ok or len(dom_db) <= 0:
             debug(f"ERROR: {args.domain} not found")
