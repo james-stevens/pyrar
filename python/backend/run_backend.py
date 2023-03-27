@@ -74,7 +74,7 @@ def run_backend_item(bke_job):
         log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
         return job_abort(bke_job)
 
-    job_run = libback.run(bke_job["job_type"], dom.registry, bke_job, dom.dom_db)
+    job_run = libback.run(bke_job["job_type"], dom, bke_job)
 
     notes = (f"{libback.JOB_RESULT[job_run]}: BKE-{job_id} type '{dom.registry['type']}:{bke_job['job_type']}' " +
              f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
@@ -181,7 +181,7 @@ def main():
     if args.action == "dom/price":
         out_js = libback.get_prices(domlist, 1, ["create", "renew"])
     else:
-        out_js = libback.run(args.action, dom.registry, bke_job, dom.dom_db)
+        out_js = libback.run(args.action, dom, bke_job)
 
     print(json.dumps(out_js, indent=3))
     return 0

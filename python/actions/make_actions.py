@@ -16,19 +16,20 @@ from librar.policy import this_policy as policy
 
 
 def add_domain_action(dom_db, now, when, action):
-    print(">>>>> add_domain_action", when, now, (when >= now))
     if when >= now:
         sql.sql_insert("actions", {"domain_id": dom_db["domain_id"], "execute_dt": when, "action": action})
 
 
 def add_order_reminders(dom_db, now, reminder_sched, reminder_type):
-    print(">>>>> add_order_reminders", dom_db["domain_id"],
-          sql.sql_exists("orders", {"domain_id": dom_db["domain_id"]}), reminder_sched)
     ok, order_db = sql.sql_select_one("orders", {"domain_id": dom_db["domain_id"]})
     if not ok or len(order_db) <= 0:
         return
-    for days in reminder_sched.split(","):
-        add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], days=int(days)), reminder_type)
+    sched = reminder_sched.split(",")
+    for days in sched[:-1]:
+        add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=int(float(days) * 24)),
+                          reminder_type)
+    add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=int(float(sched[-1]) * 24)),
+                      "order/cancel")
 
 
 def domain_actions_live(dom_db, now):
@@ -47,15 +48,13 @@ def domain_actions_live(dom_db, now):
         add_domain_action(dom_db, now, misc.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]),
                           "dom/delete")
 
-    add_order_reminders(dom_db, now, this_reg["renew_order_reminders"], "order/reminder")
+    add_order_reminders(dom_db, now, this_reg["renew_order_remind_cancel"], "order/reminder")
 
 
 def domain_actions_pending_order(dom_db, now):
     if (this_reg := registry.tld_lib.reg_record_for_domain(dom_db["name"])) is None:
         return
-    add_domain_action(dom_db, misc.date_add(dom_db["created_dt"], hours=this_reg["new_orders_expire_hrs"]),
-                      "order/cancel")
-    add_order_reminders(dom_db, now, this_reg["new_order_reminders"], "order/reminder")
+    add_order_reminders(dom_db, now, this_reg["new_order_remind_cancel"], "order/reminder")
 
 
 def recreate(dom_db, who_did_it="sales"):

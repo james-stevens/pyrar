@@ -133,10 +133,12 @@ function keyEsc(e) {
 function check_for_messages()
 {
 	callApi("messages/check",(ok,reply) => {
-		if (ok) ctx.messages = reply;
-		user_info();
+		if (ok) {
+			ctx.messages = reply;
+			user_info();
+			gbl.msmTimer = setTimeout(check_for_messages,30000);
+			}
 		},{ show_timer: false });
-	gbl.msmTimer = setTimeout(check_for_messages,30000);
 }
 
 

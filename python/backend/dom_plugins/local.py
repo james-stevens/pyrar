@@ -24,15 +24,15 @@ def tld_pdns_check(name):
     return tld
 
 
-def domain_delete(__, bke_job, dom_db):
+def domain_delete(bke_job, dom):
     """ run dom/delete request """
-    return remove_parent_records(None, bke_job, dom_db)
+    return remove_parent_records(None, bke_job, dom.dom_db)
 
 
-def remove_parent_records(__, bke_job, dom_db):
+def remove_parent_records(bke_job, dom):
     """ remove the SLD from the TLD zone (in pdns) """
     job_id = bke_job["backend_id"]
-    name = dom_db["name"]
+    name = dom.dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
         log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'")
@@ -50,19 +50,19 @@ def remove_parent_records(__, bke_job, dom_db):
     return ok_ns and ok_ds and ok_a and ok_aaaa
 
 
-def domain_expired(__, bke_job, dom_db):
+def domain_expired(bke_job, dom):
     """ run dom/expired request for type=local"""
-    return remove_parent_records(None, bke_job, dom_db)
+    return remove_parent_records(bke_job, dom)
 
 
-def domain_create(__, bke_job, dom_db):
+def domain_create(bke_job, dom):
     """ run dom/create request for type=local """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
 
-    log(f"domain_create: {dom_db['name']}, {dom_db['expiry_dt']} yrs={years}")
+    log(f"domain_create: {dom.dom_db['name']}, {dom.dom_db['expiry_dt']} yrs={years}")
 
-    if (ok_add := add_years_to_expiry(years, dom_db, "created_dt")):
+    if (ok_add := add_years_to_expiry(years, dom.dom_db, "created_dt")):
         create_update_request(bke_job)
 
     return ok_add
@@ -97,45 +97,45 @@ def check_tlds_exist():
     return True
 
 
-def domain_update_from_db(__, bke_job, dom_db):
+def domain_update_from_db(bke_job, dom):
     """ run dom/update request to sync NS & DS into TLD zone """
     job_id = bke_job["backend_id"]
-    name = dom_db["name"]
+    name = dom.dom_db["name"]
 
     if (tld := tld_pdns_check(name)) is None:
         log(f"EPP-{job_id}: tld_pdns_check failed for '{name}'")
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
-    if misc.has_data(dom_db, "ns"):
-        rrs["data"] = [d.strip(".") + "." for d in dom_db["ns"].split(",")]
+    if misc.has_data(dom.dom_db, "ns"):
+        rrs["data"] = [d.strip(".") + "." for d in dom.dom_db["ns"].split(",")]
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
-    if misc.has_data(dom_db, "ds"):
-        rrs["data"] = dom_db["ds"].split(",")
+    if misc.has_data(dom.dom_db, "ds"):
+        rrs["data"] = dom.dom_db["ds"].split(",")
 
     ok_ds, __ = pdns.update_rrs(tld, rrs)
 
     return ok_ns and ok_ds
 
 
-def domain_request_transfer(__, bke_job, dom_db):
+def domain_request_transfer(bke_job, dom):
     """ run dom/transfer request """
-    if not misc.has_data(bke_job, "authcode") or not misc.has_data(dom_db, "authcode"):
+    if not misc.has_data(bke_job, "authcode") or not misc.has_data(dom.dom_db, "authcode"):
         return None
 
-    if dom_db["user_id"] == bke_job["user_id"]:
+    if dom.dom_db["user_id"] == bke_job["user_id"]:
         return True
 
-    if not passwd.compare(dom_db["authcode"], bke_job["authcode"]):
+    if not passwd.compare(dom.dom_db["authcode"], bke_job["authcode"]):
         return None
 
     return sql.sql_update_one("domains", {
         "authcode": None,
         "user_id": bke_job["user_id"]
-    }, {"domain_id": dom_db["domain_id"]})
+    }, {"domain_id": dom.dom_db["domain_id"]})
 
 
 def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
@@ -148,18 +148,18 @@ def add_years_to_expiry(years, dom_db, start_date="expiry_dt"):
     return sql.sql_update_one("domains", ",".join(values), {"domain_id": dom_db["domain_id"]})
 
 
-def domain_renew(__, bke_job, dom_db):
+def domain_renew(bke_job, dom):
     """ run dom/renew request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
-    return add_years_to_expiry(years, dom_db)
+    return add_years_to_expiry(years, dom.dom_db)
 
 
-def domain_recover(__, bke_job, dom_db):
+def domain_recover(bke_job, dom):
     """ run dom/recover request """
     if (years := shared.check_num_years(bke_job)) is None:
         return False
-    if (ok_add := add_years_to_expiry(years, dom_db)):
+    if (ok_add := add_years_to_expiry(years, dom.dom_db)):
         create_update_request(bke_job)
     return ok_add
 
@@ -169,17 +169,17 @@ def my_hello(__):
     return "LOCAL: Hello"
 
 
-def domain_info(__, bke_job, dom_db):
+def domain_info(bke_job, dom):
     """ noting to do for type=local """
-    return dom_db
+    return dom.dom_db
 
 
-def set_authcode(__, bke_job, dom_db):
+def set_authcode(bke_job, dom):
     """ nothing to do, set by webui/domains code """
     return True
 
 
-def domain_update_flags(__, bke_job, dom_db):
+def domain_update_flags(bke_job, dom):
     """ nothing to do for `local` """
     return True
 

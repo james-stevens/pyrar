@@ -4,10 +4,7 @@
 
 from librar.log import init as log_init
 from librar.mysql import sql_server as sql
-from librar import misc
-from librar import sigprocs
-from librar import static
-from librar import validate
+from librar import misc, sigprocs, static, validate
 
 
 def apply_transaction(user_id, amount, desc, as_admin=False):

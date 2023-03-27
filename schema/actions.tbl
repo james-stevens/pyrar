@@ -14,6 +14,7 @@ sqlsh "CREATE TABLE actions (
 	domain_id			${row_id},
 	execute_dt			datetime not null,
 	action				varchar(50),
+	created_dt			datetime not null,
 
 	primary key (action_id),
 	key by_dom (domain_id),

@@ -182,7 +182,7 @@ def api_messages_read():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc")
+    ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
     if not ok:
         return req.abort(reply)
     sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
@@ -404,6 +404,13 @@ def domain_transfer():
     return req.response(reply)
 
 
+def add_domain_extras(dom, dom_db):
+    dom_db["registry"] = dom.registry["name"]
+    dom_db["locks"] = dom.locks
+    dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
+    dom_db["can_transfer"] = (dom_db["created_dt"] < dom.transfer_stop)
+
+
 @application.route('/pyrar/v1.0/users/domains', methods=['GET'])
 def users_domains():
     req = WebuiReq()
@@ -419,10 +426,7 @@ def users_domains():
     for dom_db in reply:
         dom = domobj.Domain()
         dom.set_name(dom_db["name"])
-        dom_db["registry"] = dom.registry["name"]
-        dom_db["locks"] = dom.locks
-        dom_db["is_live"] = dom_db["status_id"] in static.IS_LIVE_STATUS
-        dom_db["can_transfer"] = (dom_db["created_dt"] < dom.transfer_stop)
+        add_domain_extras(dom, dom_db)
 
     req.user_data["domains"] = reply
     return req.send_user_data()
@@ -635,9 +639,12 @@ def pdns_action(func, action):
 
     if not ok:
         return req.abort(reply)
+
     dom.load_record(req.user_id)
     if dom.dom_db is None:
         return req.abort("Domain not found or not yours")
+
+    add_domain_extras(dom, dom.dom_db)
 
     req.event({
         "domain_id": dom.dom_db["domain_id"],

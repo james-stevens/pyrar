@@ -27,7 +27,6 @@ def set_orders_status(user_id, amount_paid, new_status):
         change_status.append(order_db["order_item_id"])
 
     sql.sql_update("orders", {"status": new_status}, {"user_id": user_id, "order_item_id": change_status})
-    messages.send(user_id, f"Payment of {misc.format_currency(amount_paid)} authorised")
     return True
 
 

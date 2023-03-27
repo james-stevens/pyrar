@@ -15,7 +15,7 @@ from actions import make_actions
 MANDATORY_BASKET = ["domain", "num_years", "action", "cost"]
 
 
-def make_blank_domain(name, user_db, status_id):
+def make_blank_domain(name, user_db, status_id, num_years):
     dom_db = {
         "name": name,
         "user_id": user_db["user_id"],
@@ -28,6 +28,8 @@ def make_blank_domain(name, user_db, status_id):
     if ok:
         dom_db["domain_id"] = dom_id
 
+    dom_db["created_dt"] = misc.now()
+    dom_db["expiry_dt"] = misc.date_add(dom_db["created_dt"], years=num_years)
     return ok, dom_db
 
 
@@ -74,7 +76,8 @@ def save_basket(req, whole_basket):
 
         order_db = order["order_db"]
         if "domain_id" in order_db and order_db["domain_id"] is None:
-            ok, dom_db = make_blank_domain(order["domain"], user_db, static.STATUS_WAITING_PAYMENT)
+            ok, dom_db = make_blank_domain(order["domain"], user_db, static.STATUS_WAITING_PAYMENT,
+                                           order_db["num_years"])
             if not ok:
                 return False, f"Failed to reserve domain {order['domain']}"
             order_db["domain_id"] = dom_db["domain_id"]
@@ -142,13 +145,13 @@ def pay_for_basket_item(req, order, user_db):
     user_db["acct_current_balance"] -= order_db["price_paid"]
 
     if order_db['order_type'] == "dom/transfer":
-        ok, dom_db = make_blank_domain(order['domain'], user_db, static.STATUS_TRANS_QUEUED)
+        ok, dom_db = make_blank_domain(order['domain'], user_db, static.STATUS_TRANS_QUEUED, order_db["num_years"])
         if not ok:
             return False
         order_db["domain_id"] = dom_db["domain_id"]
         order["dom_db"] = dom_db
     elif order_db['order_type'] == "dom/create":
-        ok, dom_db = make_blank_domain(order['domain'], user_db, static.STATUS_LIVE)
+        ok, dom_db = make_blank_domain(order['domain'], user_db, static.STATUS_LIVE, order_db["num_years"])
         if not ok:
             return False
         order_db["domain_id"] = dom_db["domain_id"]

@@ -206,6 +206,7 @@ class PayPalWebHook:
             currency = policy.policy("currency")
             if self.currency == currency["iso"]:
                 payfuncs.set_orders_status(self.user_id, self.amount, "authorised")
+                messages.send(self.user_id, f"Payment of {misc.format_currency(self.amount,currency)} authorised")
         return True, True
 
     def process_webhook(self):

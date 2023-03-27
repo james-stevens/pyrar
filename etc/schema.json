@@ -15,6 +15,11 @@
             "null": false,
             "is_plain_int": true
          },
+         "created_dt": {
+            "type": "datetime",
+            "null": false,
+            "is_plain_int": false
+         },
          "domain_id": {
             "unsigned": true,
             "size": 10,

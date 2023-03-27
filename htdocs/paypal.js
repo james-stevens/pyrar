@@ -3,16 +3,17 @@
 
 function paypal_startup() // {module}_startup() is a mandatory func in a JS payment module
 {
-	if ((gbl.config.payments)&&(gbl.config.payments.paypal)&&(gbl.config.payments.paypal.client_id))
-		add_paypal_script(gbl.config.payments.paypal.client_id,gbl.config.currency.iso);
+	if ((!gbl.config.payments)||(!gbl.config.payments.paypal)) return;
+
+	let ppl = gbl.config.payments.paypal;
+	if (ppl.client_id) add_paypal_script(ppl.client_id,gbl.config.currency.iso);
 
 	payments["paypal"] = {
 		"desc": "Pay by PayPal",
 		"single": paypal_single_payment
 		};
 
-	if ((gbl.config.payments.paypal)&&(gbl.config.payments.paypal.desc))
-		payments.paypal.desc = gbl.config.payments.paypal.desc;
+	if (ppl.desc) payments.paypal.desc = ppl.desc;
 
 }
 
@@ -63,7 +64,6 @@ function paypal_amount(amount) {
 
 function make_paypal_order(description, amount, custom_id)
 {
-
 	let ret_js = {
 		purchase_units: [
 			{
@@ -112,6 +112,7 @@ function make_paypal_order(description, amount, custom_id)
 		"quantity": 1,
 		"unit_amount": paypal_amount(amount)
 		} ];
+
 	ret_js.purchase_units[0].amount.breakdown = {
 		"item_total": paypal_amount(amount)
 		};
@@ -138,9 +139,11 @@ function initPayPalButton(description, amount, custom_id) {
 	  return actions.order.capture().then(function(orderData) {
 		console.log(orderData);
 		if ((orderData)&&(orderData.purchase_units[0])&&(orderData.purchase_units[0].amount)&&(orderData.purchase_units[0].amount.value)) {
-			callApi("payments/submitted",(ok,reply)=>{
-				if (ok) do_orders_icon();
-				},{ json: { "amount":from_float(orderData.purchase_units[0].amount.value) } });
+			if ((ctx.orders)&&(ctx.orders.length)) {
+				callApi("payments/submitted",(ok,reply) => {
+					if (ok) return do_orders_icon();
+					},{ json: { "amount":from_float(orderData.purchase_units[0].amount.value) } });
+				}
 			}
 		let e = document.getElementById("payment-whole");
 		let x = '<center><h3>Thank you for your payment!</h3>'

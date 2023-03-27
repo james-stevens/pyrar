@@ -36,8 +36,13 @@ def flag_expired_domain(__, dom_db):
 
 
 def order_cancel(act_db, dom_db):
-    sql.sql_delete_one("orders", {"domain_id": dom_db["domain_id"], "user_id": dom_db["user_id"]})
-    return delete_domain(act_db, dom_db)
+    ok, order_db = sql.sql_select_one("orders", {"domain_id": dom_db["domain_id"], "user_id": dom_db["user_id"]})
+    if not ok or len(order_db) <= 0:
+        return True
+    sql.sql_delete("orders", {"domain_id": dom_db["domain_id"], "user_id": dom_db["user_id"]})
+    if order_db["order_type"] == "dom/create":
+        return delete_domain(act_db, dom_db)
+    return True
 
 
 def delete_domain(__, dom_db):
@@ -83,12 +88,12 @@ def delete_action(act_db):
 
 
 action_exec = {
-    "order/cancel": order_cancel,
     "dom/delete": delete_domain,
     "dom/expired": flag_expired_domain,
     "dom/auto-renew": auto_renew_domain,
     "dom/reminder": send_expiry_reminder,
-    "order/reminder": send_order_reminder
+    "order/reminder": send_order_reminder,
+    "order/cancel": order_cancel
 }
 
 

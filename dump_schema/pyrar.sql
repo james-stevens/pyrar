@@ -27,6 +27,7 @@ CREATE TABLE `actions` (
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
   `execute_dt` datetime NOT NULL,
   `action` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_dt` datetime NOT NULL,
   PRIMARY KEY (`action_id`),
   KEY `by_dom` (`domain_id`),
   KEY `by_date` (`execute_dt`)
