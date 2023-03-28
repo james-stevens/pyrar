@@ -47,6 +47,7 @@ def order_cancel(act_db, dom_db):
 
 def delete_domain(__, dom_db):
     sql.sql_delete("orders", {"domain_id": dom_db["domain_id"]})
+    sql.sql_delete("actions", {"domain_id": dom_db["domain_id"]})
     sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
     pdns.delete_zone(dom_db["name"])
 

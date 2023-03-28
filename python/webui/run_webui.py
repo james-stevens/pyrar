@@ -225,10 +225,12 @@ def orders_cancel():
     if not ok:
         return req.abort("Order could not be found")
 
+    dom_db = None
     event_db = {"event_type": "order/cancel"}
     dom_name = f"DOM-{order_db['domain_id']}"
-    if (reply := sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id}))[0]:
-        dom_db = reply[1]
+    ok, reply = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"], "user_id": req.user_id})
+    if ok and len(reply):
+        dom_db = reply
         event_db["domain_id"] = dom_db["domain_id"]
         dom_name = dom_db['name']
 
@@ -243,6 +245,9 @@ def orders_cancel():
             "user_id": req.user_id,
             "status_id": static.STATUS_WAITING_PAYMENT
         })
+        sql.sql_delete("actions", {"domain_id": order_db["domain_id"]})
+        if dom_db:
+            pdns.delete_zone(dom_db["name"])
     else:
         ok, dom_db = sql.sql_select_one("domains", {"domain_id": order_db["domain_id"]})
         if ok and len(dom_db) > 0:
