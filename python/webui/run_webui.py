@@ -539,7 +539,7 @@ def users_logout():
     return req.response("logged-out")
 
 
-@application.route('/pyrar/v1.0/send/verify', methods=['GET', 'POST'])
+@application.route('/pyrar/v1.0/email/sendverify', methods=['GET', 'POST'])
 def send_verify():
     req = WebuiReq()
     if not req.is_logged_in:
@@ -549,7 +549,7 @@ def send_verify():
     return req.abort("Failed to send email verification")
 
 
-@application.route('/pyrar/v1.0/users/verify', methods=['POST'])
+@application.route('/pyrar/v1.0/email/verify', methods=['POST'])
 def users_verify():
     req = WebuiReq()
     if req.post_js is None:

@@ -364,7 +364,7 @@ function confirmEmail()
 
 function send_confirm_email()
 {
-	callApi("send/verify",(ok,reply) => {
+	callApi("email/sendverify",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to send verification email",reply,"errorSpan");
 		elm.userSpace.innerHTML = "<h2>"+gbl.tick+"&nbsp;Verification email sent</h2>";
 		});
@@ -603,7 +603,7 @@ function go_welcome(with_push)
 
 function router_user_email_verify(params)
 {
-	callApi("users/verify",(ok,reply) => {
+	callApi("email/verify",(ok,reply) => {
 		if (!ok) return def_errMsg("Failed to verify email",reply,"errorSpan");
 
 		elm.userSpace.innerHTML="<h2>Email Address Verified</h2>";
