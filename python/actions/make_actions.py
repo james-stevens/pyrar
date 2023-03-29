@@ -68,7 +68,7 @@ def recreate(dom_db, who_did_it="sales"):
             "from_where": "localhost"
         }, 1)
 
-    sql.sql_exec(f"delete from actions where domain_id = {dom_db['domain_id']}")
+    sql.sql_delete("actions", {"domain_id": dom_db["domain_id"]})
 
     now = misc.now()
     if dom_db["status_id"] in action_fns:

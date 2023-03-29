@@ -47,6 +47,7 @@ def order_cancel(act_db, dom_db):
 
 def delete_domain(__, dom_db):
     sql.sql_delete("orders", {"domain_id": dom_db["domain_id"]})
+    sql.sql_delete("actions", {"domain_id": dom_db["domain_id"]})
     sql.sql_delete_one("domains", {"domain_id": dom_db["domain_id"]})
     pdns.delete_zone(dom_db["name"])
 
@@ -129,8 +130,9 @@ def main():
 
     sql.connect("engine")
     pdns.start_up()
+    registry.start_up()
+
     if args.action and args.domain:
-        registry.start_up()
         ok, dom_db = sql.sql_select_one("domains", {"name": args.domain})
         if not ok or len(dom_db) <= 0:
             debug(f"ERROR: {args.domain} not found")

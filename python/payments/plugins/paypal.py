@@ -7,11 +7,8 @@ import json
 
 from librar.policy import this_policy as policy
 from librar.log import log, init as log_init
-from librar import mysql
+from librar import misc, messages, static, accounts, mysql
 from librar.mysql import sql_server as sql
-from librar import misc
-from librar import static
-from librar import accounts
 from mailer import spool_email
 
 from payments import pay_handler
