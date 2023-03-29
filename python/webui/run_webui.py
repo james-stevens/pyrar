@@ -343,23 +343,6 @@ def payments_single():
     return req.response(pay_db)
 
 
-@application.route('/pyrar/v1.0/payments/html', methods=['POST'])
-def payments_html():
-    req = WebuiReq()
-    if not req.is_logged_in:
-        return req.abort(NOT_LOGGED_IN)
-    if req.post_js is None or "method" not in req.post_js or req.post_js["method"] not in pay_handler.pay_plugins:
-        return req.abort("Missign or invalid payment method")
-    if (plugin_func := pay_handler.run(req.post_js["method"], "html")) is None:
-        return req.abort("Missign or invalid payment method")
-
-    ok, reply = plugin_func(req.user_id)
-    if not ok:
-        return req.abort("Missign or invalid payment method")
-
-    return req.response(reply)
-
-
 @application.route('/pyrar/v1.0/payments/list', methods=['GET', 'POST'])
 def payments_list():
     req = WebuiReq()
