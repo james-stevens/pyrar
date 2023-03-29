@@ -563,7 +563,7 @@ def users_verify():
     return req.abort("Email verification failed")
 
 
-@application.route('/pyrar/v1.0/request/reset', methods=['POST'])
+@application.route('/pyrar/v1.0/password/request', methods=['POST'])
 def request_reset_password():
     req = WebuiReq()
     if req.post_js is None:
@@ -576,7 +576,7 @@ def request_reset_password():
     return req.response(True)
 
 
-@application.route('/pyrar/v1.0/users/reset', methods=['POST'])
+@application.route('/pyrar/v1.0/password/reset', methods=['POST'])
 def users_reset_password():
     req = WebuiReq()
     if req.post_js is None:

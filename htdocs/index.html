@@ -693,7 +693,7 @@ function do_reset_password()
 		return false;
 		}
 
-	callApi("users/reset",(ok,reply) => {
+	callApi("password/reset",(ok,reply) => {
 		if (!ok) def_errMsg("Password reset failed",reply,"reset_table");
 		else elm.userSpace.innerHTML = "<h2>Your password has been reset</h2>";
 		}, { json: send_json });
@@ -2828,7 +2828,7 @@ function submit_resend()
 		return false;
 		}
 
-	callApi("request/reset",(ok,reply) => {
+	callApi("password/request",(ok,reply) => {
 		if (!ok) {
 			def_errMsg("Reset password request failed",reply,"resend_table");
 			return false;
