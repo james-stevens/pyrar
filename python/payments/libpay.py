@@ -39,7 +39,7 @@ def config():
     return all_config
 
 
-def process_webhook(webhook_data, sent_data):
+def process_webhook(headers, webhook_data, sent_data):
     if "name" not in webhook_data:
         return False, "Webhook data has no 'name' property"
 
@@ -61,7 +61,7 @@ def process_webhook(webhook_data, sent_data):
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
 
-    ok, reply = func(webhook_data, sent_data, file_name)
+    ok, reply = func(headers, webhook_data, sent_data, file_name)
     if ok is None and reply is None:
         os.remove(file_name)
         return True, True

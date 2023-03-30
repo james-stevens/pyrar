@@ -23,14 +23,14 @@ def paypal_config():
         return None
 
     return_conf = {"desc": "Pay by PayPal"}
-    payapl_conf = pay_conf[THIS_MODULE]
-    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
-    if paypal_mode == "test":
+    my_conf = pay_conf[THIS_MODULE]
+    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
+    if my_mode == "test":
         return_conf["desc"] = "Pay by PayPal SandBox"
-    if paypal_mode in payapl_conf and "client_id" in payapl_conf[paypal_mode]:
-        return_conf["client_id"] = payapl_conf[paypal_mode]["client_id"]
-    elif "client_id" in payapl_conf:
-        return_conf["client_id"] = payapl_conf["client_id"]
+    if my_mode in my_conf and "client_id" in my_conf[my_mode]:
+        return_conf["client_id"] = my_conf[my_mode]["client_id"]
+    elif "client_id" in my_conf:
+        return_conf["client_id"] = my_conf["client_id"]
     else:
         return None
     return return_conf
@@ -41,15 +41,15 @@ def paypal_startup():
     if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
         return None
 
-    payapl_conf = pay_conf[THIS_MODULE]
-    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
+    my_conf = pay_conf[THIS_MODULE]
+    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
 
-    if paypal_mode in payapl_conf and misc.has_data(payapl_conf[paypal_mode], ["webhook", "client_id"]):
-        mode_conf = payapl_conf[paypal_mode]
+    if my_mode in my_conf and misc.has_data(my_conf[my_mode], ["webhook", "client_id"]):
+        mode_conf = my_conf[my_mode]
         pay_handler.pay_webhooks[mode_conf["webhook"]] = {
             "name": THIS_MODULE,
             "client_id": mode_conf["client_id"],
-            "mode": paypal_mode
+            "mode": my_mode
         }
     return True
 
@@ -219,7 +219,7 @@ class PayPalWebHook:
         return True, True
 
 
-def paypal_process_webhook(webhook_data, sent_data, filename):
+def paypal_process_webhook(headers, webhook_data, sent_data, filename):
     hook = PayPalWebHook(webhook_data, sent_data, filename)
     if not hook.interesting_webhook():
         return None, None

@@ -130,6 +130,7 @@ def before_request():
 
     allowable_referrer = policy.policy("allowable_referrer")
     if allowable_referrer is not None and isinstance(allowable_referrer, (dict, list)):
+        log(f"REFER={flask.request.referrer}")
         if flask.request.referrer in allowable_referrer:
             return None
     elif flask.request.referrer == policy.policy("website_name"):
@@ -171,7 +172,7 @@ def catch_webhook(webhook):
     elif flask.request.method == "GET":
         sent_data = flask.request.args
 
-    ok, reply = libpay.process_webhook(webhook_data, sent_data)
+    ok, reply = libpay.process_webhook(req.headers, webhook_data, sent_data)
     if not ok:
         return req.abort(reply)
     return req.response(reply)
