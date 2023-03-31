@@ -21,9 +21,16 @@ HAS_RUN_START_UP = False
 
 def startup():
     global HAS_RUN_START_UP
-    for module in [mod for mod in payfuncs.payment_file.data() if mod in pay_handler.pay_plugins]:
-        if (func := pay_handler.run(module, "startup")) is not None:
-            func()
+    pay_conf = payfuncs.payment_file.data()
+    for module in [mod for mod in pay_conf if mod in pay_handler.pay_plugins]:
+        if (func := pay_handler.run(module, "startup")) is not None and func():
+            this_conf = pay_conf[module]
+            my_mode = this_conf["mode"] if "mode" in this_conf else "live"
+            if my_mode in this_conf and "webhook" in this_conf[my_mode]:
+                this_mode = this_conf[my_mode]
+                this_mode["name"] = module
+                this_mode["mode"] = my_mode
+                pay_handler.pay_webhooks[this_mode["webhook"]] = this_mode
     HAS_RUN_START_UP = True
 
 
@@ -40,8 +47,8 @@ def config():
 
 
 def process_webhook(headers, webhook_data, sent_data):
-    if "name" not in webhook_data:
-        return False, "Webhook data has no 'name' property"
+    if not misc.has_data(webhook_data,["name","mode","webhook"]):
+        return False, "Webhook data is invalid"
 
     pay_module = webhook_data["name"]
     file_name = None
@@ -67,7 +74,7 @@ def process_webhook(headers, webhook_data, sent_data):
         return True, True
 
     if ok:
-        return True, "Processed"
+        return True, True
 
     if file_name is not None:
         spool_email.spool("admin_webhook_failed",
@@ -85,6 +92,8 @@ def main():
     log_init(with_debug=True)
     sql.connect("engine")
     startup()
+    print(json.dumps(config(),indent=3))
+    print(json.dumps(pay_handler.pay_webhooks,indent=3))
 
 
 if __name__ == "__main__":

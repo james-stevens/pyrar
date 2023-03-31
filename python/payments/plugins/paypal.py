@@ -37,20 +37,6 @@ def paypal_config():
 
 
 def paypal_startup():
-    pay_conf = payfuncs.payment_file.data()
-    if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
-        return None
-
-    my_conf = pay_conf[THIS_MODULE]
-    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
-
-    if my_mode in my_conf and misc.has_data(my_conf[my_mode], ["webhook", "client_id"]):
-        mode_conf = my_conf[my_mode]
-        pay_handler.pay_webhooks[mode_conf["webhook"]] = {
-            "name": THIS_MODULE,
-            "client_id": mode_conf["client_id"],
-            "mode": my_mode
-        }
     return True
 
 

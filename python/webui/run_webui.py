@@ -157,22 +157,32 @@ def hello():
     return req.response({"hello": "world"})
 
 
+def generic_get_data():
+    if flask.request.json:
+        return flask.request.json
+    if flask.request.method == "POST":
+        return dict(flask.request.form)
+    if flask.request.method == "GET":
+        return flask.request.args
+    return None
+
+
+@application.route('/pyrar/v1.0/hookid/<webhook>/<trans_id>/', methods=['GET', 'POST'])
+def catch_hookid(webhook,trans_id):
+    return run_webhook(WebuiReq(), webhook, trans_id)
+
 @application.route('/pyrar/v1.0/webhook/<webhook>/', methods=['GET', 'POST'])
 def catch_webhook(webhook):
-    req = WebuiReq()
+    return run_webhook(WebuiReq(), webhook)
+
+def run_webhook(req,webhook, trans_id=None):
     if webhook is None or webhook not in pay_handler.pay_webhooks:
         return req.abort(f"Webhook not recognised - '{webhook}'")
-    webhook_data = pay_handler.pay_webhooks[webhook]
 
-    sent_data = None
-    if flask.request.json:
-        sent_data = flask.request.json
-    elif flask.request.method == "POST":
-        sent_data = dict(flask.request.form)
-    elif flask.request.method == "GET":
-        sent_data = flask.request.args
+    if trans_id is not None:
+        req.headers["hook_trans_id"] = trans_id
 
-    ok, reply = libpay.process_webhook(req.headers, webhook_data, sent_data)
+    ok, reply = libpay.process_webhook(req.headers, pay_handler.pay_webhooks[webhook], generic_get_data())
     if not ok:
         return req.abort(reply)
     return req.response(reply)
@@ -856,11 +866,7 @@ def get_price_check_properties(post_js):
             qry_type = post_js["qry_type"].split(",")
         return dom, num_years, qry_type
 
-    data = None
-    if flask.request.method == "POST":
-        data = flask.request.form
-    if flask.request.method == "GET":
-        data = flask.request.args
+    data = generic_get_data()
 
     if data is None or len(data) <= 0:
         return None, "No data sent", None

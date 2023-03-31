@@ -23,3 +23,16 @@ def run(plugin_name, func_name):
     if plugin_name not in pay_conf:
         return None
     return pay_plugins[plugin_name][func_name]
+
+
+def module_config(this_module):
+    pay_conf = payfuncs.payment_file.data()
+    if pay_conf is None or not isinstance(pay_conf, dict) or this_module not in pay_conf:
+        return None, None
+    my_conf = pay_conf[this_module]
+    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
+    if my_mode not in my_conf:
+        return None
+    ret_conf = my_conf[my_mode]
+    ret_conf["mode"] = my_mode
+    return ret_conf

@@ -3,22 +3,24 @@
 # Alternative license arrangements possible, contact me for more information
 """ hashing functions """
 
+import sys
 import os
 import time
 import secrets
 import re
 import hashlib
 import base64
+import base58
 
 
 def make_hash(src_string=None, chars_needed=20):
     """ make general purpose random string """
-    hsh = hashlib.sha256()
+    hsh = hashlib.sha256() if chars_needed <= 44 else hashlib.sha512()
     if src_string is None:
         hsh.update(secrets.token_bytes(500))
     else:
         hsh.update(src_string.encode("utf-8"))
-    return re.sub("[+/.=]", "", base64.b64encode(hsh.digest()).decode("utf-8"))[:chars_needed]
+    return base58.b58encode(hsh.digest()).decode("utf-8")[:chars_needed]
 
 
 def make_session_code(user_id):
@@ -40,4 +42,4 @@ def make_session_key(session_code, user_agent):
 
 
 if __name__ == "__main__":
-    print(make_hash(chars_needed=30))
+    print(make_hash(chars_needed=int(sys.argv[1]) if len(sys.argv) > 1 else 300))
