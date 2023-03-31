@@ -130,7 +130,6 @@ def before_request():
 
     allowable_referrer = policy.policy("allowable_referrer")
     if allowable_referrer is not None and isinstance(allowable_referrer, (dict, list)):
-        log(f"REFER={flask.request.referrer}")
         if flask.request.referrer in allowable_referrer:
             return None
     elif flask.request.referrer == policy.policy("website_name"):
