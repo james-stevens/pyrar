@@ -20,9 +20,9 @@ THIS_MODULE = "nowpayment"
 def get_config():
     if (my_conf := pay_handler.module_config(THIS_MODULE)) is None:
         return None
-    return_conf = {"desc": "Pay by Crypto via NowPayment"}
+    return_conf = {"desc": "Pay by Crypto via NowPayments"}
     if my_conf["mode"] == "test":
-        return_conf["desc"] = "Pay by Crypto via NowPayment SandBox"
+        return_conf["desc"] = "Pay by Crypto via NowPayments SandBox"
     return return_conf if "api_key" in my_conf else None
 
 
@@ -122,7 +122,7 @@ class NowPaymentWebHook:
             return False, "Failed to find matching payment"
 
         user_id = pay_db["user_id"]
-        desc = (f"NowPayment: Paid {self.input['pay_amount']} in {self.input['pay_currency'].upper()} " +
+        desc = (f"NowPayments: Paid {self.input['pay_amount']} in {self.input['pay_currency'].upper()} " +
                 f"for {self.input['price_amount']} in {price_currency}")
 
         ok, trans_id = accounts.apply_transaction(user_id, amount, desc, as_admin=True)
@@ -148,7 +148,7 @@ def process_webhook(headers, webhook_data, sent_data, filename):
 
 
 pay_handler.add_plugin(THIS_MODULE, {
-    "desc": "NowPayment",
+    "desc": "NowPayments",
     "config": get_config,
     "startup": startup,
     "webhook": process_webhook,
