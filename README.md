@@ -3,7 +3,7 @@ Python engine & rest/api with JS webui to provide a complete Domain Name Registr
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
-It's probably now ready to go live in a limited installation - so long as you're happy with only being paid by PayPal.
+It's probably now ready to go live in a limited installation - supports payment by PayPal or crypto via NowPayment.io
 
 If you want to play with buying domains on the demo, I can give you some fake credit, just ask.
 
@@ -139,7 +139,7 @@ can be supprted without `fee-1.0`.
 - Password reset
 - Maintain payment options e.g. card / account details etc (some done, still needs work)
 - Close account
-- Money Managment fully woking with push-pay via PayPal fully working
+- Money Managment fully woking with push-pay via PayPal, or by crypto via NowPayment, fully working
 
 
 ## Domains
@@ -209,12 +209,12 @@ can be supprted without `fee-1.0`.
 
 # What doesn't work, yet
 
-It's probably now ready to go live in a limited installation - so long as you're happy with only being paid by PayPal.
+It's probably now ready to go live in a limited installation - so long as you're happy with being paid by PayPal or Crypto.
 
 
 ## Users
 - 2fA (enable & disable)
-- Make payments - Stripe, Crypto via Coinbase (PayPal is done)
+- Make payments - Just Stripe to do
 - Pull Payments for auto-renew (Stripe & PayPal only)
 - Ability to opt out of emails, by type of message
 
