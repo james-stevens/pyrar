@@ -121,7 +121,8 @@ class WebuiReq:
 
 @application.before_request
 def before_request():
-    if flask.request.path.find("/pyrar/v1.0/webhook/") == 0 or not WANT_REFERRER_CHECK:
+    if (flask.request.path.find("/pyrar/v1.0/hookid/") == 0 or flask.request.path.find("/pyrar/v1.0/webhook/") == 0
+            or not WANT_REFERRER_CHECK):
         return None
 
     strict_referrer = policy.policy("strict_referrer")
@@ -167,14 +168,16 @@ def generic_get_data():
 
 
 @application.route('/pyrar/v1.0/hookid/<webhook>/<trans_id>/', methods=['GET', 'POST'])
-def catch_hookid(webhook,trans_id):
+def catch_hookid(webhook, trans_id):
     return run_webhook(WebuiReq(), webhook, trans_id)
+
 
 @application.route('/pyrar/v1.0/webhook/<webhook>/', methods=['GET', 'POST'])
 def catch_webhook(webhook):
     return run_webhook(WebuiReq(), webhook)
 
-def run_webhook(req,webhook, trans_id=None):
+
+def run_webhook(req, webhook, trans_id=None):
     if webhook is None or webhook not in pay_handler.pay_webhooks:
         return req.abort(f"Webhook not recognised - '{webhook}'")
 
@@ -332,25 +335,19 @@ def payments_single():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not misc.has_data(req.post_js, "provider"):
+    if not misc.has_data(req.post_js, ["provider","amount","description"]):
         return req.abort("Missing or invalid payment method data")
 
-    if req.post_js["provider"] not in pay_handler.pay_plugins:
-        return req.abort(f"Invalid payment provider '{req.post_js['provider']}'")
+    provider = req.post_js["provider"]
+    pay_conf = payfuncs.payment_file.data()
+    if provider not in pay_conf or provider not in pay_handler.pay_plugins:
+        return req.abort(f"Unsupported provider - {provider}")
 
-    pay_db = {
-        "provider": f"{req.post_js['provider']}:single",
-        "token": f"{misc.ashex(req.user_id)}:{hashstr.make_hash(chars_needed=30)}",
-        "token_type": static.PAY_TOKEN_SINGLE,
-        "user_id": req.user_id,
-        "user_can_delete": False
-    }
+    if (func := pay_handler.run(provider, "single")) is None:
+        return req.abort("Unsupported function 'single' for provider - {provider}")
 
-    ok, __ = sql.sql_insert("payments", pay_db)
-    if not ok:
-        return req.abort("Adding payments data failed")
-
-    return req.response(pay_db)
+    ok, reply = func(req.user_id,req.post_js["description"],req.post_js["amount"])
+    return req.abort(reply) if not ok else req.response(reply)
 
 
 @application.route('/pyrar/v1.0/payments/list', methods=['GET', 'POST'])

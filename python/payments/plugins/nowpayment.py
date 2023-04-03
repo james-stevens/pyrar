@@ -40,15 +40,16 @@ def single(user_id, description, amount):
     url = "https://api-sandbox.nowpayments.io/v1/invoice"
     headers = {"x-api-key": my_conf["api_key"], "Content-Type": "application/json"}
 
-    token = f"{misc.ashex(user_id)}{hashstr.make_hash(chars_needed=30)}"
+    token = f"{misc.ashex(user_id)}.{hashstr.make_hash(length=30)}"
     call_back = policy.policy("website_name") + f"pyrar/v1.0/hookid/{my_conf['webhook']}/{token}/"
-    order_id = hashstr.make_hash(chars_needed=30)
+    order_id = hashstr.make_hash(length=30)
 
     currency = policy.policy("currency")
     post_data = {
         "price_amount": misc.format_currency(amount, currency, with_symbol=False),
         "price_currency": currency["iso"],
         "ipn_callback_url": call_back,
+        "success_url": policy.policy("website_name") + "nowpayment.html",
         "order_id": order_id,
         "order_description": description
     }
@@ -92,9 +93,12 @@ class NowPaymentWebHook:
         if self.input["payment_status"] != "finished":
             return False, "Payment status is not 'finished'"
 
+        return True, True
+
     def process(self):
-        if not (reply := self.check())[0]:
-            return False, reply[1]
+        ok, reply = self.check()
+        if not ok:
+            return False, reply
 
         log(f"SHA512: {self.headers['x-nowpayments-sig']}")
 
@@ -144,10 +148,11 @@ def process_webhook(headers, webhook_data, sent_data, filename):
 
 
 pay_handler.add_plugin(THIS_MODULE, {
-    "desc": "PayPal",
+    "desc": "NowPayment",
     "config": get_config,
     "startup": startup,
     "webhook": process_webhook,
+    "single": single
 })
 
 
@@ -155,8 +160,6 @@ def run_debug():
     log_init(with_debug=True)
     sql.connect("engine")
     startup()
-    print(json.dumps(pay_handler.module_config(THIS_MODULE),indent=3))
-    sys.exit(0)
     if len(sys.argv) <= 1:
         ok, reply = single(10450, "Some Desc", 1891)
         print(ok)

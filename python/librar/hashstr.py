@@ -13,14 +13,14 @@ import base64
 import base58
 
 
-def make_hash(src_string=None, chars_needed=20):
+def make_hash(src_string=None, length=20):
     """ make general purpose random string """
-    hsh = hashlib.sha256() if chars_needed <= 44 else hashlib.sha512()
+    hsh = hashlib.sha256() if length <= 44 else hashlib.sha512()
     if src_string is None:
         hsh.update(secrets.token_bytes(500))
     else:
         hsh.update(src_string.encode("utf-8"))
-    return base58.b58encode(hsh.digest()).decode("utf-8")[:chars_needed]
+    return base58.b58encode(hsh.digest()).decode("utf-8")[:length]
 
 
 def make_session_code(user_id):
@@ -42,4 +42,4 @@ def make_session_key(session_code, user_agent):
 
 
 if __name__ == "__main__":
-    print(make_hash(chars_needed=int(sys.argv[1]) if len(sys.argv) > 1 else 300))
+    print(make_hash(length=int(sys.argv[1]) if len(sys.argv) > 1 else 300))
