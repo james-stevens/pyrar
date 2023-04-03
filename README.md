@@ -3,7 +3,7 @@ Python engine & rest/api with JS webui to provide a complete Domain Name Registr
 
 To see a demo of it running the current latest `master` go to https://nameshake.net/
 
-It's probably now ready to go live in a limited installation - supports payment by PayPal or crypto via NowPayment.io
+It's probably now ready to go live in a limited installation - supports payment by PayPal or crypto via [NowPayments](https://nowpayments.io/)
 
 If you want to play with buying domains on the demo, I can give you some fake credit, just ask.
 
