@@ -7,7 +7,7 @@ import json
 
 from librar.policy import this_policy as policy
 from librar.log import log, init as log_init
-from librar import misc, messages, static, accounts, mysql
+from librar import misc, messages, static, accounts, mysql, hashstr
 from librar.mysql import sql_server as sql
 from mailer import spool_email
 
@@ -17,40 +17,26 @@ from payments import payfuncs
 THIS_MODULE = "paypal"
 
 
-def paypal_config():
+def my_config():
     pay_conf = payfuncs.payment_file.data()
     if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
         return None
 
     return_conf = {"desc": "Pay by PayPal"}
-    payapl_conf = pay_conf[THIS_MODULE]
-    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
-    if paypal_mode == "test":
+    my_conf = pay_conf[THIS_MODULE]
+    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
+    if my_mode == "test":
         return_conf["desc"] = "Pay by PayPal SandBox"
-    if paypal_mode in payapl_conf and "client_id" in payapl_conf[paypal_mode]:
-        return_conf["client_id"] = payapl_conf[paypal_mode]["client_id"]
-    elif "client_id" in payapl_conf:
-        return_conf["client_id"] = payapl_conf["client_id"]
+    if my_mode in my_conf and "client_id" in my_conf[my_mode]:
+        return_conf["client_id"] = my_conf[my_mode]["client_id"]
+    elif "client_id" in my_conf:
+        return_conf["client_id"] = my_conf["client_id"]
     else:
         return None
     return return_conf
 
 
-def paypal_startup():
-    pay_conf = payfuncs.payment_file.data()
-    if not isinstance(pay_conf, dict) or THIS_MODULE not in pay_conf:
-        return None
-
-    payapl_conf = pay_conf[THIS_MODULE]
-    paypal_mode = payapl_conf["mode"] if "mode" in payapl_conf else "live"
-
-    if paypal_mode in payapl_conf and misc.has_data(payapl_conf[paypal_mode], ["webhook", "client_id"]):
-        mode_conf = payapl_conf[paypal_mode]
-        pay_handler.pay_webhooks[mode_conf["webhook"]] = {
-            "name": THIS_MODULE,
-            "client_id": mode_conf["client_id"],
-            "mode": paypal_mode
-        }
+def startup():
     return True
 
 
@@ -219,7 +205,7 @@ class PayPalWebHook:
         return True, True
 
 
-def paypal_process_webhook(webhook_data, sent_data, filename):
+def process_webhook(headers, webhook_data, sent_data, filename):
     hook = PayPalWebHook(webhook_data, sent_data, filename)
     if not hook.interesting_webhook():
         return None, None
@@ -229,21 +215,38 @@ def paypal_process_webhook(webhook_data, sent_data, filename):
     return ok, reply
 
 
+def single(user_id, description, amount):
+    pay_db = {
+        "provider": f"{THIS_MODULE}:single",
+        "token": f"{misc.ashex(user_id)}.{hashstr.make_hash(length=30)}",
+        "token_type": static.PAY_TOKEN_SINGLE,
+        "user_id": user_id,
+        "user_can_delete": False
+    }
+
+    ok, __ = sql.sql_insert("payments", pay_db)
+    if not ok:
+        return False, "Adding payments data failed"
+
+    return True, pay_db
+
+
 pay_handler.add_plugin(THIS_MODULE, {
     "desc": "PayPal",
-    "config": paypal_config,
-    "startup": paypal_startup,
-    "webhook": paypal_process_webhook,
+    "config": my_config,
+    "startup": startup,
+    "webhook": process_webhook,
+    "single": single
 })
 
 
 def run_debug():
     log_init(with_debug=True)
-    paypal_startup()
+    startup()
     sql.connect("engine")
     file = "/opt/github/pyrar/tmp/" + sys.argv[1]
     with open(file, "r", encoding="utf-8") as fd:
-        print(paypal_process_webhook({}, json.load(fd), file))
+        print(process_webhook({}, json.load(fd), file))
 
 
 if __name__ == "__main__":

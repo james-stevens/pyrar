@@ -79,7 +79,7 @@ class ZoneLib:
         self.zones_from_db = []
         self.registry = None
         self.clients = {}
-        self.policy_mtime = fileloader.have_newer(None,static.POLICY_FILE)
+        self.policy_mtime = fileloader.have_newer(None, static.POLICY_FILE)
 
         self.last_zone_table = None
         self.check_zone_table()
@@ -113,7 +113,7 @@ class ZoneLib:
         return True
 
     def check_for_new_files(self):
-        new_policy_mtime = fileloader.have_newer(self.policy_mtime,static.POLICY_FILE)
+        new_policy_mtime = fileloader.have_newer(self.policy_mtime, static.POLICY_FILE)
         zones_db_is_new = self.check_zone_table()
         regs_file_is_new = self.regs_file.check()
         priority_file_is_new = self.priority_file.check()

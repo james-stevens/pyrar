@@ -41,7 +41,7 @@ function paypal_single_payment(description, amount)
 		e.innerHTML = x;
 
 		initPayPalButton(description, amount, reply.token);
-		},{ json:{ "provider":"paypal"}})
+		},{ json:{ "provider":"paypal","description":description, "amount":amount }})
 }
 
 
@@ -137,7 +137,6 @@ function initPayPalButton(description, amount, custom_id) {
 
 	onApprove: function(data, actions) {
 	  return actions.order.capture().then(function(orderData) {
-		console.log(orderData);
 		if ((orderData)&&(orderData.purchase_units[0])&&(orderData.purchase_units[0].amount)&&(orderData.purchase_units[0].amount.value)) {
 			if ((ctx.orders)&&(ctx.orders.length)) {
 				callApi("payments/submitted",(ok,reply) => {
