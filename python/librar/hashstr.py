@@ -7,7 +7,6 @@ import sys
 import os
 import time
 import secrets
-import re
 import hashlib
 import base64
 import base58

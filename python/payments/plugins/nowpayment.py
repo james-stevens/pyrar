@@ -84,7 +84,7 @@ class NowPaymentWebHook:
         self.filename = filename
 
     def check(self):
-        if not misc.has_data(self.headers,["x-nowpayments-sig","hook_trans_id"]):
+        if not misc.has_data(self.headers, ["x-nowpayments-sig", "hook_trans_id"]):
             return False, "Header items missing"
         if not misc.has_data(self.input,
                              ["payment_status", "invoice_id", "order_id", "price_amount", "price_currency"]):

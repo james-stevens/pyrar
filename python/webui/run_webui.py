@@ -6,7 +6,7 @@
 import inspect
 import flask
 
-from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs, hashstr
+from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
@@ -335,7 +335,7 @@ def payments_single():
     req = WebuiReq()
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
-    if not misc.has_data(req.post_js, ["provider","amount","description"]):
+    if not misc.has_data(req.post_js, ["provider", "amount", "description"]):
         return req.abort("Missing or invalid payment method data")
 
     provider = req.post_js["provider"]
@@ -346,7 +346,7 @@ def payments_single():
     if (func := pay_handler.run(provider, "single")) is None:
         return req.abort("Unsupported function 'single' for provider - {provider}")
 
-    ok, reply = func(req.user_id,req.post_js["description"],req.post_js["amount"])
+    ok, reply = func(req.user_id, req.post_js["description"], req.post_js["amount"])
     return req.abort(reply) if not ok else req.response(reply)
 
 

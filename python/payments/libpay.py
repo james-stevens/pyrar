@@ -48,7 +48,7 @@ def config():
 
 
 def process_webhook(headers, webhook_data, sent_data):
-    if not misc.has_data(webhook_data,["name","mode","webhook"]):
+    if not misc.has_data(webhook_data, ["name", "mode", "webhook"]):
         return False, "Webhook data is invalid"
 
     pay_module = webhook_data["name"]
@@ -61,10 +61,7 @@ def process_webhook(headers, webhook_data, sent_data):
                                      prefix=pay_module + "_") as fd:
         file_name = fd.name
         os.chmod(file_name, 0o755)
-        if isinstance(sent_data, str):
-            fd.write(sent_data)
-        else:
-            json.dump(sent_data, fd)
+        json.dump({"data": sent_data, "header": headers}, fd)
 
     if (func := pay_handler.run(pay_module, "webhook")) is None:
         return False, f"Webhook for'{pay_module}' module is not set up"
@@ -75,15 +72,17 @@ def process_webhook(headers, webhook_data, sent_data):
         return True, True
 
     if ok:
+        os.rename(file_name, file_name + ".pass")
         return True, True
 
     if file_name is not None:
         spool_email.spool("admin_webhook_failed",
                           [[None, {
-                              "filename": file_name,
+                              "filename": file_name + ".fail",
                               "pay_module": pay_module,
                               "message": reply
                           }]])
+        os.rename(file_name, file_name + ".fail")
 
     log(f"WebHook Processing Error - {reply}")
     return False, f"Call to Webhook for '{pay_module}' failed"
@@ -93,8 +92,8 @@ def main():
     log_init(with_debug=True)
     sql.connect("engine")
     startup()
-    print(json.dumps(config(),indent=3))
-    print(json.dumps(pay_handler.pay_webhooks,indent=3))
+    print(json.dumps(config(), indent=3))
+    print(json.dumps(pay_handler.pay_webhooks, indent=3))
 
 
 if __name__ == "__main__":
