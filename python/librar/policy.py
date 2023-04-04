@@ -51,8 +51,8 @@ policy_defaults = {
     "renewal_reminders": "30,14,7",
     "orders_erase_days": 30,
     "create_erase_days": 14,
-    "new_order_remind_cancel": "1,2,6,6.75",
-    "renew_order_remind_cancel": "7,14,21,28"
+    "new_order_remind_cancel": [1, 2, 6, 6.75],
+    "renew_order_remind_cancel": [7, 14, 21, 28]
 }
 
 

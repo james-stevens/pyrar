@@ -24,29 +24,35 @@ def add_order_reminders(dom_db, now, reminder_sched, reminder_type):
     ok, order_db = sql.sql_select_one("orders", {"domain_id": dom_db["domain_id"]})
     if not ok or len(order_db) <= 0:
         return
-    sched = reminder_sched.split(",")
+    sched = None
+    if isinstance(reminder_sched, list):
+        sched = reminder_sched
+    elif isinstance(reminder_sched, str):
+        sched = reminder_sched.split(",")
+    if sched is None:
+        raise ValueError(f"Reminder schedule for {reminder_type} has invalid type")
+
     for days in sched[:-1]:
-        add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=int(float(days) * 24)),
-                          reminder_type)
-    add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=int(float(sched[-1]) * 24)),
-                      "order/cancel")
+        add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=float(days) * 24), reminder_type)
+    add_domain_action(dom_db, now, misc.date_add(order_db["created_dt"], hours=float(sched[-1]) * 24), "order/cancel")
 
 
 def domain_actions_live(dom_db, now):
     if dom_db["auto_renew"]:
-        add_domain_action(dom_db, now, misc.date_add(dom_db["expiry_dt"],
-                                                     days=-1 * policy.policy("auto_renew_before")), "dom/auto-renew")
+        add_domain_action(dom_db, now,
+                          misc.date_add(dom_db["expiry_dt"], days=-1 * float(policy.policy("auto_renew_before"))),
+                          "dom/auto-renew")
     else:
         if (reminders_at := policy.policy("renewal_reminders")) is not None:
             for days in reminders_at.split(","):
-                add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=-1 * int(days)), "dom/reminder")
+                add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=-1 * float(days)), "dom/reminder")
 
     add_domain_action(dom_db, now, dom_db["expiry_dt"], "dom/expired")
 
     this_reg = registry.tld_lib.reg_record_for_domain(dom_db["name"])
     if this_reg is not None:
-        add_domain_action(dom_db, now, misc.date_add(dom_db["expiry_dt"], days=this_reg["expire_recover_limit"]),
-                          "dom/delete")
+        add_domain_action(dom_db, now, misc.date_add(dom_db["expiry_dt"],
+                                                     days=float(this_reg["expire_recover_limit"])), "dom/delete")
 
     add_order_reminders(dom_db, now, this_reg["renew_order_remind_cancel"], "order/reminder")
 

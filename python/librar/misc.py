@@ -110,7 +110,7 @@ def make_year_month_day_dir(start_dir):
 
 
 if __name__ == "__main__":
-    print(make_year_month_day_dir("/tmp/dt"))
+    print(date_add(now(), hours=1.25))
     #print(amt_from_float(sys.argv[1]))
     #print(ashex(int(sys.argv[1])))
 

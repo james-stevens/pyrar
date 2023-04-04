@@ -209,10 +209,7 @@ def process_webhook(headers, webhook_data, sent_data, filename):
     hook = PayPalWebHook(webhook_data, sent_data, filename)
     if not hook.interesting_webhook():
         return None, None
-    ok, reply = hook.process_webhook()
-    if not ok:
-        log(f"PayPal Processing Error: {reply}")
-    return ok, reply
+    return hook.process_webhook()
 
 
 def single(user_id, description, amount):
