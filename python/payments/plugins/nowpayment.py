@@ -16,6 +16,8 @@ from payments import pay_handler
 
 THIS_MODULE = "nowpayment"
 
+RETURN_PROPERTIES = ["id", "invoice_url", "order_id"]
+
 
 def get_config():
     if (my_conf := pay_handler.module_config(THIS_MODULE)) is None:
@@ -42,7 +44,7 @@ def single(user_id, description, amount):
 
     token = f"{misc.ashex(user_id)}.{hashstr.make_hash(length=30)}"
     call_back = policy.policy("website_name") + f"pyrar/v1.0/hookid/{my_conf['webhook']}/{token}/"
-    order_id = hashstr.make_hash(length=30)
+    order_id = hashstr.make_hash(length=20)
 
     currency = policy.policy("currency")
     post_data = {
@@ -54,12 +56,16 @@ def single(user_id, description, amount):
         "order_description": description
     }
 
-    resp = requests.request("POST", url, headers=headers, data=json.dumps(post_data))
-    if resp.status_code < 200 or resp.status_code > 299:
-        return False, "Creating transaction at NowPayments failed"
+    try:
+        resp = requests.request("POST", url, headers=headers, data=json.dumps(post_data))
+        if resp.status_code < 200 or resp.status_code > 299:
+            return False, "Creating transaction at NowPayments failed"
 
-    resp_js = json.loads(resp.content.decode("utf-8"))
-    if not misc.has_data(resp_js, "id"):
+        resp_js = json.loads(resp.content.decode("utf-8"))
+    except (requests.exceptions.RequestException, json.JSONDecodeError):
+        return False, "Bad response from NowPayments"
+
+    if not misc.has_data(resp_js, RETURN_PROPERTIES):
         return False, "Bad response from NowPayments"
 
     pay_db = {
@@ -73,7 +79,7 @@ def single(user_id, description, amount):
     if not ok:
         return False, "Failed to save payment details"
 
-    return True, resp_js
+    return True, {prop: resp_js[prop] for prop in RETURN_PROPERTIES}
 
 
 class NowPaymentWebHook:
@@ -86,8 +92,10 @@ class NowPaymentWebHook:
     def check(self):
         if not misc.has_data(self.headers, ["x-nowpayments-sig", "hook_trans_id"]):
             return False, "Header items missing"
-        if not misc.has_data(self.input,
-                             ["payment_status", "invoice_id", "order_id", "price_amount", "price_currency"]):
+        if not misc.has_data(self.input, [
+                "payment_status", "invoice_id", "payment_id", "pay_address", "pay_currency", "order_id",
+                "price_amount", "price_currency"
+        ]):
             return False, "Record items missing"
 
         if self.input["payment_status"] != "finished":
@@ -107,7 +115,6 @@ class NowPaymentWebHook:
         if price_currency != currency["iso"]:
             return False, "Payment currency does not match"
 
-        amount = misc.amt_from_float(self.input["price_amount"])
         token = self.headers["hook_trans_id"]
 
         ok, pay_db = sql.sql_select_one(
@@ -121,15 +128,26 @@ class NowPaymentWebHook:
         if not ok or len(pay_db) <= 0:
             return False, "Failed to find matching payment"
 
+        amount = misc.amt_from_float(self.input["price_amount"])
         user_id = pay_db["user_id"]
+
         desc = (f"NowPayments: Paid {self.input['pay_amount']} in {self.input['pay_currency'].upper()} " +
-                f"for {self.input['price_amount']} in {price_currency}")
+                f"for {amount} in {price_currency}")
 
         ok, trans_id = accounts.apply_transaction(user_id, amount, desc, as_admin=True)
         if not ok:
             return False, "Crediting user account failed"
 
         sql.sql_delete_one("payments", {"payment_id": pay_db["payment_id"]})
+
+        wallet_db = {
+            "user_id": user_id,
+            "provider": f"{THIS_MODULE}:{self.input['pay_currency']}",
+            "token": self.input['pay_address'],
+            "token_type": static.PAY_TOKEN_VERIFIED,
+            "user_can_delete": True
+        }
+        sql.sql_insert("payments", wallet_db, ignore=True)
 
         spool_email.spool("payment_done", [["users", {
             "user_id": user_id
@@ -139,6 +157,7 @@ class NowPaymentWebHook:
             "provider": THIS_MODULE,
             "provider_trans_id": self.input['payment_id']
         }]])
+
         return True, True
 
 
@@ -167,7 +186,8 @@ def run_debug():
             print(json.dumps(reply, indent=3))
     else:
         with open(sys.argv[1], "r", encoding="utf-8") as fd:
-            print(process_webhook({"x-nowpayments-sig": "123abc"}, {}, json.load(fd), sys.argv[1]))
+            injs = json.load(fd)
+            print(process_webhook(injs["header"], {}, injs["data"], sys.argv[1]))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 
 // NowPayments Payment plug-in JS
 
+let nowpayment_win = null;
+
 function nowpayment_startup() // {module}_startup() is a mandatory func in a JS payment module
 {
     if ((!gbl.config.payments)||(!gbl.config.payments.nowpayment)) return;
@@ -13,8 +15,11 @@ function nowpayment_startup() // {module}_startup() is a mandatory func in a JS 
     if (my_conf.desc) payments.nowpayment.desc = my_conf.desc;
 }
 
+
+
 function nowpayment_single_payment(description, amount)
 {
+	nowpayment_win = null;
 	let x = "<table border=0 align=center>";
 	x += "<colgroup><col width=70%/><col/></colgroup>";
 	x += "<tr><td align=center>Make payment by Crypto via NowPayments</td>";
@@ -26,12 +31,14 @@ function nowpayment_single_payment(description, amount)
 	e.innerHTML = x;
 }
 
-let nowpayment_win = null;
-let nowpayment_timer = null;
+
 
 function nowpayment_done()
 {
-	nowpayment_win.close();
+	if (nowpayment_win) {
+		nowpayment_win.close();
+		nowpayment_win = null;
+		}
 	nowpayment_show_end_message();
 	clearTimeout(gbl.msmTimer);
 	gbl.msmTimer = setTimeout(check_for_messages,5000);
@@ -46,6 +53,7 @@ function nowpayment_show_end_message()
 	let e = document.getElementById("payment-whole");
 	e.innerHTML = x;
 }
+
 
 
 function nowpayment_do_payment(description, amount)
