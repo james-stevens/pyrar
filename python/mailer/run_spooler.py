@@ -90,7 +90,8 @@ def spool_email_file(filename, server=None):
         name = policy.this_policy.policy("business_name") + ": "
         if message.find(name) == 0:
             message = message[len(name):]
-        messages.send(data["user"]["user_id"], message)
+        domain_id = data["domain"]["domain_id"] if "domain" in data and "domain_id" in data["domain"] else None
+        messages.send(data["user"]["user_id"], message, domain_id)
 
     if which_message != "verify_email" and "user" in data and "email_verified" in data[
             "user"] and not data["user"]["email_verified"]:

@@ -214,6 +214,7 @@ CREATE TABLE `messages` (
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `message` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL,
+  `domain_id` int(10) unsigned NOT NULL,
   `created_dt` datetime NOT NULL,
   PRIMARY KEY (`user_id`,`message_id`),
   UNIQUE KEY `by_id` (`message_id`)

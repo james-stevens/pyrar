@@ -707,6 +707,17 @@
             "null": false,
             "is_plain_int": false
          },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
+         },
          "is_read": {
             "type": "boolean",
             "null": false,
