@@ -291,7 +291,7 @@ CREATE TABLE `sales` (
   `sales_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `num_years` int(11) NOT NULL,
   `is_refund_of` int(10) unsigned DEFAULT NULL,
-  `been_refunded` tinyint(1) DEFAULT NULL,
+  `been_refunded` tinyint(1) NOT NULL DEFAULT 0,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`sales_item_id`)

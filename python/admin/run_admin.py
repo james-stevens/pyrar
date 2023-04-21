@@ -10,7 +10,9 @@ import flask
 from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
-from librar import registry, pdns, accounts, domobj, passwd, validate, common_ui
+from librar import registry, pdns, accounts, domobj, passwd, validate, common_ui, misc
+
+from admin import refund
 
 from backend import backend_creator, libback
 
@@ -589,6 +591,19 @@ def delete_table_row(table):
         return response(200, {"affected_rows": num_rows})
 
     return response(499, None)
+
+
+@application.route("/adm/v1/sale/refund", methods=['POST'])
+def post_sale_refund():
+    if (flask.request.json is None or not misc.has_data(flask.request.json, "sales_item_id")
+            or not isinstance(flask.request.json["sales_item_id"], int)):
+        return json_abort("No data posted")
+
+    rfnd = refund.Refund()
+    ok, reply = rfnd.run_refund(flask.request.json["sales_item_id"])
+    if not ok:
+        return json_abort(reply)
+    return response(200, reply)
 
 
 @application.route("/adm/v1/user/transaction", methods=['POST'])
