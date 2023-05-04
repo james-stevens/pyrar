@@ -5,8 +5,15 @@
 
 base="/opt/named"
 conf="${base}/etc/bind/named.conf"
+
+if ! test "${PYRAR_CATALOG_SUFFIX}"
+	then
+		export PYRAR_CATALOG_SUFFIX="pyrar.localhost"
+	fi
+
 envsub ${conf}.pre > ${conf}
-chown named: ${conf}
+chown named: ${conf} ${base}/zones
+chmod 755 ${base}/zones
 
 extra="-4"
 if test "${WITH_BIND_V6}" = "Y"; then extra=""; fi
