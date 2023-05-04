@@ -16,6 +16,7 @@ options {
 	check-sibling no;
 	check-integrity no;
 
+	allow-notify { {{PYRAR_NOTIFY_LIST}}; };
 	allow-recursion { none; };
 	recursion no;
 	dnssec-validation no;
