@@ -316,10 +316,7 @@ class MariaDB:
         if limit is not None:
             sql += f" limit {limit}"
 
-        if (reply := self.run_select(sql))[0] and len(reply[1]) > 0:
-            return True, reply[1]
-
-        return False, reply[1]
+        return self.run_select(sql)
 
     def sql_select_one(self, table, where, columns="*"):
         if (reply := self.sql_select(table, where, columns, 1))[0] and len(reply[1]) > 0:
@@ -455,7 +452,10 @@ sql_server = MariaDB()
 def main():
     log_init(with_debug=True)
     sql_server.connect("admin")
-    print(json.dumps(sql_server.schema, indent=3))
+    ret, db_rows = sql_server.sql_select("Xevents", {"event_id": 10452})
+    print(">>>>",ret,db_rows)
+    ret, db_rows = sql_server.sql_select("zones", {"zone": "fred"})
+    print(">>>>",ret,db_rows)
     sys.exit(0)
 
     sql_server.connect("pdns")

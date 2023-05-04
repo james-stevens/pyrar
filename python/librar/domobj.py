@@ -162,7 +162,7 @@ class DomainList:
             raise ValueError("Use `set_list` before `load_all`")
         ok, dom_dbs = sql.sql_select("domains", {"name": [dom.name for __, dom in self.domobjs.items()]},
                                      limit=len(self.domobjs))
-        if not ok or not dom_dbs:
+        if not ok:
             return False, "Failed to load domains from database"
 
         domdb_by_name = {dom_db["name"]: dom_db for dom_db in dom_dbs}

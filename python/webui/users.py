@@ -34,7 +34,7 @@ def start_session(user_db, user_agent):
     ret = {"user_id": user_id, "user": user_db, "session": ses_code}
 
     ok, orders_db = sql.sql_select("orders", {"user_id": user_id})
-    if ok and len(orders_db) >= 1:
+    if ok:
         ret["orders"] = orders_db
 
     return True, ret
