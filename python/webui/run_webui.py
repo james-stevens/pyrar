@@ -198,7 +198,7 @@ def api_messages_read():
     ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
     log(f"messages/read: {ok}:{reply}")
     if not ok:
-        return req.abort(reply)
+        return req.abort("Unexpected failed retrieving your messages")
     if len(reply) > 0:
         sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
     return req.response(reply)
