@@ -1,0 +1,49 @@
+
+options {
+	directory "/zones";
+	version "this page intentionally left blank";
+	
+	listen-on port 53 { any; };
+	
+	notify no;
+	allow-update { none; };
+	listen-on-v6 { any; };
+	allow-transfer { any; };
+	
+	check-names master ignore;
+	check-names slave ignore;
+	check-names response ignore;
+	check-sibling no;
+	check-integrity no;
+
+	allow-recursion { none; };
+	recursion no;
+	dnssec-validation no;
+
+    catalog-zones {
+    	zone "clients.{{PYRAR_CATALOG_SUFFIX}}" default-masters { {{PYRAR_MASTERS}} ; };
+    	zone "tlds.{{PYRAR_CATALOG_SUFFIX}}" default-masters { {{PYRAR_MASTERS}} ; };
+	};
+};
+
+include "/etc/bind/rndc.key";
+
+controls { inet * allow { any; } keys { "rndc-key"; }; };
+
+logging {
+	channel default_syslog { syslog local2; severity error; };
+	category default { default_syslog; };
+	};
+
+
+zone "clients.{{PYRAR_CATALOG_SUFFIX}}" {
+	type slave;
+	file "/zones/clients.{{PYRAR_CATALOG_SUFFIX}}";
+	masters { {{PYRAR_MASTERS}} ; };
+	};
+
+zone "tlds.{{PYRAR_CATALOG_SUFFIX}}" {
+	type slave;
+	file "/zones/tlds.{{PYRAR_CATALOG_SUFFIX}}";
+	masters { {{PYRAR_MASTERS}} ; };
+	};
