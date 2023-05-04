@@ -32,10 +32,11 @@ def start_up():
         CLIENT.headers.update(headers)
 
     catalog_zone = policy.policy("catalog_zone")
-    try:
-        create_zone(catalog_zone, False, ensure_zone=True)
-    except requests.exceptions.ConnectionError:
-        raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
+    for prefix in ["tlds.","clients."]:
+        try:
+            create_zone(prefix+catalog_zone, False, ensure_zone=True, auto_catalog=False)
+        except requests.exceptions.ConnectionError:
+            raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
 
 
 def find_best_ds(key_data):
@@ -119,7 +120,7 @@ def dnssec_zone_cmds(name):
 
 
 
-def create_zone(name, with_dnssec=False,ensure_zone = False):
+def create_zone(name, with_dnssec=False,ensure_zone = False, client_zone=True, auto_catalog=True):
     if name[-1] != ".":
         name += "."
 
@@ -138,6 +139,8 @@ def create_zone(name, with_dnssec=False,ensure_zone = False):
 
     if response.status_code >= 400:
         if ensure_zone:
+            if auto_catalog:
+                add_to_catalog(name,client_zone)
             return True
         log(f"ERROR: Creating '{name}' failed, code={response.status_code} - {response.content}")
         return None
@@ -181,7 +184,8 @@ def create_zone(name, with_dnssec=False,ensure_zone = False):
     }]
 
     run_cmds(post_json)
-    add_to_catalog(name)
+    if auto_catalog:
+        add_to_catalog(name,client_zone)
     return True
 
 
@@ -228,10 +232,15 @@ def sign_zone(name):
     return load_zone_keys(name)
 
 
-def delete_from_catalog(name):
+def get_catalog(client_zone):
+    catalog = policy.policy("catalog_zone")
+    return "clients."+catalog if client_zone else "tlds."+catalog
+
+
+def delete_from_catalog(name,client_zone=True):
     if name[-1] != ".":
         name += "."
-    catalog_zone = policy.policy("catalog_zone")
+    catalog_zone = get_catalog(client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [{
@@ -254,10 +263,10 @@ def delete_from_catalog(name):
     return run_cmds(post_json)
 
 
-def add_to_catalog(name):
+def add_to_catalog(name,client_zone=True):
     if name[-1] != ".":
         name += "."
-    catalog_zone = policy.policy("catalog_zone")
+    catalog_zone = get_catalog(client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [ {

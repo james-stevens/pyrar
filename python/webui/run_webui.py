@@ -196,9 +196,11 @@ def api_messages_read():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
     ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
+    log(f"messages/read: {ok}:{reply}")
     if not ok:
         return req.abort(reply)
-    sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
+    if len(reply) > 0:
+        sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
     return req.response(reply)
 
 
@@ -356,7 +358,7 @@ def payments_list():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
     ok, reply = sql.sql_select("payments", {"user_id": req.user_id, "user_can_delete": True})
-    if not ok and reply is None:
+    if not ok:
         return req.abort("Failed to load payment data")
 
     return req.response(reply)
@@ -377,8 +379,8 @@ def users_transactions():
     ok, trans_db = sql.sql_select("transactions", {"user_id": req.user_id},
                                   limit=limit,
                                   order_by="acct_sequence_id desc")
-    if not ok and trans_db is None:
-        return req.abort("Unexpected error loading transactions")
+    if not ok:
+        return req.abort(trans_db)
 
     req.user_data["transactions"] = trans_db
     return req.send_user_data()
@@ -414,14 +416,13 @@ def users_domains():
 
     ok, reply = sql.sql_select("domains", {"user_id": req.user_id}, order_by="name")
     if not ok:
-        if reply is None:
-            return req.abort("Failed to load domains")
-        return req.response({})
+        return req.abort("Failed to load domains")
 
-    for dom_db in reply:
-        dom = domobj.Domain()
-        dom.set_name(dom_db["name"])
-        add_domain_extras(dom, dom_db)
+    if len(reply) > 0:
+        for dom_db in reply:
+            dom = domobj.Domain()
+            dom.set_name(dom_db["name"])
+            add_domain_extras(dom, dom_db)
 
     req.user_data["domains"] = reply
     return req.send_user_data()
@@ -509,7 +510,7 @@ def users_details():
 
 def load_orders_and_reply(req):
     ok, orders_db = sql.sql_select("orders", {"user_id": req.user_id})
-    if not ok and orders_db is None:
+    if not ok:
         return req.abort("Orders failed to load")
 
     req.user_data["orders"] = orders_db

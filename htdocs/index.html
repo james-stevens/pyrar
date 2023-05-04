@@ -147,6 +147,7 @@ function viewMessages(with_push)
 {
 	if (with_push) push_hist("viewMessages");
 	callApi("messages/read",(ok,reply) => {
+		console.log(ok,reply);
 		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
 		let x = "<table style='min-width: 60%;' align=center cellspacing=5 cellpadding=0 border=0>";
 		x += "<colgroup><col width=10px/><col/></colgroup><tr><th>When</th><th>Message</th></tr>";
@@ -727,12 +728,9 @@ function check_router_path()
 
 function catch_user_data(reply)
 {
-	["failed_basket","transactions","user","domains","orders"].forEach((item) => {
-		if (item in reply) {
-			if (Object.keys(reply[item]).length) ctx[item] = reply[item]; else delete ctx[item];
-			}
+	["messages","failed_basket","transactions","user","domains","orders"].forEach((item) => {
+		if (item in reply) ctx[item] = reply[item];
 		})
-	if ("messages" in reply) ctx.messages = reply.messages;
 }
 
 
@@ -1055,12 +1053,11 @@ function load_domains_list(success_fn)
 		if ((ret)&&(reply.domains)) {
 			ctx.domains = reply.domains;
 			for(let dom of ctx.domains) preset_domain_extras(dom);
-			success_fn(true);
 			}
 		else {
-			def_errMsg("Failed to load fresh list of domains",reply,"errorSpan");
 			delete ctx.domains;
 			}
+		success_fn(true);
 		});
 }
 

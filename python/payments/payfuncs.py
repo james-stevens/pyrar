@@ -14,8 +14,10 @@ def set_orders_status(user_id, amount_paid, new_status):
         return False
 
     ok, orders_db = sql.sql_select("orders", {"user_id": user_id}, order_by="order_item_id")
-    if not ok or len(orders_db) <= 0:
+    if not ok:
         return False
+    if len(orders_db) <= 0:
+        return True
 
     change_status = []
     cur_bal = user_db["acct_current_balance"] + amount_paid

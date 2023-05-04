@@ -27,7 +27,7 @@ class Refund:
             return False, reply
 
         self.log_event()
-        self.save_refund()
+        return self.save_refund()
 
     def load_data(self, sales_item_id):
         ok, self.sale_db = sql.sql_select_one("sales", {"sales_item_id": sales_item_id})
@@ -36,6 +36,18 @@ class Refund:
 
         if self.sale_db["been_refunded"]:
             return False, "Already been refunded"
+
+        ok, rows = sql.sql_select("sales", {
+            "domain_id": self.sale_db["domain_id"],
+            "is_refund_of": None
+        },
+                                  order_by="sales_item_id desc",
+                                  limit=1)
+        if not ok or len(rows) != 1:
+            return False, "Most recent sales record not found"
+
+        if rows[0]["sales_item_id"] != self.sale_db["sales_item_id"]:
+            return False, "Can only refund most recent sale"
 
         ok, self.dom_db = sql.sql_select_one("domains", {"domain_id": self.sale_db["domain_id"]})
         if not ok:
@@ -74,10 +86,19 @@ class Refund:
 
     def save_refund(self):
         ok, refund_row_id = sql.sql_insert("sales", self.refund_db)
-        if ok and refund_row_id:
-            sql.sql_update_one("transactions", {"sales_item_id": refund_row_id},
-                               {"transaction_id": self.refund_db["transaction_id"]})
-        return True, True
+        if not ok or not refund_row_id:
+            return False, "Inserting refund failed"
+
+        sql.sql_update_one("transactions", {"sales_item_id": refund_row_id},
+                           {"transaction_id": self.refund_db["transaction_id"]})
+        sql.sql_update_one("sales", {"been_refunded": True}, {"sales_item_id": self.sale_db["sales_item_id"]})
+        if not self.roll_back_domain():
+            return False, "Roll back domain failed"
+
+        return True, refund_row_id
+
+    def roll_back_domain(self):
+        return True
 
     def log_event(self):
         mysql.event_log({

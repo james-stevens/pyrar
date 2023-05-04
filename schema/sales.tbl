@@ -25,7 +25,7 @@ sqlsh "create table sales (
 	num_years			int not null,
 
 	is_refund_of		${row_id_null},
-	been_refunded		boolean,
+	been_refunded		boolean not null default 0,
 
 	created_dt			datetime null,
 	amended_dt			datetime null,

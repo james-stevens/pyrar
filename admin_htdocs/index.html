@@ -520,6 +520,15 @@ function user_cr_db(user_id)
 }
 
 
+function refund_sale(sales_item_id)
+{
+	callApi("sale/refund",(ok,reply) => {
+		if (!ok) return def_errMsg("Refund failed to prcess",reply,"refundBtn");
+		push_table_link("sales", { "where": { "=": { "sales_item_id":reply } }, "limit": 1 });
+		},{ json: { "sales_item_id":sales_item_id }});
+}
+
+
 
 function hide_more_data()
 {
@@ -752,8 +761,8 @@ function html_one_record(table, db_rec, where)
 	if (with_pdns)
 		x += `<tr><td><button style="width:150px" onClick="show_dns_data('${with_pdns}');" class=myBtn>P/DNS Data</button></td></tr>`;
 
-	if (table=="sales"){
-		x += `<tr><td><button style="width:150px" class=myBtn>Refund</button></td></tr>`;
+	if ((table=="sales")&&(!db_rec.been_refunded)&&(!db_rec.is_refund_of)) {
+		x += `<tr><td><button style="width:150px" onClick="refund_sale(${db_rec.sales_item_id});" id=refundBtn class=myBtn>Refund</button></td></tr>`;
 		add_ending = true; }
 
 	if (table=="users"){

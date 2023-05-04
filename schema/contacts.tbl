@@ -29,4 +29,4 @@ sqlsh "create table contacts (
 
 sqlsh "ALTER TABLE contacts AUTO_INCREMENT = 10450"
 
-sqlsh "grant insert,update,select on contacts to raradm,engine,webui"
+sqlsh "grant insert,update,select on contacts to engine,webui"

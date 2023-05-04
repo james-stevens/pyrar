@@ -707,6 +707,17 @@
             "null": false,
             "is_plain_int": false
          },
+         "domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
+         },
          "is_read": {
             "type": "boolean",
             "null": false,
@@ -949,8 +960,9 @@
          },
          "been_refunded": {
             "type": "boolean",
-            "null": true,
-            "is_plain_int": false
+            "null": false,
+            "is_plain_int": false,
+            "default": false
          },
          "created_dt": {
             "type": "datetime",
@@ -991,7 +1003,11 @@
             "size": 10,
             "type": "int",
             "null": true,
-            "is_plain_int": true
+            "is_plain_int": true,
+            "join": {
+               "table": "sales",
+               "column": "sales_item_id"
+            }
          },
          "num_years": {
             "size": 11,
@@ -1502,7 +1518,8 @@
          "domain_id": "domains.domain_id",
          "sales_item_id": "sales.sales_item_id",
          "transaction_id": "transactions.transaction_id",
-         "zone": "zones.zone"
+         "zone": "zones.zone",
+         "is_refund_of": "sales.sales_item_id"
       }
    }
 }

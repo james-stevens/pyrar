@@ -11,6 +11,7 @@ sqlsh "CREATE TABLE messages (
     user_id			${row_id},
     message			varchar(3000) not null,
     is_read			boolean not null,
+    domain_id       ${row_id_null},
 	created_dt      datetime not null,
 	primary key by_user (user_id,message_id),
 	unique key by_id(message_id)

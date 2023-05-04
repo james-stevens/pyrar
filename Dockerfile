@@ -2,6 +2,8 @@
 # Alternative license arrangements are possible, contact me for more information
 
 FROM alpine:3.16
+RUN apk update
+RUN apk upgrade
 
 RUN rmdir /run
 RUN ln -s /dev/shm /run

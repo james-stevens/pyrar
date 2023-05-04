@@ -4,3 +4,4 @@ joins:
     sales_item_id: sales.sales_item_id
     transaction_id: transactions.transaction_id
     zone: zones.zone
+    is_refund_of: sales.sales_item_id
