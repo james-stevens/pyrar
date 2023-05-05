@@ -33,10 +33,8 @@ def startup():
 
 
 def single(user_id, description, amount):
-    if (my_conf := pay_handler.module_config(THIS_MODULE)) is None:
-        return None
-
-    if not misc.has_data(my_conf, ["api_key", "webhook"]):
+    if ((my_conf := pay_handler.module_config(THIS_MODULE)) is None
+            or not misc.has_data(my_conf, ["api_key", "webhook"])):
         return None
 
     if my_conf["mode"] == "test":
