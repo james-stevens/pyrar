@@ -39,7 +39,11 @@ def single(user_id, description, amount):
     if not misc.has_data(my_conf, ["api_key", "webhook"]):
         return None
 
-    url = "https://api-sandbox.nowpayments.io/v1/invoice"
+    if my_conf["mode"] == "test":
+        url = "https://api-sandbox.nowpayments.io/v1/invoice"
+    else:
+        url = "https://api.nowpayments.io/v1/invoice"
+
     headers = {"x-api-key": my_conf["api_key"], "Content-Type": "application/json"}
 
     token = f"{misc.ashex(user_id)}.{hashstr.make_hash(length=30)}"
