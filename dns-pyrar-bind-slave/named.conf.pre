@@ -5,10 +5,8 @@ options {
 	
 	listen-on port 53 { any; };
 	
-	notify no;
 	allow-update { none; };
 	listen-on-v6 { any; };
-	allow-transfer { any; };
 	
 	check-names master ignore;
 	check-names slave ignore;
@@ -16,10 +14,12 @@ options {
 	check-sibling no;
 	check-integrity no;
 
-	allow-notify { {{PYRAR_NOTIFY_LIST}}; };
+	allow-notify { {{PYRAR_ALLOW_NOTIFY}}; };
 	allow-recursion { none; };
 	recursion no;
 	dnssec-validation no;
+
+	include "/etc/config.inc";
 
     catalog-zones {
     	zone "clients.{{PYRAR_CATALOG_SUFFIX}}" default-masters { {{PYRAR_MASTERS}} ; };
@@ -34,6 +34,7 @@ controls { inet * allow { any; } keys { "rndc-key"; }; };
 logging {
 	channel default_syslog { syslog local2; severity error; };
 	category default { default_syslog; };
+	category unmatched { default_syslog; };
 	};
 
 

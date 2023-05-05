@@ -6,13 +6,43 @@
 base="/opt/named"
 conf="${base}/etc/bind/named.conf"
 
+if ! test "${PYRAR_MASTERS}"
+	then
+		echo ""
+		echo "===== ERROR: 'PYRAR_MASTERS' is not defined"
+		echo ""
+		sleep 5
+		exit 1
+	fi
+
 if ! test "${PYRAR_CATALOG_SUFFIX}"
 	then
 		export PYRAR_CATALOG_SUFFIX="pyrar.localhost"
 	fi
 
+if ! test "${PYRAR_ALLOW_NOTIFY}"
+	then
+		export PYRAR_ALLOW_NOTIFY="${PYRAR_MASTERS}"
+	fi
+
+if test "${PYRAR_SUB_SLAVES}"
+	then
+		{
+		echo "	allow-transfer { 127.0.0.1; ${PYRAR_SUB_SLAVES}; };"
+		echo "	ixfr-from-differences yes;"
+		echo "	notify explicit;"
+		echo "	also-notify { ${PYRAR_SUB_SLAVES}; };"
+		} > ${base}/etc/config.inc
+	else
+		{
+		echo "	allow-transfer { 127.0.0.1; };"
+		echo "	notify no;"
+		} > ${base}/etc/config.inc
+	fi
+
+
 envsub ${conf}.pre > ${conf}
-chown named: ${conf} ${base}/zones
+chown named: ${conf} ${base}/zones ${base}/etc/config.inc
 chmod 755 ${base}/zones
 
 extra="-4"
@@ -20,7 +50,9 @@ if test "${WITH_BIND_V6}" = "Y"; then extra=""; fi
 
 if ! named-checkconf -t ${base}
 	then
-		echo "======= ERROR ========"
+		echo ""
+		echo "======= ERROR: bind config failed named-checkconf ========"
+		echo ""
 		sleep 5
 		exit 1
 	fi
