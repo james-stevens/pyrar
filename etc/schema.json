@@ -711,7 +711,7 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
+            "null": true,
             "is_plain_int": true,
             "join": {
                "table": "domains",

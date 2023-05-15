@@ -5,6 +5,7 @@
 
 import inspect
 import flask
+import validators
 
 from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs
 from librar.log import log, debug, init as log_init
@@ -730,10 +731,39 @@ def pdns_update_rrs(req, dom_db):
     if not check_rr_data(dom_db, req.post_js):
         return req.abort("RR data missing or invalid")
 
-    ok, reply = pdns.update_rrs(dom_db["name"], req.post_js["rr"])
+    rrset = req.post_js["rr"]
+    if rrset["type"] != "U-W-R":
+        ok, reply = pdns.update_rrs(dom_db["name"], rrset)
+        if not ok:
+            return req.abort(reply)
+        return req.response(True)
+
+    uwr_nodes = policy.policy("uwr_servers_nodes")
+    if uwr_nodes is not None and not isinstance(uwr_nodes, list):
+        return req.abort("ERROR: No UWR nodes confgiured")
+
+    for idx, uri in enumerate(rrset["data"]):
+        if uri[:7].lower() != "http://" or uri[:7].lower() != "http://":
+            uri = "http://" + uri
+            rrset["data"][idx] = uri
+        if not validators.url(uri):
+            return req.abort("Invalid URL provided")
+
+    uwr = {
+        "name": "_http._tcp." + rrset["name"],
+        "type": "URI",
+        "ttl": rrset["ttl"],
+        "data": ['1 1 "' + d + '"' for d in rrset["data"]]
+    }
+    ok, reply = pdns.update_rrs(dom_db["name"], uwr)
     if not ok:
         return req.abort(reply)
 
+    rrset["type"] = "A"
+    rrset["data"] = uwr_nodes
+    ok, reply = pdns.update_rrs(dom_db["name"], rrset)
+    if not ok:
+        return req.abort(reply)
     return req.response(True)
 
 

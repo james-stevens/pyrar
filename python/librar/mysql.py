@@ -453,9 +453,9 @@ def main():
     log_init(with_debug=True)
     sql_server.connect("admin")
     ret, db_rows = sql_server.sql_select("Xevents", {"event_id": 10452})
-    print(">>>>",ret,db_rows)
+    print(">>>>", ret, db_rows)
     ret, db_rows = sql_server.sql_select("zones", {"zone": "fred"})
-    print(">>>>",ret,db_rows)
+    print(">>>>", ret, db_rows)
     sys.exit(0)
 
     sql_server.connect("pdns")

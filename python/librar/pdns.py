@@ -32,9 +32,9 @@ def start_up():
         CLIENT.headers.update(headers)
 
     catalog_zone = policy.policy("catalog_zone")
-    for prefix in ["tlds.","clients."]:
+    for prefix in ["tlds.", "clients."]:
         try:
-            create_zone(prefix+catalog_zone, False, ensure_zone=True, auto_catalog=False)
+            create_zone(prefix + catalog_zone, False, ensure_zone=True, auto_catalog=False)
         except requests.exceptions.ConnectionError:
             raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
 
@@ -47,7 +47,7 @@ def find_best_ds(key_data):
             for ds_rr in key["ds"]:
                 ds_parts = ds_rr.split()
                 each_ds[int(ds_parts[2])] = ds_rr
-            for sha_type in [2,4,1]:
+            for sha_type in [2, 4, 1]:
                 if sha_type in each_ds:
                     return each_ds[sha_type]
     return None
@@ -119,8 +119,7 @@ def dnssec_zone_cmds(name):
     }]
 
 
-
-def create_zone(name, with_dnssec=False,ensure_zone = False, client_zone=True, auto_catalog=True):
+def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, auto_catalog=True):
     if name[-1] != ".":
         name += "."
 
@@ -129,18 +128,18 @@ def create_zone(name, with_dnssec=False,ensure_zone = False, client_zone=True, a
         if ns[-1] != ".":
             dns_servers[idx] += "."
 
-    response = run_one_cmd("POST",f"{PDNS_BASE_URL}/zones",{
-            "name": name,
-            "kind": "Master",
-            "masters": [],
-            "nameservers": dns_servers,
-            "soa_edit_api": "EPOCH"
-        })
+    response = run_one_cmd("POST", f"{PDNS_BASE_URL}/zones", {
+        "name": name,
+        "kind": "Master",
+        "masters": [],
+        "nameservers": dns_servers,
+        "soa_edit_api": "EPOCH"
+    })
 
     if response.status_code >= 400:
         if ensure_zone:
             if auto_catalog:
-                add_to_catalog(name,client_zone)
+                add_to_catalog(name, client_zone)
             return True
         log(f"ERROR: Creating '{name}' failed, code={response.status_code} - {response.content}")
         return None
@@ -185,7 +184,7 @@ def create_zone(name, with_dnssec=False,ensure_zone = False, client_zone=True, a
 
     run_cmds(post_json)
     if auto_catalog:
-        add_to_catalog(name,client_zone)
+        add_to_catalog(name, client_zone)
     return True
 
 
@@ -209,7 +208,7 @@ def unsign_zone(name):
     return run_cmds(post_json)
 
 
-def run_one_cmd(cmd,url,json_data):
+def run_one_cmd(cmd, url, json_data):
     request = requests.Request(cmd, url, json=json_data, headers=headers)
     return CLIENT.send(request.prepare())
 
@@ -218,7 +217,7 @@ def run_cmds(post_json):
     ret = True
     for req in post_json:
         json_data = req["data"] if "data" in req else None
-        response = run_one_cmd(req["cmd"], req["url"],json_data)
+        response = run_one_cmd(req["cmd"], req["url"], json_data)
         if response.status_code < 200 or response.status_code > 299:
             ret = False
             log(f"PDNS-ERROR: {response.content}")
@@ -234,10 +233,10 @@ def sign_zone(name):
 
 def get_catalog(client_zone):
     catalog = policy.policy("catalog_zone")
-    return "clients."+catalog if client_zone else "tlds."+catalog
+    return "clients." + catalog if client_zone else "tlds." + catalog
 
 
-def delete_from_catalog(name,client_zone=True):
+def delete_from_catalog(name, client_zone=True):
     if name[-1] != ".":
         name += "."
     catalog_zone = get_catalog(client_zone)
@@ -263,13 +262,13 @@ def delete_from_catalog(name,client_zone=True):
     return run_cmds(post_json)
 
 
-def add_to_catalog(name,client_zone=True):
+def add_to_catalog(name, client_zone=True):
     if name[-1] != ".":
         name += "."
     catalog_zone = get_catalog(client_zone)
     zone_hashed = hash_zone_name(name)
 
-    post_json = [ {
+    post_json = [{
         "cmd": "PATCH",
         "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
         "data": {
@@ -297,7 +296,7 @@ def delete_zone(name):
         name += "."
 
     delete_from_catalog(name)
-    return run_cmds( [{"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}"}])
+    return run_cmds([{"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}"}])
 
 
 def update_rrs(zone, rrs):
@@ -343,7 +342,7 @@ def main():
     log_init(with_debug=True)
     start_up()
     # print(create_zone(sys.argv[1],with_dnssec=True,ensure_zone=True))
-    print("ZONE>>>>", json.dumps(load_zone(sys.argv[1]),indent=3))
+    print("ZONE>>>>", json.dumps(load_zone(sys.argv[1]), indent=3))
     # print(unsign_zone(name))
     # print("UPDATE>>>",update_rrs(name,{"name":"www.zz","type":"A","data":["1.2.3.4","5.6.5.19"]}))
     # print("KEYS>>>>",load_zone_keys(name))
@@ -359,6 +358,7 @@ def main():
     # print(json.dumps(create_zone("mine", True),indent=3))
     # print("cat-add>>>>", json.dumps(add_to_catalog(name)))
     # print("cat-del>>>>", json.dumps(delete_from_catalog(name)))
+
 
 if __name__ == "__main__":
     main()
