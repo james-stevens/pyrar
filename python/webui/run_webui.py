@@ -7,7 +7,7 @@ import inspect
 import flask
 import validators
 
-from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs
+from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
@@ -654,6 +654,7 @@ def pdns_action(func, action):
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
     pdns.create_zone(dom_name, ensure_zone=True)
+    domains.domain_backend_update(dom_db)
     dns = pdns.load_zone(dom_name)
 
     if dns and "dnssec" in dns and dns["dnssec"]:
@@ -679,7 +680,6 @@ def pdns_unsign_zone(req, dom_db):
         sql.sql_update_one("domains", {"ds": None}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
         dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
-        sigprocs.signal_service("backend")
     return pdns_get_data(req, dom_db)
 
 
@@ -688,11 +688,11 @@ def update_doms_ds(req, key_data, dom_db):
     dom_db["ds"] = ds_rr
     sql.sql_update_one("domains", {"ds": ds_rr}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
     domains.domain_backend_update(dom_db)
-    sigprocs.signal_service("backend")
 
 
 def pdns_drop_zone(req, dom_db):
     if pdns.delete_zone(dom_db["name"]):
+        domains.domain_backend_update(dom_db)
         return req.response(True)
     return req.abort("Domain data failed to drop")
 

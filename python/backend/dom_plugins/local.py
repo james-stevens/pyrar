@@ -6,11 +6,8 @@
 from librar.log import log, init as log_init
 
 from librar.mysql import sql_server as sql
-from librar import registry
-from librar import pdns
-from librar import static
-from librar import passwd
-from librar import misc
+from librar import registry, pdns, static, passwd, misc
+from librar.policy import this_policy as policy
 
 from backend import shared
 from backend import dom_handler
@@ -97,6 +94,10 @@ def check_tlds_exist():
     return True
 
 
+def needs_parent_records(dom_db):
+	return (misc.has_data(dom_db,"ns") and dom_db["ns"] != policy.policy("dns_servers")) or pdns.zone_exists(dom_db["name"])
+
+
 def domain_update_from_db(bke_job, dom):
     """ run dom/update request to sync NS & DS into TLD zone """
     job_id = bke_job["backend_id"]
@@ -107,13 +108,13 @@ def domain_update_from_db(bke_job, dom):
         return False
 
     rrs = {"name": name, "type": "NS", "data": []}
-    if misc.has_data(dom.dom_db, "ns"):
+    if needs_parent_records(dom.dom_db):
         rrs["data"] = [d.strip(".") + "." for d in dom.dom_db["ns"].split(",")]
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 
     rrs = {"name": name, "type": "DS", "data": []}
-    if misc.has_data(dom.dom_db, "ds"):
+    if needs_parent_records(dom.dom_db) and misc.has_data(dom.dom_db, "ds"):
         rrs["data"] = dom.dom_db["ds"].split(",")
 
     ok_ds, __ = pdns.update_rrs(tld, rrs)
