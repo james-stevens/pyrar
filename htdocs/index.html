@@ -2476,6 +2476,33 @@ function edit_rr(idx,rrs_id,rec_id)
 }
 
 
+function find_dns_name(name)
+{
+	for(let rr in ctx.dns.rrsets)
+		if (ctx.dns.rrsets[rr].name.toLowerCase() == name) return rr;
+	return null;
+}
+
+
+function check_for_uwr_ips(del_rr)
+{
+	let uwr_nodes = policy("uwr_servers_nodes",null);
+	if (!uwr_nodes) return false;
+
+	if (del_rr.type != "URI") return false;
+	if (del_rr.name.slice(0,11).toLowerCase() != "_http._tcp.") return false;
+	let rr_idx = find_dns_name(del_rr.name.slice(11).toLowerCase());
+	if (!rr_idx) return false;
+
+	let uwr_ips = {}, rr_ips = {};
+	let me = ctx.dns.rrsets[rr_idx];
+
+	for(let i in me.records) rr_ips[me.records[i].content] = true;
+	for(let i in uwr_nodes) uwr_ips[uwr_nodes[i]] = true;
+
+	return Object.entries(uwr_ips).toString() == Object.entries(rr_ips).toString();
+}
+
 
 function delete_rr(idx,rrs_id,rec_id)
 {
@@ -2489,18 +2516,25 @@ function delete_rr(idx,rrs_id,rec_id)
 	del_rr = {
 		"name": dom["name"],
 		"rr": {
-			"name":rrs.name,
-			"type":rrs.type,
+			"name": rrs.name,
+			"type": rrs.type,
 			"ttl": rrs.ttl,
 			"data": rr_data
 			}
 		};
 
-	hideAllPopUp();
-
 	callApi("dns/update",(ok,reply) => {
-		if (!ok) return def_errMsg("DNS Data failed to update",reply,`rrs_${rrs_id}_${rec_id}`);
-		domain_dns(idx);
+		if (!ok) return def_errMsg("DNS Data failed to delete",reply,"AddRRwin");
+		hideAllPopUp();
+
+		if (check_for_uwr_ips(del_rr.rr)) {
+			del_rr.rr.name = rrs.name.slice(11);
+			del_rr.rr.type = "A";
+			del_rr.rr.data = [];
+			callApi("dns/update",(ok,reply) => { return domain_dns(idx); },{ json: del_rr });
+			}
+		else
+			return domain_dns(idx);
 		}, { json: del_rr });
 }
 
