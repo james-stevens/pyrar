@@ -87,7 +87,7 @@ VALID_RR_TYPES = {
     "WKS": True,
     "WKS ": True,
     "X25": True,
-    "U-W-R": True
+    "_UWR": True
 }
 
 

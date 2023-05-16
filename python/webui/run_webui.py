@@ -732,7 +732,7 @@ def pdns_update_rrs(req, dom_db):
         return req.abort("RR data missing or invalid")
 
     rrset = req.post_js["rr"]
-    if rrset["type"] != "U-W-R":
+    if rrset["type"] != "_UWR":
         ok, reply = pdns.update_rrs(dom_db["name"], rrset)
         if not ok:
             return req.abort(reply)
@@ -750,7 +750,7 @@ def pdns_update_rrs(req, dom_db):
             return req.abort("Invalid URL provided")
 
     uwr = {
-        "name": "_http._tcp." + rrset["name"],
+        "name": "_http._tcp." + rrset["name"] if rrset["name"][:2] != "*." else rrset["name"],
         "type": "URI",
         "ttl": rrset["ttl"],
         "data": ['1 1 "' + d + '"' for d in rrset["data"]]

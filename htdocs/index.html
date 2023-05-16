@@ -2510,7 +2510,7 @@ function rr_type_select(name,val)
 {
 	let x = "";
 	let uwr_nodes = policy("uwr_servers_nodes",null);
-	if ((uwr_nodes)&&(Array.isArray(uwr_nodes))) x = "<option value='U-W-R'>Web Redirect";
+	if ((uwr_nodes)&&(Array.isArray(uwr_nodes))) x = "<option value='_UWR'>Web Redirect";
 
 	[ "A", "AAAA", "MX", "NS", "TXT", "A6", "ADDR", "AFSDB", "ALIAS", "CAA", "CDNSKEY", "CDS",
 	"CERT", "CNAME", "DHCID", "DLV", "DNAME", "DNSKEY", "DS", "EUI48", "EUI64", "HINFO", "IPSECKEY",
@@ -2530,7 +2530,7 @@ function add_rr_form(params)
 	let have_last_rr = false;
 	let pol = gbl.config.policy;
 	let last_rr = { "rrs_id":-1,"rec_id":-1,"rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
-	if ((pol.uwr_servers_nodes)&&(Array.isArray(pol.uwr_servers_nodes))) last_rr.rr_type="U-W-R";
+	if ((pol.uwr_servers_nodes)&&(Array.isArray(pol.uwr_servers_nodes))) last_rr.rr_type="_UWR";
 	if (ctx.last_rr) {
 		last_rr = ctx.last_rr;
 		delete ctx.last_rr;

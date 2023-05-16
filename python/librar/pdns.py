@@ -319,23 +319,34 @@ def update_rrs(zone, rrs):
 
     resp = CLIENT.patch(f"{PDNS_BASE_URL}/zones/{zone}", json={"rrsets": [rr_data]}, headers=headers)
 
-    ok = resp.status_code >= 200 and resp.status_code <= 299
-    if not ok:
-        try:
-            js_content = json.loads(resp.content)
-            if "error" in js_content:
-                err_txt = js_content["error"]
-                err_parts = err_txt.split(":")
-                if err_txt.find("(try 'pdnsutil check-zone'):") > 0:
-                    err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[2]
-                else:
-                    err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[1]
-                return False, err_txt
-        except Exception:
-            pass
-        return False, "Failed to update"
+    log(f"CODE: {resp.status_code}, CONT: {resp.content}, DATA: {rr_data}")
 
-    return True, resp
+    ok = resp.status_code >= 200 and resp.status_code <= 299
+    if ok and len(resp.content) == 0:
+        return True, True
+
+    try:
+        js_content = json.loads(resp.content)
+    except Exception:
+        return False, "P/DNS Error: Failed to update"
+
+    if ok:
+        return True, js_content
+
+    if "error" not in js_content:
+        return False, resp
+
+    err_txt = js_content["error"]
+    if err_txt.find(":") < 0:
+        return False, err_txt
+
+    err_parts = err_txt.split(":")
+    if err_txt.find("(try 'pdnsutil check-zone'):") > 0:
+        err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[2]
+    else:
+        err_txt = err_parts[0] + "&nbsp;<br>&nbsp;" + err_parts[1]
+    return False, err_txt
+
 
 
 def main():
