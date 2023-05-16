@@ -1,0 +1,4 @@
+#! /bin/bash
+
+me="$(cat list)"
+docker image build -t ${me} . $*

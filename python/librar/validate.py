@@ -86,7 +86,8 @@ VALID_RR_TYPES = {
     "URI": True,
     "WKS": True,
     "WKS ": True,
-    "X25": True
+    "X25": True,
+    "_UWR": True
 }
 
 

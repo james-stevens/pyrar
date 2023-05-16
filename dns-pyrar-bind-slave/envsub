@@ -1,0 +1,2 @@
+#! /usr/bin/awk -f
+{ for (a in ENVIRON) gsub("{{" _ a _ "}}",ENVIRON[a]); print }

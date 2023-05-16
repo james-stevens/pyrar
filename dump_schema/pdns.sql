@@ -1,4 +1,4 @@
--- MariaDB dump 10.19  Distrib 10.6.8-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.19  Distrib 10.6.13-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.1.240    Database: pdns
 -- ------------------------------------------------------

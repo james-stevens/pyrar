@@ -1,0 +1,13 @@
+#! /bin/sh
+
+if test "$1"; then imgs="$*"; else imgs="$(cat list)"; fi
+
+for img in ${imgs}
+do
+	id=$(docker image ls | awk '{ if ($1=="'"${img}"'") print $3 }')
+
+	docker tag ${id} docker.jrcs.net/${img}
+	docker push docker.jrcs.net/${img}
+done
+
+yes | docker image prune

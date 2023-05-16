@@ -205,6 +205,11 @@
             "null": false,
             "is_plain_int": false
          },
+         "created_dt": {
+            "type": "datetime",
+            "null": false,
+            "is_plain_int": false
+         },
          "name_regexp": {
             "size": 260,
             "type": "varchar",
@@ -218,6 +223,13 @@
             "serial": true,
             "null": false,
             "is_plain_int": true
+         },
+         "prioiry": {
+            "size": 11,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0
          },
          "zone": {
             "size": 260,
@@ -711,7 +723,7 @@
             "unsigned": true,
             "size": 10,
             "type": "int",
-            "null": false,
+            "null": true,
             "is_plain_int": true,
             "join": {
                "table": "domains",

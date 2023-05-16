@@ -4,7 +4,7 @@ if test "$*"
 	then
 		files="$*"
 	else
-		files="$(grep -lr ' /usr/bin/python3$' | grep -v pdns.py)"
+		files="$(grep -lr ' /usr/bin/python3$')"
 	fi
 
 f=$(mktemp)

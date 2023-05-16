@@ -52,7 +52,8 @@ policy_defaults = {
     "orders_erase_days": 30,
     "create_erase_days": 14,
     "new_order_remind_cancel": [1, 2, 6, 6.75],
-    "renew_order_remind_cancel": [7, 14, 21, 28]
+    "renew_order_remind_cancel": [7, 14, 21, 28],
+    "uwr_servers_nodes": None
 }
 
 

@@ -1,0 +1,11 @@
+#! /bin/sh
+
+me="$(cat list)"
+docker run \
+	--env "PYRAR_CATALOG_SUFFIX=pyrar.localhost" \
+	--env "PYRAR_MASTERS=10.10.10.10" \
+	--env "PYRAR_ALLOW_NOTIFY=10.10.10.10" \
+	--env "PYRAR_SUB_SLAVES=10.10.10.10" \
+	-p 192.168.1.145:53:53 -p 192.168.1.145:53:53/udp \
+	-p 127.0.0.1:53:53 -p 127.0.0.1:53:53/udp \
+	-it ${me} $*

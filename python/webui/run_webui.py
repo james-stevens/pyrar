@@ -5,8 +5,9 @@
 
 import inspect
 import flask
+import validators
 
-from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj, sigprocs
+from librar import registry, validate, passwd, pdns, common_ui, static, misc, domobj
 from librar.log import log, debug, init as log_init
 from librar.policy import this_policy as policy
 from librar.mysql import sql_server as sql
@@ -198,7 +199,7 @@ def api_messages_read():
     ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
     log(f"messages/read: {ok}:{reply}")
     if not ok:
-        return req.abort(reply)
+        return req.abort("Unexpected failed retrieving your messages")
     if len(reply) > 0:
         sql.sql_update("messages", {"is_read": True}, {"user_id": req.user_id, "is_read": False})
     return req.response(reply)
@@ -653,6 +654,7 @@ def pdns_action(func, action):
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
     pdns.create_zone(dom_name, ensure_zone=True)
+    domains.domain_backend_update(dom_db)
     dns = pdns.load_zone(dom_name)
 
     if dns and "dnssec" in dns and dns["dnssec"]:
@@ -678,7 +680,6 @@ def pdns_unsign_zone(req, dom_db):
         sql.sql_update_one("domains", {"ds": None}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
         dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
-        sigprocs.signal_service("backend")
     return pdns_get_data(req, dom_db)
 
 
@@ -687,11 +688,11 @@ def update_doms_ds(req, key_data, dom_db):
     dom_db["ds"] = ds_rr
     sql.sql_update_one("domains", {"ds": ds_rr}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
     domains.domain_backend_update(dom_db)
-    sigprocs.signal_service("backend")
 
 
 def pdns_drop_zone(req, dom_db):
     if pdns.delete_zone(dom_db["name"]):
+        domains.domain_backend_update(dom_db)
         return req.response(True)
     return req.abort("Domain data failed to drop")
 
@@ -730,10 +731,39 @@ def pdns_update_rrs(req, dom_db):
     if not check_rr_data(dom_db, req.post_js):
         return req.abort("RR data missing or invalid")
 
-    ok, reply = pdns.update_rrs(dom_db["name"], req.post_js["rr"])
+    rrset = req.post_js["rr"]
+    if rrset["type"] != "_UWR":
+        ok, reply = pdns.update_rrs(dom_db["name"], rrset)
+        if not ok:
+            return req.abort(reply)
+        return req.response(True)
+
+    uwr_nodes = policy.policy("uwr_servers_nodes")
+    if uwr_nodes is not None and not isinstance(uwr_nodes, list):
+        return req.abort("ERROR: No UWR nodes confgiured")
+
+    for idx, uri in enumerate(rrset["data"]):
+        if uri[:7].lower() != "http://" or uri[:7].lower() != "http://":
+            uri = "http://" + uri
+            rrset["data"][idx] = uri
+        if not validators.url(uri):
+            return req.abort("Invalid URL provided")
+
+    uwr = {
+        "name": "_http._tcp." + rrset["name"] if rrset["name"][:2] != "*." else rrset["name"],
+        "type": "URI",
+        "ttl": rrset["ttl"],
+        "data": ['1 1 "' + d + '"' for d in rrset["data"]]
+    }
+    ok, reply = pdns.update_rrs(dom_db["name"], uwr)
     if not ok:
         return req.abort(reply)
 
+    rrset["type"] = "A"
+    rrset["data"] = uwr_nodes
+    ok, reply = pdns.update_rrs(dom_db["name"], rrset)
+    if not ok:
+        return req.abort(reply)
     return req.response(True)
 
 

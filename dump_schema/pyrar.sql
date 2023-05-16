@@ -1,4 +1,4 @@
--- MariaDB dump 10.19  Distrib 10.6.8-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.19  Distrib 10.6.13-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.1.240    Database: pyrar
 -- ------------------------------------------------------
@@ -83,10 +83,12 @@ DROP TABLE IF EXISTS `class_by_regexp`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `class_by_regexp` (
   `name_regexp_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `prioiry` int(11) NOT NULL DEFAULT 0,
   `name_regexp` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
   `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
   `class` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `amended_dt` datetime NOT NULL,
+  `created_dt` datetime NOT NULL,
   PRIMARY KEY (`name_regexp_id`),
   UNIQUE KEY `zone` (`zone`,`name_regexp`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -214,7 +216,7 @@ CREATE TABLE `messages` (
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `message` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL,
-  `domain_id` int(10) unsigned NOT NULL,
+  `domain_id` int(10) unsigned DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   PRIMARY KEY (`user_id`,`message_id`),
   UNIQUE KEY `by_id` (`message_id`)

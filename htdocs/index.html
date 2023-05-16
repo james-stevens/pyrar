@@ -147,7 +147,6 @@ function viewMessages(with_push)
 {
 	if (with_push) push_hist("viewMessages");
 	callApi("messages/read",(ok,reply) => {
-		console.log(ok,reply);
 		if (!ok) return def_errMsg("Failed to load messages",reply,"errorSpan")
 		let x = "<table style='min-width: 60%;' align=center cellspacing=5 cellpadding=0 border=0>";
 		x += "<colgroup><col width=10px/><col/></colgroup><tr><th>When</th><th>Message</th></tr>";
@@ -2301,7 +2300,6 @@ function getAuthCode(idx)
 	if (dom.text_authcode) return show_authcode(dom.authcode);
 
 	callApi("domain/authcode",(ok, reply) => {
-		console.log(ok,reply);
 		if ((ok)&&(reply.authcode)) show_authcode(reply["authcode"]);
 		else def_errMsg("Get AuthCode failed",reply,"showAuthCode");
 		}, { json: dom });
@@ -2478,6 +2476,33 @@ function edit_rr(idx,rrs_id,rec_id)
 }
 
 
+function find_dns_name(name)
+{
+	for(let rr in ctx.dns.rrsets)
+		if (ctx.dns.rrsets[rr].name.toLowerCase() == name) return rr;
+	return null;
+}
+
+
+function check_for_uwr_ips(del_rr)
+{
+	let uwr_nodes = policy("uwr_servers_nodes",null);
+	if (!uwr_nodes) return false;
+
+	if (del_rr.type != "URI") return false;
+	if (del_rr.name.slice(0,11).toLowerCase() != "_http._tcp.") return false;
+	let rr_idx = find_dns_name(del_rr.name.slice(11).toLowerCase());
+	if (!rr_idx) return false;
+
+	let uwr_ips = {}, rr_ips = {};
+	let me = ctx.dns.rrsets[rr_idx];
+
+	for(let i in me.records) rr_ips[me.records[i].content] = true;
+	for(let i in uwr_nodes) uwr_ips[uwr_nodes[i]] = true;
+
+	return Object.entries(uwr_ips).toString() == Object.entries(rr_ips).toString();
+}
+
 
 function delete_rr(idx,rrs_id,rec_id)
 {
@@ -2491,18 +2516,25 @@ function delete_rr(idx,rrs_id,rec_id)
 	del_rr = {
 		"name": dom["name"],
 		"rr": {
-			"name":rrs.name,
-			"type":rrs.type,
+			"name": rrs.name,
+			"type": rrs.type,
 			"ttl": rrs.ttl,
 			"data": rr_data
 			}
 		};
 
-	hideAllPopUp();
-
 	callApi("dns/update",(ok,reply) => {
-		if (!ok) return def_errMsg("DNS Data failed to update",reply,`rrs_${rrs_id}_${rec_id}`);
-		domain_dns(idx);
+		if (!ok) return def_errMsg("DNS Data failed to delete",reply,"AddRRwin");
+		hideAllPopUp();
+
+		if (check_for_uwr_ips(del_rr.rr)) {
+			del_rr.rr.name = rrs.name.slice(11);
+			del_rr.rr.type = "A";
+			del_rr.rr.data = [];
+			callApi("dns/update",(ok,reply) => { return domain_dns(idx); },{ json: del_rr });
+			}
+		else
+			return domain_dns(idx);
 		}, { json: del_rr });
 }
 
@@ -2511,6 +2543,9 @@ function delete_rr(idx,rrs_id,rec_id)
 function rr_type_select(name,val)
 {
 	let x = "";
+	let uwr_nodes = policy("uwr_servers_nodes",null);
+	if ((uwr_nodes)&&(Array.isArray(uwr_nodes))) x = "<option value='_UWR'>Web Redirect";
+
 	[ "A", "AAAA", "MX", "NS", "TXT", "A6", "ADDR", "AFSDB", "ALIAS", "CAA", "CDNSKEY", "CDS",
 	"CERT", "CNAME", "DHCID", "DLV", "DNAME", "DNSKEY", "DS", "EUI48", "EUI64", "HINFO", "IPSECKEY",
 	"KEY", "KX", "LOC", "LUA", "MAILA", "MAILB", "MB", "MG", "MINFO", "MR", "MX", "NAPTR", "NS",
@@ -2527,7 +2562,9 @@ function rr_type_select(name,val)
 function add_rr_form(params)
 {
 	let have_last_rr = false;
+	let pol = gbl.config.policy;
 	let last_rr = { "rrs_id":-1,"rec_id":-1,"rr_name":"","rr_type":"A","rr_data":"","rr_ttl":policy("default_ttl",86400) };
+	if ((pol.uwr_servers_nodes)&&(Array.isArray(pol.uwr_servers_nodes))) last_rr.rr_type="_UWR";
 	if (ctx.last_rr) {
 		last_rr = ctx.last_rr;
 		delete ctx.last_rr;
