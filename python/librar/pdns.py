@@ -319,8 +319,6 @@ def update_rrs(zone, rrs):
 
     resp = CLIENT.patch(f"{PDNS_BASE_URL}/zones/{zone}", json={"rrsets": [rr_data]}, headers=headers)
 
-    log(f"CODE: {resp.status_code}, CONT: {resp.content}, DATA: {rr_data}")
-
     ok = resp.status_code >= 200 and resp.status_code <= 299
     if ok and len(resp.content) == 0:
         return True, True
