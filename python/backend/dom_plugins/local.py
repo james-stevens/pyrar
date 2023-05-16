@@ -195,7 +195,7 @@ def get_class_from_name(name):
         return "standard"
 
     where = f"(unhex('{misc.ashex(name[:idx])}') regexp name_regexp) and zone = unhex('{misc.ashex(name[idx+1:])}')"
-    ok, class_db = sql.sql_select_one("class_by_regexp", where, "class")
+    ok, class_db = sql.sql_select("class_by_regexp", where, "class", limit=1, order_by="priority")
     if ok and class_db and len(class_db) > 0:
         return class_db["class"].lower()
 
