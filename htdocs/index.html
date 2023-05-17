@@ -2495,13 +2495,15 @@ function check_for_uwr_ips(del_rr)
 	let rr_idx = find_dns_name(del_rr.name.slice(11).toLowerCase());
 	if (!rr_idx) return false;
 
-	let uwr_ips = {}, rr_ips = {};
+	let uwr_ips = [], rr_ips = [];
 	let me = ctx.dns.rrsets[rr_idx];
 
-	for(let i in me.records) rr_ips[me.records[i].content] = true;
-	for(let i in uwr_nodes) uwr_ips[uwr_nodes[i]] = true;
+	for(let i in me.records) rr_ips.push(me.records[i].content);
+	for(let i in uwr_nodes) uwr_ips.push(uwr_nodes[i]);
+	uwr_ips.sort();
+	rr_ips.sort();
 
-	return Object.entries(uwr_ips).toString() == Object.entries(rr_ips).toString();
+	return uwr_ips.toString() === rr_ips.toString();
 }
 
 
