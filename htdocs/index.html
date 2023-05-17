@@ -730,6 +730,7 @@ function catch_user_data(reply)
 	["messages","failed_basket","transactions","user","domains","orders"].forEach((item) => {
 		if (item in reply) ctx[item] = reply[item];
 		})
+	if (("orders" in ctx)&&(ctx.orders.length <= 0)) delete ctx.orders;
 }
 
 
