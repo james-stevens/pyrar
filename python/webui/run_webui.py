@@ -197,7 +197,6 @@ def api_messages_read():
     if not req.is_logged_in:
         return req.abort(NOT_LOGGED_IN)
     ok, reply = sql.sql_select("messages", {"user_id": req.user_id}, order_by="message_id desc", limit=75)
-    log(f"messages/read: {ok}:{reply}")
     if not ok:
         return req.abort("Unexpected failed retrieving your messages")
     if len(reply) > 0:
@@ -700,27 +699,21 @@ def pdns_drop_zone(req, dom_db):
 def check_rr_data(dom_db, add_rr):
     """ Validate an rr-set sent by user """
     if "rr" not in add_rr:
-        log("No `rr` property")
         return False
 
     for item in ["name", "type", "data", "ttl"]:
         if item not in add_rr["rr"]:
-            log(f"{item} is missing")
             return False
 
     if not validate.is_valid_hostname(add_rr["rr"]["name"]):
-        log("Invalid host name")
         return False
     if not validate.valid_rr_type(add_rr["rr"]["type"]):
-        log("Invalid RR type")
         return False
     if not isinstance(add_rr["rr"]["ttl"], int):
-        log("TTL is not integer")
         return False
 
     if len(add_rr["rr"]["name"]) > len(
             dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
-        log("Bad name suffix")
         return False
 
     return True
