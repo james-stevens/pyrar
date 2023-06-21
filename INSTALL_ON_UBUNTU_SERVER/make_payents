@@ -1,0 +1,11 @@
+#! /bin/sh
+
+r1="$(dd if=/dev/random count=40 bs=1 2>/dev/null | base64 | tr -d '/+=')"
+r2="$(dd if=/dev/random count=40 bs=1 2>/dev/null | base64 | tr -d '/+=')"
+r3="$(dd if=/dev/random count=40 bs=1 2>/dev/null | base64 | tr -d '/+=')"
+r4="$(dd if=/dev/random count=40 bs=1 2>/dev/null | base64 | tr -d '/+=')"
+
+{
+echo '{"paypal":{"mode":"test","test":{"client_id":"[YOUR-SANDBOX-CLIENT-ID]","webhook":"'"${r1}"'"},"live":{"client_id":"[YOUR-LIVE-CLIENT-ID]","webhook":"'"${r2}"'"}},'
+echo '"nowpayment":{"mode":"test","test":{"api_key":"[YOUR-TEST-API-KEY]","webhook":"'"${r3}"'"},"live":{"api_key":"[YOUR-LIVE-API-KEY]","webhook":"'"${r4}"'"}}}'
+} | jq

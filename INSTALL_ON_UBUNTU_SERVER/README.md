@@ -52,7 +52,7 @@ Install some other things and copy a base config
 	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp -a your-config /opt/config
 
-Edit the file `base.sql` to give unique passwords to the database users `reg`, `webui` and `engine`.
+Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
 
 NOTE: `reg` is the pyrar admin user
 
@@ -74,7 +74,7 @@ Get the latest PyRar
 
 	$ sudo docker pull jamesstevens/pyrar
 
-Edit the file `/etc/rsyslog.conf` and uncomment these lines
+Edit the file `/etc/rsyslog.conf` and, at about line 16, uncomment these lines
 
 	module(load="imudp")
 	input(type="imudp" port="514")
@@ -83,5 +83,36 @@ Restart `rsyslog`
 
 	$ sudo systemctl restart rsyslog
 
-This will allow the pyrar container to syslog to the Ubuntu syslog service. By default its logging
+This will allow the pyrar container to syslog to the Ubuntu syslog service. By default the logging
 will go into `/var/log/syslog`, but you can change that if you wish.
+
+
+# 6. Setting Up Your PyRar Config
+
+Now run `cd /opt/config` and edit the config files to suit you needs
+
+## login.json
+
+The only changes needed here are ones to to change the passwords to match the passwords you put into `base.sql`.
+
+## registry.json
+
+If you only want to sell SLDs from TLDs that you own, copy `example_registry_one_local.json` to `registry.json`
+and edit the prices, if you wish.
+
+If you want to also sell from a single EPP Registry, copy `example_registry_one_epp_one_local.json` instead.
+
+## priority.json
+
+This is a JSON list of the TLDs you want listed first in a user's search results - it can be empty.
+It's the names you want to prompt the most.
+
+## policy.json
+
+This replaces policy choices from the defaults you will see in `/opt/pyrar/python/librar/policy.py`
+The minimum ones you need to change are listed in the default `policy.json` provided.
+
+For the option `dns_servers`, when you are setting up, this PyRar can be your only Name Server, so just set `ns1` & `ns2` to point to this server.
+You can set up a real second name server later. You can also use different host names, as you prefer.
+
+
