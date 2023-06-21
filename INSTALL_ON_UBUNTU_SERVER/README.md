@@ -165,8 +165,11 @@ If you do not get any looping programs, you are ready to continue, but first in 
 ## A quick `docker` cheat sheet
 
 `docker image ls` - show loaded containers
+
 `docker pull jamesstevens/pyrar` - update the container image with the latest version
+
 `docker ps` - show running containers
+
 `docker stop <CONTAINER ID>` - stop a running container
 
 where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
