@@ -51,6 +51,7 @@ Install some other things and copy a base config
 	$ sudo apt install jq net-tools nginx
 	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp -a your-config /opt/config
+	$ sudo ./make_payments > /opt/config/payments.json
 
 Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
 
