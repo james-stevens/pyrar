@@ -170,6 +170,4 @@ If you do not get any looping programs, you are ready to continue, but first in 
 
 `docker ps` - show running containers
 
-`docker stop <CONTAINER ID>` - stop a running container
-
-where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
+`docker stop <CONTAINER ID>` - stop a running container, where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
