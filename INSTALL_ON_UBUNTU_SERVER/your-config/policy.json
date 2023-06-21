@@ -8,5 +8,6 @@
   "email_return": "[BOUNCE-EMAILS]@[MY-DOMAIN-NAME]",
   "syslog_server" : "[SYSLOG-SERVER-IP-ADDRESS]",
   "dns_servers": "[YOUR-EXTERNAL-NS-COMMA-SEPARATED]",
-  "catalog_zone": "[MY-TLD-NAME].localhost"
+  "catalog_zone": "pyrar.localhost",
+  "dns_servers": "ns1.[MY-DOMAIN-NAME],ns2.[MY-DOMAIN-NAME]"
 }

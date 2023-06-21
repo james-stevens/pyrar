@@ -46,10 +46,42 @@ All command line commands should be run as root, either by logging in as `root` 
 
 # 5. Now the rest
 
+Install some other things and copy a base config
+
+	$ sudo apt install jq net-tools nginx
 	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp -a your-config /opt/config
+
+Edit the file `base.sql` to give unique passwords to the database users `reg`, `webui` and `engine`.
+
+NOTE: `reg` is the pyrar admin user
+
+Make the databases, add users & apply table permission
+
+	$ sudo mysql -u root < base.sql
+	$ sudo mysql -u root pdns < ../dump_schema/pdns.sql
+	$ sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
+	$ sudo mysql -u root pyrar < grants.sql
+
+Make some more directories & set permission
+
 	$ sudo cd /opt
 	$ sudo mkdir -m 777 storage
 	$ sudo mkdir -m 700 pems
 	$ sudo chmod 700 config
 
+Get the latest PyRar
+
+	$ sudo docker pull jamesstevens/pyrar
+
+Edit the file `/etc/rsyslog.conf` and uncomment these lines
+
+	module(load="imudp")
+	input(type="imudp" port="514")
+
+Restart `rsyslog`
+
+	$ sudo systemctl restart rsyslog
+
+This will allow the pyrar container to syslog to the Ubuntu syslog service. By default its logging
+will go into `/var/log/syslog`, but you can change that if you wish.

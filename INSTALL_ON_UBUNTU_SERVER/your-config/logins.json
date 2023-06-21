@@ -1,18 +1,18 @@
 {
   "mysql": {
-    "connect": "[PYRAR-DATABASE-SERVER]",
-    "database": "[PYRAR-DATABASE-NAME]",
+    "connect": "172.17.0.1",
+    "database": "pyrar",
     "webui": "[WEBUI-USER-PASSWORD]",
     "engine": "[ENGINE-USER-PASSWORD]",
     "admin": [
-      "[PYRAR-DATABASE-ADMIN-USERNAME]",
+      "reg",
       "[PYRAR-DATABASE-ADMIN-PASSWORD]"
     ]
   },
   "pdns": {
-    "server": "[PDNS-DATABASE-SERVER]",
-    "database": "[PDNS-DATABASE-NAME]",
-    "username": "[PDNS-DATABASE-LOGIN]",
+    "server": "172.17.0.1",
+    "database": "pdns",
+    "username": "pdns",
     "password": "[PDNS-DATABASE-PASSWORD]"
   }
 }
