@@ -1,0 +1,9 @@
+{
+  "local": {
+    "type": "local",
+    "prices": {
+      "create": 20,
+      "renew": 20
+    }
+  }
+}

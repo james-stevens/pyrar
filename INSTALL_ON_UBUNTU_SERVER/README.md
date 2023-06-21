@@ -31,3 +31,15 @@ you can find the [install instructions here](https://docs.docker.com/engine/inst
 # 3. Install Mariadb
 
 Follow Steps 1 & 2 from [here](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
+
+
+
+# 4. Pull the PyRar Git Repo
+
+All command line commands should be run as root, either by logging in as `root` or using the `sudo` prefix.
+
+	# cd /opt
+	# git clone https://github.com/james-stevens/pyrar.git
+	# cd pyrar/INSTALL_ON_UBUNTU_SERVER
+	# 
+

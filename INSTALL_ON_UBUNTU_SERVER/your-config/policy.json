@@ -1,0 +1,12 @@
+{
+  "user_message": "Welcome",
+  "business_name": "My Registrar",
+  "default_theme": "dark",
+  "website_name": "https://[MY-WEBSITE-NAME]/",
+  "name_sender": "[EMAIL-SENDER-NAME]",
+  "email_sender": "[CUSTOMER-SERVICES]@[MY-DOMAIN-NAME]",
+  "email_return": "[BOUNCE-EMAILS]@[MY-DOMAIN-NAME]",
+  "syslog_server" : "[SYSLOG-SERVER-IP-ADDRESS]",
+  "dns_servers": "[YOUR-EXTERNAL-NS-COMMA-SEPARATED]",
+  "catalog_zone": "[MY-TLD-NAME].localhost"
+}
