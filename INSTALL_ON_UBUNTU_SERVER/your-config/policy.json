@@ -6,8 +6,7 @@
   "name_sender": "[EMAIL-SENDER-NAME]",
   "email_sender": "[CUSTOMER-SERVICES]@[MY-DOMAIN-NAME]",
   "email_return": "[BOUNCE-EMAILS]@[MY-DOMAIN-NAME]",
-  "syslog_server" : "[SYSLOG-SERVER-IP-ADDRESS]",
+  "syslog_server" : "None",
   "dns_servers": "[YOUR-EXTERNAL-NS-COMMA-SEPARATED]",
-  "catalog_zone": "pyrar.localhost",
   "dns_servers": "ns1.[MY-DOMAIN-NAME],ns2.[MY-DOMAIN-NAME]"
 }

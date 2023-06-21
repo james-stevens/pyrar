@@ -35,6 +35,17 @@ Follow Steps 1 & 2 from [here](https://www.digitalocean.com/community/tutorials/
 When you run `mysql_secure_installation`, answer `Y` to everything and set a password for the MariaDB `root` user.
 
 
+At about line 27 of `/etc/mysql/mariadb.conf.d/50-server.cnf` change
+
+	bind-address            = 127.0.0.1
+
+to read
+
+	bind-address            = 0.0.0.0
+
+then restart Mariadb with `sudo systemctl restart mariadb`
+
+
 
 # 4. Pull the PyRar Git Repo
 
@@ -51,7 +62,7 @@ Install some other things and copy a base config
 	$ sudo apt install jq net-tools nginx
 	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp -a your-config /opt/config
-	$ sudo ./make_payments > /opt/config/payments.json
+	$ sudo ./make_payment > /opt/config/payment.json
 
 Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
 
@@ -69,7 +80,7 @@ Make some more directories & set permission
 	$ sudo cd /opt
 	$ sudo mkdir -m 777 storage
 	$ sudo mkdir -m 700 pems
-	$ sudo chmod 700 config
+	$ sudo chmod 755 config
 
 Get the latest PyRar
 
@@ -116,4 +127,42 @@ The minimum ones you need to change are listed in the default `policy.json` prov
 For the option `dns_servers`, when you are setting up, this PyRar can be your only Name Server, so just set `ns1` & `ns2` to point to this server.
 You can set up a real second name server later. You can also use different host names, as you prefer.
 
+For the time being, leave `syslog_server` set to `None`.
 
+NOTE: Until you have decided on a website name, got an SSL certificate (e.g from letsencrypt) and 
+confgured your site name in `policy.json`, you will not be able to access the site.
+
+## payment.json
+
+Remove payment methods you do not want to use. For the ones you do wish to use, edit the placeholder values with the ones
+you have got been given by the provider.
+
+For Paypal, you will need to enable their webhook call-back. The URL will be
+
+	https://[YOUR-WEBSITE-NAME]/pyrar/v1.0/webhook/[PAYPAL-WEBHOOK-STRING]/
+
+Where `[PAYPAL-WEBHOOK-STRING]` is the `webhook` value in the `payment.json` file. 
+
+NOTE: The Sandbox & live webhooks are set up separately in the PayPal developer dashboard.
+
+
+# 7. Test Run
+
+You should now be able to do a test run of PyRar, so run `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/test_run_pyrar`.
+
+This should syslog everything to stdout, so you can see it.
+
+If you see any error messages, particularly if you see any programs continuously restart, you have a configuration
+problem and need to fix it.
+
+If you do not get any looping programs, you are ready to continue, but first in `policy.json` change
+`syslog_server` to `172.17.0.1`
+
+## A quick `docker` cheat sheet
+
+	`docker image ls` - show loaded containers
+	`docker pull jamesstevens/pyrar` - update the container image with the latest version
+	`docker ps` - show running containers
+	`docker stop <CONTAINER ID>` - stop a running container
+
+where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
