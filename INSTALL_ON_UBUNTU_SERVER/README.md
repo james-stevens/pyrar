@@ -22,15 +22,17 @@ you installed "comfortable".
 
 # 2. Install docker
 
-During the install I was offered to include the docker runtime, so I selected this.
+Instal docker [using the instructions here](https://docs.docker.com/engine/install/ubuntu/)
 
-If you do not get offered to install docker, or docker is not included in your Ubuntu distribution,
-you can find the [install instructions here](https://docs.docker.com/engine/install/ubuntu/)
+As per those instructions, ensure the command `docker run hello-world` displays `Hello from Docker!`
+
 
 
 # 3. Install Mariadb
 
 Follow Steps 1 & 2 from [here](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04)
+
+When you run `mysql_secure_installation`, answer `Y` to everything and set a password for the MariaDB `root` user.
 
 
 
@@ -38,8 +40,16 @@ Follow Steps 1 & 2 from [here](https://www.digitalocean.com/community/tutorials/
 
 All command line commands should be run as root, either by logging in as `root` or using the `sudo` prefix.
 
-	# cd /opt
-	# git clone https://github.com/james-stevens/pyrar.git
-	# cd pyrar/INSTALL_ON_UBUNTU_SERVER
-	# 
+	$ sudo cd /opt
+	$ sudo git clone https://github.com/james-stevens/pyrar.git
+
+
+# 5. Now the rest
+
+	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
+	$ sudo cp -a your-config /opt/config
+	$ sudo cd /opt
+	$ sudo mkdir -m 777 storage
+	$ sudo mkdir -m 700 pems
+	$ sudo chmod 700 config
 
