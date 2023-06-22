@@ -61,7 +61,7 @@ then run
 
 All these commands should be run as `root`, either by logging in as `root` or using the `sudo` prefix.
 
-	$ cd /opt
+	cd /opt
 	sudo git clone https://github.com/james-stevens/pyrar.git
 
 
@@ -70,7 +70,7 @@ All these commands should be run as `root`, either by logging in as `root` or us
 Install some other things and copy a base config
 
 	sudo apt install jq net-tools nginx
-	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
+	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	sudo cp -a default-config /opt/config
 	sudo ./make_payment > /opt/config/payment.json
 
@@ -87,7 +87,7 @@ Make the databases, add users & apply table permission
 
 Make some more directories & set permission
 
-	$ cd /opt
+	cd /opt
 	sudo mkdir -m 777 storage
 	sudo mkdir -m 755 pems
 	sudo chmod 755 config
@@ -229,7 +229,7 @@ NOTE: The config provided assumes that the one certificate is for both your doma
 e.g. `example.com` and `*.example.com`. This is not necessary, but makes life easier. If your certificate is different
 you will need to edit the `nginx.conf` provided.
 
-	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
+	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
 	sudo cp nginx.conf /etc/nginx/
 
@@ -261,7 +261,7 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 
 Now
 
-	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
+	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	sudo cp run_pyrar stop_pyrar /usr/local/bin
 	sudo cp pyrar.service /etc/systemd/system
 	sudo systemctl daemon-reload
