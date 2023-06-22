@@ -172,9 +172,7 @@ PyRar passes a single use webhook URL when requeesting payment.
 ## 7. Test Run
 
 You should now be able to do a test run of PyRar, by running the script `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar`.
-
 This should log everything to your terminal session, so you can see it.
-
 If you see any error messages, particularly if you see any programs continuously restart, you have a configuration
 problem and need to fix it.
 
