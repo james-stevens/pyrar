@@ -1,0 +1,11 @@
+[Unit]
+Description=PyRar Registrar Container
+After=network.target docker.service mariadb.service nginx.service
+
+[Service]
+ExecStart=/usr/local/bin/run_pyrar
+ExecStop=/usr/local/bin/stop_pyrar
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

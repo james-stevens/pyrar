@@ -1,0 +1,10 @@
+#! /bin/sh
+
+docker run \
+	-v /opt/storage:/opt/pyrar/storage \
+	-v /opt/config:/opt/pyrar/config \
+	-v /opt/pems:/opt/pyrar/pems \
+	-p 127.0.0.1:53:53/udp -p 127.0.0.1:53:53 \
+	-p 127.0.0.1:800:80 \
+	-p 127.0.0.1:1000:1000 \
+	-t jamesstevens/pyrar $*

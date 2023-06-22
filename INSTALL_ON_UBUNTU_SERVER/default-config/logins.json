@@ -1,0 +1,18 @@
+{
+  "mysql": {
+    "connect": "172.17.0.1",
+    "database": "pyrar",
+    "webui": "[WEBUI-USER-PASSWORD]",
+    "engine": "[ENGINE-USER-PASSWORD]",
+    "admin": [
+      "reg",
+      "[PYRAR-DATABASE-ADMIN-PASSWORD]"
+    ]
+  },
+  "pdns": {
+    "server": "172.17.0.1",
+    "database": "pdns",
+    "username": "pdns",
+    "password": "[PDNS-DATABASE-PASSWORD]"
+  }
+}

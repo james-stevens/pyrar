@@ -1,0 +1,3 @@
+#! /bin/sh
+
+docker stop $(docker ps | awk '{ if($2=="jamesstevens/pyrar") print $1 }')

@@ -12,7 +12,7 @@
     "type": "local",
     "max_checks": 5,
     "prices": {
-      "new": 20,
+      "create": 20,
       "renew": 20
     }
   }
