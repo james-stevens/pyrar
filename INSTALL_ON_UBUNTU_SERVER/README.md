@@ -38,7 +38,7 @@ As per those instructions, ensure the command `docker run hello-world` displays 
 	sudo systemctl start mariadb.service
 	sudo mysql_secure_installation
 
-Copied (from here)[https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04].
+Copied [from here](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04).
 
 When you run `mysql_secure_installation`, answer `Y` (the default) to all prompts and set a password for the MariaDB `root` user.
 
