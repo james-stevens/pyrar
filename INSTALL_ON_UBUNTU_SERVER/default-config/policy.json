@@ -2,11 +2,10 @@
   "user_message": "Welcome",
   "business_name": "My Registrar",
   "default_theme": "dark",
-  "website_name": "https://[MY-WEBSITE-NAME]/",
-  "name_sender": "[EMAIL-SENDER-NAME]",
-  "email_sender": "[CUSTOMER-SERVICES]@[MY-DOMAIN-NAME]",
-  "email_return": "[BOUNCE-EMAILS]@[MY-DOMAIN-NAME]",
+  "website_name": "https://[YOUR-WEBSITE-NAME]/",
+  "name_sender": "Customer Services",
+  "email_sender": "support@[YOUR-DOMAIN-NAME]",
+  "email_return": "no-return@[YOUR-DOMAIN-NAME]",
   "syslog_server" : "None",
-  "dns_servers": "[YOUR-EXTERNAL-NS-COMMA-SEPARATED]",
-  "dns_servers": "ns1.[MY-DOMAIN-NAME],ns2.[MY-DOMAIN-NAME]"
+  "dns_servers": "ns1.[YOUR-DOMAIN-NAME],ns2.[YOUR-DOMAIN-NAME]"
 }

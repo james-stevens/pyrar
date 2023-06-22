@@ -108,6 +108,8 @@ This will allow the pyrar container to syslog to the Ubuntu syslog service. By d
 will go into `/var/log/syslog`, but you can change that if you wish.
 
 
+
+
 ## 6. Setting Up Your PyRar Config
 
 Now run `cd /opt/config` and edit the config files to suit you needs
@@ -134,9 +136,12 @@ It's the names you want to promote the most.
 ### policy.json
 
 This replaces policy choices from the defaults you will see in `/opt/pyrar/python/librar/policy.py`
-The minimum ones you need to change are listed in the default `policy.json` provided.
+The default file contains the minimum ones you need to change.
 
-For the option `dns_servers`, when you are still setting up, this PyRar can be your only Name Server, so just set `ns1` & `ns2` to point to this server.
+It is likely that `[YOUR-WEBSITE-NAME]` and `[YOUR-DOMAIN-NAME]` ar the same, but they may not be.
+
+For the option `dns_servers`, when you are still setting up, this PyRar can be your only Name Server, so 
+(in your DNS) just set `ns1` & `ns2` to point to this server.
 You can set up a real second name server later. You can also use different host names, as you prefer.
 
 For the time being, leave `syslog_server` set to `None`.
@@ -166,9 +171,9 @@ PyRar passes a single use webhook URL when requeesting payment.
 
 ## 7. Test Run
 
-You should now be able to do a test run of PyRar, so run the script `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/test_run_pyrar`.
+You should now be able to do a test run of PyRar, by running the script `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar`.
 
-This should syslog everything to stdout, so you can see it.
+This should log everything to your terminal session, so you can see it.
 
 If you see any error messages, particularly if you see any programs continuously restart, you have a configuration
 problem and need to fix it.
@@ -196,11 +201,13 @@ This should return an `SOA` record for the zone `tlds.pyrar.localhost`, includin
 	;; AUTHORITY SECTION:
 	tlds.pyrar.localhost.   3600    IN      SOA     ns1.exmaple.com. hostmaster.tlds.pyrar.localhost. 1687436967 10800 3600 604800 3600
 
+If this works, but returns no `SOA` record, you probably didn't set the `dns_servers` value correctly.
+
 Now run:
 
 	$ curl http://127.0.0.1:800/pyrar/v1.0/config
 
-should return `{"error":"Website continuity error"}`
+this should return `{"error":"Website continuity error"}`
 
 
 ## 9. Adding External Access
@@ -215,7 +222,53 @@ e.g. `example.com` and `*.example.com`. This is not necessary, but makes life ea
 you will need to edit the `nginx.conf` provided.
 
 	$ sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+	$ sudo cp nginx.conf /etc/nginx/
 
+Now edit `/etc/nginx/nginx.conf` and change the placeholder to your domain name, then run `nginx -t` to check the config is valid, 
+if it passes, restart `nginx`, with
+
+	$ sudo systemctl restart nginx
+
+NOTE: there are two website names in the `nginx.conf`, one for users to reach the normal site and one for sysadmins
+to reach the admin interface.
+
+
+## 10. Loading the site
+
+Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server,
+you should now be able to load both the user's site  the admin site in a browser.
+
+Until you create any sysadmin logins, the default login of `pyrar` & password `pyrar` should work.
+
+When you click the `PowerDNS` button (top right of the admin site), you will be taken into a generic PowerDNS Admin UI. 
+As you are already logged in, you do not need the PowerDNS API-Key, so just click `Load Zone List` and you should see the
+two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for internal use.
+
+
+## 11. Running PyRar under Systemd
+
+- Shutdown the PyRar container you are running from the command line
+- Edit `/opt/config/policy.json` and set `syslog_server` to `172.17.0.1`
+
+Now
+
+	$ sudo cp run_pyrar stop_pyrar /usr/local/bin
+	$ sudo cp pyrar.service /etc/systemd/system
+	$ sudo systemctl daemon-reload
+	$ sudo systemctl enable pyrar
+	$ sudo systemctl start pyrar
+
+You should now have PyRar runnning in the background as a service. You can check that by running
+
+	$ sudo systemctl status pyrar
+
+Don't worry about a `postfix/readme` message.
+
+If PyRar is running, then you should be able to get to the PyRar websites again now. You can now
+stop & restart it in the normal way using `systemctl`.
+
+PyRar should also automatically start at boot time, once `docker`, `mariadb` and `nginx` have started, so you might
+wan tot reboot your server just ot check that.
 
 
 
