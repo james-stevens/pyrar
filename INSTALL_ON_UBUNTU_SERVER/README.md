@@ -187,6 +187,38 @@ If you do not get any looping programs, you are ready to continue, but first in 
 `docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
 
 
+## 8. Testing the Test-Run
+
+	$ dig @127.0.0.1 tlds.pyrar.localhost
+
+This should return an `SOA` record for the zone `tlds.pyrar.localhost`, including this
+
+	;; AUTHORITY SECTION:
+	tlds.pyrar.localhost.   3600    IN      SOA     ns1.exmaple.com. hostmaster.tlds.pyrar.localhost. 1687436967 10800 3600 604800 3600
+
+Now run:
+
+	$ curl http://127.0.0.1:800/pyrar/v1.0/config
+
+should return `{"error":"Website continuity error"}`
+
+
+## 9. Adding External Access
+
+First you need to upload your SSL PEM, that includes both the CA Ceritficate & the private key, to `/etc/nginx/certkey.pem`
+
+If you have a LetsEncrypt data set, go into the directory of LetsEncrypt files for the domain, then
+run `cat fullchain.pem privkey.pem > certkey.pem` and upload `certkey.pem` to `/etc/nginx`.
+
+NOTE: The config provided assumes that the certificate is for both your domain & your domain with a wildcard prefix, 
+e.g. `example.com` and `*.example.com`. This is not necessary, but makes life easier. If your certificate is different
+you will need to edit the `nginx.conf` provided.
+
+	$ sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+
+
+
+
 # Twin Server Install
 
 If you wish you can install the database server & docker runtine server (PyRar Server) as two separate linux systems.
