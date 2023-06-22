@@ -217,9 +217,13 @@ this should return `{"error":"Website continuity error"}`
 First you need to upload your SSL PEM, that includes both the CA Ceritficate & the private key, to `/etc/nginx/certkey.pem`
 
 If you have a LetsEncrypt data set, go into the directory of LetsEncrypt files for the domain, then
-run `cat fullchain.pem privkey.pem > certkey.pem` and upload `certkey.pem` to `/etc/nginx`.
+run
 
-NOTE: The config provided assumes that the certificate is for both your domain & your domain with a wildcard prefix, 
+	$ cat fullchain.pem privkey.pem > certkey.pem
+
+and upload `certkey.pem` to `/etc/nginx`.
+
+NOTE: The config provided assumes that the one certificate is for both your domain & your domain with a wildcard prefix, 
 e.g. `example.com` and `*.example.com`. This is not necessary, but makes life easier. If your certificate is different
 you will need to edit the `nginx.conf` provided.
 
@@ -277,6 +281,8 @@ wan tot reboot your server just ot check that.
 If the container crashes, `systemd` should restart it, but if you cleanly shut down the container using `docker` it
 will stay down, until you use `systemctl start pyrar` to start it again.
 
+
+IMPORTANT: Before going any further, it is STRONGLY recommended that you create one or more sysadmin users in the admin web/ui.
 
 
 ## 12. Add your TLDs
