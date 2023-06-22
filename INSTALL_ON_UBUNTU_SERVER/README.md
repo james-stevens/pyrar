@@ -89,6 +89,7 @@ Make some more directories & set permission
 
 	$ cd /opt
 	$ sudo mkdir -m 777 storage
+	$ sudo mkdir -m 755 pems
 	$ sudo chmod 755 config
 
 Get the latest copy of PyRar from `docker.com`
@@ -177,7 +178,8 @@ If you see any error messages, particularly if you see any programs continuously
 problem and need to fix it.
 
 If you do not get any looping programs, you are ready to continue, but first in `policy.json` change
-`syslog_server` to `172.17.0.1`. This will syslog to the Ubuntu syslog service.
+`syslog_server` to `172.17.0.1`. This will syslog PyRar services to the Ubuntu syslog server.
+Usually this will log PyRar logs into `/var/log/syslog`.
 
 ### A quick `docker` cheat sheet
 
@@ -187,9 +189,9 @@ If you do not get any looping programs, you are ready to continue, but first in 
 
 `docker ps` - show running containers
 
-`docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
+`docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output.
 
-`docker exec -it <CONTAINER ID> /bin/sh` - shell into the container
+`docker exec -it <CONTAINER ID> /bin/sh` - shell into a container
 
 
 ## 8. Testing the Test-Run
@@ -211,6 +213,8 @@ this should return `{"error":"Website continuity error"}`
 
 
 ## 9. Adding External Access
+
+Now we'll get the `nginx` server running to provide SSL access to the PyRar container.
 
 First you need to upload your SSL PEM, that includes both the CA Ceritficate & the private key, to `/etc/nginx/certkey.pem`
 
@@ -252,7 +256,7 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 
 ## 11. Running PyRar under Systemd
 
-- From another terminal, use `docker stop` to shutdown the PyRar container you are running from the command line
+- From another terminal, use `docker stop <ID>` to shutdown the PyRar container you are running from the command line
 - Edit `/opt/config/policy.json` and set `syslog_server` to `172.17.0.1`
 
 Now
@@ -270,13 +274,13 @@ You should now have PyRar runnning in the background as a service. You can check
 
 Don't worry about a `postfix/readme` message.
 
-If PyRar is running, then you should be able to get to the PyRar websites again now. You can now
-stop & restart it in the normal way using `systemctl`.
+If PyRar is running, then you should be able to get to the PyRar websites again now. You can also
+stop & restart PyRar in the normal way using `systemctl`.
 
 PyRar should also automatically start at boot time, once `docker`, `mariadb` and `nginx` have started, so you might
-wan tot reboot your server just ot check that.
+want to reboot your server just to check that.
 
-If the container crashes, `systemd` should restart it, but if you cleanly shut down the container using `docker` it
+If the container crashes, `systemd` should restart it, but if you cleanly shut down the container using `docker` or `systemctl` it
 will stay down, until you use `systemctl start pyrar` to start it again.
 
 
@@ -289,12 +293,12 @@ You now need to add to the system all the domains you will be selling sub-domain
 
 Go into the Admin Web/UI, click the `Add to Table` drop down and select `zones` and you'll get a form.
 
-The only items that you really need to fill out are `Zone` which is the name of the zone and `Price Info`, which is a JSON
+The only items that you really MUST fill out are `Zone` which is the name of the zone and `Price Info`, which is a JSON
 of the prices you wish to charge for names in the zone.
 
-If this is your zone you are selling names in then the `Registry` is `local`. For EPP zones, see below.
+If this is your zone you are selling names in then, the `Registry` is `local`. For EPP zones, see below.
 
-For prices, the minimum is
+For prices, the minimum JSON is
 
 	{
 	"create": 10.00,
@@ -308,6 +312,9 @@ You can change currency by setting a different currency in the `policy.json` fil
 As soon as you add a zone, the system will pick it up, but users won't see it until they reload, or close & reopen the site.
 
 Once users have reloaded the site, when they do a search the newly added zone should now come up.
+
+
+Essentially, the install in now done - its just for you to complete setting it up how you want it.
 
 
 
@@ -342,3 +349,48 @@ If you are using an external database service, like AWS, you may not be able to 
 are allowed to use, so just specify both the username & password for each role.
 
 When using an external database service, you will also need to edit the `base.sql` & `grants.sql` scripts.
+
+
+# Connecting to EPP Registries
+
+To connect to an external EPP registry, you need to set up the registry in `registry.json` and set up its login in `logins.json`.
+
+Each EPP registry will have a name of yor choice, say "example". The `logins.json` will have three properties, `username`, `password` and `server`.
+So the `logins.json` entry for `example` might look like this
+
+	"exmaple" : {
+		"username": "my-login",
+		"password": "my-password",
+		"server": "epp.example.com"
+		}
+
+The `registry.json` entry must have `desc`, `type` (which is `epp`), `sessions` and `prices`.
+
+`desc` - A text string of your choice
+
+`type` - For EPP registries this is `epp`
+
+`sessions` - Number of simultainious EPP sessions the registry will allow you / you want to maintain
+
+`prices` - A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price
+
+For exmaple
+
+	"example": {
+		"desc": "An exmaple EPP registry",
+		"type": "epp",
+		"sessions": 3,
+		"prices" : { "default": "x1.5" }
+		}
+
+In this example, we are going to charge our users a 50% mark up of the whole sale price of the domains.
+
+EPP requires that you present a client-side certificate. Different registries have different requirements on this,
+so you will need to find out from them what they require. Some will issue you with your client-side certificate.
+
+Once you have a client side certificate you must copy it into `/opt/pems` with the name of the service and the suffix `.pem`.
+In our exmaple that would be `/opt/pems/example.pem`.
+
+Most changes to the `config` file will happen immediatly, but to add or remove an EPP service, you must restart the PyRar container with
+
+	$ sudo systemctl restart pyrar
