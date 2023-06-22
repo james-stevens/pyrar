@@ -21,8 +21,8 @@ you installed `comfortable`.
 
 Then make sure you're up-to-date
 
-	$ sudo apt update
-	$ sudo apt upgrade
+	sudo apt update
+	sudo apt upgrade
 
 
 ## 2. Install docker
@@ -34,9 +34,9 @@ As per those instructions, ensure the command `docker run hello-world` displays 
 
 ## 3. Install Mariadb
 
-	$ sudo apt install mariadb-server
-	$ sudo systemctl start mariadb.service
-	$ sudo mysql_secure_installation
+	sudo apt install mariadb-server
+	sudo systemctl start mariadb.service
+	sudo mysql_secure_installation
 
 Copied (from here)[https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04].
 
@@ -53,7 +53,7 @@ to read
 
 then run
 
-	$ sudo systemctl restart mariadb
+	sudo systemctl restart mariadb
 
 
 
@@ -62,17 +62,17 @@ then run
 All these commands should be run as `root`, either by logging in as `root` or using the `sudo` prefix.
 
 	$ cd /opt
-	$ sudo git clone https://github.com/james-stevens/pyrar.git
+	sudo git clone https://github.com/james-stevens/pyrar.git
 
 
 ## 5. Now the rest
 
 Install some other things and copy a base config
 
-	$ sudo apt install jq net-tools nginx
+	sudo apt install jq net-tools nginx
 	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
-	$ sudo cp -a default-config /opt/config
-	$ sudo ./make_payment > /opt/config/payment.json
+	sudo cp -a default-config /opt/config
+	sudo ./make_payment > /opt/config/payment.json
 
 Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
 
@@ -80,21 +80,21 @@ NOTE: `reg` is the pyrar admin user
 
 Make the databases, add users & apply table permission
 
-	$ sudo mysql -u root < base.sql
-	$ sudo mysql -u root pdns < ../dump_schema/pdns.sql
-	$ sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
-	$ sudo mysql -u root pyrar < grants.sql
+	sudo mysql -u root < base.sql
+	sudo mysql -u root pdns < ../dump_schema/pdns.sql
+	sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
+	sudo mysql -u root pyrar < grants.sql
 
 Make some more directories & set permission
 
 	$ cd /opt
-	$ sudo mkdir -m 777 storage
-	$ sudo mkdir -m 755 pems
-	$ sudo chmod 755 config
+	sudo mkdir -m 777 storage
+	sudo mkdir -m 755 pems
+	sudo chmod 755 config
 
 Get the latest copy of PyRar from `docker.com`
 
-	$ sudo docker pull jamesstevens/pyrar
+	sudo docker pull jamesstevens/pyrar
 
 Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
 
@@ -103,7 +103,7 @@ Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
 
 Restart `rsyslog`
 
-	$ sudo systemctl restart rsyslog
+	sudo systemctl restart rsyslog
 
 This will allow the pyrar container to syslog to the Ubuntu syslog service. By default the logging
 will go into `/var/log/syslog`, but you can change that if you wish.
@@ -230,13 +230,13 @@ e.g. `example.com` and `*.example.com`. This is not necessary, but makes life ea
 you will need to edit the `nginx.conf` provided.
 
 	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
-	$ sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
-	$ sudo cp nginx.conf /etc/nginx/
+	sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+	sudo cp nginx.conf /etc/nginx/
 
 Now edit `/etc/nginx/nginx.conf` and change the placeholder to your domain name, then run `nginx -t` to check the config is valid, 
 if it passes, restart `nginx`, with
 
-	$ sudo systemctl restart nginx
+	sudo systemctl restart nginx
 
 NOTE: there are two website names in the `nginx.conf`, one for users to reach the normal site and one for sysadmins
 to reach the admin interface.
@@ -262,15 +262,15 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 Now
 
 	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
-	$ sudo cp run_pyrar stop_pyrar /usr/local/bin
-	$ sudo cp pyrar.service /etc/systemd/system
-	$ sudo systemctl daemon-reload
-	$ sudo systemctl enable pyrar
-	$ sudo systemctl start pyrar
+	sudo cp run_pyrar stop_pyrar /usr/local/bin
+	sudo cp pyrar.service /etc/systemd/system
+	sudo systemctl daemon-reload
+	sudo systemctl enable pyrar
+	sudo systemctl start pyrar
 
 You should now have PyRar runnning in the background as a service. You can check that by running
 
-	$ sudo systemctl status pyrar
+	sudo systemctl status pyrar
 
 Don't worry about a `postfix/readme` message.
 
@@ -393,4 +393,4 @@ In our exmaple that would be `/opt/pems/example.pem`.
 
 Most changes to the `config` file will happen immediatly, but to add or remove an EPP service, you must restart the PyRar container with
 
-	$ sudo systemctl restart pyrar
+	sudo systemctl restart pyrar
