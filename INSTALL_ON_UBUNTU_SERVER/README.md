@@ -19,6 +19,11 @@ With Ubuntu Server, you can do either a `comfortable` or `minimal` install, I ch
 chose `minimal` and just install any missing packages later. But these instructions will assume
 you installed `comfortable`.
 
+Then make sure you're up-to-date
+
+	$ sudo apt update
+	$ sudo apt upgrade
+
 
 ## 2. Install docker
 
@@ -27,10 +32,8 @@ Instal docker [using these instructions](https://docs.docker.com/engine/install/
 As per those instructions, ensure the command `docker run hello-world` displays `Hello from Docker!`
 
 
-
 ## 3. Install Mariadb
 
-	$ sudo apt update
 	$ sudo apt install mariadb-server
 	$ sudo systemctl start mariadb.service
 	$ sudo mysql_secure_installation
@@ -68,7 +71,7 @@ Install some other things and copy a base config
 
 	$ sudo apt install jq net-tools nginx
 	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
-	$ sudo cp -a your-config /opt/config
+	$ sudo cp -a default-config /opt/config
 	$ sudo ./make_payment > /opt/config/payment.json
 
 Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
