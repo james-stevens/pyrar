@@ -61,7 +61,7 @@ then run
 
 All these commands should be run as `root`, either by logging in as `root` or using the `sudo` prefix.
 
-	$ sudo cd /opt
+	$ cd /opt
 	$ sudo git clone https://github.com/james-stevens/pyrar.git
 
 
@@ -70,7 +70,7 @@ All these commands should be run as `root`, either by logging in as `root` or us
 Install some other things and copy a base config
 
 	$ sudo apt install jq net-tools nginx
-	$ sudo cd pyrar/INSTALL_ON_UBUNTU_SERVER
+	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp -a default-config /opt/config
 	$ sudo ./make_payment > /opt/config/payment.json
 
@@ -87,7 +87,7 @@ Make the databases, add users & apply table permission
 
 Make some more directories & set permission
 
-	$ sudo cd /opt
+	$ cd /opt
 	$ sudo mkdir -m 777 storage
 	$ sudo chmod 755 config
 
@@ -191,6 +191,8 @@ If you do not get any looping programs, you are ready to continue, but first in 
 
 `docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is one of the columns in the `docker ps` output.
 
+`docker exec -it <CONTAINER ID> /bin/sh` - shell into the container
+
 
 ## 8. Testing the Test-Run
 
@@ -221,6 +223,7 @@ NOTE: The config provided assumes that the certificate is for both your domain &
 e.g. `example.com` and `*.example.com`. This is not necessary, but makes life easier. If your certificate is different
 you will need to edit the `nginx.conf` provided.
 
+	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
 	$ sudo cp nginx.conf /etc/nginx/
 
@@ -247,11 +250,12 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 
 ## 11. Running PyRar under Systemd
 
-- Shutdown the PyRar container you are running from the command line
+- From another terminal, use `docker stop` to shutdown the PyRar container you are running from the command line
 - Edit `/opt/config/policy.json` and set `syslog_server` to `172.17.0.1`
 
 Now
 
+	$ cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	$ sudo cp run_pyrar stop_pyrar /usr/local/bin
 	$ sudo cp pyrar.service /etc/systemd/system
 	$ sudo systemctl daemon-reload
@@ -269,6 +273,37 @@ stop & restart it in the normal way using `systemctl`.
 
 PyRar should also automatically start at boot time, once `docker`, `mariadb` and `nginx` have started, so you might
 wan tot reboot your server just ot check that.
+
+If the container crashes, `systemd` should restart it, but if you cleanly shut down the container using `docker` it
+will stay down, until you use `systemctl start pyrar` to start it again.
+
+
+
+## 12. Add your TLDs
+
+You now need to add to the system all the domains you will be selling sub-domains from.
+
+Go into the Admin Web/UI, click the `Add to Table` drop down and select `zones` and you'll get a form.
+
+The only items that you really need to fill out are `Zone` which is the name of the zone and `Price Info`, which is a JSON
+of the prices you wish to charge for names in the zone.
+
+If this is your zone you are selling names in then the `Registry` is `local`. For EPP zones, see below.
+
+For prices, the minimum is
+
+	{
+	"create": 10.00,
+	"renew": 10.00
+	}
+
+This sets the new & renew prices to $10.00 for names in this zone.
+
+You can change currency by setting a different currency in the `policy.json` file, but you really MUST do this right at the beginning.
+
+As soon as you add a zone, the system will pick it up, but users won't see it until they reload, or close & reopen the site.
+
+Once users have reloaded the site, when they do a search the newly added zone should now come up.
 
 
 
