@@ -6,9 +6,33 @@ level, then run PyRar in a docker container. Everything that PyRar needs comes i
 PyRar will only be accessible to `localhost`, so we will run `nginx` to provide SSL services & give
 the outside world access to PyRar & its admin system. This improves security.
 
+`nginx` may not be necessary if you are usign a hosting service that will so the SSL for you - AWS can do this.
+
 In this exmaple I am using Ubuntu Server, but pretty much any linux should work. You'll just have to
 google / adjust the commands as appropriate. I didn't chose Ubuntu Server for any particular reson,
 except that its popular.  I'm using Ubuntu Server v22.04.2
+
+
+## Using a hosting provider
+
+You can use a hosting provider to host the database, provide the SSL service or even run the container native. 
+
+If you are doing all or any of these, the instruction below should be helpful, but will not work
+out-of-the-box. Each hosting provider is different, so it is impossible for me to provide instructions
+for them all.
+
+If you use a hosting provider to run the container directly, it will need three permenent storage areas
+mapped to these directories inside the container
+
+	/opt/pyrar/storage
+	/opt/pyrar/config
+	/opt/pyrar/pems
+
+`storage` is long term disk storage for PyRar, e.g. email spooling etc, you can provide this empty.
+
+`config` contains your config files (see below)
+
+`pems` contains the client side certificates required for EPP. Not required if you don't sell names from an external EPP registry.
 
 
 # The Actual Install
@@ -75,8 +99,11 @@ Install some other things and copy a base config
 	sudo ./make_payment > /opt/config/payment.json
 
 Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
-
 NOTE: `reg` is the pyrar admin user
+
+You can run the program `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/random_password` to generate passwords
+that should be sufficiently secure.
+
 
 Make the databases, add users & apply table permission
 
@@ -115,7 +142,7 @@ will go into `/var/log/syslog`, but you can change that if you wish.
 
 Now run `cd /opt/config` and edit the config files to suit you needs
 
-### login.json
+### logins.json
 
 The only changes needed here are to change the passwords to match the passwords you put into `base.sql`.
 
@@ -168,6 +195,22 @@ NOTE: The PayPal Sandbox (test) & Live webhooks are set up separately in the Pay
 
 (NowPayments)[https://nowpayments.io/] does not require a pre-configured callback webhook URL. Using the API-Key,
 PyRar passes a single use webhook URL when requeesting payment.
+However, NowPayments does require that you enable webhook callbacks in your account settings. By default
+they are disabled. If you do not enable them, your request to be called-back will be silently ignored.
+
+
+### Checking your JSON
+
+Now check your JSON is valid using `jq`, you shouldn't need a `sudo` prefix.
+
+	jq -c < /opt/config/logins.json
+	jq -c < /opt/config/payment.json
+	jq -c < /opt/config/policy.json
+	jq -c < /opt/config/priority.json
+	jq -c < /opt/config/registry.json
+
+If these succeed, then you will get your JSON displayed, if they fail `jq` will tell you the line
+with the error.
 
 
 ## 7. Test Run
@@ -213,6 +256,20 @@ this should return `{"error":"Website continuity error"}`
 
 
 ## 9. Adding External Access
+
+**IF** you are using a hosting service that will do the SSL for you in their infrastructure, then you 
+donot want to also be running `nginx`. Some AWS services include running SSL for you.
+
+So, if you have external SSL, run the following
+
+	sudo systemctl stop nginx
+	sudo systemctl remove nginx
+	sudo cp run_pyrar.without_nginx /usr/local/bin/run_pyrar
+
+This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
+need to configure your hosting provider to direct the traffic to these ports.
+
+Otherwise, do the following...
 
 Now we'll get the `nginx` server running to provide SSL access to the PyRar container.
 
