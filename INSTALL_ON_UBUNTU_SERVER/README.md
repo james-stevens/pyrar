@@ -166,7 +166,7 @@ It's the names you want to promote the most.
 This replaces policy choices from the defaults you will see in `/opt/pyrar/python/librar/policy.py`
 The default file contains the minimum ones you need to change.
 
-It is likely that `[YOUR-WEBSITE-NAME]` and `[YOUR-DOMAIN-NAME]` ar the same, but they may not be.
+It is likely that `[YOUR-WEBSITE-NAME]` and `[YOUR-DOMAIN-NAME]` are the same, but they may not be.
 
 For the option `dns_servers`, when you are still setting up, this PyRar can be your only Name Server, so 
 (in your DNS) just set `ns1` & `ns2` to point to this server.
@@ -193,10 +193,11 @@ Where `[PAYPAL-WEBHOOK-STRING]` is the `webhook` value in the `payment.json` fil
 
 NOTE: The PayPal Sandbox (test) & Live webhooks are set up separately in the PayPal developer dashboard.
 
-(NowPayments)[https://nowpayments.io/] does not require a pre-configured callback webhook URL. Using the API-Key,
-PyRar passes a single use webhook URL when requeesting payment.
+[NowPayments](https://nowpayments.io/) does not require a pre-configured callback webhook URL. Using the API-Key,
+PyRar passes a single use webhook URL when requesting payment.
 However, NowPayments does require that you enable webhook callbacks in your account settings. By default
-they are disabled. If you do not enable them, your request to be called-back will be silently ignored.
+they are disabled. If you do not enable them, your request to be called-back will be silently ignored,
+i.e. user accounts will not get automatically credited after they have paid.
 
 
 ### Checking your JSON
@@ -210,7 +211,7 @@ Now check your JSON is valid using `jq`, you shouldn't need a `sudo` prefix.
 	jq -c < /opt/config/registry.json
 
 If these succeed, then you will get your JSON displayed, if they fail `jq` will tell you the line
-with the error.
+with the error. Remove the `-c` for a prettier, but longer, output.
 
 
 ## 7. Test Run
