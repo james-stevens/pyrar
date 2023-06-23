@@ -258,20 +258,18 @@ this should return `{"error":"Website continuity error"}`
 ## 9. Adding External Access
 
 **IF** you are using a hosting service that will do the SSL for you in their infrastructure, then you 
-donot want to also be running `nginx`. Some AWS services include running SSL for you.
+do not want to be running `nginx`. Some AWS services include running SSL for you.
 
-So, if you have external SSL, run the following
+if this is the case for you, run the following
 
 	sudo systemctl stop nginx
 	sudo systemctl remove nginx
-	sudo cp run_pyrar.without_nginx /usr/local/bin/run_pyrar
+	sudo cp opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar.without_nginx /usr/local/bin/run_pyrar
 
 This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
 need to configure your hosting provider to direct the traffic to these ports.
 
-Otherwise, do the following...
-
-Now we'll get the `nginx` server running to provide SSL access to the PyRar container.
+Otherwise, now we'll get the `nginx` server running to provide SSL access to the PyRar container.
 
 First you need to upload your SSL PEM, that includes both the CA Ceritficate & the private key, to `/etc/nginx/certkey.pem`
 
