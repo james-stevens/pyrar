@@ -407,11 +407,14 @@ The only ports you need exposed to the outside world are
 If you are not using an external firewall, it is recommended you [set up the firewall]
 (https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-22-04) in Ubuntu Server.
 
-If you have enough bandwidth, and low enough latency, on your home internet connection, You can run PyRar on a PC server at home.
+If you have enough bandwidth, and low enough latency, on your home internet connection, you can run PyRar on a PC server at home.
 [My demo site](https://nameshake.net) runs on my home DSL line which has 75Mb/s down & 25Mb/s up and less than 8ms `ping` response
 to the main UK/IX.
 
+If you google "internet speed test" and run the Google provided test, it will show you these three stats for your connection.
+
 Most home DSL routers support "port forwarding", so configure your router to forward the HTTPS & DNS ports (shown above) to your PyRar Server.
+With only these ports forwarded, your server should be reasonbly secure, assuming the other machines on your network don't get attacked!!
 
 NOTE: Exposing port 3306 (MariaDB) to the entire world is **HIGHLY* undesirable.
 
