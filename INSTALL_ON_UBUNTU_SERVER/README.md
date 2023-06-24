@@ -411,7 +411,7 @@ If you have enough bandwidth, and low enough latency, on your home internet conn
 [My demo site](https://nameshake.net) runs on my home DSL line which has 75Mb/s down & 25Mb/s up and less than 8ms `ping` response
 to the main UK/IX.
 
-If you google "internet speed test" and run the Google provided test, it will show you these three stats for your connection.
+If you google "internet speed test" and run the Google test provided, it will show you these three stats for your connection.
 
 Most home DSL routers support "port forwarding", so configure your router to forward the HTTPS & DNS ports (shown above) to your PyRar Server.
 With only these ports forwarded, your server should be reasonbly secure, assuming the other machines on your network don't get attacked!!
