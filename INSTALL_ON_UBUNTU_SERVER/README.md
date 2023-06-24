@@ -160,11 +160,11 @@ will go into `/var/log/syslog`, but you can change that if you wish.
 
 Now run `cd /opt/config` and edit the config files to suit your needs
 
-### logins.json
+### `logins.json`
 
 The only changes needed here are to change the passwords to match the passwords you put into `base.sql`.
 
-### registry.json
+### `registry.json`
 
 If you only want to sell SLDs from TLDs that you own, copy `example_registry_one_local.json` to `registry.json`
 and edit the prices, if you wish.
@@ -172,14 +172,14 @@ and edit the prices, if you wish.
 If you want to also sell from a single EPP Registry, copy `example_registry_one_epp_one_local.json` instead.
 
 
-### priority.json
+### `priority.json`
 
 This is a JSON list of the TLDs you want listed first in a user's search results - it can be empty.
 
 It's the names you want to promote the most.
 
 
-### policy.json
+### `policy.json`
 
 This replaces policy choices from the defaults you will see in `/opt/pyrar/python/librar/policy.py`
 The default file contains the minimum ones you need to change.
@@ -196,7 +196,7 @@ NOTE: Until you have a website name, an SSL certificate (e.g from letsencrypt) a
 configured your site name in `policy.json`, you will not be able to access the site properly.
 
 
-### payment.json
+### `payment.json`
 
 Remove payment methods you do not want to use. 
 
