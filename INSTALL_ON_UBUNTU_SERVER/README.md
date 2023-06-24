@@ -73,12 +73,30 @@ At about line 27 of `/etc/mysql/mariadb.conf.d/50-server.cnf` change
 
 to read
 
-	bind-address            = 0.0.0.0
+	bind-address            = 172.17.0.1
+
+now edit `/etc/systemd/system/multi-user.target.wants/mariadb.service`, at about line 27, change
+
+	After=network.target
+
+to
+
+	After=network.target docker.service
+
+NOTE: If you ever upgrade MariaDB, its possible you will get warnings about the fact you have changed a file that came with
+the package, but we really need `docker` to start before MariaDB, so the IP Address `172.17.0.1` is set-up.
 
 then run
 
-	sudo systemctl restart mariadb
+	 sudo systemctl daemon-reload
+	 sudo systemctl restart mariadb
 
+`172.17.0.1` is the docker "loop-back" address, so allows programs in containers to talk to services running in the host operating
+system, without exposing your service to the entire globe!
+
+I would also recommend you enable the [query cache in MariaDB](https://mariadb.com/kb/en/query-cache/). A TL;DR about
+[how to do that is here](https://ivan.reallusiondesign.com/enabling-query-cache-for-mariadb-mysql/),
+more info at Google ;)
 
 
 ## 4. Pull the PyRar Git Repo - It contains some install scripts
@@ -227,15 +245,11 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 
 ### A quick `docker` cheat sheet
 
-`docker image ls` - show loaded containers
-
-`docker pull jamesstevens/pyrar` - update the container image with the latest version
-
-`docker ps` - show running containers
-
-`docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output.
-
-`docker exec -it <CONTAINER ID> /bin/sh` - shell into a container
+| `docker image ls` | show loaded containers |
+| `docker pull jamesstevens/pyrar` | update the container image with the latest version |
+| `docker ps` | show running containers |
+| `docker stop <CONTAINER ID>` | clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output. |
+| `docker exec -it <CONTAINER ID> /bin/sh` | shell into a container |
 
 
 ## 8. Testing the Test-Run
@@ -370,7 +384,15 @@ As soon as you add a zone, the system will pick it up, but users won't see it un
 Once users have reloaded the site, when they do a search the newly added zone should now come up.
 
 
+# You're done
+
 Essentially, the install in now done - its just for you to complete setting it up how you want it.
+
+
+
+# Security & Firewalls
+
+Theonly ports you need exposed to the ou // JAMES
 
 
 
