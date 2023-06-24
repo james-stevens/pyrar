@@ -324,7 +324,7 @@ to reach the admin interface.
 
 ## 10. Loading the site
 
-Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server,
+Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server (see below),
 you should now be able to load both the user's site and the admin site in a browser.
 
 Until you create any sysadmin logins, the default login of `pyrar` & password `pyrar` should work.
