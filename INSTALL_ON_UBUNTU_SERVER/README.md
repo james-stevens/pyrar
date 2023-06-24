@@ -254,6 +254,13 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 <tr><td nowrap><code>docker exec -it <CONTAINER ID> /bin/sh</code></td><td>shell into a container</td></tr>
 </table>
 
+NOTE: If you run `docker pull jamesstevens/pyrar` to update to the latest version, you also have to run
+
+	sudo systemctl restart pyrar
+
+To stop the old version & restart with the new version.
+
+
 
 ## 8. Testing the Test-Run
 
