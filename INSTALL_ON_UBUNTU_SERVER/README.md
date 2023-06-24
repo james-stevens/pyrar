@@ -109,23 +109,30 @@ All these commands should be run as `root`, either by logging in as `root` or us
 
 ## 5. Now the rest
 
-Install some other things and copy a base config
+Install some useful/required packages, add the start & stop scripts and copy a base config
 
 	sudo apt install jq net-tools nginx
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
+	sudo cp run_pyrar stop_pyrar /usr/local/bin
+	sudo cp base.sql /tmp
+	sudo chmod 600 /tmp/base.sql
 	sudo cp -a default-config /opt/config
 	sudo ./make_payment > /opt/config/payment.json
 
-Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
+You can now **EITHER** edit the files `/tmp/base.sql` & `/opt/config/logins.json` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`,
+**OR** you can run the script `sudo ./set_up_passwords` and it will make up some random passwords for you & put them into `/tmp/base.sql` and `/opt/config/logins.json`.
+
+This automatic password configuration should be fine for most users. It just depends if you have specific password policies where you are.
+
 NOTE: `reg` is the pyrar admin user
 
-You can run the program `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/random_password` to generate passwords
-that should be sufficiently secure.
+If you choose to set the passwords manually, you can use the script `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/random_password`
+to generate passwords that should be sufficiently secure.
 
 
 Make the databases, add users & apply table permission
 
-	sudo mysql -u root < base.sql
+	sudo mysql -u root < /tmp/base.sql
 	sudo mysql -u root pdns < ../dump_schema/pdns.sql
 	sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
 	sudo mysql -u root pyrar < grants.sql
@@ -162,7 +169,7 @@ Now run `cd /opt/config` and edit the config files to suit your needs
 
 ### `logins.json`
 
-The only changes needed here are to change the passwords to match the passwords you put into `base.sql`.
+The only changes needed here are to change the passwords to match the passwords you put into `/tmp/base.sql`.
 
 ### `registry.json`
 
@@ -291,6 +298,7 @@ if this is the case for you, run the following
 	sudo systemctl remove nginx
 	sudo cp opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar.without_nginx /usr/local/bin/run_pyrar
 
+
 This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
 need to configure your hosting provider to direct the traffic to these ports.
 
@@ -342,7 +350,6 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 Now
 
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
-	sudo cp run_pyrar stop_pyrar /usr/local/bin
 	sudo cp pyrar.service /etc/systemd/system
 	sudo systemctl daemon-reload
 	sudo systemctl enable pyrar
@@ -478,7 +485,7 @@ where the role & login name are the same, you only need to specify the password 
 If you are using an external database service, like AWS, you may not be able to control what user names you
 are allowed to use, so just specify both the username & password for each role.
 
-When using an external database service, you will also need to edit the `base.sql` & `grants.sql` scripts.
+When using an external database service, you will also need to edit the `/tmp/base.sql` & `grants.sql` scripts.
 
 
 # Connecting to EPP Registries
