@@ -247,7 +247,7 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 
 <table>
 <tr><th> Command</th><th>What it does</th>
-<tr><td nowrap><code>docker image ls</code></td><td>show loaded containers</td></tr>
+<tr><td nowrap><code>docker image ls</code></td><td>show containers you have downloaded</td></tr>
 <tr><td nowrap><code>docker pull jamesstevens/pyrar</code></td><td>update the container image with the latest version</td></tr>
 <tr><td nowrap><code>docker ps</code></td><td>show running containers</td></tr>
 <tr><td nowrap><code>docker stop <CONTAINER ID></code></td><td>clean shutdown a running container, where <code>CONTAINER ID</code> is the first column in the <code>docker ps</code> output.</td></tr>
@@ -395,7 +395,25 @@ Essentially, the install in now done - its just for you to complete setting it u
 
 # Security & Firewalls
 
-Theonly ports you need exposed to the ou // JAMES
+The only ports you need exposed to the outside world are
+
+| Port | Meaning |
+| ---- | ------- |
+| TCP/443 | HTTPS, for access to the web/ui & admin/ui |
+| TCP/53 | DNS |
+| UDP/53 | DNS |
+| TCP/22 | SSH - preferably restricted, not just open to the world |
+
+If you are not using an external firewall, it is recommended you [set up the firewall]
+(https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-22-04) in Ubuntu Server.
+
+If you have enough bandwidth, and low enough latency, on your home internet connection, You can run PyRar on a PC server at home.
+[My demo site](https://nameshake.net) runs on my home DSL line which has 75Mb/s down & 25Mb/s up and less than 8ms `ping` response
+to the main UK/IX.
+
+Most home DSL routers support "port forwarding", so configure your router to forward the HTTPS & DNS ports (shown above) to your PyRar Server.
+
+NOTE: Exposing port 3306 (MariaDB) to the entire world is **HIGHLY* undesirable.
 
 
 
