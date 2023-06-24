@@ -245,6 +245,8 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 
 ### A quick `docker` cheat sheet
 
+| Command | What it does |
+| --- | --- |
 | `docker image ls` | show loaded containers |
 | `docker pull jamesstevens/pyrar` | update the container image with the latest version |
 | `docker ps` | show running containers |
