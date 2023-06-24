@@ -1,15 +1,15 @@
 # Installing PyRar to Run on Ubuntu Server
 
-The plan here is to run the docker runtime & MairaDB at the operating system 
+The plan here is to run the docker runtime & MariaDB at the operating system 
 level, then run PyRar in a docker container. Everything that PyRar needs comes in its container (Python, PowerDNS etc).
 
 PyRar will only be accessible to `localhost`, so we will run `nginx` to provide SSL services & give
 the outside world access to PyRar & its admin system. This improves security.
 
-`nginx` may not be necessary if you are usign a hosting service that will so the SSL for you - AWS can do this.
+`nginx` may not be necessary if you are using a hosting service that will so the SSL for you - AWS can do this.
 
-In this exmaple I am using Ubuntu Server, but pretty much any linux should work. You'll just have to
-google / adjust the commands as appropriate. I didn't chose Ubuntu Server for any particular reson,
+In this example I am using Ubuntu Server, but pretty much any linux should work. You'll just have to
+google / adjust the commands as appropriate. I didn't chose Ubuntu Server for any particular reason,
 except that its popular.  I'm using Ubuntu Server v22.04.2
 
 
@@ -21,7 +21,7 @@ If you are doing all or any of these, the instruction below should be helpful, b
 out-of-the-box. Each hosting provider is different, so it is impossible for me to provide instructions
 for them all.
 
-If you use a hosting provider to run the container directly, it will need three permenent storage areas
+If you use a hosting provider to run the container directly, it will need three permanent storage areas
 mapped to these directories inside the container
 
 	/opt/pyrar/storage
@@ -51,12 +51,12 @@ Then make sure you're up-to-date
 
 ## 2. Install docker
 
-Instal docker [using these instructions](https://docs.docker.com/engine/install/ubuntu/)
+Install docker [using these instructions](https://docs.docker.com/engine/install/ubuntu/)
 
 As per those instructions, ensure the command `docker run hello-world` displays `Hello from Docker!`
 
 
-## 3. Install Mariadb
+## 3. Install MariaDB
 
 	sudo apt install mariadb-server
 	sudo systemctl start mariadb.service
@@ -140,7 +140,7 @@ will go into `/var/log/syslog`, but you can change that if you wish.
 
 ## 6. Setting Up Your PyRar Config
 
-Now run `cd /opt/config` and edit the config files to suit you needs
+Now run `cd /opt/config` and edit the config files to suit your needs
 
 ### logins.json
 
@@ -175,7 +175,7 @@ You can set up a real second name server later. You can also use different host 
 For the time being, leave `syslog_server` set to `None`.
 
 NOTE: Until you have a website name, an SSL certificate (e.g from letsencrypt) and 
-confgured your site name in `policy.json`, you will not be able to access the site properly.
+configured your site name in `policy.json`, you will not be able to access the site properly.
 
 
 ### payment.json
@@ -301,7 +301,7 @@ to reach the admin interface.
 ## 10. Loading the site
 
 Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server,
-you should now be able to load both the user's site  the admin site in a browser.
+you should now be able to load both the user's site and the admin site in a browser.
 
 Until you create any sysadmin logins, the default login of `pyrar` & password `pyrar` should work.
 
@@ -376,8 +376,8 @@ Essentially, the install in now done - its just for you to complete setting it u
 
 # Twin Server Install
 
-If you wish you can install the database server & docker runtine server (PyRar Server) as two separate linux systems.
-Just run the MaraiDB insatll on a DB server, instead of the docker server, then run all the `mysql -u root` commands on
+If you wish you can install the database server & docker runtime server (PyRar Server) as two separate linux systems.
+Just run the MariaDB install on a DB server, instead of the docker server, then run all the `mysql -u root` commands on
 the DB server.
 
 This will require that you copy a few `.sql` scripts from the PyRar Server to the DB Server.
@@ -388,7 +388,7 @@ of your DB Server.
 
 # Notes on DB Logins
 
-The DB identies `admin`, `webui` and `engine` (in `logins.json`) are roles, not fixed user names.
+The DB identities `admin`, `webui` and `engine` (in `logins.json`) are roles, not fixed user names.
 For security, I have not used `admin` as the admin user cos this is too easy to guess, but have used `reg`
 instead. For `webui` and `engine` I have used the role name as the login name, to simplify the configuration.
 
@@ -399,7 +399,7 @@ where the role & login name are the same, you only need to specify the password 
 
 ... or ...
 
-	"admin": [ "reg", "the-admin-passowrd" ],
+	"admin": [ "reg", "the-admin-password" ],
 
 If you are using an external database service, like AWS, you may not be able to control what user names you
 are allowed to use, so just specify both the username & password for each role.
@@ -411,10 +411,10 @@ When using an external database service, you will also need to edit the `base.sq
 
 To connect to an external EPP registry, you need to set up the registry in `registry.json` and set up its login in `logins.json`.
 
-Each EPP registry will have a name of yor choice, say "example". The `logins.json` will have three properties, `username`, `password` and `server`.
+Each EPP registry will have a name of your choice, say "example". The `logins.json` will have three properties, `username`, `password` and `server`.
 So the `logins.json` entry for `example` might look like this
 
-	"exmaple" : {
+	"example" : {
 		"username": "my-login",
 		"password": "my-password",
 		"server": "epp.example.com"
@@ -426,7 +426,7 @@ The `registry.json` entry must have `desc`, `type` (which is `epp`), `sessions` 
 
 `type` - For EPP registries this is `epp`
 
-`sessions` - Number of simultainious EPP sessions the registry will allow you / you want to maintain
+`sessions` - Number of simultaneous EPP sessions the registry will allow you / you want to maintain
 
 `prices` - A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price
 
@@ -445,8 +445,8 @@ EPP requires that you present a client-side certificate. Different registries ha
 so you will need to find out from them what they require. Some will issue you with your client-side certificate.
 
 Once you have a client side certificate you must copy it into `/opt/pems` with the name of the service and the suffix `.pem`.
-In our exmaple that would be `/opt/pems/example.pem`.
+In our example that would be `/opt/pems/example.pem`.
 
-Most changes to the `config` file will happen immediatly, but to add or remove an EPP service, you must restart the PyRar container with
+Most changes to the `config` file will happen immediately, but to add or remove an EPP service, you must restart the PyRar container with
 
 	sudo systemctl restart pyrar
