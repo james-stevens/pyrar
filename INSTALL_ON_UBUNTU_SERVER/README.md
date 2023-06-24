@@ -392,6 +392,23 @@ Once users have reloaded the site, when they do a search the newly added zone sh
 Essentially, the install in now done - its just for you to complete setting it up how you want it.
 
 
+# Setting Up The DNS in Your Domain
+
+If you have followed this installations, you will need four IP Address entries in your domain.
+They are for the hosts `@`, `admin`, `ns1` and `ns2` - where `@` means the zone itself.
+e.g. if your PyRar server's external IP Address is 64.65.66.67, then you would add the following
+into your domain's DNS (this is usually done at your registrar, where you bought the domain).
+
+	@     IN  A  64.65.66.67
+	ns1   IN  A  64.65.66.67
+	ns2   IN  A  64.65.66.67
+	admin IN  A  64.65.66.67
+
+These records will also need a `TTL`, this depends on how often you think you might change these
+values. If you are not sure, `3600` is probably a reasonable choice to start with.
+
+Documentation for setting up addititonal and/or external Name Servers will follow in due time.
+
 
 # Security & Firewalls
 
