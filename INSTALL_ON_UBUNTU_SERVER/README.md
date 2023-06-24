@@ -250,7 +250,7 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 <tr><td nowrap><code>docker image ls</code></td><td>show loaded containers</td></tr>
 <tr><td nowrap><code>docker pull jamesstevens/pyrar</code></td><td>update the container image with the latest version</td></tr>
 <tr><td nowrap><code>docker ps</code></td><td>show running containers</td></tr>
-<tr><td nowrap><code>docker stop <CONTAINER ID></code></td><td>clean shutdown a running container, where <code><CONTAINER ID></code> is the first column in the <code>docker ps</code> output.</td></tr>
+<tr><td nowrap><code>docker stop <CONTAINER ID></code></td><td>clean shutdown a running container, where <code>CONTAINER ID</code> is the first column in the <code>docker ps</code> output.</td></tr>
 <tr><td nowrap><code>docker exec -it <CONTAINER ID> /bin/sh</code></td><td>shell into a container</td></tr>
 </table>
 
