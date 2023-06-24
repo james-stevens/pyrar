@@ -28,11 +28,11 @@ mapped to these directories inside the container
 	/opt/pyrar/config
 	/opt/pyrar/pems
 
-`storage` is long term disk storage for PyRar, e.g. email spooling etc, you can provide this empty.
-
-`config` contains your config files (see below)
-
-`pems` contains the client side certificates required for EPP. Not required if you don't sell names from an external EPP registry.
+<table>
+<tr><td><code>storage</code></td><td>long term disk storage for PyRar, e.g. email spooling etc, you can provide this empty.</td></tr>
+<tr><td><code>config</code></td><td>contains your config files (see below)</td></tr>
+<tr><td><code>pems</code></td><td>contains the client side certificates required for EPP. Not required if you don't sell names from an external EPP registry.</td></tr>
+</table>
 
 
 # The Actual Install
@@ -489,13 +489,12 @@ So the `logins.json` entry for `example` might look like this
 
 The `registry.json` entry must have `desc`, `type` (which is `epp`), `sessions` and `prices`.
 
-`desc` - A text string of your choice
-
-`type` - For EPP registries this is `epp`
-
-`sessions` - Number of simultaneous EPP sessions the registry will allow you / you want to maintain
-
-`prices` - A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price
+<table>
+<tr><td><code>desc</code></td><td>A text string of your choice</td></tr>
+<tr><td><code>type</code></td><td>For EPP registries this is <code>epp</code></td></tr>
+<tr><td><code>sessions</code></td><td>Number of simultaneous EPP sessions the registry will allow you / you want to maintain</td></tr>
+<tr><td><code>prices</code></td><td>A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price</td></tr>
+</table>
 
 For exmaple
 
