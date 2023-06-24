@@ -28,11 +28,11 @@ mapped to these directories inside the container
 	/opt/pyrar/config
 	/opt/pyrar/pems
 
-`storage` is long term disk storage for PyRar, e.g. email spooling etc, you can provide this empty.
-
-`config` contains your config files (see below)
-
-`pems` contains the client side certificates required for EPP. Not required if you don't sell names from an external EPP registry.
+<table>
+<tr><td><code>storage</code></td><td>long term disk storage for PyRar, e.g. email spooling etc, you can provide this empty.</td></tr>
+<tr><td><code>config</code></td><td>contains your config files (see below)</td></tr>
+<tr><td><code>pems</code></td><td>contains the client side certificates required for EPP. Not required if you don't sell names from an external EPP registry.</td></tr>
+</table>
 
 
 # The Actual Install
@@ -73,12 +73,30 @@ At about line 27 of `/etc/mysql/mariadb.conf.d/50-server.cnf` change
 
 to read
 
-	bind-address            = 0.0.0.0
+	bind-address            = 172.17.0.1
+
+now edit `/etc/systemd/system/multi-user.target.wants/mariadb.service`, at about line 27, change
+
+	After=network.target
+
+to
+
+	After=network.target docker.service
+
+NOTE: If you ever upgrade MariaDB, its possible you will get warnings about the fact you have changed a file that came with
+the package, but we really need `docker` to start before MariaDB, so the IP Address `172.17.0.1` is set-up.
 
 then run
 
-	sudo systemctl restart mariadb
+	 sudo systemctl daemon-reload
+	 sudo systemctl restart mariadb
 
+`172.17.0.1` is the docker "loop-back" address, so allows programs in containers to talk to services running in the host operating
+system, without exposing your service to the entire globe!
+
+I would also recommend you enable the [query cache in MariaDB](https://mariadb.com/kb/en/query-cache/). A TL;DR about
+[how to do that is here](https://ivan.reallusiondesign.com/enabling-query-cache-for-mariadb-mysql/),
+more info at Google ;)
 
 
 ## 4. Pull the PyRar Git Repo - It contains some install scripts
@@ -91,23 +109,30 @@ All these commands should be run as `root`, either by logging in as `root` or us
 
 ## 5. Now the rest
 
-Install some other things and copy a base config
+Install some useful/required packages, add the start & stop scripts and copy a base config
 
 	sudo apt install jq net-tools nginx
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
+	sudo cp run_pyrar stop_pyrar /usr/local/bin
+	sudo cp base.sql /tmp
+	sudo chmod 600 /tmp/base.sql
 	sudo cp -a default-config /opt/config
 	sudo ./make_payment > /opt/config/payment.json
 
-Edit the file `base.sql` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`.
+You can now **EITHER** edit the files `/tmp/base.sql` & `/opt/config/logins.json` to give unique passwords to the database users `pdns`, `reg`, `webui` and `engine`,
+**OR** you can run the script `sudo ./set_up_passwords` and it will make up some random passwords for you & put them into `/tmp/base.sql` and `/opt/config/logins.json`.
+
+This automatic password configuration should be fine for most users. It just depends if you have specific password policies where you are.
+
 NOTE: `reg` is the pyrar admin user
 
-You can run the program `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/random_password` to generate passwords
-that should be sufficiently secure.
+If you choose to set the passwords manually, you can use the script `/opt/pyrar/INSTALL_ON_UBUNTU_SERVER/random_password`
+to generate passwords that should be sufficiently secure.
 
 
 Make the databases, add users & apply table permission
 
-	sudo mysql -u root < base.sql
+	sudo mysql -u root < /tmp/base.sql
 	sudo mysql -u root pdns < ../dump_schema/pdns.sql
 	sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
 	sudo mysql -u root pyrar < grants.sql
@@ -142,11 +167,11 @@ will go into `/var/log/syslog`, but you can change that if you wish.
 
 Now run `cd /opt/config` and edit the config files to suit your needs
 
-### logins.json
+### `logins.json`
 
-The only changes needed here are to change the passwords to match the passwords you put into `base.sql`.
+The only changes needed here are to change the passwords to match the passwords put into `/tmp/base.sql`.
 
-### registry.json
+### `registry.json`
 
 If you only want to sell SLDs from TLDs that you own, copy `example_registry_one_local.json` to `registry.json`
 and edit the prices, if you wish.
@@ -154,14 +179,14 @@ and edit the prices, if you wish.
 If you want to also sell from a single EPP Registry, copy `example_registry_one_epp_one_local.json` instead.
 
 
-### priority.json
+### `priority.json`
 
 This is a JSON list of the TLDs you want listed first in a user's search results - it can be empty.
 
 It's the names you want to promote the most.
 
 
-### policy.json
+### `policy.json`
 
 This replaces policy choices from the defaults you will see in `/opt/pyrar/python/librar/policy.py`
 The default file contains the minimum ones you need to change.
@@ -178,7 +203,7 @@ NOTE: Until you have a website name, an SSL certificate (e.g from letsencrypt) a
 configured your site name in `policy.json`, you will not be able to access the site properly.
 
 
-### payment.json
+### `payment.json`
 
 Remove payment methods you do not want to use. 
 
@@ -227,15 +252,21 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 
 ### A quick `docker` cheat sheet
 
-`docker image ls` - show loaded containers
+<table>
+<tr><th> Command</th><th>What it does</th>
+<tr><td nowrap><code>docker image ls</code></td><td>show containers you have downloaded</td></tr>
+<tr><td nowrap><code>docker pull jamesstevens/pyrar</code></td><td>update the container image with the latest version</td></tr>
+<tr><td nowrap><code>docker ps</code></td><td>show running containers</td></tr>
+<tr><td nowrap><code>docker stop <CONTAINER ID></code></td><td>clean shutdown a running container, where <code>CONTAINER ID</code> is the first column in the <code>docker ps</code> output.</td></tr>
+<tr><td nowrap><code>docker exec -it <CONTAINER ID> /bin/sh</code></td><td>shell into a container</td></tr>
+</table>
 
-`docker pull jamesstevens/pyrar` - update the container image with the latest version
+NOTE: If you run `docker pull jamesstevens/pyrar` to update to the latest version, you also have to run
 
-`docker ps` - show running containers
+	sudo systemctl restart pyrar
 
-`docker stop <CONTAINER ID>` - clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output.
+To stop the old version & restart with the new version.
 
-`docker exec -it <CONTAINER ID> /bin/sh` - shell into a container
 
 
 ## 8. Testing the Test-Run
@@ -266,6 +297,7 @@ if this is the case for you, run the following
 	sudo systemctl stop nginx
 	sudo systemctl remove nginx
 	sudo cp opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar.without_nginx /usr/local/bin/run_pyrar
+
 
 This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
 need to configure your hosting provider to direct the traffic to these ports.
@@ -300,7 +332,7 @@ to reach the admin interface.
 
 ## 10. Loading the site
 
-Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server,
+Assuming you have the same website name in `policy.json` and `nginx.conf` and you have the DNS set up to point to this server (see below),
 you should now be able to load both the user's site and the admin site in a browser.
 
 Until you create any sysadmin logins, the default login of `pyrar` & password `pyrar` should work.
@@ -318,7 +350,6 @@ two zones `tlds.pyrar.localhost` and `clients.pyrar.localhost`. These are for in
 Now
 
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
-	sudo cp run_pyrar stop_pyrar /usr/local/bin
 	sudo cp pyrar.service /etc/systemd/system
 	sudo systemctl daemon-reload
 	sudo systemctl enable pyrar
@@ -370,7 +401,57 @@ As soon as you add a zone, the system will pick it up, but users won't see it un
 Once users have reloaded the site, when they do a search the newly added zone should now come up.
 
 
+# You're done
+
 Essentially, the install in now done - its just for you to complete setting it up how you want it.
+
+
+# Setting Up The DNS in Your Domain
+
+If you have followed this installation, you will need four IP Address entries in your domain.
+They are for the hosts `@`, `admin`, `ns1` and `ns2` - where `@` means the zone itself.
+For example, if your PyRar server's external IP Address is `64.65.66.67`, then you would add the following
+into your domain's DNS - this is usually done at your registrar, where you bought the domain.
+
+	@     IN  A  64.65.66.67
+	ns1   IN  A  64.65.66.67
+	ns2   IN  A  64.65.66.67
+	admin IN  A  64.65.66.67
+
+These records will also need a `TTL`, this depends on how often you think you might change these
+values. If you are not sure, `3600` is probably a reasonable choice to start with.
+
+You do not have to use the name `admin` for the Admin/UI, but whatever name you choose must be matched in the `nginx.conf`
+and you must have a valid certificate for it. If you have a wildcard certificate (as recommended), then
+you are free to choose any name you wish.
+
+Documentation for setting up addititonal and/or external Name Servers will follow in due time.
+
+
+# Security & Firewalls
+
+The only ports you need exposed to the outside world are
+
+| Port | Meaning |
+| ---- | ------- |
+| TCP/443 | HTTPS, for access to the web/ui & admin/ui |
+| TCP/53 | DNS |
+| UDP/53 | DNS |
+| TCP/22 | SSH - preferably restricted, not just open to the world |
+
+If you are not using an external firewall, it is recommended you [set up the firewall](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-22-04)
+in Ubuntu Server.
+
+If you have enough bandwidth, and low enough latency, on your home internet connection, you can run PyRar on a PC server at home.
+[My demo site](https://nameshake.net) runs on my home DSL line which has 75Mb/s down & 25Mb/s up and less than 8ms `ping` response
+to the main UK/IX.
+
+If you google "internet speed test" and run the Google test provided, it will show you these three stats for your connection.
+
+Most home DSL routers support "port forwarding", so configure your router to forward the HTTPS & DNS ports (shown above) to your PyRar Server.
+With only these ports forwarded, your server should be reasonbly secure, assuming the other machines on your network don't get attacked!!
+
+NOTE: Exposing port 3306 (MariaDB) to the entire world is **HIGHLY* undesirable.
 
 
 
@@ -404,7 +485,7 @@ where the role & login name are the same, you only need to specify the password 
 If you are using an external database service, like AWS, you may not be able to control what user names you
 are allowed to use, so just specify both the username & password for each role.
 
-When using an external database service, you will also need to edit the `base.sql` & `grants.sql` scripts.
+When using an external database service, you will also need to edit the `/tmp/base.sql` & `grants.sql` scripts.
 
 
 # Connecting to EPP Registries
@@ -422,13 +503,12 @@ So the `logins.json` entry for `example` might look like this
 
 The `registry.json` entry must have `desc`, `type` (which is `epp`), `sessions` and `prices`.
 
-`desc` - A text string of your choice
-
-`type` - For EPP registries this is `epp`
-
-`sessions` - Number of simultaneous EPP sessions the registry will allow you / you want to maintain
-
-`prices` - A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price
+<table>
+<tr><td><code>desc</code></td><td>A text string of your choice</td></tr>
+<tr><td><code>type</code></td><td>For EPP registries this is <code>epp</code></td></tr>
+<tr><td><code>sessions</code></td><td>Number of simultaneous EPP sessions the registry will allow you / you want to maintain</td></tr>
+<tr><td><code>prices</code></td><td>A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price</td></tr>
+</table>
 
 For exmaple
 
