@@ -425,8 +425,8 @@ The only ports you need exposed to the outside world are
 | UDP/53 | DNS |
 | TCP/22 | SSH - preferably restricted, not just open to the world |
 
-If you are not using an external firewall, it is recommended you [set up the firewall]
-(https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-22-04) in Ubuntu Server.
+If you are not using an external firewall, it is recommended you [set up the firewall](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-22-04)
+in Ubuntu Server.
 
 If you have enough bandwidth, and low enough latency, on your home internet connection, you can run PyRar on a PC server at home.
 [My demo site](https://nameshake.net) runs on my home DSL line which has 75Mb/s down & 25Mb/s up and less than 8ms `ping` response
