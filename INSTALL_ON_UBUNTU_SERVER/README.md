@@ -245,13 +245,14 @@ Usually this will log PyRar logs into `/var/log/syslog`.
 
 ### A quick `docker` cheat sheet
 
-| Command | What it does |
-| --- | --- |
-| `docker image ls` | show loaded containers |
-| `docker pull jamesstevens/pyrar` | update the container image with the latest version |
-| `docker ps` | show running containers |
-| `docker stop <CONTAINER ID>` | clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output. |
-| `docker exec -it <CONTAINER ID> /bin/sh` | shell into a container |
+<table>
+<tr><th> Command</th><th>What it does</th>
+<tr><td nowrap>`docker image ls`</td><td>show loaded containers</td></tr>
+<tr><td nowrap>`docker pull jamesstevens/pyrar`</td><td>update the container image with the latest version</td></tr>
+<tr><td nowrap>`docker ps`</td><td>show running containers</td></tr>
+<tr><td nowrap>`docker stop <CONTAINER ID>`</td><td>clean shutdown a running container, where `<CONTAINER ID>` is the first column in the `docker ps` output.</td></tr>
+<tr><td nowrap>`docker exec -it <CONTAINER ID> /bin/sh`</td><td>shell into a container</td></tr>
+</table>
 
 
 ## 8. Testing the Test-Run
