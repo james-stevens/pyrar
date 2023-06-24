@@ -169,7 +169,7 @@ Now run `cd /opt/config` and edit the config files to suit your needs
 
 ### `logins.json`
 
-The only changes needed here are to change the passwords to match the passwords you put into `/tmp/base.sql`.
+The only changes needed here are to change the passwords to match the passwords put into `/tmp/base.sql`.
 
 ### `registry.json`
 
