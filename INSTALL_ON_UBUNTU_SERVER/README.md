@@ -109,7 +109,7 @@ All these commands should be run as `root`, either by logging in as `root` or us
 
 ## 5. Now the rest
 
-Install some useful/required packages, add the start & stop scripts and copy a base config
+#### Install some useful/required packages, add the start & stop scripts and copy a base config
 
 	sudo apt install jq net-tools nginx
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
@@ -131,7 +131,9 @@ If you choose to set the passwords manually, you can use the script `/opt/pyrar/
 to generate passwords that should be sufficiently secure.
 
 
-Now edit `/usr/local/etc/external_ip.inc` to set your server's external IP Address. This is to prevent PyRar conflicting with
+#### Now edit `/usr/local/etc/external_ip.inc` to set your server's external IP Address.
+
+This is to prevent PyRar conflicting with
 services that are running within the operating system.
 
 The address you want is probably the one you used to `ssh` to the server. You can see all your server's IP Addresses by running `ip addr show`.
@@ -150,31 +152,33 @@ to
 
 	export EXTERNAL_IP_ADDRESS="192.168.1.220"
 
+If you want to change this later, you will neeed to run `sudo systemctl restart pyrar`
 
-Make the databases, add users & apply table permission
+
+#### Make the databases, add users & apply table permission
 
 	sudo mysql -u root < /tmp/base.sql
 	sudo mysql -u root pdns < ../dump_schema/pdns.sql
 	sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
 	sudo mysql -u root pyrar < grants.sql
 
-Make some more directories & set permission
+#### Make some more directories & set permission
 
 	cd /opt
 	sudo mkdir -m 777 storage
 	sudo mkdir -m 755 pems
 	sudo chmod 755 config
 
-Get the latest copy of PyRar from `docker.com`
+#### Get the latest copy of PyRar from `docker.com`
 
 	sudo docker pull jamesstevens/pyrar
 
-Set up logging, Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
+#### Set up logging, Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
 
 	module(load="imudp")
 	input(type="imudp" port="514")
 
-Restart `rsyslog`
+#### Restart `rsyslog`
 
 	sudo systemctl restart rsyslog
 
@@ -308,7 +312,7 @@ Now run:
 this should return `{"error":"Website continuity error"}`
 
 
-## 9. Adding External Access
+## 9. Adding External Access & SSL
 
 **IF** you are using a hosting service that will do the SSL for you in their infrastructure, then you 
 do not want to be running `nginx`. Some AWS services include running SSL for you.
@@ -322,7 +326,11 @@ if this is the case for you, run the following
 This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
 need to configure your hosting provider to direct the traffic to these ports.
 
-Otherwise, now we'll get the `nginx` server running to provide SSL access to the PyRar container.
+Your external SSL service provider should be pointed to whatever IP Address you set in the file `/usr/local/etc/external_ip.inc`.
+
+
+
+**Otherwise**, now we'll get the `nginx` server running to provide SSL access to the PyRar container.
 
 First you need to upload your SSL PEM, that includes both the CA Ceritficate & the private key, to `/etc/nginx/certkey.pem`
 
