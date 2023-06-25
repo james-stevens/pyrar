@@ -144,7 +144,7 @@ You can *probably* find the external one by running
 You only need to use the IP Address, **not** the netmask (the part after, and including the `/`)
 e.g. for `192.168.1.220/22` the IP Address is `192.168.1.220`.
 
-In this exmaple you would change the line
+In this example you would change the line
 
 	export EXTERNAL_IP_ADDRESS="[YOUR-EXTERNAL-IP]"
 
@@ -152,7 +152,7 @@ to
 
 	export EXTERNAL_IP_ADDRESS="192.168.1.220"
 
-If you want to change this later, you will neeed to run `sudo systemctl restart pyrar`
+If you want to change this once the entire install is done & you're running, you will neeed to run `sudo systemctl restart pyrar`
 
 
 #### Make the databases, add users & apply table permission
@@ -290,8 +290,42 @@ NOTE: If you run `docker pull jamesstevens/pyrar` to update to the latest versio
 
 	sudo systemctl restart pyrar
 
-To stop the old version & restart with the new version.
+To stop the old version & restart with the new version. Until youu restart the PyRar container, it will
+happily keep running the only version.
 
+If you wish to retain a copy of the old version of the container code, you can give it a tag.
+
+NOTE: if you tag an old version, it will never be remvoed until you remove it manually.
+
+For example, to give the current latest version the tag `working`, run
+
+	sudo docker image tag jamesstevens/pyrar:latest pyrar:working
+
+You can then run this older tagged version by changing `/usr/local/bin/run_pyrar`. In the above example, change the last line from...
+
+	-t jamesstevens/pyrar $*
+
+to
+
+	-y pyrar:working $*
+
+then restart PyRar to make it run the tagged version. To remove the tagged copy, run
+
+	sudo docker image rm pyrar:working
+
+Keeping old copies of containers like this can considerably reduce your risk when doing an upgrade,
+so long as you tag the container **BEFORE** running `docker pull` to download the newsest code!!!!
+
+If you suspect old copies are lingering about and taking up disk space, run this to clean up
+
+	sudo docker image prune
+
+You can also run
+
+	sudo docker system prune
+
+to make `docker` to a full clean up in all areas. This should only clean up unwanted or uneeded assets,
+not currently running assets.
 
 
 ## 8. Testing the Test-Run
@@ -301,7 +335,7 @@ To stop the old version & restart with the new version.
 This should return an `SOA` record for the zone `tlds.pyrar.localhost`, including this
 
 	;; AUTHORITY SECTION:
-	tlds.pyrar.localhost.   3600    IN      SOA     ns1.exmaple.com. hostmaster.tlds.pyrar.localhost. 1687436967 10800 3600 604800 3600
+	tlds.pyrar.localhost.   3600    IN      SOA     ns1.example.com. hostmaster.tlds.pyrar.localhost. 1687436967 10800 3600 604800 3600
 
 If this works, but returns no `SOA` record, you probably didn't set the `dns_servers` value correctly.
 
@@ -502,7 +536,7 @@ For security, I have not used `admin` as the admin user cos this is too easy to 
 instead. For `webui` and `engine` I have used the role name as the login name, to simplify the configuration.
 
 Where the role & login name are different, you must specify the role's value as an array of two items `[usernane,password]`, but
-where the role & login name are the same, you only need to specify the password as a string. For exmaple
+where the role & login name are the same, you only need to specify the password as a string. For example
 
 	"webui": "some-webui-password",
 
@@ -538,10 +572,10 @@ The `registry.json` entry must have `desc`, `type` (which is `epp`), `sessions` 
 <tr><td><code>prices</code></td><td>A JSON of the prices you wish to charge. This can specify a fixed price, a multiplication factor or a fixed addition to the registry price</td></tr>
 </table>
 
-For exmaple
+For example
 
 	"example": {
-		"desc": "An exmaple EPP registry",
+		"desc": "An example EPP registry",
 		"type": "epp",
 		"sessions": 3,
 		"prices" : { "default": "x1.5" }
