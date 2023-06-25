@@ -111,6 +111,7 @@ All these commands should be run as `root`, either by logging in as `root` or us
 
 - Install some useful/required packages, add the start & stop scripts and copy a base config
 
+
 	sudo apt install jq net-tools nginx
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	sudo cp run_pyrar stop_pyrar /usr/local/bin
