@@ -109,11 +109,12 @@ All these commands should be run as `root`, either by logging in as `root` or us
 
 ## 5. Now the rest
 
-Install some useful/required packages, add the start & stop scripts and copy a base config
+- Install some useful/required packages, add the start & stop scripts and copy a base config
 
 	sudo apt install jq net-tools nginx
 	cd /opt/pyrar/INSTALL_ON_UBUNTU_SERVER
 	sudo cp run_pyrar stop_pyrar /usr/local/bin
+	sudo cp external_ip.inc /usr/local/etc/
 	sudo cp base.sql /tmp
 	sudo chmod 600 /tmp/base.sql
 	sudo cp -a default-config /opt/config
@@ -130,30 +131,50 @@ If you choose to set the passwords manually, you can use the script `/opt/pyrar/
 to generate passwords that should be sufficiently secure.
 
 
-Make the databases, add users & apply table permission
+- Now edit `/usr/local/etc/external_ip.inc` to set your server's external IP Address. This is to prevent PyRar conflicting with
+services that are running within the operating system.
+
+The address you want is probably the one you used to `ssh` to the server. You can see all your server's IP Addresses by running `ip addr show`.
+You can *probably* find the external one by running
+
+	ip addr show | grep 'scope global' | grep -v 172.17
+
+You only need to use the IP Address, **not** the netmask (the part after, and including the `/`)
+e.g. for `192.168.1.220/22` the IP Address is `192.168.1.220`.
+
+In this exmaple you would change the line
+
+	export EXTERNAL_IP_ADDRESS="[YOUR-EXTERNAL-IP]"
+
+to
+
+	export EXTERNAL_IP_ADDRESS="192.168.1.220"
+
+
+- Make the databases, add users & apply table permission
 
 	sudo mysql -u root < /tmp/base.sql
 	sudo mysql -u root pdns < ../dump_schema/pdns.sql
 	sudo mysql -u root pyrar < ../dump_schema/pyrar.sql
 	sudo mysql -u root pyrar < grants.sql
 
-Make some more directories & set permission
+- Make some more directories & set permission
 
 	cd /opt
 	sudo mkdir -m 777 storage
 	sudo mkdir -m 755 pems
 	sudo chmod 755 config
 
-Get the latest copy of PyRar from `docker.com`
+- Get the latest copy of PyRar from `docker.com`
 
 	sudo docker pull jamesstevens/pyrar
 
-Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
+- Set up logging, Edit the file `/etc/rsyslog.conf` at about line 16, uncomment these lines
 
 	module(load="imudp")
 	input(type="imudp" port="514")
 
-Restart `rsyslog`
+- Restart `rsyslog`
 
 	sudo systemctl restart rsyslog
 
@@ -297,7 +318,6 @@ if this is the case for you, run the following
 	sudo systemctl stop nginx
 	sudo systemctl remove nginx
 	sudo cp opt/pyrar/INSTALL_ON_UBUNTU_SERVER/run_pyrar.without_nginx /usr/local/bin/run_pyrar
-
 
 This will run the user website to port 80 (HTTP) and run the admin web/ui on port 1000, so you will 
 need to configure your hosting provider to direct the traffic to these ports.
