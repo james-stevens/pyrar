@@ -6,6 +6,7 @@ docker run \
 	-v /opt/storage:/opt/pyrar/storage \
 	-v /opt/config:/opt/pyrar/config \
 	-v /opt/pems:/opt/pyrar/pems \
+	-p 127.0.0.1:53:53/udp -p 127.0.0.1:53:53 \
 	-p ${EXTERNAL_IP_ADDRESS}:53:53/udp -p ${EXTERNAL_IP_ADDRESS}:53:53 \
 	-p ${EXTERNAL_IP_ADDRESS}:80:80 -p ${EXTERNAL_IP_ADDRESS}:1000:1000 \
 	-t jamesstevens/pyrar $*
