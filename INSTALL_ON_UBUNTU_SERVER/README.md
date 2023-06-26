@@ -9,7 +9,7 @@ the outside world access to PyRar & its admin system. This improves security.
 `nginx` may not be necessary if you are using a hosting service that will so the SSL for you - AWS can do this.
 
 In this example I am using Ubuntu Server, but pretty much any linux should work. You'll just have to
-google / adjust the commands as appropriate. I didn't chose Ubuntu Server for any particular reason,
+google / adjust the commands as appropriate. I didn't choose Ubuntu Server for any particular reason,
 except that its popular.  I'm using Ubuntu Server v22.04.2
 
 
@@ -52,7 +52,7 @@ send you a quote for the install. Give it a title like "Custom Ubuntu server ins
 ## 1. Install Ubuntu Server
 
 With Ubuntu Server, you can do either a `comfortable` or `minimal` install, I chose `comfortable`. You can probably
-chose `minimal` and just install any missing packages later. But these instructions will assume
+choose `minimal` and just install any missing packages later. But these instructions will assume
 you installed `comfortable`.
 
 Then make sure you're up-to-date
