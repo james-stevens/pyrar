@@ -35,7 +35,7 @@ mapped to these directories inside the container
 </table>
 
 
-## Getting Somebody Else to The Install
+## Getting Somebody Else to do The Install
 
 If you think this install is more than you feel comfortable with, you should be able to easily find somebody to do it for you.
 Go to a site like https://www.peopleperhour.com/ or https://www.fiverr.com/ and search for `ubuntu server` or `linux server`.
@@ -43,7 +43,7 @@ Go to a site like https://www.peopleperhour.com/ or https://www.fiverr.com/ and 
 Send them a link to these installation instructions & ask for a quote to do this install.
 
 Or you can just generate a quote request that points to these installation instructions and various people should
-send you a quite for the install. Give it a title like "Custom Ubuntu server installation".
+send you a quote for the install. Give it a title like "Custom Ubuntu server installation".
 
 
 
@@ -145,8 +145,7 @@ to generate passwords that should be sufficiently secure.
 
 #### Now edit `/usr/local/etc/external_ip.inc` to set your server's external IP Address.
 
-This is to prevent PyRar conflicting with
-services that are running within the operating system.
+This is to prevent PyRar conflicting with services that are running within the operating system.
 
 The address you want is probably the one you used to `ssh` to the server. You can see all your server's IP Addresses by running `ip addr show`.
 You can *probably* find the external one by running
@@ -165,6 +164,13 @@ to
 	export EXTERNAL_IP_ADDRESS="192.168.1.220"
 
 If you want to change this once the entire install is done & you're running, you will neeed to run `sudo systemctl restart pyrar`
+
+NOTE: Some hosting services use Network Address Translation (NAT), this can mean the IP Address your server appears as on the
+internet is different from the IP Address you see configured into the server itself.
+
+If this is the case, configure the IP you see on the server itself, as shown by `ip addr show`, into `external_ip.inc`, **NOT** its
+external (NAT) IP Address. The same applies if you are hosting PyRar at home on your home internet connection & using port forwarding 
+in your home router, see `Security & Firewalls` below.
 
 
 #### Make the databases, add users & apply table permission
