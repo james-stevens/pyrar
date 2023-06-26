@@ -35,6 +35,18 @@ mapped to these directories inside the container
 </table>
 
 
+## Getting Somebody Else to The Install
+
+If you think this install is more than you feel comfortable with, you should be able to easily find somebody to do it for you.
+Go to a site like https://www.peopleperhour.com/ or https://www.fiverr.com/ and search for `ubuntu server` or `linux server`.
+
+Send them a link to these installation instructions & ask for a quote to do this install.
+
+Or you can just generate a quote request that points to these installation instructions and various people should
+send you a quite for the install. Give it a title like "Custom Ubuntu server installation".
+
+
+
 # The Actual Install
 
 ## 1. Install Ubuntu Server
@@ -202,6 +214,18 @@ If you only want to sell SLDs from TLDs that you own, copy `example_registry_one
 and edit the prices, if you wish.
 
 If you want to also sell from a single EPP Registry, copy `example_registry_one_epp_one_local.json` instead.
+
+I **STRONGLY** recommend you start by trying to get selling only TLDs you own first, before trying to get
+external EPP registries working. So copy `example_registry_one_local.json` to `registry.json` & restart pyrar.
+
+If you don't own any TLDs, just pretend you do and use a TLD name like `example`, and remove it later, before you go live.
+
+NOTE: I use the terms `TLD` & `SLD` to mean the parent domain & the client's subdomain, but the parent domain does not
+have to be a Top Level Domain, you can ue PyRar to sell third level domains from a second level domain.
+
+e.g. Parent domain: `name.it`, then clients could buy names like: `my.name.it`
+
+
 
 
 ### `priority.json`
@@ -463,6 +487,25 @@ As soon as you add a zone, the system will pick it up, but users won't see it un
 Once users have reloaded the site, when they do a search the newly added zone should now come up.
 
 
+# Checking Transactions Work
+
+From within the admin/ui you can find a user's account & give them fake credit. This will allow that user to test 
+paying for domains. Once paying with admin fake credit works, you should test using an external payment system.
+
+Register an account with [NowPayments](https://nowpayments.io/) and enable webhook callbacks in your account settings.
+Configure the account into the `payment.json` file. Set the payment `mode` to `test` and enter the API-Key they have given you for testing / sandbox.
+
+Don't forget to run `jq < payment.json` to check the JSON syntax is correct - its so easy to make typos.
+
+PyRar will reload the `payment.json` file automatically, but users will need to reload the user interface to get the new config.
+
+Once the user has the latest configuration, they should be able to make adhoc credits to their account, or use
+NowPayments to pay for transactions.
+
+Even if you do not intend to use NowPayments when you go live, their testing interface is really nice & easy to get set-up,
+so is a great way to check payments & external webhooks work.
+
+
 # You're done
 
 Essentially, the install in now done - its just for you to complete setting it up how you want it.
@@ -581,14 +624,23 @@ For example
 		"prices" : { "default": "x1.5" }
 		}
 
-In this example, we are going to charge our users a 50% mark up of the whole sale price of the domains.
+In this example, we are going to charge our users a 50% mark up of the wholesale price of the domains.
 
-EPP requires that you present a client-side certificate. Different registries have different requirements on this,
+EPP **requires** that you present a client-side certificate. Different registries have different requirements on this,
 so you will need to find out from them what they require. Some will issue you with your client-side certificate.
+Others will accept the PEM you used for `nginx`. Some want a publicly verifiable certificate, others are
+happy with a private certificate.
 
 Once you have a client side certificate you must copy it into `/opt/pems` with the name of the service and the suffix `.pem`.
 In our example that would be `/opt/pems/example.pem`.
 
-Most changes to the `config` file will happen immediately, but to add or remove an EPP service, you must restart the PyRar container with
+If you do **NOT** provide a client-side certificate, the EPP service will fail to start & continuously loop, restarting again & again.
+You can also expect to see an error like this
+
+	ValueError: Client PEM file for 'example' at '/opt/pyrar/pems/example.pem' not found
+
+Most changes to the `config` file will happen immediately, but to add or remove an `registry` service, you must restart the PyRar container with
 
 	sudo systemctl restart pyrar
+
+If you ever replace a client-side certificate you will also need to restart PyRar.
