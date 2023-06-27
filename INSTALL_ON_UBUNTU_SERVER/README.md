@@ -46,6 +46,24 @@ Or you can just generate a quote request that points to these installation instr
 send you a quote for the install. Give it a title like "Custom Ubuntu server installation".
 
 
+## Terminology
+
+`TLD` - Stands for Top Level Domain. Usually people will want to be selling client sub-domains
+from a TLD, e.g for the domain `example` you might sell the prefix `name` to make `name.example`
+
+However, this is not always the case. You can also sell third level domains from a second level domain. e.g from the
+domain `it.net` you could sell the prefix `name` to mnake `name.it.net` - assuming you already own `it.net` :)
+
+Whether you are selling from a top, second or even third level domain, I will always refer to this parent domain as 
+the `TLD`. In PyRar they are stored in the `zones` table.
+
+`SLD` - Stands for Second  Level Domain and refers to the client's sub-domain. In the examples above this would be
+`name.example` or `name.it.net`
+
+Again, I will always refer to your client's subdomains as `SLD`, even though they could be third level domains, or below.
+In PyRar they are stored in the `domains` table.
+
+
 
 # The Actual Install
 
@@ -216,22 +234,12 @@ The only changes needed here are to change the passwords to match the passwords 
 
 ### `registry.json`
 
-If you only want to sell SLDs from TLDs that you own, copy `example_registry_one_local.json` to `registry.json`
-and edit the prices, if you wish.
-
-If you want to also sell from a single EPP Registry, copy `example_registry_one_epp_one_local.json` instead.
-
-I **STRONGLY** recommend you start by trying to get selling only TLDs you own first, before trying to get
-external EPP registries working. So copy `example_registry_one_local.json` to `registry.json` & restart pyrar.
+The default registry set up is to sell client subdomains (SLDs) from TLDs they you own or control. Even if
+you plan to also sell client domains from an external EPP registry, start with this simple set-up and get a local registry working first.
 
 If you don't own any TLDs, just pretend you do and use a TLD name like `example`, and remove it later, before you go live.
 
-NOTE: I use the terms `TLD` & `SLD` to mean the parent domain & the client's subdomain, but the parent domain does not
-have to be a Top Level Domain, you can ue PyRar to sell third level domains from a second level domain.
-
-e.g. Parent domain: `name.it`, then clients could buy names like: `my.name.it`
-
-
+More documentation for adding an external EPP registry is below.
 
 
 ### `priority.json`
@@ -603,8 +611,8 @@ When using an external database service, you will also need to edit the `/tmp/ba
 
 To connect to an external EPP registry, you need to set up the registry in `registry.json` and set up its login in `logins.json`.
 
-Each EPP registry will have a name of your choice, say "example". The `logins.json` will have three properties, `username`, `password` and `server`.
-So the `logins.json` entry for `example` might look like this
+Each EPP registry will have a name of your choice, say "example". The `logins.json` will have three properties,
+`username`, `password` and `server`.  So the `logins.json` entry for `example` might look like this
 
 	"example" : {
 		"username": "my-login",
