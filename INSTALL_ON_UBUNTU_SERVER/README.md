@@ -237,6 +237,8 @@ The only changes needed here are to change the passwords to match the passwords 
 The default registry set up is to sell client subdomains (SLDs) from TLDs they you own or control. Even if
 you plan to also sell client domains from an external EPP registry, start with this simple set-up and get a local registry working first.
 
+The default `registry.json` contains the default prices for your locally owned TLDs, so you may want to edit this.
+
 If you don't own any TLDs, just pretend you do and use a TLD name like `example`, and remove it later, before you go live.
 
 More documentation for adding an external EPP registry is below.
