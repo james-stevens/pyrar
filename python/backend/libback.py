@@ -12,18 +12,23 @@ from backend.dom_plugins import *
 JOB_RESULT = {None: "FAILED", False: "Retry", True: "Complete"}
 
 
+def has_func(action, dom, bke_job):
+    if dom.registry["type"] not in dom_handler.backend_plugins:
+        return None, (f"ERROR: Registry '{dom.registry['name']}' type '{dom.registry['type']}'" +
+                      " for '{dom.dom_db['name']}' not supported")
+    this_handler = dom_handler.backend_plugins[dom.registry["type"]]
+    return action in this_handler and this_handler[action] is not None, None
+
+
 def run(action, dom, bke_job):
     this_handler = dom_handler.backend_plugins[dom.registry["type"]]
-    if action not in this_handler:
-        log(f"Action '{action}' not supported by Plugin '{dom.registry['type']}'")
-        return None
     return this_handler[action](bke_job, dom)
 
 
 def get_prices(domlist, num_years, qry_type):
     this_handler = dom_handler.backend_plugins[domlist.registry["type"]]
     if "dom/price" not in this_handler:
-        log(f"Action 'dom/price' not supported by Plugin '{domlist.reg['type']}'")
+        log(f"ERROR: Action 'dom/price' not supported by Plugin '{domlist.reg['type']}'")
         return False, f"Action 'dom/price' not supported by plugin '{domlist.reg['type']}'"
     return this_handler["dom/price"](domlist, num_years, qry_type)
 

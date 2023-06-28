@@ -563,8 +563,8 @@ def users_verify():
     if req.post_js is None:
         return req.abort("No JSON posted")
 
-    if not misc.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"],
-                                                                             int) or len(req.post_js["hash"]) != 20:
+    if not misc.has_data(req.post_js, ["user_id", "hash"]) or not isinstance(req.post_js["user_id"], int) or len(
+            req.post_js["hash"]) != 20:
         return req.abort("Invalid verification data")
     if users.verify_email(int(req.post_js["user_id"]), req.post_js["hash"]):
         return req.response(True)
@@ -932,4 +932,5 @@ def main():
 
 
 if __name__ == "__main__":
+    log("RUNNING WEB/UI")
     main()

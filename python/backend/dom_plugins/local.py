@@ -41,8 +41,7 @@ def remove_parent_records(bke_job, dom):
     ok_ns, __ = pdns.update_rrs(tld, {"name": name, "type": "NS", "data": []})
     ok_ds, __ = pdns.update_rrs(tld, {"name": name, "type": "DS", "data": []})
 
-    # CODE
-    # need code to remove glue records, when supported
+    # CODE - need code to remove glue records, when supported
 
     return ok_ns and ok_ds and ok_a and ok_aaaa
 
@@ -95,7 +94,8 @@ def check_tlds_exist():
 
 
 def needs_parent_records(dom_db):
-	return (misc.has_data(dom_db,"ns") and dom_db["ns"] != policy.policy("dns_servers")) or pdns.zone_exists(dom_db["name"])
+    return (misc.has_data(dom_db, "ns") and dom_db["ns"] != policy.policy("dns_servers")) or pdns.zone_exists(
+        dom_db["name"])
 
 
 def domain_update_from_db(bke_job, dom):
@@ -175,16 +175,6 @@ def domain_info(bke_job, dom):
     return dom.dom_db
 
 
-def set_authcode(bke_job, dom):
-    """ nothing to do, set by webui/domains code """
-    return True
-
-
-def domain_update_flags(bke_job, dom):
-    """ nothing to do for `local` """
-    return True
-
-
 def get_class_from_name(name):
     """ support for domain:class, premium pricing. Return class for {name} """
     ok, class_db = sql.sql_select_one("class_by_name", {"name": name}, "class")
@@ -225,13 +215,11 @@ dom_handler.add_plugin(
         "dom/create": domain_create,
         "dom/renew": domain_renew,
         "dom/transfer": domain_request_transfer,
-        "dom/authcode": set_authcode,
         "dom/delete": domain_delete,
         "dom/expired": domain_expired,
         "dom/info": domain_info,
         "dom/rawinfo": domain_info,
         "dom/recover": domain_recover,
-        "dom/flags": domain_update_flags,
         "dom/price": local_domain_prices
     })
 

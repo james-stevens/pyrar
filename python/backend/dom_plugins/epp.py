@@ -278,13 +278,8 @@ def xml_check_code(job_id, desc, xml):
     return True
 
 
-def domain_expired(bke_job, dom):
-    """ nothing to do here """
-    return True
-
-
 def domain_delete(bke_job, dom):
-    """ nothing to do here """
+    """ might be worth doing something here """
     return True
 
 
@@ -355,7 +350,6 @@ dom_handler.add_plugin(
         "dom/info": domain_info,
         "dom/delete": domain_delete,
         "dom/recover": domain_renew,
-        "dom/expired": domain_expired,
         "dom/flags": domain_update_flags,
         "dom/price": epp_domain_prices,
         "dom/rawinfo": domain_info_raw

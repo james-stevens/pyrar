@@ -74,11 +74,20 @@ def run_backend_item(bke_job):
         log(f"BKE-{job_id}: Domain '{dom.dom_db['name']}' is not owned by '{bke_job['user_id']}'")
         return job_abort(bke_job)
 
-    job_run = libback.run(bke_job["job_type"], dom, bke_job)
+    ok, reply = libback.has_func(bke_job["job_type"], dom, bke_job)
+    if ok is None:
+        job_run = None
+        notes = reply
+    elif not ok:
+        job_run = True
+        notes = (f"{libback.JOB_RESULT[job_run]}: BKE-{job_id} type '{dom.registry['type']}:{bke_job['job_type']}' " +
+                 f"on DOM-{bke_job['domain_id']} not required for this registry type")
+    else:
+        job_run = libback.run(bke_job["job_type"], dom, bke_job)
 
-    notes = (f"{libback.JOB_RESULT[job_run]}: BKE-{job_id} type '{dom.registry['type']}:{bke_job['job_type']}' " +
-             f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
-             f"{policy.policy('backend_retry_attempts')}")
+        notes = (f"{libback.JOB_RESULT[job_run]}: BKE-{job_id} type '{dom.registry['type']}:{bke_job['job_type']}' " +
+                 f"on DOM-{bke_job['domain_id']} retries {bke_job['failures']}/" +
+                 f"{policy.policy('backend_retry_attempts')}")
 
     log(notes)
     shared.event_log(notes, bke_job)

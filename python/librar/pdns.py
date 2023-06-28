@@ -346,7 +346,6 @@ def update_rrs(zone, rrs):
     return False, err_txt
 
 
-
 def main():
     log_init(with_debug=True)
     start_up()
