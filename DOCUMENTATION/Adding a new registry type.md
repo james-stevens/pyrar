@@ -116,4 +116,4 @@ This is the call to add the `local` plug-in
 
 	from backend import dom_handler
 
-Juts take a look through the `local` plug-in at `python/backend/dom_plugins/local.py` for more info.
+Just take a look through the `local` plug-in at `python/backend/dom_plugins/local.py` for more info.
