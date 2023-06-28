@@ -67,6 +67,23 @@ In PyRar they are stored in the `domains` table.
 
 # The Actual Install
 
+## Server Requirements
+
+My default install used 4.8Gb of disk space & the entire system is using about 650Mb of RAM for a default runtime.
+So I recommend a minimum of 1Gb of RAM and (say) 20Gb of disk.
+
+Obviously the amount of disk space you need will massively depends on your plans.
+
+The default is to run 5 threads for the user rest/api. More threads will require more memory, but maybe required if you
+have a busy site.
+
+To increase the user api threads, set the property `webui_sessions` in `/opt/config/policy.json` & restart PyRar. Increasing it to 10
+increased my RAM usage to about 750Mb.
+
+The number of user api threads determins the number of user request that can be serviced at the same time, with any additional requests
+queued until a thread becomes free, causing the user to see a slight delay & the message `Loading...`.
+
+
 ## 1. Install Ubuntu Server
 
 With Ubuntu Server, you can do either a `comfortable` or `minimal` install, I chose `comfortable`. You can probably
@@ -105,6 +122,14 @@ to read
 
 	bind-address            = 172.17.0.1
 
+I also strongly recommend you enable `binlogs`, so at about line 69, uncomment these lines
+
+	server-id              = 1
+	log_bin                = /var/log/mysql/mysql-bin.log
+	expire_logs_days       = 10
+	max_binlog_size        = 100M
+
+
 now edit `/etc/systemd/system/multi-user.target.wants/mariadb.service`, at about line 27, change
 
 	After=network.target
@@ -120,6 +145,7 @@ then run
 
 	 sudo systemctl daemon-reload
 	 sudo systemctl restart mariadb
+
 
 `172.17.0.1` is the docker "loop-back" address, so allows programs in containers to talk to services running in the host operating
 system, without exposing your service to the entire globe!
