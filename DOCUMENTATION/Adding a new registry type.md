@@ -50,13 +50,13 @@ Parameters:-
 - `qry_type` :  A list of the type of actions you want a price on, these can be `create` (new), `renew`, `transfer` or `recover`
 
 The list of domains supplied in `domlist` should always be from the same registry operator, as defined in `registry.json`.
-this does not mean they have to be in the same parent domains (TLDs), just hosted at the same registry operator.
+This does not mean they have to be in the same parent domains (TLDs), just hosted at the same registry operator.
 
 If `num_years` is not supplied it should default to `1`
 
 If `qry_type` is not supplied it should default to `["create", "renew"]`
 
-The function should return a list of dictionaries of the domains, their prices and class as the following properties
+The function should return a boolean for if it worked or not and list of dictionaries of the domains, their prices and class as the following properties
 - `name` : the domain name
 - `num_years` : The number of years the price is for
 - `avail` : Boolean, if the domain is available for registration or not
