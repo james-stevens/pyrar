@@ -1,7 +1,7 @@
 # BackEnd Plug-In Functions
 
 To add a new registry type you need to write a plug-in for it, then put
-your plug-in into the directory `dom_plugins` with the name
+your plug-in into the directory `python/backend/dom_plugins` with the name
 of the file as the name of the plug-in with the `.py` suffix.
 
 The Python file must supply all the functions needed to control domains within that registry type,
@@ -14,8 +14,11 @@ Except `dom/price`, all the `dom/` functions take two paramaters
 - a domain object, which is a `class Domain` object from `librar/domobj.py`.
 
 The functions should return
+
 `True` - the function succeeded and the backend job can be deleted
+
 `False` - the function failed, but the job can be retried
+
 `None` - the function failed and the backend job should not be retried (it will be archived with `failures` = `9999`)
 
 
@@ -113,4 +116,4 @@ This is the call to add the `local` plug-in
 
 	from backend import dom_handler
 
-Juts take a look through the `local` plug-in at `dom_plugins/local.py` for more info.
+Juts take a look through the `local` plug-in at `python/backend/dom_plugins/local.py` for more info.
