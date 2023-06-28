@@ -24,19 +24,19 @@ The functions should return
 
 | Name | Wnat it does |
 | ---- | ------------ |
-| hello | takes no paramaeters, returns a "Hello World" string so you can test your plug-in is loading |
-| start_up | takes no paramaeters, is run when the `backend` service starts-up |
-| dom/authcode | Set a transfer AuthCode on a domain |
-| dom/create | Buy a domain new |
-| dom/delete | Delete a domain |
-| dom/expired | Fired off when a domain expires |
-| dom/flags | Fired off when the user has changed the client lock flags |
-| dom/info | Get the registry side information on the domain, parsed into a standarised format |
-| dom/rawinfo | Get the registry side information on the domain in the registry native format |
-| dom/recover | Recover a domain, ie. renew a domain that has passed its expiry date |
-| dom/renew | Renew a domain |
-| dom/transfer | Transfer a domain to this user with the AuthCode supplied in the `backend` record |
-| dom/update | Fired off when the user has updated the `NS` or `DS` fields |
+| `hello` | takes no paramaeters, returns a "Hello World" string so you can test your plug-in is loading |
+| `start_up` | takes no paramaeters, is run when the `backend` service starts-up |
+| `dom/authcode` | Set a transfer AuthCode on a domain |
+| `dom/create` | Buy a domain new |
+| `dom/delete` | Delete a domain |
+| `dom/expired` | Fired off when a domain expires |
+| `dom/flags` | Fired off when the user has changed the client lock flags |
+| `dom/info` | Get the registry side information on the domain, parsed into a standarised format |
+| `dom/rawinfo` | Get the registry side information on the domain in the registry native format |
+| `dom/recover` | Recover a domain, ie. renew a domain that has passed its expiry date |
+| `dom/renew` | Renew a domain |
+| `dom/transfer` | Transfer a domain to this user with the AuthCode supplied in the `backend` record |
+| `dom/update` | Fired off when the user has updated the `NS` or `DS` fields |
 
 
 ## dom/price
