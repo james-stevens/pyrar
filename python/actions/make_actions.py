@@ -45,7 +45,8 @@ def domain_actions_live(dom_db, now):
     else:
         if (reminders_at := policy.policy("renewal_reminders")) is not None:
             for days in reminders_at.split(","):
-                add_domain_action(dom_db, misc.date_add(dom_db["expiry_dt"], days=-1 * float(days)), "dom/reminder")
+                add_domain_action(dom_db, now, misc.date_add(dom_db["expiry_dt"], days=-1 * float(days)),
+                                  "dom/reminder")
 
     add_domain_action(dom_db, now, dom_db["expiry_dt"], "dom/expired")
 

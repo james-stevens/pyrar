@@ -388,7 +388,6 @@ sql.make_schema()
 set_amended_and_created()
 registry.start_up()
 pdns.start_up()
-libback.start_ups()
 
 site_currency = policy.policy("currency")
 if not validate.valid_currency(site_currency):
