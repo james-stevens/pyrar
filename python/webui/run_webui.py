@@ -651,7 +651,7 @@ def pdns_action(func, action):
 
 
 def pdns_zone_exists(req, dom_db):
-    return req.response({"name": dom_db["name"],"exists":pdns.zone_exists(dom_db["name"])});
+    return req.response({"name": dom_db["name"], "exists": pdns.zone_exists(dom_db["name"])})
 
 
 def pdns_get_data(req, dom_db):
@@ -805,9 +805,11 @@ def domain_dns_unsign():
 def domain_dns_sign():
     return pdns_action(pdns_sign_zone, "pdns/sign")
 
+
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
     return pdns_action(pdns_get_data, "pdns/load")
+
 
 @application.route('/pyrar/v1.0/dns/exists', methods=['POST'])
 def domain_dns_exists():
