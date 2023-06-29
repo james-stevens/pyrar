@@ -650,6 +650,10 @@ def pdns_action(func, action):
     return func(req, dom.dom_db)
 
 
+def pdns_zone_exists(req, dom_db):
+    return req.response({"name": dom_db["name"],"exists":pdns.zone_exists(dom_db["name"])});
+
+
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
     pdns.create_zone(dom_name, ensure_zone=True)
@@ -784,55 +788,49 @@ def make_tlsa():
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
 def domain_dns_update():
-    """ Update an RR-set in P/DNS """
     return pdns_action(pdns_update_rrs, "pdns/update")
 
 
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
-    """ Drop a domain & all its data in P/DNS """
     return pdns_action(pdns_drop_zone, "pdns/drop")
 
 
 @application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
 def domain_dns_unsign():
-    """ Remove DNSSEC from a domain in P/DNS """
     return pdns_action(pdns_unsign_zone, "pdns/unsign")
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
 def domain_dns_sign():
-    """ Sign a domain in P/DNS """
     return pdns_action(pdns_sign_zone, "pdns/sign")
-
 
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
-    """ load domain's DNS data from P/DNS """
     return pdns_action(pdns_get_data, "pdns/load")
+
+@application.route('/pyrar/v1.0/dns/exists', methods=['POST'])
+def domain_dns_exists():
+    return pdns_action(pdns_zone_exists, "pdns/exists")
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
-    """ gift a domain to another user """
     return run_user_domain_task(domains.webui_gift_domain, "Gift")
 
 
 @application.route('/pyrar/v1.0/domain/flags', methods=['POST'])
 def domain_flags():
-    """ update domain flags """
     return run_user_domain_task(domains.webui_update_domains_flags, "Flags")
 
 
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
-    """ update domain details """
     return run_user_domain_task(domains.webui_update_domain, "Update")
 
 
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
-    """ set domain authcode """
     return run_user_domain_task(domains.webui_set_authcode, "setAuth")
 
 

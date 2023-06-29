@@ -2802,14 +2802,16 @@ function one_domain_html(idx)
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
 	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
-		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",100)
+		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",140)
 
 	if ((dom.is_live)&&(!have_locks.TransferProhibited)&&(dom.can_transfer))
-		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,100)
+		x += btn(`push_domain_transfer_options('${idx}')`,"Transfer Out",`Options for transferring this domain to another owner`,140)
 
 	if (dom.status_id != 20) {
-		x += btn(`push_domain_dns('${idx}')`,"DNS Data",`Edit the DNS Data for ${dom.display_name}`,100)
-		x += btn(`push_domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,100)
+		let dns_btn = "Create DNS Data";
+		if (dom.has_dns_data) dns_btn="Edit DNS Data";
+		x += btn(`push_domain_dns('${idx}')`,dns_btn,`${dns_btn} for ${dom.display_name}`,140)
+		x += btn(`push_domain_settings('${idx}')`,"Settings",`Edit the settings for ${dom.display_name}`,140)
 		}
 
 	x += "</span></td></tr>";
@@ -2846,10 +2848,15 @@ function go_show_one_domain(with_push,rest) { show_one_domain(parseInt(rest[0]))
 
 function show_one_domain(idx)
 {
-	show_one_space("userSpace");
-	elm.userSpace.innerHTML = one_domain_html(idx);
-	size_one_space();
-    window.scrollTo(0, 0);
+	let dom = ctx.domains[idx];
+	callApi("dns/exists",(ok,reply) => {
+		dom.has_dns_data = false;
+		if ((ok)&&(reply.name)&&(reply.name==dom.name)) { dom.has_dns_data = reply.exists; }
+		show_one_space("userSpace");
+		elm.userSpace.innerHTML = one_domain_html(idx);
+		size_one_space();
+		window.scrollTo(0, 0);
+		},{ json: {"name": dom.name } });
 }
 
 
