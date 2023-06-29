@@ -740,7 +740,7 @@ def pdns_update_rrs(req, dom_db):
         return req.abort("ERROR: No UWR nodes confgiured")
 
     for idx, uri in enumerate(rrset["data"]):
-        if uri[:7].lower() != "http://" or uri[:7].lower() != "http://":
+        if uri[:7].lower() != "http://" and uri[:8].lower() != "https://":
             uri = "http://" + uri
             rrset["data"][idx] = uri
         if not validators.url(uri):
