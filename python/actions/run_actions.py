@@ -71,7 +71,7 @@ def send_order_reminder(act_db, dom_db):
 
 
 def auto_renew_domain(act_db, dom_db):
-    # CODE REQUIRED
+    # CODE - required for running auto-renew action
     return True
 
 

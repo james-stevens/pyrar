@@ -958,7 +958,8 @@ function postDomainTransfer()
 			ctx.show_one = f.trans_domain_name.value;
 			return load_domains_list(show_selected_domain);
 			}
-		console.log(ok,reply); // # CODE
+		console.log(ok,reply);
+		// # CODE - to handle delayed domain transfers
 		},	{
 			json : {
 				"name": f.trans_domain_name.value,
