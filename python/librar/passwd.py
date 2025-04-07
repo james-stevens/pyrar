@@ -3,14 +3,6 @@
 # Alternative license arrangements possible, contact me for more information
 """ password checking & encrypting fns """
 
-"""
-import scrypt
-salt = b'aa1f2d3f4d23ac44e9c5a6c3d8f9ee8c'
-passwd = b'p@$Sw0rD~7'
-key = scrypt.hash(passwd, salt, 1 << 13,8,10,50)
-print("Derived key:", key.hex())
-"""
-
 import sys
 import bcrypt
 
@@ -31,3 +23,9 @@ if __name__ == "__main__":
     print(">>>>", sys.argv[1], crypt(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None))
     # print(">>>>", sys.argv[1], compare(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None))
     # print(">>>>", sys.argv[1], crypt(base64.b64decode(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else None))
+
+# import scrypt
+# salt = b'aa1f2d3f4d23ac44e9c5a6c3d8f9ee8c'
+# passwd = b'p@$Sw0rD~7'
+# key = scrypt.hash(passwd, salt, 1 << 13,8,10,50)
+# print("Derived key:", key.hex())
