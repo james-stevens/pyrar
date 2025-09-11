@@ -273,9 +273,7 @@ def include_for_join(data):
     """ shall we retrieve this foreign record """
     if data is None:
         return False
-    if isinstance(data, str) and data == "":
-        return False
-    return True
+    return not (isinstance(data, str) and data == "")
 
 
 def mysql_abort(exc, state):

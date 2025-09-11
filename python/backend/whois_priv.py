@@ -62,7 +62,5 @@ def check_privacy_exists(client, url):
         return False
 
     reply = json.loads(resp.content)
-    if xmlapi.xmlcode(reply) == 1000:
-        return True
 
-    return False
+    return xmlapi.xmlcode(reply) == 1000
