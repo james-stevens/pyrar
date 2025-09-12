@@ -94,8 +94,8 @@ def check_tlds_exist():
 
 
 def needs_parent_records(dom_db):
-    return (misc.has_data(dom_db, "ns") and dom_db["ns"] != policy.policy("dns_servers")) or pdns.zone_exists(
-        dom_db["name"])
+    return (misc.has_data(dom_db, "ns")
+            and dom_db["ns"] != ",".join(policy.policy("dns_servers"))) or pdns.zone_exists(dom_db["name"])
 
 
 def domain_update_from_db(bke_job, dom):

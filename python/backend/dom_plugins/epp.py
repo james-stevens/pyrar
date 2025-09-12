@@ -48,9 +48,8 @@ def start_up_check():
 
         client = registry.tld_lib.clients[name]
         if not whois_priv.check_privacy_exists(client, reg["url"]):
-            msg = (f"ERROR: Registry '{name}' " + "privacy record failed to create")
+            msg = (f"WARNING: Registry '{name}' privacy record failed to create")
             log(msg)
-            sys.exit(1)
 
 
 def ds_in_list(ds_data, ds_list):

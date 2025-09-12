@@ -7,7 +7,12 @@ dst="/run/admin_logins"
 sqlsh 'select concat(login,":",htpasswd) from sysadmins' > ${dst}
 if ! test -s ${dst}
 	then
-		echo 'pyrar:$2b$12$QzdoF1paZjwdufgGml/9J.67H7N5bzZScBR8rIC92duMLNOdxFg7m' > ${dst}
+		sqlsh 'insert into sysadmins values("pyrar","$2b$12$QzdoF1paZjwdufgGml/9J.67H7N5bzZScBR8rIC92duMLNOdxFg7m",now(),now())'
+		sqlsh 'select concat(login,":",htpasswd) from sysadmins' > ${dst}
+		if ! test -s ${dst}
+			then
+				echo 'pyrar:$2b$12$QzdoF1paZjwdufgGml/9J.67H7N5bzZScBR8rIC92duMLNOdxFg7m' > ${dst}
+			fi
 	fi
 
 chown daemon: ${dst}

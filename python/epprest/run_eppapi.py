@@ -280,7 +280,6 @@ def connectToEPP():
         conn = None
         return
 
-
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()
 

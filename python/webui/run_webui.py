@@ -137,6 +137,9 @@ def before_request():
     elif flask.request.referrer == policy.policy("website_name"):
         return None
 
+    if flask.request.remote_addr == "127.0.0.1":
+    	return None
+
     return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
 
@@ -672,14 +675,14 @@ def pdns_sign_zone(req, dom_db):
     if key_data is None:
         return req.abort("No DNSSEC Keys found")
 
-    if dom_db["ns"] == policy.policy("dns_servers"):
+    if dom_db["ns"] == ",".join(policy.policy("dns_servers")):
         update_doms_ds(req, key_data, dom_db)
 
     return pdns_get_data(req, dom_db)
 
 
 def pdns_unsign_zone(req, dom_db):
-    if pdns.unsign_zone(dom_db["name"]) and dom_db["ns"] == policy.policy("dns_servers"):
+    if pdns.unsign_zone(dom_db["name"]) and dom_db["ns"] == ",".join(policy.policy("dns_servers")):
         sql.sql_update_one("domains", {"ds": None}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
         dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
@@ -716,11 +719,8 @@ def check_rr_data(dom_db, add_rr):
     if not isinstance(add_rr["rr"]["ttl"], int):
         return False
 
-    if len(add_rr["rr"]["name"]) > len(
-            dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
-        return False
-
-    return True
+    return not (len(add_rr["rr"]["name"]) > len(dom_db["name"])
+                and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"])
 
 
 def pdns_update_rrs(req, dom_db):

@@ -76,7 +76,12 @@ function callApi(sfx,callback,inData)
 		url = `${window.location.origin}${sfx}`;
 
 	let okResp = 200;
-	let httpCmd = { headers: { }, method: 'GET' };
+	let httpCmd = {
+		headers: {
+			"Content-type" : "application/json; charset=UTF-8",
+			"Accept" : "application/json; charset=UTF-8"
+			},
+		method: 'GET' };
 
 	if (inData != null) {
 		if ("json" in inData) {

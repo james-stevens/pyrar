@@ -123,7 +123,7 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
     if name[-1] != ".":
         name += "."
 
-    dns_servers = policy.policy("dns_servers").split(",")
+    dns_servers = policy.policy("dns_servers")
     for idx, ns in enumerate(dns_servers):
         if ns[-1] != ".":
             dns_servers[idx] += "."
