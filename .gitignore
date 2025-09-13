@@ -1,5 +1,7 @@
 __pycache__
+pems/extra.pem
+pems/nol.pem
 pems/server.pem
 env
-storage/perm
+storage
 config

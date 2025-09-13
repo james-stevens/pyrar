@@ -1,5 +1,9 @@
 #! /bin/sh
 
+cp -u /var/lib/pems/jrcs.net.pem pems/extra.pem
+cp -u /var/lib/pems/jrcs.net.pem pems/nol.pem
+
+
 docker run \
 	-m 1g \
 	-v /opt/github/pyrar/config:/opt/pyrar/config \

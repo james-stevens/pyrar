@@ -66,7 +66,9 @@ def run_backend_item(bke_job):
     """ run a backend job """
     job_id = bke_job["backend_id"]
     dom = domobj.Domain()
-    if not dom.set_by_id(bke_job["domain_id"]):
+    ok, reply = dom.set_by_id(bke_job["domain_id"])
+    if not ok:
+        log(f"BKE-{job_id}: Domain DOM-{bke_job['domain_id']} no longer exists")
         return job_abort(bke_job)
 
     if (misc.has_data(bke_job, "user_id") and bke_job["job_type"] != "dom/transfer"
