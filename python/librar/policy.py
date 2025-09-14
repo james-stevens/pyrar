@@ -22,6 +22,7 @@ policy_defaults = {
     "email_sender": "support@example.com",
     "email_return": "no_reply@example.com",
     "logging_default": "local0",
+    "logging_postfix": "local0",
     "logging_python": "local0",
     "logging_nginx": "local0",
     "logging_nginx_level": "warn",
