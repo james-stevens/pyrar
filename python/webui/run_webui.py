@@ -52,7 +52,7 @@ class WebuiReq:
         self.sess_code = None
         self.user_id = None
         self.user_data = None
-        self.post_js = flask.request.json
+        self.post_js = flask.request.json if flask.request.method == "POST" and flask.request.is_json else None
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
         self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
 
@@ -136,9 +136,6 @@ def before_request():
             return None
     elif flask.request.referrer == policy.policy("website_name"):
         return None
-
-    if flask.request.remote_addr == "127.0.0.1":
-    	return None
 
     return flask.make_response(flask.jsonify({"error": "Website continuity error"}), HTML_CODE_ERR)
 
