@@ -49,8 +49,10 @@ http {
 		listen 1000;
 		access_log syslog:server=unix:/dev/log,facility=${facility},tag=nginx_admin,severity=${severity};
 		error_page 404 =200 /;
+
 		auth_basic 'Unauthorised Access Prohibited';
 		auth_basic_user_file /run/admin_logins;
+
 		location /usr/ { alias ${BASE}/htdocs/; }
 		location /img/ { alias ${BASE}/htdocs/img/; }
 		location /icons/ { alias ${BASE}/htdocs/icons/; }
@@ -60,10 +62,8 @@ http {
 			proxy_set_header X-Forwarded-Proto \$scheme;
 			proxy_pass http://wsgi_admin/adm;
 			}
-		root ${BASE}/admin_htdocs;"
+		root ${BASE}/admin_htdocs;
 
-if_has_pem 1000 1000
-echo "
 		location /api {
 			proxy_set_header X-API-Key '${PDNS_API_KEY}';
 			proxy_set_header X-Forwaded-For \$proxy_add_x_forwarded_for;
