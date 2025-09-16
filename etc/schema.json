@@ -231,6 +231,13 @@
             "is_plain_int": true,
             "default": 0
          },
+         "priority": {
+            "size": 11,
+            "type": "int",
+            "null": false,
+            "is_plain_int": true,
+            "default": 0
+         },
          "zone": {
             "size": 260,
             "type": "varchar",

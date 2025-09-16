@@ -131,9 +131,7 @@ def test_plain_int(this_type, this_places):
         # of decimal places is in INT """
     if this_type in INTS:
         return True
-    if this_type == "decimal" and this_places == 0:
-        return True
-    return False
+    return this_type == "decimal" and this_places == 0
 
 
 def event_log(other_items, stack_pos=2):
@@ -344,7 +342,7 @@ class MariaDB:
         if not misc.has_data(mysql_json, ["database", self.which_connector, "connect"]):
             raise ValueError(f"Missing server, database or login data for '{self.which_connector}'")
 
-        self.credentials = {cred: None for cred in ALL_CREDENTIALS}
+        self.credentials = dict.fromkeys(ALL_CREDENTIALS, None)
         self.credentials["server"] = mysql_json["connect"]
 
         if isinstance(mysql_json[self.which_connector], str):

@@ -1,8 +1,9 @@
--- MariaDB dump 10.19  Distrib 10.6.13-MariaDB, for Linux (x86_64)
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19-11.4.8-MariaDB, for Linux (x86_64)
 --
 -- Host: 192.168.1.240    Database: pyrar
 -- ------------------------------------------------------
--- Server version	10.6.8-MariaDB-log
+-- Server version	11.4.8-MariaDB-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -13,7 +14,7 @@
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
 
 --
 -- Table structure for table `actions`
@@ -21,12 +22,12 @@
 
 DROP TABLE IF EXISTS `actions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `actions` (
   `action_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
   `execute_dt` datetime NOT NULL,
-  `action` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `action` varchar(50) DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   PRIMARY KEY (`action_id`),
   KEY `by_dom` (`domain_id`),
@@ -40,15 +41,15 @@ CREATE TABLE `actions` (
 
 DROP TABLE IF EXISTS `backend`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `backend` (
   `backend_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `job_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `job_type` varchar(50) DEFAULT NULL,
   `failures` int(11) NOT NULL DEFAULT 0,
   `num_years` int(11) DEFAULT NULL,
-  `authcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `authcode` varchar(100) DEFAULT NULL,
   `execute_dt` datetime NOT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
@@ -63,11 +64,11 @@ CREATE TABLE `backend` (
 
 DROP TABLE IF EXISTS `class_by_name`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `class_by_name` (
   `class_by_name_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `class` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(260) NOT NULL,
+  `class` varchar(50) NOT NULL,
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`class_by_name_id`),
   UNIQUE KEY `name` (`name`)
@@ -80,13 +81,13 @@ CREATE TABLE `class_by_name` (
 
 DROP TABLE IF EXISTS `class_by_regexp`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `class_by_regexp` (
   `name_regexp_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `prioiry` int(11) NOT NULL DEFAULT 0,
-  `name_regexp` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `class` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `priority` int(11) NOT NULL DEFAULT 0,
+  `name_regexp` varchar(260) NOT NULL,
+  `zone` varchar(260) NOT NULL,
+  `class` varchar(50) NOT NULL,
   `amended_dt` datetime NOT NULL,
   `created_dt` datetime NOT NULL,
   PRIMARY KEY (`name_regexp_id`),
@@ -100,20 +101,20 @@ CREATE TABLE `class_by_regexp` (
 
 DROP TABLE IF EXISTS `contacts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `contacts` (
   `contact_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `name` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `org_name` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `street` varchar(350) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `city` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `state` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `postcode` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `country` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `fax` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(250) DEFAULT NULL,
+  `org_name` varchar(250) DEFAULT NULL,
+  `street` varchar(350) DEFAULT NULL,
+  `city` varchar(200) DEFAULT NULL,
+  `state` varchar(200) DEFAULT NULL,
+  `postcode` varchar(200) DEFAULT NULL,
+  `country` varchar(200) DEFAULT NULL,
+  `phone` varchar(200) DEFAULT NULL,
+  `fax` varchar(200) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`contact_id`),
@@ -127,16 +128,16 @@ CREATE TABLE `contacts` (
 
 DROP TABLE IF EXISTS `deleted_domains`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `deleted_domains` (
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `name` varchar(260) NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `status_id` int(10) unsigned NOT NULL DEFAULT 0,
   `auto_renew` tinyint(1) DEFAULT NULL,
-  `ns` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `ds` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ns` varchar(3500) DEFAULT NULL,
+  `ds` varchar(3500) DEFAULT NULL,
+  `client_locks` varchar(100) DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   `expiry_dt` datetime NOT NULL,
@@ -153,20 +154,20 @@ CREATE TABLE `deleted_domains` (
 
 DROP TABLE IF EXISTS `domains`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `domains` (
   `domain_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `name` varchar(260) NOT NULL DEFAULT '',
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `contact_id` int(10) unsigned DEFAULT NULL,
   `status_id` int(11) NOT NULL DEFAULT 0,
   `auto_renew` tinyint(1) DEFAULT NULL,
-  `ns` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `ds` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `client_locks` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `for_sale_msg` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ns` varchar(3500) DEFAULT NULL,
+  `ds` varchar(3500) DEFAULT NULL,
+  `client_locks` varchar(100) DEFAULT NULL,
+  `for_sale_msg` varchar(100) DEFAULT NULL,
   `for_sale_amount` decimal(10,0) DEFAULT NULL,
-  `authcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `authcode` varchar(100) DEFAULT NULL,
   `reg_create_dt` datetime DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
@@ -184,20 +185,20 @@ CREATE TABLE `domains` (
 
 DROP TABLE IF EXISTS `events`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `events` (
   `event_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `event_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `event_type` varchar(50) DEFAULT NULL,
   `domain_id` int(10) unsigned DEFAULT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
   `when_dt` datetime DEFAULT NULL,
-  `who_did_it` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `from_where` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `program` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `function` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `who_did_it` varchar(100) DEFAULT NULL,
+  `from_where` varchar(50) DEFAULT NULL,
+  `program` varchar(50) DEFAULT NULL,
+  `function` varchar(50) DEFAULT NULL,
   `line_num` int(11) DEFAULT NULL,
-  `notes` varchar(1024) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `filename` varchar(1024) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` varchar(1024) DEFAULT NULL,
+  `filename` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`event_id`),
   KEY `by_domain` (`domain_id`),
   KEY `by_user` (`user_id`)
@@ -210,11 +211,11 @@ CREATE TABLE `events` (
 
 DROP TABLE IF EXISTS `messages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `messages` (
   `message_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `message` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` varchar(3000) NOT NULL,
   `is_read` tinyint(1) NOT NULL,
   `domain_id` int(10) unsigned DEFAULT NULL,
   `created_dt` datetime NOT NULL,
@@ -229,19 +230,19 @@ CREATE TABLE `messages` (
 
 DROP TABLE IF EXISTS `orders`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `orders` (
   `order_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_charged` char(3) DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_paid` char(3) DEFAULT NULL,
   `domain_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `order_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `order_type` varchar(20) NOT NULL DEFAULT 'none',
   `num_years` int(11) NOT NULL,
-  `authcode` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `authcode` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
   PRIMARY KEY (`order_item_id`),
@@ -255,12 +256,12 @@ CREATE TABLE `orders` (
 
 DROP TABLE IF EXISTS `payments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `payments` (
   `payment_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
-  `provider` varchar(1000) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(3000) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `provider` varchar(1000) NOT NULL,
+  `token` varchar(3000) NOT NULL,
   `token_type` tinyint(4) NOT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
@@ -276,21 +277,21 @@ CREATE TABLE `payments` (
 
 DROP TABLE IF EXISTS `sales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `sales` (
   `sales_item_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `transaction_id` int(10) unsigned NOT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
   `price_charged` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_charged` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_charged` char(3) DEFAULT NULL,
   `price_paid` decimal(10,0) NOT NULL DEFAULT 0,
-  `currency_paid` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `domain_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `currency_paid` char(3) DEFAULT NULL,
+  `domain_name` varchar(260) DEFAULT NULL,
   `domain_id` int(10) unsigned NOT NULL,
-  `zone_name` varchar(260) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `registry` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `sales_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `zone_name` varchar(260) DEFAULT NULL,
+  `registry` varchar(50) NOT NULL,
+  `user_email` varchar(100) DEFAULT NULL,
+  `sales_type` varchar(50) NOT NULL,
   `num_years` int(11) NOT NULL,
   `is_refund_of` int(10) unsigned DEFAULT NULL,
   `been_refunded` tinyint(1) NOT NULL DEFAULT 0,
@@ -306,9 +307,9 @@ CREATE TABLE `sales` (
 
 DROP TABLE IF EXISTS `session_keys`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `session_keys` (
-  `session_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `session_key` varchar(100) NOT NULL,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
   `amended_dt` datetime DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
@@ -323,10 +324,10 @@ CREATE TABLE `session_keys` (
 
 DROP TABLE IF EXISTS `sysadmins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `sysadmins` (
-  `login` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `htpasswd` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `login` varchar(50) NOT NULL,
+  `htpasswd` varchar(100) NOT NULL,
   `created_dt` datetime DEFAULT NULL,
   `amended_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`login`)
@@ -339,7 +340,7 @@ CREATE TABLE `sysadmins` (
 
 DROP TABLE IF EXISTS `transactions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `transactions` (
   `transaction_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL DEFAULT 0,
@@ -348,7 +349,7 @@ CREATE TABLE `transactions` (
   `pre_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `post_balance` decimal(10,0) NOT NULL DEFAULT 0,
   `sales_item_id` int(10) unsigned DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
   `created_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`user_id`,`acct_sequence_id`),
   UNIQUE KEY `by_id` (`transaction_id`)
@@ -361,19 +362,19 @@ CREATE TABLE `transactions` (
 
 DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `user_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `email` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(100) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
   `contact_id` int(10) unsigned DEFAULT NULL,
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,
   `default_auto_renew` tinyint(1) NOT NULL DEFAULT 1,
   `account_closed` tinyint(1) NOT NULL DEFAULT 0,
-  `email_opt_out` varchar(2000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `two_fa` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password_reset` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email_opt_out` varchar(2000) DEFAULT NULL,
+  `two_fa` varchar(100) DEFAULT NULL,
+  `password_reset` varchar(100) DEFAULT NULL,
   `discount_percent` int(11) DEFAULT NULL,
   `acct_sequence_id` int(10) unsigned NOT NULL DEFAULT 1,
   `acct_on_hold` tinyint(1) NOT NULL DEFAULT 0,
@@ -397,11 +398,11 @@ CREATE TABLE `users` (
 
 DROP TABLE IF EXISTS `zones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `zones` (
-  `zone` varchar(260) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `registry` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price_info` varchar(3500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `zone` varchar(260) NOT NULL,
+  `registry` varchar(50) NOT NULL,
+  `price_info` varchar(3500) DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `allow_sales` tinyint(1) NOT NULL DEFAULT 1,
   `renew_limit` int(11) DEFAULT NULL,
@@ -421,5 +422,5 @@ CREATE TABLE `zones` (
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+/*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 

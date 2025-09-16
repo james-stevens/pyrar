@@ -11,7 +11,7 @@ import copy
 
 from librar import misc, fileloader, static
 from librar.mysql import sql_server as sql
-from librar.log import init as log_init
+from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 
 SEND_REGS_ITEMS = ["max_checks", "desc", "type", "locks", "renew_limit"]
@@ -207,7 +207,7 @@ class ZoneLib:
     def reg_record_for_domain(self, domain):
         if (tld := self.tld_of_name(domain)) is None or tld not in self.zone_data:
             return None
-        return self.zone_data[tld]["reg_data"] if "reg_data" in self.zone_data[tld] else None
+        return self.zone_data[tld].get("reg_data", None)
 
     def extract_items(self, dom):
         return {
@@ -266,13 +266,20 @@ class ZoneLib:
 
 def apply_price_factor(action, dom, factor, num_years, retain_reg_price):
     regs_price = float(dom[action]) if dom[action] is not None else 0
-    if isinstance(factor, str):
-        if factor[:1] == "x":
-            our_price = regs_price * float(factor[1:])
-        elif factor[:1] == "+":
-            our_price = regs_price + float(factor[1:])
-    else:
-        our_price = float(factor)
+    try:
+        if isinstance(factor, str):
+            if factor[:1] == "x":
+                our_price = regs_price * float(factor[1:])
+            elif factor[:1] == "+":
+                our_price = regs_price + float(factor[1:])
+            else:
+                our_price = float(factor)
+        else:
+            our_price = float(factor)
+    except ValueError:
+        log("ERROR: value '{factor}' is invalid in context, {dom.name}/{action}")
+        del dom[action]
+        return
 
     if dom[action] is None or dom[action] == 0:
         our_price *= float(num_years)

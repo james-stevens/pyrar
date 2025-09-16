@@ -216,7 +216,7 @@ def run_one_cmd(cmd, url, json_data):
 def run_cmds(post_json):
     ret = True
     for req in post_json:
-        json_data = req["data"] if "data" in req else None
+        json_data = req.get("data", None)
         response = run_one_cmd(req["cmd"], req["url"], json_data)
         if response.status_code < 200 or response.status_code > 299:
             ret = False

@@ -54,7 +54,7 @@ class WebuiReq:
         self.user_data = None
         self.post_js = flask.request.json if flask.request.method == "POST" and flask.request.is_json else None
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
-        self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
+        self.user_agent = self.headers.get("user-agent", "Unknown")
 
         if SESSION_TAG_LOWER in self.headers:
             logged_in, check_sess_data = users.check_session(self.headers[SESSION_TAG_LOWER], self.user_agent)

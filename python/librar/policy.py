@@ -75,7 +75,7 @@ class Policy:
 
     def policy(self, name, default_value=None):
         self.check_file()
-        return self.all_data[name] if name in self.all_data else default_value
+        return self.all_data.get(name, default_value)
 
     def data(self):
         self.check_file()

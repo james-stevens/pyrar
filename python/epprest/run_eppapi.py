@@ -54,7 +54,7 @@ if not os.path.isfile(client_pem):
 
 log_init("logging_epp_api")
 
-jobInterval = this_login["keep_alive"] if "keep_alive" in this_login else 20
+jobInterval = this_login.get("keep_alive", 20)
 
 
 def keepAlive():

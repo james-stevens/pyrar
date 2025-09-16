@@ -747,8 +747,8 @@ function one_search_line(item,block_not_avail)
 		x += `<br><span class=searchRenew>renew ${format_amount(item.renew)}</span>`;
 	x += "</td>";
 
-	if ("for_sale_msg" in item) x += `<td colspan=2>${item.for_sale_msg}</td>`;
-	else if ("reason" in item) x += `<td colspan=2>${item.reason}</td>`;
+	if ("for_sale_msg" in item) x += `<td colspan=2 style='text-align: center;'>${item.for_sale_msg}</td>`;
+	else if ((item.reason)&&(!("create" in item))) x += `<td colspan=2 style='text-align: center;'>${item.reason}</td>`;
 	else {
 		if ("create" in item) {
 			x += "<td style='vertical-align: middle; text-align: right;'>";
@@ -786,7 +786,7 @@ function showSearch(ok,reply)
 			}
 
 		for(let item of reply) ctx.search.result += one_search_line(item,is_multi_search);
-		elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%>" + ctx.search.result + "</table>";
+		elm.output.innerHTML = "<table border=0 cellspacing=0 width=100%><colgroup><col/><col width=30%/><col width=50%/></colgroup>" + ctx.search.result + "</table>";
 		size_one_space();
 		}
 

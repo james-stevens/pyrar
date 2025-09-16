@@ -26,7 +26,7 @@ def startup():
     for module in [mod for mod in pay_conf if mod in pay_handler.pay_plugins]:
         if (func := pay_handler.run(module, "startup")) is not None and func():
             this_conf = pay_conf[module]
-            my_mode = this_conf["mode"] if "mode" in this_conf else "live"
+            my_mode = this_conf.get("mode", "live")
             if my_mode in this_conf and "webhook" in this_conf[my_mode]:
                 this_mode = this_conf[my_mode]
                 this_mode["name"] = module

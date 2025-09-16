@@ -30,7 +30,7 @@ def module_config(this_module):
     if pay_conf is None or not isinstance(pay_conf, dict) or this_module not in pay_conf:
         return None, None
     my_conf = pay_conf[this_module]
-    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
+    my_mode = my_conf.get("mode", "live")
     if my_mode not in my_conf:
         return None
     ret_conf = my_conf[my_mode]
