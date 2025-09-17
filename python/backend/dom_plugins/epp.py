@@ -42,14 +42,26 @@ def start_up_check():
         if reg["type"] != "epp":
             continue
 
-        if run_epp_request(reg, {"hello": None}) is None:
+        if (xml := run_epp_request(reg, {"hello": None})) is None:
             log(f"ERROR: EPP Gateway for '{name}' is not working")
             sys.exit(0)
 
-        client = registry.tld_lib.clients[name]
-        if not whois_priv.check_privacy_exists(client, reg["url"]):
-            msg = (f"WARNING: Registry '{name}' privacy record failed to create")
-            log(msg)
+        if "greeting" in xml and "svcMenu" in xml["greeting"] and "objURI" in xml["greeting"]["svcMenu"]:
+            features = xml["greeting"]["svcMenu"]["objURI"]
+            if isinstance(features, str):
+                features = [features]
+
+            reg["epp_features"] = {}
+            for this_feature in features:
+                short_name = this_feature.split(":")[-1]
+                short_name = short_name.split("-")[0]
+                reg["epp_features"][short_name] = True
+
+        if reg["epp_features"].get("contact", False):
+            client = registry.tld_lib.clients[name]
+            if not whois_priv.check_privacy_exists(client, reg["url"]):
+                msg = (f"WARNING: Registry '{name}' privacy record failed to create")
+                log(msg)
 
 
 def ds_in_list(ds_data, ds_list):
@@ -253,7 +265,7 @@ def domain_update_from_db(bke_job, dom):
     if (len(add_ns) + len(del_ns) + len(add_ds) + len(del_ds)) <= 0:
         return True
 
-    if len(add_ns) > 0:
+    if len(add_ns) > 0 and dom.registry["epp_feature"].get("host",False):
         run_host_create(dom.registry, add_ns)
 
     if not misc.has_data(dom.dom_db, "reg_create_dt") or dom.dom_db["reg_create_dt"] != epp_info["created_dt"]:

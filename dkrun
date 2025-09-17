@@ -16,8 +16,7 @@ docker run \
 	--env BASE="/opt/pyrar" \
 	--env PYTHONPATH="/opt/pyrar/python" \
 	--env PDNS_API_KEY="$(cat /run/pdns_api_key)" \
-	-p 10000:10000 \
-	-p 10001:10001 \
+	-p 10000:10000 -p 10001:10001 -p 10002:10002 \
 	-p 8081:8081 \
 	-p 127.0.0.1:25:25 \
 	-p 127.0.0.1:80:80 \
