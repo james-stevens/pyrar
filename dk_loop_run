@@ -1,0 +1,2 @@
+#! /bin/sh
+while test 1; do ./dkrun ; echo "-----------------------"; sleep 5 ; done

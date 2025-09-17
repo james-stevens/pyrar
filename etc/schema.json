@@ -1405,7 +1405,7 @@
             "is_plain_int": false
          },
          "password": {
-            "size": 100,
+            "size": 200,
             "type": "varchar",
             "null": false,
             "is_plain_int": false
