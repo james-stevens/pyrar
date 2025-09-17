@@ -366,7 +366,7 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `user_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(100) NOT NULL,
-  `password` varchar(100) NOT NULL,
+  `password` varchar(200) NOT NULL,
   `name` varchar(100) DEFAULT NULL,
   `contact_id` int(10) unsigned DEFAULT NULL,
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,

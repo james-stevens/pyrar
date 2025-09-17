@@ -12,7 +12,7 @@ RUN apk add nginx curl
 RUN addgroup nginx daemon
 
 RUN apk add python3 jq py-pip
-RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient py3-argon2-cffi
 RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml py3-requests py3-validators py3-apscheduler
 RUN pip install --break-system-packages base58
 

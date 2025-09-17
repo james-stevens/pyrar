@@ -212,7 +212,7 @@ def check_messages(req, data):
 def api_messages_check():
     req = WebuiReq()
     if not req.is_logged_in:
-        return req.abort(NOT_LOGGED_IN)
+        return req.response(False)
     return req.response(sql.sql_exists("messages", {"user_id": req.user_id, "is_read": False}))
 
 

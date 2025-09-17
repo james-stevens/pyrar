@@ -592,10 +592,10 @@ function go_welcome(with_push)
 					loggedIn();
 					}
 				check_router_path();
+				check_for_messages();
 				});
 			} else { loggedOut(); check_router_path(); }
 
-		check_for_messages();
 		});
 }
 
@@ -1003,7 +1003,7 @@ function userDomainList()
 	x += "<tr><td colspan=6>"+gbl.gap+"</td></tr>";
 
 	if (ctx.domains.length <= 0) return "<h2>You have no domains ... yet</h2>";
-	let default_dns_servers = policy("dns_servers",null);
+	let default_dns_servers = policy("dns_servers",null).join(",");
 
 	x += "<tr><th colspan=2>Domain Name</th><th>Auto</th><th>Expiry Date</th><th>Name Servers</th></tr>";
 	if (ctx.domains.length < 30) cls="dataRowBig"; else cls="dataRow";
@@ -1760,6 +1760,8 @@ function html_for_basket(with_place_order)
 		x += "<table width=100%>";
 		x += "<colgroup><col width=30%/><col width=70%/></colgroup>";
 		x += "<tr><Td colspan=2><div style='height: 15px;'></div></td></tr>";
+		x += "<tr><Td align=center colspan=2>To buy a domain you must register a new account,<br>or login with an existing account</td></tr>";
+		x += "<tr><Td colspan=2><div style='height: 15px;'></div></td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;E-Mail:&nbsp;</td><td><input style='width: 250px;' id='reg_pay_email'>&nbsp;</td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;Password:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_password'>&nbsp;</td></tr>";
 		x += "<tr><td class=formPrompt>&nbsp;Confirm:&nbsp;</td><td><input style='width: 250px;' type=password id='reg_pay_confirm'>&nbsp;</td></tr>";
@@ -1809,6 +1811,7 @@ function myAccount(with_push)
 			return def_errMsg("Error in setting your data",reply,"searchEdit");
 			}
 		catch_user_data(reply);
+		check_for_messages();
 		user_info();
 		elm.userSpace.innerHTML = userDetails();
 		size_one_space();
@@ -1901,7 +1904,7 @@ function doAddDS(idx)
 
 function do_change_ns(dest_dom,src_dom)
 {
-	let default_dns_servers = policy("dns_servers",null);
+	let default_dns_servers = policy("dns_servers",null).join(",");
 	let dom = ctx.domains[dest_dom];
 
 	if ((src_dom >= 0)&&(src_dom < ctx.domains.length)
@@ -1924,7 +1927,7 @@ function do_change_ns(dest_dom,src_dom)
 
 function copy_btn_internal(param)
 {
-	let default_dns_servers = policy("dns_servers",null);
+	let default_dns_servers = policy("dns_servers",null).join(",");
 	let seen_ns = { };
 	if (default_dns_servers) seen_ns[default_dns_servers] = true;
 	let idx=param["idx"];
@@ -2755,7 +2758,7 @@ function show_dns_data(idx)
 
 	x += "</td></tr></table></td></tr>";
 
-	if (policy("dns_servers",null) != dom.ns) {
+	if (policy("dns_servers",null).join(",") != dom.ns) {
 		x += "<tr><th>Warning: this data may not be public until<br>you set this zone to use our name servers</th></tr>";
 		}
 
