@@ -287,7 +287,7 @@ def domain_update_from_db(bke_job, dom):
                            {"domain_id": dom.dom_db["domain_id"]})
 
     update_xml = domain_xml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
-    log(f"DEBUG: domain_update_from_db: {update_xml}") # CODE - remove this
+    log(f"DEBUG: domain_update_from_db: {update_xml}")  # CODE - remove this
 
     return xml_check_code(job_id, "update", run_epp_request(dom.registry, update_xml))
 

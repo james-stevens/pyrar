@@ -124,13 +124,15 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
     if name[-1] != ".":
         name += "."
 
-    response = run_one_cmd("POST", f"{PDNS_BASE_URL}/zones", {
-        "name": name,
-        "kind": "Master",
-        "masters": [],
-        "nameservers": [ ns.rstrip(".")+"." for ns in policy.policy("dns_servers")],
-        "soa_edit_api": "EPOCH"
-    })
+    dns_servers = policy.policy("dns_servers")
+    response = run_one_cmd(
+        "POST", f"{PDNS_BASE_URL}/zones", {
+            "name": name,
+            "kind": "Master",
+            "masters": [],
+            "nameservers": [ns.rstrip(".") + "." for ns in dns_servers],
+            "soa_edit_api": "EPOCH"
+        })
 
     if response.status_code >= 400:
         if ensure_zone:
@@ -160,7 +162,7 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
                 "changetype":
                 "REPLACE",
                 "records": [{
-                    "content": f"{dns_servers[0]} hostmaster.{name} {now} 10800 3600 6048000 3600",
+                    "content": f"{dns_servers[0].rstrip('.')+'.'} hostmaster.{name} {now} 10800 3600 6048000 3600",
                     "disabled": False
                 }]
             }]
