@@ -109,7 +109,7 @@ def domain_update_from_db(bke_job, dom):
 
     rrs = {"name": name, "type": "NS", "data": []}
     if needs_parent_records(dom.dom_db):
-        rrs["data"] = [d.strip(".") + "." for d in dom.dom_db["ns"].split(",")]
+        rrs["data"] = dom.dom_db["ns"].split(",")
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 

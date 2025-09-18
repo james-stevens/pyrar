@@ -37,6 +37,7 @@ def start_up():
             create_zone(prefix + catalog_zone, False, ensure_zone=True, auto_catalog=False)
         except requests.exceptions.ConnectionError:
             raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
+        # CODE - add "version" in txt "1", for catalog zones
 
 
 def find_best_ds(key_data):
@@ -123,16 +124,11 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
     if name[-1] != ".":
         name += "."
 
-    dns_servers = policy.policy("dns_servers")
-    for idx, ns in enumerate(dns_servers):
-        if ns[-1] != ".":
-            dns_servers[idx] += "."
-
     response = run_one_cmd("POST", f"{PDNS_BASE_URL}/zones", {
         "name": name,
         "kind": "Master",
         "masters": [],
-        "nameservers": dns_servers,
+        "nameservers": [ ns.rstrip(".")+"." for ns in policy.policy("dns_servers")],
         "soa_edit_api": "EPOCH"
     })
 
