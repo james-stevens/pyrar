@@ -164,7 +164,7 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
                 "changetype":
                 "REPLACE",
                 "records": [{
-                    "content": f"{dns_servers[0]} hostmaster.{name} {now} 10800 3600 604800 3600",
+                    "content": f"{dns_servers[0]} hostmaster.{name} {now} 10800 3600 6048000 3600",
                     "disabled": False
                 }]
             }]
