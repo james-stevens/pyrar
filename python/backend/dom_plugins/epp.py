@@ -19,6 +19,33 @@ from backend import dom_handler
 
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
 
+def check_epp_feature(this_reg, feature):
+
+    if "epp_features" in this_reg:
+        return this_reg["epp_features"].get(feature, False)
+
+    if (xml := run_epp_request(this_reg, {"hello": None})) is None:
+        log(f"ERROR: EPP Gateway for \"{this_reg['name']}\" is not working")
+        sys.exit(0)
+
+    this_reg["epp_features"] = {}
+
+    if "greeting" in xml and "svcMenu" in xml["greeting"] and "objURI" in xml["greeting"]["svcMenu"]:
+        features = xml["greeting"]["svcMenu"]["objURI"]
+        if isinstance(features, str):
+            features = [features]
+
+        for this_feature in features:
+            short_name = this_feature.split(":")[-1]
+            short_name = short_name.split("-")[0]
+            this_reg["epp_features"][short_name] = True
+
+    if not this_reg["epp_features"].get("domain", False):
+        log(f"ERROR: Very concerning - \"{this_reg['name']}\" doesn't have epp feature 'domain'")
+
+    return this_reg["epp_features"].get(feature, False)
+
+
 
 def run_epp_request(this_reg, post_json):
     """ run EPP request to EPP service {this_reg} using {post_json} """
@@ -38,28 +65,13 @@ def run_epp_request(this_reg, post_json):
 
 def start_up_check():
     """ checks that need to be run before this service can be used """
-    for name, reg in registry.tld_lib.registry.items():
-        if reg["type"] != "epp":
+    for name, this_reg in registry.tld_lib.registry.items():
+        if this_reg["type"] != "epp":
             continue
 
-        if (xml := run_epp_request(reg, {"hello": None})) is None:
-            log(f"ERROR: EPP Gateway for '{name}' is not working")
-            sys.exit(0)
-
-        if "greeting" in xml and "svcMenu" in xml["greeting"] and "objURI" in xml["greeting"]["svcMenu"]:
-            features = xml["greeting"]["svcMenu"]["objURI"]
-            if isinstance(features, str):
-                features = [features]
-
-            reg["epp_features"] = {}
-            for this_feature in features:
-                short_name = this_feature.split(":")[-1]
-                short_name = short_name.split("-")[0]
-                reg["epp_features"][short_name] = True
-
-        if reg["epp_features"].get("contact", False):
+        if check_epp_feature(this_reg,"contact"):
             client = registry.tld_lib.clients[name]
-            if not whois_priv.check_privacy_exists(client, reg["url"]):
+            if not whois_priv.check_privacy_exists(client, this_reg["url"]):
                 msg = (f"WARNING: Registry '{name}' privacy record failed to create")
                 log(msg)
 
@@ -265,7 +277,7 @@ def domain_update_from_db(bke_job, dom):
     if (len(add_ns) + len(del_ns) + len(add_ds) + len(del_ds)) <= 0:
         return True
 
-    if len(add_ns) > 0 and dom.registry["epp_feature"].get("host",False):
+    if len(add_ns) > 0 and check_epp_feature(dom.registry,"host"):
         run_host_create(dom.registry, add_ns)
 
     if not misc.has_data(dom.dom_db, "reg_create_dt") or dom.dom_db["reg_create_dt"] != epp_info["created_dt"]:
