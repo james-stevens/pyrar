@@ -84,37 +84,37 @@ def domain_renew(name, years, cur_exp):
     }
 
 
-def domain_create(name, ns_list, ds_list, years):
+def domain_create(name, ns_list, ds_list, years, with_contacts):
     """ JSON/XML to create a domain """
     xml = {
         "create": {
             "domain:create": {
-                "@xmlns:domain":
-                "urn:ietf:params:xml:ns:domain-1.0",
-                "domain:name":
-                name,
+                "@xmlns:domain": "urn:ietf:params:xml:ns:domain-1.0",
+                "domain:name": name,
                 "domain:period": {
                     "@unit": "y",
                     "#text": str(years)
                 },
                 "domain:ns": {
                     "domain:hostObj": ns_list
-                },
-                "domain:registrant":
-                whois_priv.WHOIS_PRIVACY_ID,
-                "domain:contact": [{
-                    "@type": "admin",
-                    "#text": whois_priv.WHOIS_PRIVACY_ID
-                }, {
-                    "@type": "tech",
-                    "#text": whois_priv.WHOIS_PRIVACY_ID
-                }, {
-                    "@type": "billing",
-                    "#text": whois_priv.WHOIS_PRIVACY_ID
-                }]
+                }
             }
         }
     }
+
+    if with_contacts:
+        dom_cr = xml["create"]["domain:create"]
+        dom_cr["domain:registrant"] = whois_priv.WHOIS_PRIVACY_ID
+        dom_cr["domain:contact"] = [{
+            "@type": "admin",
+            "#text": whois_priv.WHOIS_PRIVACY_ID
+        }, {
+            "@type": "tech",
+            "#text": whois_priv.WHOIS_PRIVACY_ID
+        }, {
+            "@type": "billing",
+            "#text": whois_priv.WHOIS_PRIVACY_ID
+        }]
 
     if len(ds_list) > 0:
         xml["extension"] = {

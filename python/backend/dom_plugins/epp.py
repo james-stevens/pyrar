@@ -13,11 +13,12 @@ from librar.log import log, init as log_init
 from librar.policy import this_policy as policy
 from librar import domobj, static, misc, registry
 from mailer import spool_email
-from backend import whois_priv, dom_req_xml, xmlapi, shared, parsexml, parse_dom_resp
+from backend import whois_priv, domain_xml, xmlapi, shared, parsexml, parse_dom_resp
 
 from backend import dom_handler
 
 DEFAULT_NS = ["ns1.example.com", "ns2.exmaple.com"]
+
 
 def check_epp_feature(this_reg, feature):
 
@@ -46,7 +47,6 @@ def check_epp_feature(this_reg, feature):
     return this_reg["epp_features"].get(feature, False)
 
 
-
 def run_epp_request(this_reg, post_json):
     """ run EPP request to EPP service {this_reg} using {post_json} """
     try:
@@ -69,7 +69,7 @@ def start_up_check():
         if this_reg["type"] != "epp":
             continue
 
-        if check_epp_feature(this_reg,"contact"):
+        if check_epp_feature(this_reg, "contact"):
             client = registry.tld_lib.clients[name]
             if not whois_priv.check_privacy_exists(client, this_reg["url"]):
                 msg = (f"WARNING: Registry '{name}' privacy record failed to create")
@@ -98,7 +98,7 @@ def domain_renew(bke_job, dom):
     if (years := shared.check_num_years(bke_job)) is None:
         return None
 
-    xml = run_epp_request(dom.registry, dom_req_xml.domain_renew(name, years, dom.dom_db["expiry_dt"].split()[0]))
+    xml = run_epp_request(dom.registry, domain_xml.domain_renew(name, years, dom.dom_db["expiry_dt"].split()[0]))
 
     if not xml_check_code(job_id, "renew", xml):
         return False
@@ -127,10 +127,8 @@ def domain_request_transfer(bke_job, dom):
         transfer_failed(dom.dom_db["domain_id"])
         return None
 
-    xml = run_epp_request(
-        dom.registry,
-        dom_req_xml.domain_request_transfer(name,
-                                            base64.b64decode(bke_job["authcode"]).decode("utf-8"), years))
+    authcode = base64.b64decode(bke_job["authcode"]).decode("utf-8")
+    xml = run_epp_request(dom.registry, domain_xml.domain_request_transfer(name, authcode, years))
 
     if not xml_check_code(job_id, "transfer", xml):
         if (bke_job["failures"] + 1) >= policy.policy("epp_retry_attempts"):
@@ -165,10 +163,11 @@ def domain_create(bke_job, dom):
     if (years := shared.check_num_years(bke_job)) is None:
         return None
 
-    if len(ns_list) > 0:
-        run_host_create(dom.registry, ns_list)
+    run_host_create(dom.registry, ns_list)
 
-    xml = run_epp_request(dom.registry, dom_req_xml.domain_create(name, ns_list, ds_list, years))
+    xml = run_epp_request(
+        dom.registry,
+        domain_xml.domain_create(name, ns_list, ds_list, years, check_epp_feature(dom.registry, "contact")))
     if not xml_check_code(job_id, "create", xml):
         return False
 
@@ -199,7 +198,7 @@ def epp_get_domain_info(this_reg, job_id, domain_name, as_raw=False):
         log(f"EPP-{job_id} '{domain_name}' this_reg or url not given")
         return None
 
-    xml = run_epp_request(this_reg, dom_req_xml.domain_info(domain_name))
+    xml = run_epp_request(this_reg, domain_xml.domain_info(domain_name))
 
     if xml_check_code(job_id, "info", xml):
         if as_raw:
@@ -217,7 +216,7 @@ def set_authcode(bke_job, dom):
         log(f"Odd: this_reg or url returned None for '{name}")
         return None
 
-    req = dom_req_xml.domain_set_authcode(
+    req = domain_xml.domain_set_authcode(
         name,
         base64.b64decode(bke_job["authcode"]).decode("utf-8"),
     )
@@ -242,16 +241,20 @@ def domain_update_flags(bke_job, dom):
     if len(add_flags) == 0 and len(del_flags) == 0:
         return True
 
-    update_xml = dom_req_xml.domain_update_flags(name, add_flags, del_flags)
+    update_xml = domain_xml.domain_update_flags(name, add_flags, del_flags)
 
     return xml_check_code(job_id, "update", run_epp_request(dom.registry, update_xml))
 
 
 def run_host_create(this_reg, host_list):
     """ create hosts at EPP registry """
-    # CODE - may need code for GLUE addresses
+    # CODE - need code if you want to support GLUE addresses
+
+    if host_list is None or len(host_list) <= 0 or not check_epp_feature(this_reg, "host"):
+        return
+
     for host in host_list:
-        run_epp_request(this_reg, dom_req_xml.host_add(host))
+        run_epp_request(this_reg, domain_xml.host_add(host))
 
 
 def domain_update_from_db(bke_job, dom):
@@ -277,14 +280,13 @@ def domain_update_from_db(bke_job, dom):
     if (len(add_ns) + len(del_ns) + len(add_ds) + len(del_ds)) <= 0:
         return True
 
-    if len(add_ns) > 0 and check_epp_feature(dom.registry,"host"):
-        run_host_create(dom.registry, add_ns)
+    run_host_create(dom.registry, add_ns)
 
     if not misc.has_data(dom.dom_db, "reg_create_dt") or dom.dom_db["reg_create_dt"] != epp_info["created_dt"]:
         sql.sql_update_one("domains", {"reg_create_dt": epp_info["created_dt"]},
                            {"domain_id": dom.dom_db["domain_id"]})
 
-    update_xml = dom_req_xml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
+    update_xml = domain_xml.domain_update(name, add_ns, del_ns, add_ds, del_ds)
 
     return xml_check_code(job_id, "update", run_epp_request(dom.registry, update_xml))
 
