@@ -224,13 +224,6 @@
             "null": false,
             "is_plain_int": true
          },
-         "prioiry": {
-            "size": 11,
-            "type": "int",
-            "null": false,
-            "is_plain_int": true,
-            "default": 0
-         },
          "priority": {
             "size": 11,
             "type": "int",
@@ -1289,6 +1282,13 @@
    },
    "users": {
       "columns": {
+         "about_me_domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true,
+            "is_plain_int": true
+         },
          "account_closed": {
             "type": "boolean",
             "null": false,

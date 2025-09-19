@@ -13,6 +13,7 @@ sqlsh "CREATE TABLE users (
 	password				${password} not null,
 	name					varchar(100),
 	contact_id				${row_id_null},
+	about_me_domain_id		${row_id},
 
 	email_verified			boolean not null default 0,
 	default_auto_renew		boolean not null default 1,

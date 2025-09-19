@@ -369,6 +369,7 @@ CREATE TABLE `users` (
   `password` varchar(200) NOT NULL,
   `name` varchar(100) DEFAULT NULL,
   `contact_id` int(10) unsigned DEFAULT NULL,
+  `about_me_domain_id` int(10) unsigned DEFAULT NULL,
   `email_verified` tinyint(1) NOT NULL DEFAULT 0,
   `default_auto_renew` tinyint(1) NOT NULL DEFAULT 1,
   `account_closed` tinyint(1) NOT NULL DEFAULT 0,
