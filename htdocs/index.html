@@ -1164,6 +1164,11 @@ function goMarketPlace()
 	errMsg(gbl.thumb+"&nbsp;Coming Soon","marketPlaceBtn");
 }
 
+function myAboutMe()
+{
+	errMsg(gbl.thumb+"&nbsp;Coming Soon","myAboutMeBtn");
+}
+
 
 
 function enable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
@@ -3051,6 +3056,7 @@ function make_theme_popup()
 </span>
 
 <span style="display:none;" id="isLoggedIn">
+	<span style='width: 75px;' tabindex=0 title="Publish Info About Me" id="myAboutMeBtn" class=myBtn onClick="return myAboutMe(true);">About Me</span>
 	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains(true);">Domains</span>
 	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="load_domains_list(myAccount); return false;">Account</span>
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>

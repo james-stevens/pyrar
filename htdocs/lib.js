@@ -31,6 +31,7 @@ function from_float(amount)
 
 function callApi(sfx,callback,inData)
 {
+	unerrMsg();
 	document.body.style.cursor="progress";
 	let show_timer = true;
 	if ((inData)&&("show_timer" in inData)) show_timer = inData.show_timer;
@@ -224,7 +225,7 @@ function unerrMsg()
 	if (t2 == null) t2 = "";
 	if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
 	delete ctx.lastErrMsg;
-	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
+	if (ctx.err_msg_tout) clearTimeout(ctx.err_msg_tout);
 	delete ctx.err_msg_tout;
 }
 
