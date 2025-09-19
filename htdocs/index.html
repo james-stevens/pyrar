@@ -1169,6 +1169,11 @@ function myAboutMe()
 	errMsg(gbl.thumb+"&nbsp;Coming Soon","myAboutMeBtn");
 }
 
+function thisAboutMe()
+{
+	errMsg(gbl.thumb+"&nbsp;Coming Soon","domainBtnBar");
+}
+
 
 
 function enable_two_fa() { errMsg(gbl.thumb+"&nbsp;Coming Soon","2fa_section"); }
@@ -2808,6 +2813,8 @@ function one_domain_html(idx)
 	let x = "<table align=center width=75% border=0>";
 
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
+
+	x += btn(`thisAboutMe(${dom.domain_id})`,`About Me`,"Add About-Me info to this domain",140)
 
 	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",140)
