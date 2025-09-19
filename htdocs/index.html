@@ -1845,7 +1845,7 @@ function doAddNS(idx)
 	let dom = ctx.domains[idx];
 
 	let ns = "";
-	if (dom.ns) ns = dom.ns.split(",");
+	if (dom.ns) ns = dom.ns.split(","); else ns=[];
 	if (!ns.find(data => { return (data == e.value); })) {
 		if (dom.ns=="") dom.ns = e.value;
 		else dom.ns += ","+e.value;
