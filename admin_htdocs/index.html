@@ -30,11 +30,16 @@ const list_columns = {
 	"payments": [ "created_dt","provider","token" ],
 	"domains": ["name","status_id","created_dt","expiry_dt","ns" ],
 	"sysadmins": ["login","htpasswd","amended_dt" ],
-	"class_by_regexp": ["name_regexp","zone","class","amended_dt" ],
 	"zones": [ "zone","amended_dt","price_info" ],
 	"users": [ "user_id","email","account_closed","created_dt"],
 	"class_by_name": [ "name","class","amended_dt"],
 	"class_by_regexp": ["name_regexp","zone","class","amended_dt"],
+	"backend":  ["backend_id","job_type","failures","domain_id","user_id","execute_dt"],
+	"contacts":  [ "contact_id","user_id","name","org_name","created_dt"],
+	"deleted_domains":  [ "deleted_dt","name","status_id","expiry_dt","ns" ],
+	"messages":  [ "message_id","user_id","is_read","message"],
+	"orders":  [ "order_item_id","user_id","domain_id","order_type","num_years","status"],
+	"session_keys":  [ "user_id","session_key","created_dt", "amended_dt"],
 	};
 
 const order_by = {
@@ -53,6 +58,7 @@ const table_desc = {
 	"deleted_domains" : "Domains that have been deleted",
 	"domains" : "SLDs owned by users",
 	"events" : "Recorded events applied to domains / users",
+	"messages": "Users pop-up messages",
 	"orders" : "Orders from users waiting to be paid for",
 	"payments" : "Information abou how users pay",
 	"sales" : "Domain sales we have made to users",
@@ -362,6 +368,10 @@ function linkedData(table,where,location)
 			x += "<tr><td>"+gbl.gap+"</td></tr>";
 			}
 		x += "<tr>";
+
+		if (!(table in list_columns))
+			console.log(`ERROR: table '${table}' has no columns coded for making a list`);
+
 		for(let col of list_columns[table])
 			x += `<th>${pretty_prompt(col)}</th>`;
 		x += "</tr>";
