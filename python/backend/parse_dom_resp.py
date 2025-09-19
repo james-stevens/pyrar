@@ -37,12 +37,7 @@ def parse_domain_info_xml(xml, data_type):
             data["status"] = [item["@s"] for item in dom_data["domain:status"] if "@s" in item]
         data["status"].sort()
 
-    if "domain:ns" in dom_data:
-
-        if "domain:ns" not in dom_data or dom_data["domain:ns"] is None or len(dom_data["domain:ns"]) <= 0:
-            data["ns"] = []
-            return
-
+    if dom_data.get("domain:ns",None) is not None and len(dom_data["domain:ns"]) > 0:
         dom_ns = dom_data["domain:ns"]
 
         if "domain:hostObj" in dom_ns:

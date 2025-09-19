@@ -176,6 +176,7 @@ def domain_transfer(req):
 def internal_domain_transfer(req, dom_db):
     if dom_db["user_id"] == req.user_id:
         return False, "The domain is already yours"
+
     if not (misc.has_data(dom_db, "authcode") and passwd.compare(req.post_js["authcode"], dom_db["authcode"])):
         return False, "Authcode provided does not match the one on file"
 
