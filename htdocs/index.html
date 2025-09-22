@@ -2037,6 +2037,10 @@ function add_rec_type_btn(rec_type,idx,inside_func)
 function saveDomDetails(idx)
 {
 	let dom = ctx.domains[idx];
+
+	if ((!dom.ns)||(dom.ns.length <= 0))
+		return errMsg("We do not support having no NS records","saveButton");
+
 	callApi("domain/update",(ok,reply) => {
 		if (!ok) return def_errMsg("Domain save failed",reply,"saveButton");
 		delete dom.unsaved;
