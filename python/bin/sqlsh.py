@@ -41,7 +41,7 @@ sql.connect(args.user)
 
 for query in args.sql:
     cmd = query.split()[0].lower()
-    if cmd in ["select","show"]:
+    if cmd in ["select", "show"]:
         ok, reply = sql.run_select(query)
     else:
         ok, reply = sql.sql_exec(query)
