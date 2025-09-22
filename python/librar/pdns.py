@@ -34,10 +34,13 @@ def start_up():
     catalog_zone = policy.policy("catalog_zone")
     for prefix in ["tlds.", "clients."]:
         try:
-            create_zone(prefix + catalog_zone, False, ensure_zone=True, auto_catalog=False)
+            fqdn = (prefix + catalog_zone).rstrip(".") + "."
+            create_zone(fqdn, False, ensure_zone=True, auto_catalog=False)
+            update_rrs(fqdn, {"name": "version." + fqdn, "type": "TXT", "ttl": 0, "data": ["\"1\""]})
         except requests.exceptions.ConnectionError:
             raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
-        # CODE - add "version" in txt "1", for catalog zones
+        except Exception as err:
+            log(f"ERROR: '{err}' when setting up catalog zones")
 
 
 def find_best_ds(key_data):
