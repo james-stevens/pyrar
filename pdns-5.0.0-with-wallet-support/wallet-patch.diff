@@ -1,0 +1,97 @@
+diff --git a/pdns/dnsrecords.cc b/pdns/dnsrecords.cc
+index 7895a788c..0cc682481 100644
+--- a/pdns/dnsrecords.cc
++++ b/pdns/dnsrecords.cc
+@@ -172,6 +172,10 @@ boilerplate_conv(OPT,
+                    conv.xfrBlob(d_data)
+                  );
+ 
++// NOLINTBEGIN
++boilerplate_conv(WALLET, conv.xfrText(d_text, true));
++// NOLINTEND
++
+ #ifdef HAVE_LUA_RECORDS
+ 
+ bool g_luaRecordInsertWhitespace;
+@@ -980,6 +984,7 @@ static void reportOtherTypes(const ReportIsOnlyCallableByReportAllTypes& guard)
+    L32RecordContent::report(guard);
+    L64RecordContent::report(guard);
+    LPRecordContent::report(guard);
++   WALLETRecordContent::report(guard);
+    ZONEMDRecordContent::report(guard);
+ }
+ 
+diff --git a/pdns/dnsrecords.hh b/pdns/dnsrecords.hh
+index da1c8cb8d..30d5821b6 100644
+--- a/pdns/dnsrecords.hh
++++ b/pdns/dnsrecords.hh
+@@ -1115,6 +1115,20 @@ private:
+   DNSName d_fqdn;
+ };
+ 
++class WALLETRecordContent : public DNSRecordContent
++{
++public:
++  includeboilerplate(WALLET)
++
++  [[nodiscard]] size_t sizeEstimate() const override
++  {
++    return sizeof(*this) + d_text.size();
++  }
++
++  string d_text;
++};
++
++
+ class EUI48RecordContent : public DNSRecordContent
+ {
+ public:
+diff --git a/pdns/qtype.cc b/pdns/qtype.cc
+index 710421f97..70caf5de7 100644
+--- a/pdns/qtype.cc
++++ b/pdns/qtype.cc
+@@ -92,6 +92,7 @@ const map<const string, uint16_t> QType::names = {
+   {"ANY", 255},
+   {"URI", 256},
+   {"CAA", 257},
++  {"WALLET", 262},
+   {"DLV", 32769},
+   {"ADDR", 65400},
+ #if !defined(RECURSOR)
+diff --git a/pdns/qtype.hh b/pdns/qtype.hh
+index dd2761a65..2cabcfd93 100644
+--- a/pdns/qtype.hh
++++ b/pdns/qtype.hh
+@@ -136,6 +136,7 @@ public:
+     ANY = 255,
+     URI = 256,
+     CAA = 257,
++    WALLET = 262,
+     DLV = 32769,
+     ADDR = 65400,
+ #if !defined(RECURSOR)
+diff --git a/regression-tests/tests/basic-wallet-resolution/command b/regression-tests/tests/basic-wallet-resolution/command
+new file mode 100644
+index 000000000..ec4a644d1
+--- /dev/null
++++ b/regression-tests/tests/basic-wallet-resolution/command
+@@ -0,0 +1,2 @@
++#!/bin/sh
++cleandig text.example.com WALLET
+diff --git a/regression-tests/tests/basic-wallet-resolution/description b/regression-tests/tests/basic-wallet-resolution/description
+new file mode 100644
+index 000000000..c34431524
+--- /dev/null
++++ b/regression-tests/tests/basic-wallet-resolution/description
+@@ -0,0 +1 @@
++This test tries to resolve the new WALLET RRType.
+\ No newline at end of file
+diff --git a/regression-tests/tests/basic-wallet-resolution/expected_result b/regression-tests/tests/basic-wallet-resolution/expected_result
+new file mode 100644
+index 000000000..85c425dc8
+--- /dev/null
++++ b/regression-tests/tests/basic-wallet-resolution/expected_result
+@@ -0,0 +1,3 @@
++0	wallet.example.com.	120	IN	WALLET	"currency-identifer" "wallet-identifier"
++Rcode: 0 (No Error), RD: 0, QR: 1, TC: 0, AA: 1, opcode: 0
++Reply to question for qname='wallet.example.com.', qtype=WALLET
