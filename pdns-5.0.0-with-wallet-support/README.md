@@ -1,7 +1,7 @@
 # How to add DNS Record type WALLET to PowerDNS Auth
 
-In Apr-2025, PowerDNS had [already made the code change](https://github.com/PowerDNS/pdns/pull/15449)
-necessary to add support for the WALLET rr-type, as of now (Sep-2025) it is still waiting to go through QA.
+In Apr-2025, a pull-request [already exists](https://github.com/PowerDNS/pdns/pull/15449)
+to add support for the WALLET rr-type, as of now (Sep-2025) it is still waiting to go through QA.
 
 But you don't have to wait, if you're a little handy on Linux.
 
