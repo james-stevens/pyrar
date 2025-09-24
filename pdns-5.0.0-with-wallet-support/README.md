@@ -22,7 +22,7 @@ Now you have the code changes, but there is some stuff you will need to remove.
 - Untar it
 - Go into the directory tar just created and run `./configure`
 
-Based on the configuration used in Alpine v3.22, I created this configure. I don't know what much of it means, I just used
+Based on the configuration used in Alpine v3.22, I created [this configure](run_configure). I don't know what much of it means, I just used
 the same options that has been used to build the Alpine package of PowerDNS Auth.
 
 		./configure \
@@ -55,7 +55,8 @@ However, this is still stock PowerDNS Auth, so now we want to add WALLET support
 - `patch -p1 < /tmp/wallet-patch.diff`
 
 This will give some errors, but you can just (carefully) delete the references to the files that gave an error & run `patch` again.
-For me this happened twice, giving the `wallet-patch.diff` file in this directory.
+For me this happened twice, giving the [wallet-patch.diff](wallet-patch.diff) file in this directory.
+You can just use my `wallet-patch.diff`, if you are happy to do that.
 
 Now you have patched in WALLET support, run `make` again.
 
