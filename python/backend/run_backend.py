@@ -130,6 +130,7 @@ def start_up(is_live):
     registry.start_up()
     libback.start_ups()
     pdns.start_up()
+    pdns.create_catalog_zones()
 
 
 def main():

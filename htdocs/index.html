@@ -2509,7 +2509,6 @@ function check_for_uwr_ips(del_rr)
 	if (!uwr_nodes) return false;
 
 	if (del_rr.type != "URI") return false;
-	if (del_rr.name.slice(0,11).toLowerCase() != "_http._tcp.") return false;
 	let rr_idx = find_dns_name(del_rr.name.slice(11).toLowerCase());
 	if (!rr_idx) return false;
 

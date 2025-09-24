@@ -744,7 +744,7 @@ def pdns_update_rrs(req, dom_db):
             return req.abort("Invalid URL provided")
 
     uwr = {
-        "name": "_http._tcp." + rrset["name"] if rrset["name"][:2] != "*." else rrset["name"],
+        "name": rrset["name"],
         "type": "URI",
         "ttl": rrset["ttl"],
         "data": ['1 1 "' + d + '"' for d in rrset["data"]]
