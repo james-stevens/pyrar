@@ -76,3 +76,8 @@ or
 
 You may need to install `bind` or `bind-utils` to get `dig`.
 
+## Or, Use my Binaries
+
+If you are running PowerDNS Auth in a container based on Alpine v3.22, you can save yourself all this hassle by using
+the three binaries in this directory. 
+
