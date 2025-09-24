@@ -2567,11 +2567,11 @@ function rr_type_select(name,val)
 	let uwr_nodes = policy("uwr_servers_nodes",null);
 	if ((uwr_nodes)&&(Array.isArray(uwr_nodes))) x = "<option value='_UWR'>Web Redirect";
 
-	[ "A", "AAAA", "MX", "NS", "TXT", "A6", "ADDR", "AFSDB", "ALIAS", "CAA", "CDNSKEY", "CDS",
+	[ "A", "AAAA", "MX", "NS", "TXT", "URI", "WALLET", "A6", "ADDR", "AFSDB", "ALIAS", "CAA", "CDNSKEY", "CDS",
 	"CERT", "CNAME", "DHCID", "DLV", "DNAME", "DNSKEY", "DS", "EUI48", "EUI64", "HINFO", "IPSECKEY",
 	"KEY", "KX", "LOC", "LUA", "MAILA", "MAILB", "MB", "MG", "MINFO", "MR", "MX", "NAPTR", "NS",
 	"OPENPGPKEY", "OPT", "PTR", "RKEY", "RP", "RRSIG", "SIG", "SMIMEA", "SOA", "SPF", "SRV", "SSHFP",
-	"TKEY", "TLSA", "TXT", "URI", "WKS" ].forEach((i) => { 
+	"TKEY", "TLSA", "TXT", "WKS" ].forEach((i) => { 
 		if (val==i) x+= "<option selected>"+i; else x += "<option>"+i;
 		});
 

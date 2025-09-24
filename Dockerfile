@@ -25,7 +25,18 @@ RUN apk add sysklogd
 RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 RUN rm -f /etc/periodic/daily/sysklogd
 
-RUN apk add pdns pdns-backend-mysql
+####################################
+# RUN apk add pdns pdns-backend-mysql
+####################################
+COPY pdns-5.0.0-with-wallet-support/pdns_control /usr/bin/pdns_control
+COPY pdns-5.0.0-with-wallet-support/pdnsutil /usr/bin/pdnsutil
+COPY pdns-5.0.0-with-wallet-support/pdns_server /usr/sbin/pdns_server
+RUN mkdir /etc/pdns
+RUN addgroup -S pdns
+RUN adduser -S -G pdns pdns
+RUN chown pdns: /etc/pdns
+RUN apk add lua5.3 boost1.84-libs
+####################################
 
 RUN rm -rf /tmp
 RUN rmdir /var/lib/nginx/tmp /var/log/nginx 

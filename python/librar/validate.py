@@ -84,6 +84,7 @@ VALID_RR_TYPES = {
     "TLSA": True,
     "TXT": True,
     "URI": True,
+    "WALLET": True,
     "WKS": True,
     "WKS ": True,
     "X25": True,

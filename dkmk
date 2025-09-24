@@ -1,5 +1,12 @@
 #! /bin/bash
 
+if test -z "${BASE}" -o -z "${PYTHONPATH}"
+	then
+		echo "You must set BASE & PYTHONPATH"
+		echo ""
+		echo "export BASE=<this-directory>"
+		echo "export PYTHONPATH=${BASE}/python"
+	fi
 
 cd ${BASE}
 
