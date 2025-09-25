@@ -67,33 +67,31 @@ def zone_exists(name):
     return load_zone_keys(name) is not None
 
 
-def hash_zone_name(name):
+def hash_zone_name(in_name):
     """ return {name} FQDN as a catalog hash in text """
-    if name[-1] != ".":
-        name += "."
+    name = in_name.rstrip(".") + "."
     return hashlib.sha1(dns.name.from_text(name).to_wire()).hexdigest().lower()
 
 
-def load_zone(name):
-    if name[-1] != ".":
-        name += "."
+def load_zone(in_name):
+    name = in_name.rstrip(".") + "."
     resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
 
 
-def load_zone_keys(name):
-    if name[-1] != ".":
-        name += "."
+def load_zone_keys(in_name):
+    name = in_name.rstrip(".") + "."
     resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}/cryptokeys")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
 
 
-def dnssec_zone_cmds(name):
+def dnssec_zone_cmds(in_name):
     """ rest/api calls to sign zone called {name}, name must have trailing "." """
+    name = in_name.rstrip(".") + "."
     dnssec_algorithm = policy.policy("dnssec_algorithm")
     dnssec_ksk_bits = policy.policy("dnssec_ksk_bits")
     dnssec_zsk_bits = policy.policy("dnssec_zsk_bits")
@@ -128,10 +126,8 @@ def dnssec_zone_cmds(name):
     }]
 
 
-def create_zone(name, with_dnssec=False, ensure_zone=False, is_client_zone=True, auto_catalog=True):
-    if name[-1] != ".":
-        name += "."
-
+def create_zone(in_name, with_dnssec=False, ensure_zone=False, is_client_zone=True, auto_catalog=True):
+    name = in_name.rstrip(".") + "."
     dns_servers = policy.policy("dns_servers")
     response = run_one_cmd(
         "POST", f"{PDNS_BASE_URL}/zones", {
@@ -194,10 +190,8 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, is_client_zone=True,
     return True
 
 
-def unsign_zone(name):
-    if name[-1] != ".":
-        name += "."
-
+def unsign_zone(in_name):
+    name = in_name.rstrip(".") + "."
     keys = load_zone_keys(name)
 
     post_json = [{
@@ -230,9 +224,8 @@ def run_cmds(post_json):
     return ret
 
 
-def sign_zone(name):
-    if name[-1] != ".":
-        name += "."
+def sign_zone(in_name):
+    name = in_name.rstrip(".") + "."
     run_cmds(dnssec_zone_cmds(name))
     return load_zone_keys(name)
 
@@ -243,18 +236,17 @@ def get_catalog(is_client_zone):
     return ret.rstrip(".") + "."
 
 
-def delete_from_catalog(name, is_client_zone=True):
-    if name[-1] != ".":
-        name += "."
+def delete_from_catalog(in_name, is_client_zone=True):
+    name = in_name.rstrip(".") + "."
     catalog_zone = get_catalog(is_client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [{
         "cmd": "PATCH",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}",
         "data": {
             "rrsets": [{
-                "name": f"{zone_hashed}.zones.{catalog_zone}.",
+                "name": f"{zone_hashed}.zones.{catalog_zone}",
                 "ttl": 3600,
                 "type": "PTR",
                 "changetype": "REPLACE",
@@ -269,18 +261,17 @@ def delete_from_catalog(name, is_client_zone=True):
     return run_cmds(post_json)
 
 
-def add_to_catalog(name, is_client_zone=True):
-    if name[-1] != ".":
-        name += "."
+def add_to_catalog(in_name, is_client_zone=True):
+    name = in_name.rstrip(".") + "."
     catalog_zone = get_catalog(is_client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [{
         "cmd": "PATCH",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}",
         "data": {
             "rrsets": [{
-                "name": f"{zone_hashed}.zones.{catalog_zone}.",
+                "name": f"{zone_hashed}.zones.{catalog_zone}",
                 "ttl": 3600,
                 "type": "PTR",
                 "changetype": "REPLACE",
@@ -298,18 +289,14 @@ def add_to_catalog(name, is_client_zone=True):
     return run_cmds(post_json)
 
 
-def delete_zone(name):
-    if name[-1] != ".":
-        name += "."
-
+def delete_zone(in_name):
+    name = in_name.rstrip(".") + "."
     delete_from_catalog(name)
     return run_cmds([{"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}"}])
 
 
-def update_rrs(zone, rrs):
-    if zone[-1] != ".":
-        zone += "."
-
+def update_rrs(in_zone, rrs):
+    zone = in_zone.rstrip(".") + "."
     if "ttl" not in rrs:
         rrs["ttl"] = policy.policy("default_ttl")
 
@@ -318,8 +305,7 @@ def update_rrs(zone, rrs):
         if item not in rrs:
             return False, f"Missing data item '{item}'"
         rr_data[item] = rrs[item]
-    if rr_data["name"][-1] != ".":
-        rr_data["name"] += "."
+    rr_data["name"] = rr_data["name"].rstrip(".") + "."
 
     if "data" in rrs:
         rr_data["records"] = [{"content": val, "disabled": False} for val in rrs["data"]]

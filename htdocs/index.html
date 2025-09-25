@@ -958,7 +958,6 @@ function postDomainTransfer()
 			ctx.show_one = f.trans_domain_name.value;
 			return load_domains_list(show_selected_domain);
 			}
-		console.log(ok,reply);
 		// # CODE - to handle delayed domain transfers
 		},	{
 			json : {
@@ -1147,12 +1146,12 @@ function postCloseAccount()
 	let f = document.editCloseAccount;
 	function regErr(err,item) { errMsg(err,"editCloseAccount"); item.focus(); return false; }
 
-	if (f.password.value=="") return regErr("Password missing",f.password);
+	if (f.close_password.value=="") return regErr("Password missing",f.close_password);
 
 	callApi("users/close",(ret,reply) => {
 		if (ret) goSearch(true);
 		else def_errMsg("failed",reply,"editCloseAccount");
-		}, { json: { "password": f.password.value }});
+		}, { json: { "password": f.close_password.value }});
 
 	return false;
 }
@@ -1317,7 +1316,7 @@ function user_general_settings()
 	x += "<tr><td colspan=2>To close your account, please enter your current password</td></tr>";
 	x += "<tr><td colspan=2>"+gbl.gap+"</td></tr>";
 	x += form_prompt("Current Password");
-	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='password'></td></tr>`;
+	x += `<input style="width: 300px;" autocomplete="current-password" placeholder="Your current password" type=password id='close_password'></td></tr>`;
 	x += "<tr><td colspan=2></td><td align=right><input style='width: 135px;' type=submit class=myBtn value='Close Account'></td></tr>";
 	x += "</table></form></td></tr>";
 

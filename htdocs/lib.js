@@ -106,11 +106,10 @@ function callApi(sfx,callback,inData)
 	if (debugAPI) { console.log("OUT-HEAD",httpCmd.headers); console.log("OUT-METHOD",httpCmd.method); }
 
 	fetch(url,httpCmd).then(response => {
-		if (debugAPI) console.log("API>>> Resp",response);
-
 		if (response.status != okResp) {
 			response.text().then(
 				data => {
+					if (debugAPI) console.log("API>>> Resp/BAD",data);
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
 					if (response.status != 499) return we_are_done(false,{"error":"Unexecpted System Error"});
 					check_session(response.headers);
@@ -126,6 +125,7 @@ function callApi(sfx,callback,inData)
 			}
 		else {
 			response.text().then(data => {
+				if (debugAPI) console.log("API>>> Resp/OK",data);
 				check_session(response.headers);
 
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);

@@ -36,11 +36,16 @@ def compare_bcrypt(text_password, stored_password):
     return crypt_bcrypt(text_password, stored_password) == stored_password
 
 
+def needs_updating(stored_password):
+    split_password = stored_password.split("$")
+    return split_password[1] != "argon2id"
+
+
 def compare(text_password, stored_password):
     split_password = stored_password.split("$")
     if split_password[1] == "2b":
         return compare_bcrypt(text_password, stored_password)
-    if split_password[1] == "argon2id":
+    elif split_password[1] == "argon2id":
         return compare_argon2(text_password, stored_password)
     return False
 
@@ -54,3 +59,5 @@ if __name__ == "__main__":
         print(">>>2>>>", sys.argv[1], sys.argv[2], compare(sys.argv[1], sys.argv[2]))
     else:
         print(">>>1>>>", sys.argv[1], crypt(sys.argv[1]))
+        print(">>>1a>>>", sys.argv[1], crypt_argon2(sys.argv[1]))
+        print(">>>1b>>>", sys.argv[1], crypt_bcrypt(sys.argv[1]))

@@ -180,7 +180,10 @@ def check_password(user_id, data, user_db=None):
         if not ok:
             return False
 
-    return passwd.compare(data["password"], user_db["password"])
+    if (ret := passwd.compare(data["password"], user_db["password"])) and passwd.needs_updating(user_db["password"]):
+        sql.sql_update_one("users", {"password": passwd.crypt(data["password"])},{"user_id": user_db["user_id"]})
+
+    return ret
 
 
 def verify_email(user_id, hash_sent):
