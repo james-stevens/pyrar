@@ -48,6 +48,7 @@ policy_defaults = {
     "trans_per_page": 25,
     "expire_recover_limit": 30,
     "domain_transfer_age": 30,
+    "domain_authcode_expire": 14,
     "auto_renew_before": 14,
     "renewal_reminders": "30,14,7",
     "orders_erase_days": 30,

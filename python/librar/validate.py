@@ -204,6 +204,14 @@ def is_valid_pin(val):
     return len(val) == 4 and val.isdecimal()
 
 
+def is_valid_exists_domain_id(dom_id):
+    if not isinstance(dom_id, int):
+        return False
+    if dom_id < 0 or dom_id > 99999999:
+        return False
+    return sql.sql_exists("domains", {"domain_id": dom_id})
+
+
 def valid_currency(currency):
     for item in ["iso", "symbol", "separator", "decimal", "desc"]:
         if item not in currency:

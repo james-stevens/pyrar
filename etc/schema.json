@@ -485,6 +485,11 @@
             "null": true,
             "is_plain_int": false
          },
+         "authcode_expire_dt": {
+            "type": "datetime",
+            "null": true,
+            "is_plain_int": false
+         },
          "auto_renew": {
             "type": "boolean",
             "null": true,

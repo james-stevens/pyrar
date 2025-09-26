@@ -10,6 +10,8 @@ from librar import passwd
 from librar.mysql import sql_server as sql
 from librar import sigprocs, domobj, misc, pdns, tlsa, static, hashstr, registry, validate
 
+from librar.policy import this_policy as policy
+
 from mailer import spool_email
 from backend import libback
 
@@ -213,8 +215,11 @@ def webui_set_authcode(req):
         return False, "Gifting / Transfer blocked by locks"
 
     authcode = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
-    password = passwd.crypt(authcode)
-    sql.sql_update_one("domains", {"authcode": password}, {"domain_id": dom.dom_db["domain_id"]})
+
+    sql.sql_update_one("domains", {
+        "authcode": passwd.crypt(authcode),
+        "authcode_expire_dt": misc.now(policy.policy("domain_authcode_expire" * 86400))
+    }, {"domain_id": dom.dom_db["domain_id"]})
 
     bke_job = {
         "domain_id": dom.dom_db["domain_id"],

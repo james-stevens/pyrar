@@ -168,6 +168,7 @@ CREATE TABLE `domains` (
   `for_sale_msg` varchar(100) DEFAULT NULL,
   `for_sale_amount` decimal(10,0) DEFAULT NULL,
   `authcode` varchar(100) DEFAULT NULL,
+  `authcode_expire_dt` datetime DEFAULT NULL,
   `reg_create_dt` datetime DEFAULT NULL,
   `created_dt` datetime NOT NULL,
   `amended_dt` datetime NOT NULL,
