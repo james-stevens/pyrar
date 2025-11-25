@@ -22,7 +22,6 @@ COPY basic_start_files/aliases /etc/postfix/aliases
 RUN apk add ldns-tools openssl
 
 RUN apk add sysklogd
-RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 RUN rm -f /etc/periodic/daily/sysklogd
 
 ####################################
@@ -50,11 +49,6 @@ RUN ln -fns /run/inittab /etc/inittab
 RUN ln -fns /run/policy_subst/pdns.conf /etc/pdns/pdns.conf
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/config /opt/pyrar/pems
-
-COPY pems/myCA.pem /opt/pyrar/pems/myCA.pem
-COPY pems/myCA-2.pem /opt/pyrar/pems/myCA-2.pem
-RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
-RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
 RUN ln -fns /usr/local/bin/run_actions /etc/periodic/15min/run_actions
 RUN ln -fns /usr/local/bin/run_hourly_jobs /etc/periodic/hourly/run_hourly_jobs

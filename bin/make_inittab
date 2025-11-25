@@ -3,7 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 {
-echo "::respawn:/sbin/syslogd -r -f /run/syslog.conf -n"
+echo "::respawn:/sbin/syslogd -r -f /opt/pyrar/etc/syslog.conf -n"
 
 if test "${PYRAR_PDNS_ONLY}" = "Y"
 	then
