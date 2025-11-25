@@ -15,4 +15,6 @@ cd ${BASE}
 if ! python3 -m compileall python; then exit 1; fi
 
 docker pull alpine:3.22
+
+date +%Y%m%d.%H%M > build.txt
 docker image build $* -t pyrar .
