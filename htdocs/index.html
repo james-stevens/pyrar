@@ -516,7 +516,7 @@ function history_back(event)
 		"user_settings": user_settings,
 		"myAccount": myAccount,
 		"myDomains": myDomains,
-		"myAboutMe": select_about_me,
+		"myIsThisYou": select_about_me,
 		"request_transfer": request_transfer,
 		"goSearch": goSearch,
 		"viewMessages": viewMessages,
@@ -1001,7 +1001,7 @@ function userDomainList()
 	let x = "<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
 	x += "<tr><td colspan=6 id=domListBtnBar class=btmBtnBar>";
 	x += btn("request_transfer(true)","Transfer In","Use an AuthCode to request a domain transfer",100);
-	x += btn("select_about_me(true)","Change AboutMe","Change which domain you use for About-Me",100);
+	x += btn("select_about_me(true)","IsThisYou","Change which domain you use for IsThisYou.org",100);
 	x += "</td></tr>";
 	x += "<tr><td colspan=6>"+gbl.gap+"</td></tr>";
 
@@ -1172,7 +1172,7 @@ function goMarketPlace()
 
 
 
-function postSelectAboutMeDomain()
+function postSelectIsThisYouDomain()
 {
 	let f = document.aboutMeSelectForm;
 	let dom = domain_of(f.aboutMeDomain.value);
@@ -1181,21 +1181,21 @@ function postSelectAboutMeDomain()
         if (!ok) return def_errMsg("Failed to update user settings",reply,"aboutMeTable");
         if (reply.user) ctx.user = reply.user;
         size_one_space();
-        thisAboutMe(dom._idx);
+        thisIsThisYou(dom._idx);
     }, { json: { "about_me_domain_id": dom.domain_id }});
 }
 
 
 
-function myAboutMe(with_push)
+function myIsThisYou(with_push)
 {
 	if (!ctx.session) return errMsg("You must be logged-in to use this feature");
 
-	if (!ctx.domains) return load_domains_list(myAboutMe);
+	if (!ctx.domains) return load_domains_list(myIsThisYou);
 
 	if (ctx.user.about_me_domain_id) {
 		let dom = domain_of(ctx.user.about_me_domain_id);
-		if (dom) return thisAboutMe(dom._idx);
+		if (dom) return thisIsThisYou(dom._idx);
 		}
 	return select_about_me(with_push);
 }
@@ -1209,10 +1209,10 @@ function select_about_me(with_push)
 	show_one_space("userSpace");
 
 	let x="<table align=center border=0>";
-	x += settings_header("Select About-Me Domain",true);
-	x += "<form name=aboutMeSelectForm method=post action=# onSubmit='postSelectAboutMeDomain(); return false;'>";
+	x += settings_header("Select Default Domain for IsThisYou",true);
+	x += "<form name=aboutMeSelectForm method=post action=# onSubmit='postSelectIsThisYouDomain(); return false;'>";
 	x += "<table id=aboutMeTable width=100%><colgroup><col width=30%/><col/><col width=10%/></colgroup>";
-	x += form_prompt("Domain to use as your About-Me domain")+"<select name=aboutMeDomain>";
+	x += form_prompt("Domain to use as your default IsThisYou.org domain")+"<select name=aboutMeDomain>";
 	for(let dom of ctx.domains) {
 		let selected = "";
 		if (dom.domain_id == ctx.user.about_me_domain_id) selected = "selected";
@@ -1221,7 +1221,7 @@ function select_about_me(with_push)
 	x += "</select></td></tr>"
 
 	x += "<tr><td colspan=2></td><td>";
-	x += btn("postSelectAboutMeDomain()","Select Domain","Select a domain to use as your About-Me domain",100);
+	x += btn("postSelectIsThisYouDomain()","Select Domain","Select a domain to use as your IsThisYou.org domain",100);
 	x += "</td></tr>";
 	x += "</table>"
 	elm.userSpace.innerHTML = x + "</table>";
@@ -1229,12 +1229,12 @@ function select_about_me(with_push)
 
 
 
-function thisAboutMe(idx)
+function thisIsThisYou(idx)
 {
 	let dom = ctx.domains[idx];
 	show_one_space("userSpace");
     let x="<table style='min-width: 75%;' align=center cellspacing=1 cellpadding=0 border=0>";
-    x += `<tr><td align=center>About Me Domain: ${dom.display_name}</td></tr>`;
+    x += `<tr><td align=center><a href="https://IsThisYou.org/">IsThisYou.org</a> Domain: ${dom.display_name}</td></tr>`;
     x += "<tr><td align=center><table width=100%><tr><td class=btmBtnBar><span id=aboutBtnBar>"
 
 	x += btn(`about_me_show_urls(${idx})`,`Web/Social`,"Maintain your list of socal media / websites",100)
@@ -3006,7 +3006,7 @@ function one_domain_html(idx)
 
 	x += "<tr><td colspan=4 class=btmBtnBar><span id=domainBtnBar>"
 
-	x += btn(`thisAboutMe(${dom._idx})`,`About Me`,"Add About-Me info to this domain",140)
+	x += btn(`thisIsThisYou(${dom._idx})`,`IsThisYou`,"Add IsThisYou.org info to this domain",140)
 
 	if ((dom.status_id in {1:true,20:true})&&(!have_locks.RenewProhibited))
 		x += btn(`buy_one_name('${dom.name}','renew',true)`,`Renew`,"Renew this domain",140)
@@ -3255,7 +3255,7 @@ function make_theme_popup()
 </span>
 
 <span style="display:none;" id="isLoggedIn">
-	<span style='width: 75px;' tabindex=0 title="Publish Info About Me" id="myAboutMeBtn" class=myBtn onClick="return myAboutMe(true);">About Me</span>
+	<span style='width: 75px;' tabindex=0 title="Publish Info at IsThisYou.org" id="myIsThisYouBtn" class=myBtn onClick="return myIsThisYou(true);">IsThisYou</span>
 	<span style='width: 75px;' tabindex=0 title="List my domains" id="myDomainsBtn" class=myBtn onClick="return myDomains(true);">Domains</span>
 	<span style='width: 75px;' tabindex=0 title="My account details" id="myAccountBtn" class=myBtn onClick="load_domains_list(myAccount); return false;">Account</span>
 	<span style='width: 75px;' tabindex=0 title="Log me out" class=myBtn onClick="doLogOut(); return false;">Logout</span>
