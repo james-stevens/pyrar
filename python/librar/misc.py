@@ -46,6 +46,22 @@ def puny_to_utf8(name, strict_idna_2008=None):
             return None
     return None
 
+def utf8_to_puny(utf8, strict_idna_2008=None):
+    if strict_idna_2008 is None:
+        strict_idna_2008 = policy.policy("strict_idna2008")
+    try:
+        puny = idna.encode(utf8)
+        return puny
+    except idna.IDNAError:
+        if strict_idna_2008:
+            return None
+        try:
+            puny = utf8.encode("idna")
+            return puny
+        except UnicodeError:
+            return None
+    return None
+
 
 def amt_from_float(amt, currency=None):
     if currency is None:
@@ -110,11 +126,14 @@ def make_year_month_day_dir(start_dir):
 
 
 if __name__ == "__main__":
-    print(date_add(now(), hours=1.25))
-    #print(amt_from_float(sys.argv[1]))
-    #print(ashex(int(sys.argv[1])))
+    # print(date_add(now(), hours=1.25))
+    # print(amt_from_float(sys.argv[1]))
+    # print(ashex(int(sys.argv[1])))
 
-    # print(puny_to_utf8("frog.xn--k3h"))
+    print(puny_to_utf8("xn--mp8h"))
+    print(puny_to_utf8("xn--v86cr064b"))
+    print(utf8_to_puny("👁️"))
+    print(utf8_to_puny("👁"))
     # print(puny_to_utf8("frog.xn--k3hw410f"))
     # print(puny_to_utf8("xn--e28h.xn--dp8h"))
     # print(puny_to_utf8("xn--strae-oqa.com"))
