@@ -36,9 +36,6 @@ with open("emojis.js", "w", encoding='UTF-8') as fd:
     fd.write("emojis=")
     fd.write(json.dumps(emojis, separators=(',', ':')))
 
-print(len(emojis))
-print(emojis[0])
-print(emojis[1])
-print(emojis[2])
-print(emojis[3])
-print(emojis[4])
+print("Emoji found :",len(emojis))
+for x in range(0,5):
+    print(x,":",emojis[x])
