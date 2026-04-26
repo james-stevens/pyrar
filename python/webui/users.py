@@ -138,6 +138,7 @@ def login(data, user_agent):
 
 
 USER_CAN_CHANGE = {
+    "about_me_domain_id": validate.is_valid_exists_domain_id,
     "default_auto_renew": validate.validate_binary,
     "email": validate.is_valid_email,
     "name": validate.is_valid_display_name,
@@ -180,7 +181,10 @@ def check_password(user_id, data, user_db=None):
         if not ok:
             return False
 
-    return passwd.compare(data["password"], user_db["password"])
+    if (ret := passwd.compare(data["password"], user_db["password"])) and passwd.needs_updating(user_db["password"]):
+        sql.sql_update_one("users", {"password": passwd.crypt(data["password"])}, {"user_id": user_db["user_id"]})
+
+    return ret
 
 
 def verify_email(user_id, hash_sent):

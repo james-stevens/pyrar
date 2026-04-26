@@ -54,7 +54,7 @@ if not os.path.isfile(client_pem):
 
 log_init("logging_epp_api")
 
-jobInterval = this_login["keep_alive"] if "keep_alive" in this_login else 20
+jobInterval = this_login.get("keep_alive", 20)
 
 
 def keepAlive():
@@ -274,6 +274,11 @@ def connectToEPP():
 
     ret, js = xmlRequest(makeLogin(this_login["username"], this_login["password"]))
     log(f"Login to '{this_reg}' gives {ret}")
+    if ret >= 2000:
+        log(f"Login Failed: ${js}")
+        conn.close()
+        conn = None
+        return
 
     if jobInterval > 0 and scheduler is not None:
         scheduler.resume()

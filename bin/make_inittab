@@ -3,7 +3,7 @@
 # Alternative license arrangements possible, contact me for more information
 
 {
-echo "::respawn:/usr/sbin/syslogd -r -f /run/syslog.conf -n"
+echo "::respawn:/sbin/syslogd -r -f /opt/pyrar/etc/syslogd.conf -n"
 
 if test "${PYRAR_PDNS_ONLY}" = "Y"
 	then
@@ -11,11 +11,11 @@ if test "${PYRAR_PDNS_ONLY}" = "Y"
 		exit 0
 	fi
 
-echo "::respawn:/usr/local/bin/start_wsgi_webui"
-echo "::respawn:/usr/local/bin/start_wsgi_admin"
 
 if test "${PYRAR_FAILOVER_ONLY}" = "Y"
 	then
+		echo "::respawn:/usr/local/bin/start_wsgi_webui"
+		echo "::respawn:/usr/local/bin/start_wsgi_admin"
 		exit 0
 	fi
 

@@ -24,7 +24,7 @@ def my_config():
 
     return_conf = {"desc": "Pay by PayPal"}
     my_conf = pay_conf[THIS_MODULE]
-    my_mode = my_conf["mode"] if "mode" in my_conf else "live"
+    my_mode = my_conf.get("mode", "live")
     if my_mode == "test":
         return_conf["desc"] = "Pay by PayPal SandBox"
     if my_mode in my_conf and "client_id" in my_conf[my_mode]:
@@ -64,15 +64,15 @@ class PayPalWebHook:
         resource = self.input["resource"]
         if "payer" in resource:
             payer = resource["payer"]
-            self.email = payer["email_address"] if "email_address" in payer else None
-            self.payer_id = payer["payer_id"] if "payer_id" in payer else None
+            self.email = payer.get("email_address", None)
+            self.payer_id = payer.get("payer_id", None)
 
         pay_unit = resource["purchase_units"][0]
-        self.token = pay_unit["custom_id"] if "custom_id" in pay_unit else None
+        self.token = pay_unit.get("custom_id", None)
         if "amount" in pay_unit:
             amt = pay_unit["amount"]
             self.amount = misc.amt_from_float(amt["value"]) if "value" in amt else None
-            self.currency = amt["currency_code"] if "currency_code" in amt else None
+            self.currency = amt.get("currency_code", None)
 
         return self.email is not None and self.payer_id is not None
 
@@ -124,11 +124,8 @@ class PayPalWebHook:
         return False
 
     def interesting_webhook(self):
-        if "event_type" in self.input and self.input["event_type"] in [
-                "CHECKOUT.ORDER.APPROVED", "PAYMENT.CAPTURE.COMPLETED"
-        ]:
-            return True
-        return False
+        return ("event_type" in self.input
+                and self.input["event_type"] in ["CHECKOUT.ORDER.APPROVED", "PAYMENT.CAPTURE.COMPLETED"])
 
     def event_log(self, notes):
         mysql.event_log({
@@ -149,13 +146,13 @@ class PayPalWebHook:
             return self.err_exit("Currency mismatch {amount['currency_code']} is not {currency['iso']}")
         self.amount = misc.amt_from_float(amount["value"])
 
-        self.desc = self.input["summary"] if "summary" in self.input else "Payment by PayPal"
+        self.desc = self.input.get("summary", "Payment by PayPal")
 
         if "custom_id" not in resource:
             return self.err_exit("No custom_id found")
 
         self.token = resource["custom_id"]
-        self.paypal_trans_id = self.input["id"] if "id" in self.input else self.token
+        self.paypal_trans_id = self.input.get("id", self.token)
         return True, True
 
     def set_token_seen(self):

@@ -30,7 +30,17 @@ def get_prices(domlist, num_years, qry_type):
     if "dom/price" not in this_handler:
         log(f"ERROR: Action 'dom/price' not supported by Plugin '{domlist.reg['type']}'")
         return False, f"Action 'dom/price' not supported by plugin '{domlist.reg['type']}'"
-    return this_handler["dom/price"](domlist, num_years, qry_type)
+
+    ok, reply = this_handler["dom/price"](domlist, num_years, qry_type)
+
+    for dom_each in reply:
+        for qry_each in qry_type:
+            if qry_each not in dom_each:
+                dom_each[qry_each] = None
+            if "num_years" not in dom_each:
+                dom_each["num_years"] = num_years
+
+    return ok, reply
 
 
 def start_ups():

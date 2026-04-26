@@ -24,9 +24,7 @@ def property_same(name, col1, col2):
         return False
     if name not in col1 and name in col2:
         return False
-    if col1[name] != col2[name]:
-        return False
-    return True
+    return col1[name] == col2[name]
 
 
 def type_change(col1, col2):

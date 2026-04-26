@@ -2,6 +2,13 @@
 const yes_no = [ [true,"Yes"], [false,"No"] ];
 
 pick_lists = {
+	"uri" : {
+		"id": [	
+			[ 0, "Personal"],
+			[ 10, "Social"],
+			[ 20, "Payment"]
+			],
+		},
 	"users" : {
 		"acct_on_hold": yes_no,
 		"email_verified": yes_no,

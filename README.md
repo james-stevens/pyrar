@@ -22,34 +22,6 @@ Donations are paid into a UK Limited Company, so if you want a trade invoice / r
 Or you can sponsor me [through GitHub](https://github.com/sponsors/james-stevens) - Also see `Sponsor this project`
 
 
-# Fully Hosted Service
-
-To help users go live with this system, either as a registry or registrar (or both), we plan to offer a
-fully hosted & supported service that (we hope) will be price competative with public cloud.
-
-The service will be graded by the level of performance you want, and will always be on an unmetered basis - i.e.
-no surcharges for extra usage ever - the price quoted is the price you pay. Anti-D/DoS measures will be applied.
-
-Optional extras include additonal Name Servers (e.g. in almost any part of the world, to improve DNS performance)
-and the option of "off-shore" hosting at locations like Iceland, The Seychelles or Morocco.
-With the option of a local "off-shore" domain name for your site.
-
-Two Name Servers will be included in the price of all services.
-
-
-## You Will
-- Set up suitable payment accounts (e.g PayPal) and provide us with the API crterdentials we'd need
-- All payments from users will be received by you directly
-- Promote you service (PR/sales/marketing)
-- Handle first level support - generally this means payment & refund issues
-
-## We Will
-- Host the PyRar Server & its required MySQL databases
-- Give you full access to daily backups of the databases to download
-- Provide technical back-up support
-- Give you access to the Admin Web/UI for your system (but **not** command line access)
-
-
 # Hosting on Public Cloud
 
 If you would prefer, I'm sure it would not be hard to find a tech-guru on Fiverr (etc) who could

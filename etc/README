@@ -1,0 +1,3 @@
+
+recrerate the schemas by running `python/bin/fix_db_schema.py -C`
+

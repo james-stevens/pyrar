@@ -252,5 +252,5 @@ const countries = [
 	[ "ZW", "Zimbabwe" ]
 	];
 
-by_country = {};
+var by_country = {};
 for(let i of countries) by_country[i[0]] = i[1];

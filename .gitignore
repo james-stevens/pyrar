@@ -1,5 +1,10 @@
 __pycache__
+pems/shakestation.pem
+pems/client.pyrar.com.pem
+pems/extra.pem
+pems/nol.pem
 pems/server.pem
 env
-storage/perm
+storage
 config
+build.txt

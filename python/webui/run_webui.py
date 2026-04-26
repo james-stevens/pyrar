@@ -28,6 +28,8 @@ SESSION_TAG_LOWER = SESSION_TAG.lower()
 
 # remove these columns before transmitting to user
 REMOVE_TO_SECURE = {
+    "domains": [ "authcode" ],
+    "users": ["password", "two_fa", "password_reset"],
     "user": ["password", "two_fa", "password_reset"],
     "orders": ["price_charged", "currency_charged"],
     "transactions": ["sales_item_id"]
@@ -52,9 +54,9 @@ class WebuiReq:
         self.sess_code = None
         self.user_id = None
         self.user_data = None
-        self.post_js = flask.request.json
+        self.post_js = flask.request.json if flask.request.method == "POST" and flask.request.is_json else None
         self.headers = {item.lower(): val for item, val in dict(flask.request.headers).items()}
-        self.user_agent = self.headers["user-agent"] if "user-agent" in self.headers else "Unknown"
+        self.user_agent = self.headers.get("user-agent", "Unknown")
 
         if SESSION_TAG_LOWER in self.headers:
             logged_in, check_sess_data = users.check_session(self.headers[SESSION_TAG_LOWER], self.user_agent)
@@ -84,15 +86,22 @@ class WebuiReq:
         """ return error code to caller """
         return self.response({"error": data}, HTML_CODE_ERR)
 
+    def clean_this_record(self, this_record, remove_cols):
+        for column in remove_cols:
+            if column in this_record:
+                del this_record[column]
+
     def secure_user_data(self):
         """ remove data columns the user shouldnt see """
         if self.user_data is None:
             return
         for table, remove_cols in REMOVE_TO_SECURE.items():
-            if table in self.user_data and isinstance(self.user_data[table], dict):
-                for column in remove_cols:
-                    if column in self.user_data[table]:
-                        del self.user_data[table][column]
+            if table in self.user_data:
+                if isinstance(self.user_data[table], dict):
+                    self.clean_this_record(self.user_data[table], remove_cols)
+                if isinstance(self.user_data[table], list):
+                    for this_record in self.user_data[table]:
+                        self.clean_this_record(this_record,remove_cols)
 
     def send_user_data(self):
         check_messages(self, self.user_data)
@@ -212,7 +221,7 @@ def check_messages(req, data):
 def api_messages_check():
     req = WebuiReq()
     if not req.is_logged_in:
-        return req.abort(NOT_LOGGED_IN)
+        return req.response(False)
     return req.response(sql.sql_exists("messages", {"user_id": req.user_id, "is_read": False}))
 
 
@@ -650,6 +659,10 @@ def pdns_action(func, action):
     return func(req, dom.dom_db)
 
 
+def pdns_zone_exists(req, dom_db):
+    return req.response({"name": dom_db["name"], "exists": pdns.zone_exists(dom_db["name"])})
+
+
 def pdns_get_data(req, dom_db):
     dom_name = dom_db["name"]
     pdns.create_zone(dom_name, ensure_zone=True)
@@ -668,14 +681,14 @@ def pdns_sign_zone(req, dom_db):
     if key_data is None:
         return req.abort("No DNSSEC Keys found")
 
-    if dom_db["ns"] == policy.policy("dns_servers"):
+    if dom_db["ns"] == ",".join(policy.policy("dns_servers")):
         update_doms_ds(req, key_data, dom_db)
 
     return pdns_get_data(req, dom_db)
 
 
 def pdns_unsign_zone(req, dom_db):
-    if pdns.unsign_zone(dom_db["name"]) and dom_db["ns"] == policy.policy("dns_servers"):
+    if pdns.unsign_zone(dom_db["name"]) and dom_db["ns"] == ",".join(policy.policy("dns_servers")):
         sql.sql_update_one("domains", {"ds": None}, {"domain_id": dom_db["domain_id"], "user_id": req.user_id})
         dom_db["ds"] = None
         domains.domain_backend_update(dom_db)
@@ -712,11 +725,8 @@ def check_rr_data(dom_db, add_rr):
     if not isinstance(add_rr["rr"]["ttl"], int):
         return False
 
-    if len(add_rr["rr"]["name"]) > len(
-            dom_db["name"]) and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"]:
-        return False
-
-    return True
+    return not (len(add_rr["rr"]["name"]) > len(dom_db["name"])
+                and add_rr["rr"]["name"][-1 * len(dom_db["name"]) - 1:-1] != dom_db["name"])
 
 
 def pdns_update_rrs(req, dom_db):
@@ -736,14 +746,14 @@ def pdns_update_rrs(req, dom_db):
         return req.abort("ERROR: No UWR nodes confgiured")
 
     for idx, uri in enumerate(rrset["data"]):
-        if uri[:7].lower() != "http://" or uri[:7].lower() != "http://":
+        if uri[:7].lower() != "http://" and uri[:8].lower() != "https://":
             uri = "http://" + uri
             rrset["data"][idx] = uri
         if not validators.url(uri):
             return req.abort("Invalid URL provided")
 
     uwr = {
-        "name": "_http._tcp." + rrset["name"] if rrset["name"][:2] != "*." else rrset["name"],
+        "name": rrset["name"],
         "type": "URI",
         "ttl": rrset["ttl"],
         "data": ['1 1 "' + d + '"' for d in rrset["data"]]
@@ -784,55 +794,51 @@ def make_tlsa():
 
 @application.route('/pyrar/v1.0/dns/update', methods=['POST'])
 def domain_dns_update():
-    """ Update an RR-set in P/DNS """
     return pdns_action(pdns_update_rrs, "pdns/update")
 
 
 @application.route('/pyrar/v1.0/dns/drop', methods=['POST'])
 def domain_dns_drop():
-    """ Drop a domain & all its data in P/DNS """
     return pdns_action(pdns_drop_zone, "pdns/drop")
 
 
 @application.route('/pyrar/v1.0/dns/unsign', methods=['POST'])
 def domain_dns_unsign():
-    """ Remove DNSSEC from a domain in P/DNS """
     return pdns_action(pdns_unsign_zone, "pdns/unsign")
 
 
 @application.route('/pyrar/v1.0/dns/sign', methods=['POST'])
 def domain_dns_sign():
-    """ Sign a domain in P/DNS """
     return pdns_action(pdns_sign_zone, "pdns/sign")
 
 
 @application.route('/pyrar/v1.0/dns/load', methods=['POST'])
 def domain_dns_load():
-    """ load domain's DNS data from P/DNS """
     return pdns_action(pdns_get_data, "pdns/load")
+
+
+@application.route('/pyrar/v1.0/dns/exists', methods=['POST'])
+def domain_dns_exists():
+    return pdns_action(pdns_zone_exists, "pdns/exists")
 
 
 @application.route('/pyrar/v1.0/domain/gift', methods=['POST'])
 def domain_gift():
-    """ gift a domain to another user """
     return run_user_domain_task(domains.webui_gift_domain, "Gift")
 
 
 @application.route('/pyrar/v1.0/domain/flags', methods=['POST'])
 def domain_flags():
-    """ update domain flags """
     return run_user_domain_task(domains.webui_update_domains_flags, "Flags")
 
 
 @application.route('/pyrar/v1.0/domain/update', methods=['POST'])
 def domain_update():
-    """ update domain details """
     return run_user_domain_task(domains.webui_update_domain, "Update")
 
 
 @application.route('/pyrar/v1.0/domain/authcode', methods=['POST'])
 def domain_authcode():
-    """ set domain authcode """
     return run_user_domain_task(domains.webui_set_authcode, "setAuth")
 
 

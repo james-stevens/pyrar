@@ -19,7 +19,7 @@ def make_blank_domain(name, user_db, status_id, num_years):
     dom_db = {
         "name": name,
         "user_id": user_db["user_id"],
-        "ns": policy.policy("dns_servers"),
+        "ns": ",".join(policy.policy("dns_servers")),
         "auto_renew": user_db["default_auto_renew"],
         "status_id": status_id,
         "expiry_dt": None

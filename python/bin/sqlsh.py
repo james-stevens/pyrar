@@ -40,7 +40,12 @@ def verbose_output(this_row):
 sql.connect(args.user)
 
 for query in args.sql:
-    ok, reply = sql.run_select(query)
+    cmd = query.split()[0].lower()
+    if cmd in ["select", "show"]:
+        ok, reply = sql.run_select(query)
+    else:
+        ok, reply = sql.sql_exec(query)
+
     FIRST_ROW = sys.stdout.isatty()
     if not ok:
         break

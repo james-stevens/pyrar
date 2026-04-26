@@ -1,5 +1,9 @@
 #! /bin/sh
 
+cp -u /var/lib/pems/jrcs.net.pem pems/extra.pem
+cp -u /var/lib/pems/jrcs.net.pem pems/nol.pem
+
+
 docker run \
 	-m 1g \
 	-v /opt/github/pyrar/config:/opt/pyrar/config \
@@ -12,8 +16,7 @@ docker run \
 	--env BASE="/opt/pyrar" \
 	--env PYTHONPATH="/opt/pyrar/python" \
 	--env PDNS_API_KEY="$(cat /run/pdns_api_key)" \
-	-p 10000:10000 \
-	-p 10001:10001 \
+	-p 10000:10000 -p 10001:10001 -p 10002:10002 \
 	-p 8081:8081 \
 	-p 127.0.0.1:25:25 \
 	-p 127.0.0.1:80:80 \

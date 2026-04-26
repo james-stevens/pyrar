@@ -151,7 +151,7 @@ def process_emails_waiting(server=None):
 
         if ok:
             if records is not None:
-                state = records["state"] if "state" in records else "Delivered"
+                state = records.get("state", "Delivered")
                 spool_email.event_log(state, records)
             os.remove(path)
         else:

@@ -22,6 +22,7 @@ policy_defaults = {
     "email_sender": "support@example.com",
     "email_return": "no_reply@example.com",
     "logging_default": "local0",
+    "logging_postfix": "local0",
     "logging_python": "local0",
     "logging_nginx": "local0",
     "logging_nginx_level": "warn",
@@ -47,6 +48,7 @@ policy_defaults = {
     "trans_per_page": 25,
     "expire_recover_limit": 30,
     "domain_transfer_age": 30,
+    "domain_authcode_expire": 14,
     "auto_renew_before": 14,
     "renewal_reminders": "30,14,7",
     "orders_erase_days": 30,
@@ -74,7 +76,7 @@ class Policy:
 
     def policy(self, name, default_value=None):
         self.check_file()
-        return self.all_data[name] if name in self.all_data else default_value
+        return self.all_data.get(name, default_value)
 
     def data(self):
         self.check_file()

@@ -53,8 +53,8 @@ class Domain:
         self.tld_rec = registry.tld_lib.zone_data[self.tld]
         self.registry = self.tld_rec["reg_data"]
         self.transfer_stop = misc.now(self.registry["domain_transfer_age"] * -86400)
-        self.permitted_locks = self.registry["locks"] if "locks" in self.registry else static.CLIENT_DOM_FLAGS
-        self.strict_idna2008 = self.registry["strict_idna2008"] if "strict_idna2008" in self.registry else None
+        self.permitted_locks = self.registry.get("locks", static.CLIENT_DOM_FLAGS)
+        self.strict_idna2008 = self.registry.get("strict_idna2008", None)
 
         if not validate.is_valid_fqdn(name, self.strict_idna2008):
             return False, "Invalid domain name"
@@ -87,7 +87,7 @@ class Domain:
     def set_locks(self):
         self.locks = {}
         if self.dom_db is not None and misc.has_data(self.dom_db, "client_locks"):
-            self.locks = {lock: True for lock in self.dom_db["client_locks"].split(",")}
+            self.locks = dict.fromkeys(self.dom_db["client_locks"].split(","), True)
         return True, None
 
     def valid_expiry_limit(self, num_years):

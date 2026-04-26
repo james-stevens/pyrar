@@ -8,7 +8,7 @@ sqlsh "drop table if exists class_by_regexp"
 sqlsh "create table class_by_regexp (
 	name_regexp_id		${auto} not null,
 
-	prioiry				int not null default 0,
+	priority			int not null default 0,
 	name_regexp			${domain_name} not null,
 	zone				${domain_name} not null,
 	class				varchar(50) not null,

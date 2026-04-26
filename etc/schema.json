@@ -224,7 +224,7 @@
             "null": false,
             "is_plain_int": true
          },
-         "prioiry": {
+         "priority": {
             "size": 11,
             "type": "int",
             "null": false,
@@ -482,6 +482,11 @@
          "authcode": {
             "size": 100,
             "type": "varchar",
+            "null": true,
+            "is_plain_int": false
+         },
+         "authcode_expire_dt": {
+            "type": "datetime",
             "null": true,
             "is_plain_int": false
          },
@@ -1282,6 +1287,17 @@
    },
    "users": {
       "columns": {
+         "about_me_domain_id": {
+            "unsigned": true,
+            "size": 10,
+            "type": "int",
+            "null": true,
+            "is_plain_int": true,
+            "join": {
+               "table": "domains",
+               "column": "domain_id"
+            }
+         },
          "account_closed": {
             "type": "boolean",
             "null": false,
@@ -1398,7 +1414,7 @@
             "is_plain_int": false
          },
          "password": {
-            "size": 100,
+            "size": 200,
             "type": "varchar",
             "null": false,
             "is_plain_int": false
@@ -1531,7 +1547,8 @@
          "sales_item_id": "sales.sales_item_id",
          "transaction_id": "transactions.transaction_id",
          "zone": "zones.zone",
-         "is_refund_of": "sales.sales_item_id"
+         "is_refund_of": "sales.sales_item_id",
+         "about_me_domain_id": "domains.domain_id"
       }
    }
 }

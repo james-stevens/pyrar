@@ -1,8 +1,11 @@
 # BackEnd Plug-In Functions
 
-To add a new registry type you need to write a plug-in for it, then put
+To add a new registry type you need to write a Python plug-in for it, then put
 your plug-in into the directory `python/backend/dom_plugins` with the name
 of the file as the name of the plug-in with the `.py` suffix.
+
+This file name will become the value for the registry `type`, when a new registry of this type is
+set up in `registry.json`.
 
 The Python file must supply all the functions needed to control domains within that registry type,
 e.g. buy a name, renew a name, update the `NS` or `DS` records, etc

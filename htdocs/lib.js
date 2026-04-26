@@ -31,6 +31,7 @@ function from_float(amount)
 
 function callApi(sfx,callback,inData)
 {
+	unerrMsg();
 	document.body.style.cursor="progress";
 	let show_timer = true;
 	if ((inData)&&("show_timer" in inData)) show_timer = inData.show_timer;
@@ -76,7 +77,12 @@ function callApi(sfx,callback,inData)
 		url = `${window.location.origin}${sfx}`;
 
 	let okResp = 200;
-	let httpCmd = { headers: { }, method: 'GET' };
+	let httpCmd = {
+		headers: {
+			"Content-type" : "application/json; charset=UTF-8",
+			"Accept" : "application/json; charset=UTF-8"
+			},
+		method: 'GET' };
 
 	if (inData != null) {
 		if ("json" in inData) {
@@ -100,11 +106,10 @@ function callApi(sfx,callback,inData)
 	if (debugAPI) { console.log("OUT-HEAD",httpCmd.headers); console.log("OUT-METHOD",httpCmd.method); }
 
 	fetch(url,httpCmd).then(response => {
-		if (debugAPI) console.log("API>>> Resp",response);
-
 		if (response.status != okResp) {
 			response.text().then(
 				data => {
+					if (debugAPI) console.log("API>>> Resp/BAD",data);
 					if (debugAPI) console.log("API>>> BAD",response.status,response.statusText);
 					if (response.status != 499) return we_are_done(false,{"error":"Unexecpted System Error"});
 					check_session(response.headers);
@@ -120,6 +125,7 @@ function callApi(sfx,callback,inData)
 			}
 		else {
 			response.text().then(data => {
+				if (debugAPI) console.log("API>>> Resp/OK",data);
 				check_session(response.headers);
 
 				if (debugAPI) console.log("API>>> OK",response.status,response.statusText);
@@ -219,7 +225,7 @@ function unerrMsg()
 	if (t2 == null) t2 = "";
 	if (t1 == t2) elm.myMsgPop.className = "msgPop msgPopNo";
 	delete ctx.lastErrMsg;
-	if ("err_msg_tout" in ctx) clearTimeout(ctx.err_msg_tout);
+	if (ctx.err_msg_tout) clearTimeout(ctx.err_msg_tout);
 	delete ctx.err_msg_tout;
 }
 

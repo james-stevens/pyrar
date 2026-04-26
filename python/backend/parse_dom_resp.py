@@ -37,13 +37,23 @@ def parse_domain_info_xml(xml, data_type):
             data["status"] = [item["@s"] for item in dom_data["domain:status"] if "@s" in item]
         data["status"].sort()
 
-    if "domain:ns" in dom_data:
+    if dom_data.get("domain:ns", None) is not None and len(dom_data["domain:ns"]) > 0:
         dom_ns = dom_data["domain:ns"]
+
+        if "domain:hostObj" in dom_ns:
+            sent_ns_data = dom_ns["domain:hostObj"]
+            if isinstance(sent_ns_data, str):
+                data["ns"] = [sent_ns_data]
+            elif isinstance(sent_ns_data, list):
+                data["ns"] = sent_ns_data
+
         if "domain:hostAttr" in dom_ns:
-            if isinstance(dom_ns["domain:hostAttr"], dict):
-                data["ns"] = [unroll_one_ns_attr(dom_ns["domain:hostAttr"])]
-            elif isinstance(dom_ns["domain:hostAttr"], list):
-                data["ns"] = [unroll_one_ns_attr(item) for item in dom_ns["domain:hostAttr"]]
+            sent_ns_data = dom_ns["domain:hostAttr"]
+            if isinstance(sent_ns_data, dict):
+                data["ns"] = [unroll_one_ns_attr(sent_ns_data)]
+            elif isinstance(sent_ns_data, list):
+                data["ns"] = [unroll_one_ns_attr(item) for item in sent_ns_data]
+
         data["ns"].sort()
 
     data["created_dt"] = epp_dt_to_sql(dom_data, "domain:crDate")

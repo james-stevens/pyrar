@@ -84,6 +84,7 @@ VALID_RR_TYPES = {
     "TLSA": True,
     "TXT": True,
     "URI": True,
+    "WALLET": True,
     "WKS": True,
     "WKS ": True,
     "X25": True,
@@ -94,9 +95,7 @@ VALID_RR_TYPES = {
 def has_idn(name):
     if name[:4] == 'xn--':
         return True
-    if name.find(".xn--") > 0:
-        return True
-    return False
+    return name.find(".xn--") > 0
 
 
 def valid_rr_type(rr_type):
@@ -143,9 +142,7 @@ def is_valid_fqdn(name, strict_idna_2008=None):
         return False
     if re.match(IS_FQDN, name, re.IGNORECASE) is None:
         return False
-    if has_idn(name) and misc.puny_to_utf8(name, strict_idna_2008) is None:
-        return False
-    return True
+    return not (has_idn(name) and misc.puny_to_utf8(name, strict_idna_2008) is None)
 
 
 def is_valid_hostname(name):
@@ -207,6 +204,14 @@ def is_valid_pin(val):
     return len(val) == 4 and val.isdecimal()
 
 
+def is_valid_exists_domain_id(dom_id):
+    if not isinstance(dom_id, int):
+        return False
+    if dom_id < 0 or dom_id > 99999999:
+        return False
+    return sql.sql_exists("domains", {"domain_id": dom_id})
+
+
 def valid_currency(currency):
     for item in ["iso", "symbol", "separator", "decimal", "desc"]:
         if item not in currency:
@@ -215,10 +220,7 @@ def valid_currency(currency):
     if len(currency["iso"]) != 3:
         return False
 
-    if not isinstance(currency["decimal"], int):
-        return False
-
-    return True
+    return isinstance(currency["decimal"], int)
 
 
 def valid_domain_actions(actions):

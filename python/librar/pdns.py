@@ -31,12 +31,21 @@ def start_up():
         CLIENT = requests.Session()
         CLIENT.headers.update(headers)
 
-    catalog_zone = policy.policy("catalog_zone")
-    for prefix in ["tlds.", "clients."]:
-        try:
-            create_zone(prefix + catalog_zone, False, ensure_zone=True, auto_catalog=False)
-        except requests.exceptions.ConnectionError:
-            raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
+
+def create_one_catalog_zones(is_client_zone):
+    fqdn = get_catalog(is_client_zone)
+    try:
+        create_zone(fqdn, False, ensure_zone=True, auto_catalog=False)
+        update_rrs(fqdn, {"name": "version." + fqdn, "type": "TXT", "ttl": 0, "data": ["\"1\""]})
+    except requests.exceptions.ConnectionError:
+        raise requests.exceptions.ConnectionError("Failed to connect to PowerDNS")
+    except Exception as err:
+        log(f"ERROR: '{err}' when setting up catalog zones")
+
+
+def create_catalog_zones():
+    create_one_catalog_zones(False)
+    create_one_catalog_zones(True)
 
 
 def find_best_ds(key_data):
@@ -58,33 +67,31 @@ def zone_exists(name):
     return load_zone_keys(name) is not None
 
 
-def hash_zone_name(name):
+def hash_zone_name(in_name):
     """ return {name} FQDN as a catalog hash in text """
-    if name[-1] != ".":
-        name += "."
+    name = in_name.rstrip(".") + "."
     return hashlib.sha1(dns.name.from_text(name).to_wire()).hexdigest().lower()
 
 
-def load_zone(name):
-    if name[-1] != ".":
-        name += "."
+def load_zone(in_name):
+    name = in_name.rstrip(".") + "."
     resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
 
 
-def load_zone_keys(name):
-    if name[-1] != ".":
-        name += "."
+def load_zone_keys(in_name):
+    name = in_name.rstrip(".") + "."
     resp = CLIENT.get(f"{PDNS_BASE_URL}/zones/{name}/cryptokeys")
     if resp.status_code < 200 or resp.status_code > 299:
         return None
     return json.loads(resp.content)
 
 
-def dnssec_zone_cmds(name):
+def dnssec_zone_cmds(in_name):
     """ rest/api calls to sign zone called {name}, name must have trailing "." """
+    name = in_name.rstrip(".") + "."
     dnssec_algorithm = policy.policy("dnssec_algorithm")
     dnssec_ksk_bits = policy.policy("dnssec_ksk_bits")
     dnssec_zsk_bits = policy.policy("dnssec_zsk_bits")
@@ -119,27 +126,22 @@ def dnssec_zone_cmds(name):
     }]
 
 
-def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, auto_catalog=True):
-    if name[-1] != ".":
-        name += "."
-
-    dns_servers = policy.policy("dns_servers").split(",")
-    for idx, ns in enumerate(dns_servers):
-        if ns[-1] != ".":
-            dns_servers[idx] += "."
-
-    response = run_one_cmd("POST", f"{PDNS_BASE_URL}/zones", {
-        "name": name,
-        "kind": "Master",
-        "masters": [],
-        "nameservers": dns_servers,
-        "soa_edit_api": "EPOCH"
-    })
+def create_zone(in_name, with_dnssec=False, ensure_zone=False, is_client_zone=True, auto_catalog=True):
+    name = in_name.rstrip(".") + "."
+    dns_servers = policy.policy("dns_servers")
+    response = run_one_cmd(
+        "POST", f"{PDNS_BASE_URL}/zones", {
+            "name": name,
+            "kind": "Master",
+            "masters": [],
+            "nameservers": [ns.rstrip(".") + "." for ns in dns_servers],
+            "soa_edit_api": "EPOCH"
+        })
 
     if response.status_code >= 400:
         if ensure_zone:
             if auto_catalog:
-                add_to_catalog(name, client_zone)
+                add_to_catalog(name, is_client_zone)
             return True
         log(f"ERROR: Creating '{name}' failed, code={response.status_code} - {response.content}")
         return None
@@ -164,7 +166,7 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
                 "changetype":
                 "REPLACE",
                 "records": [{
-                    "content": f"{dns_servers[0]} hostmaster.{name} {now} 10800 3600 604800 3600",
+                    "content": f"{dns_servers[0].rstrip('.')+'.'} hostmaster.{name} {now} 10800 3600 6048000 3600",
                     "disabled": False
                 }]
             }]
@@ -184,14 +186,12 @@ def create_zone(name, with_dnssec=False, ensure_zone=False, client_zone=True, au
 
     run_cmds(post_json)
     if auto_catalog:
-        add_to_catalog(name, client_zone)
+        add_to_catalog(name, is_client_zone)
     return True
 
 
-def unsign_zone(name):
-    if name[-1] != ".":
-        name += "."
-
+def unsign_zone(in_name):
+    name = in_name.rstrip(".") + "."
     keys = load_zone_keys(name)
 
     post_json = [{
@@ -216,7 +216,7 @@ def run_one_cmd(cmd, url, json_data):
 def run_cmds(post_json):
     ret = True
     for req in post_json:
-        json_data = req["data"] if "data" in req else None
+        json_data = req.get("data", None)
         response = run_one_cmd(req["cmd"], req["url"], json_data)
         if response.status_code < 200 or response.status_code > 299:
             ret = False
@@ -224,30 +224,29 @@ def run_cmds(post_json):
     return ret
 
 
-def sign_zone(name):
-    if name[-1] != ".":
-        name += "."
+def sign_zone(in_name):
+    name = in_name.rstrip(".") + "."
     run_cmds(dnssec_zone_cmds(name))
     return load_zone_keys(name)
 
 
-def get_catalog(client_zone):
+def get_catalog(is_client_zone):
     catalog = policy.policy("catalog_zone")
-    return "clients." + catalog if client_zone else "tlds." + catalog
+    ret = "clients." + catalog if is_client_zone else "tlds." + catalog
+    return ret.rstrip(".") + "."
 
 
-def delete_from_catalog(name, client_zone=True):
-    if name[-1] != ".":
-        name += "."
-    catalog_zone = get_catalog(client_zone)
+def delete_from_catalog(in_name, is_client_zone=True):
+    name = in_name.rstrip(".") + "."
+    catalog_zone = get_catalog(is_client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [{
         "cmd": "PATCH",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}",
         "data": {
             "rrsets": [{
-                "name": f"{zone_hashed}.zones.{catalog_zone}.",
+                "name": f"{zone_hashed}.zones.{catalog_zone}",
                 "ttl": 3600,
                 "type": "PTR",
                 "changetype": "REPLACE",
@@ -262,18 +261,17 @@ def delete_from_catalog(name, client_zone=True):
     return run_cmds(post_json)
 
 
-def add_to_catalog(name, client_zone=True):
-    if name[-1] != ".":
-        name += "."
-    catalog_zone = get_catalog(client_zone)
+def add_to_catalog(in_name, is_client_zone=True):
+    name = in_name.rstrip(".") + "."
+    catalog_zone = get_catalog(is_client_zone)
     zone_hashed = hash_zone_name(name)
 
     post_json = [{
         "cmd": "PATCH",
-        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}.",
+        "url": f"{PDNS_BASE_URL}/zones/{catalog_zone}",
         "data": {
             "rrsets": [{
-                "name": f"{zone_hashed}.zones.{catalog_zone}.",
+                "name": f"{zone_hashed}.zones.{catalog_zone}",
                 "ttl": 3600,
                 "type": "PTR",
                 "changetype": "REPLACE",
@@ -291,18 +289,14 @@ def add_to_catalog(name, client_zone=True):
     return run_cmds(post_json)
 
 
-def delete_zone(name):
-    if name[-1] != ".":
-        name += "."
-
+def delete_zone(in_name):
+    name = in_name.rstrip(".") + "."
     delete_from_catalog(name)
     return run_cmds([{"cmd": "DELETE", "url": f"{PDNS_BASE_URL}/zones/{name}"}])
 
 
-def update_rrs(zone, rrs):
-    if zone[-1] != ".":
-        zone += "."
-
+def update_rrs(in_zone, rrs):
+    zone = in_zone.rstrip(".") + "."
     if "ttl" not in rrs:
         rrs["ttl"] = policy.policy("default_ttl")
 
@@ -311,8 +305,7 @@ def update_rrs(zone, rrs):
         if item not in rrs:
             return False, f"Missing data item '{item}'"
         rr_data[item] = rrs[item]
-    if rr_data["name"][-1] != ".":
-        rr_data["name"] += "."
+    rr_data["name"] = rr_data["name"].rstrip(".") + "."
 
     if "data" in rrs:
         rr_data["records"] = [{"content": val, "disabled": False} for val in rrs["data"]]

@@ -1,20 +1,22 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-FROM alpine:3.16
+FROM alpine:3.22
 RUN apk update
 RUN apk upgrade
 
-RUN rmdir /run
+RUN rm -rf /run
 RUN ln -s /dev/shm /run
 RUN mkdir /run/policy_subst
 RUN apk add nginx curl
 RUN addgroup nginx daemon
 
 RUN apk add python3 jq py-pip
-RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz py3-bcrypt tzdata py3-mysqlclient
-RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml py3-requests py3-validators
-RUN pip install apscheduler base58
+RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz
+RUN apk add py3-bcrypt tzdata py3-mysqlclient py3-argon2-cffi
+RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml
+RUN apk add py3-requests py3-validators py3-apscheduler
+RUN pip install --break-system-packages base58
 
 RUN apk add postfix
 COPY basic_start_files/aliases /etc/postfix/aliases
@@ -22,10 +24,20 @@ COPY basic_start_files/aliases /etc/postfix/aliases
 RUN apk add ldns-tools openssl
 
 RUN apk add sysklogd
-RUN rm -f /etc/syslogd.conf; ln -s /run/syslogd.conf /etc/syslogd.conf
 RUN rm -f /etc/periodic/daily/sysklogd
 
-RUN apk add pdns pdns-backend-mysql
+####################################
+# RUN apk add pdns pdns-backend-mysql
+####################################
+COPY pdns-5.0.0-with-wallet-support/pdns_control /usr/bin/pdns_control
+COPY pdns-5.0.0-with-wallet-support/pdnsutil /usr/bin/pdnsutil
+COPY pdns-5.0.0-with-wallet-support/pdns_server /usr/sbin/pdns_server
+RUN mkdir /etc/pdns
+RUN addgroup -S pdns
+RUN adduser -S -G pdns pdns
+RUN chown pdns: /etc/pdns
+RUN apk add lua5.3 boost1.84-libs
+####################################
 
 RUN rm -rf /tmp
 RUN rmdir /var/lib/nginx/tmp /var/log/nginx 
@@ -39,11 +51,6 @@ RUN ln -fns /run/inittab /etc/inittab
 RUN ln -fns /run/policy_subst/pdns.conf /etc/pdns/pdns.conf
 
 RUN mkdir -m 755 -p /opt/pyrar /opt/pyrar/config /opt/pyrar/pems
-
-COPY pems/myCA.pem /opt/pyrar/pems/myCA.pem
-COPY pems/myCA-2.pem /opt/pyrar/pems/myCA-2.pem
-RUN mv /opt/pyrar/pems/myCA.pem /opt/pyrar/pems/myCA-2.pem /etc/ssl/private/
-RUN cd /etc/ssl/private; cat myCA.pem myCA-2.pem >> /etc/ssl/cert.pem
 
 RUN ln -fns /usr/local/bin/run_actions /etc/periodic/15min/run_actions
 RUN ln -fns /usr/local/bin/run_hourly_jobs /etc/periodic/hourly/run_hourly_jobs
@@ -63,4 +70,5 @@ RUN ln -fns /opt/pyrar/python/bin/flat.py /usr/bin/flat
 COPY admin_htdocs /opt/pyrar/admin_htdocs/
 COPY htdocs /opt/pyrar/htdocs/
 
+COPY build.txt /usr/local/etc/build.txt
 CMD [ "/usr/local/bin/run_init" ]

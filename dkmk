@@ -1,5 +1,12 @@
 #! /bin/bash
 
+if test -z "${BASE}" -o -z "${PYTHONPATH}"
+	then
+		echo "You must set BASE & PYTHONPATH"
+		echo ""
+		echo "export BASE=<this-directory>"
+		echo "export PYTHONPATH=${BASE}/python"
+	fi
 
 cd ${BASE}
 
@@ -7,5 +14,7 @@ cd ${BASE}
 ./python/bin/fix_db_schema.py -C
 if ! python3 -m compileall python; then exit 1; fi
 
-docker pull alpine:3.16
+docker pull alpine:3.22
+
+date +%Y%m%d.%H%M > build.txt
 docker image build $* -t pyrar .

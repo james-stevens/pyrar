@@ -65,6 +65,12 @@ flat ${BASE}/config/registry.json | awk -F. 'BEGIN { n=10000 }
 postfix set-permissions
 rm -f ${perm}/postfix/pid/*.pid
 
+src="${BASE}/pems/server.pem"
+dst="/run/server.pem"
+if test -f "${src}"; then cp -a "${src}" "${dst}"; fi
+
+mkdir -p /opt/pyrar/storage/logs
+
 /usr/local/bin/make_inittab
 
 exec /sbin/init

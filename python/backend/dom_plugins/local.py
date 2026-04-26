@@ -17,7 +17,7 @@ def tld_pdns_check(name):
     """ check if domain exists in pdns """
     if (tld := registry.tld_lib.tld_of_name(name)) is None:
         return None
-    pdns.create_zone(tld, True, ensure_zone=True, client_zone=False)
+    pdns.create_zone(tld, True, ensure_zone=True, is_client_zone=False, auto_catalog=True)
     return tld
 
 
@@ -88,14 +88,14 @@ def check_tlds_exist():
     """ check all TLDs of type=local exist in pdns """
     for zone, zone_rec in registry.tld_lib.zone_data.items():
         if "reg_data" in zone_rec and zone_rec["reg_data"]["type"] == "local":
-            pdns.create_zone(zone, True, ensure_zone=True, client_zone=False, auto_catalog=True)
+            pdns.create_zone(zone, True, ensure_zone=True, is_client_zone=False, auto_catalog=True)
 
     return True
 
 
 def needs_parent_records(dom_db):
-    return (misc.has_data(dom_db, "ns") and dom_db["ns"] != policy.policy("dns_servers")) or pdns.zone_exists(
-        dom_db["name"])
+    return (misc.has_data(dom_db, "ns")
+            and dom_db["ns"] != ",".join(policy.policy("dns_servers"))) or pdns.zone_exists(dom_db["name"])
 
 
 def domain_update_from_db(bke_job, dom):
@@ -109,7 +109,7 @@ def domain_update_from_db(bke_job, dom):
 
     rrs = {"name": name, "type": "NS", "data": []}
     if needs_parent_records(dom.dom_db):
-        rrs["data"] = [d.strip(".") + "." for d in dom.dom_db["ns"].split(",")]
+        rrs["data"] = dom.dom_db["ns"].split(",")
 
     ok_ns, __ = pdns.update_rrs(tld, rrs)
 

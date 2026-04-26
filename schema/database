@@ -10,7 +10,7 @@ cmd="${root}"
 
 row_id_null="int unsigned"
 row_id="${row_id_null} not null"
-password="varchar(100)"
+password="varchar(200)"
 language="char(3)"    # ISO639-2/B
 hostname="varchar(260)"
 domain_name="varchar(260)"

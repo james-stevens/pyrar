@@ -29,6 +29,8 @@ inet_protocols = ipv4
 meta_directory = /etc/postfix
 shlib_directory = /usr/lib/postfix
 
+syslog_facility={{policy.logging_postfix}}
+
 maximal_queue_lifetime = 30d
 maximal_backoff_time = 60m
 minimal_backoff_time = 15m
