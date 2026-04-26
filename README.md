@@ -67,8 +67,7 @@ and allow zone transfers to them.
 ## Using PyRar as a Registry System
 
 PyRar can also run as a self-contained registry platform. It does **not** (yet) support
-in-bound EPP connections (e.g. from other registrars), but connecting between other PyRar Registry Systems
-should be available shortly.
+in-bound EPP connections (e.g. from other registrars).
 
 It maintains the TLD in PowerDNS, adding & removing SLDs as they are bought / expire. By default
 TLDs are signed `NSEC3+OptOut KSK+ZSK ECDSA256`. This can be reconfigured, or you can pre-create
