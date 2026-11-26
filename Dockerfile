@@ -1,7 +1,7 @@
 # (c) Copyright 2019-2022, James Stevens ... see LICENSE for details
 # Alternative license arrangements are possible, contact me for more information
 
-FROM alpine:3.22
+FROM alpine:3.24
 RUN apk update
 RUN apk upgrade
 
@@ -11,12 +11,12 @@ RUN mkdir /run/policy_subst
 RUN apk add nginx curl
 RUN addgroup nginx daemon
 
-RUN apk add python3 jq py-pip
+RUN apk add python3 jq
 RUN apk add py3-flask py3-gunicorn py3-xmltodict py3-tz
 RUN apk add py3-bcrypt tzdata py3-mysqlclient py3-argon2-cffi
 RUN apk add py3-dnspython py3-dateutil py3-jinja2 py3-yaml
 RUN apk add py3-requests py3-validators py3-apscheduler
-RUN pip install --break-system-packages base58
+RUN apk add py3-base58
 
 RUN apk add postfix
 COPY basic_start_files/aliases /etc/postfix/aliases
