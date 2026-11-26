@@ -46,6 +46,7 @@ def puny_to_utf8(name, strict_idna_2008=None):
             return None
     return None
 
+
 def utf8_to_puny(utf8, strict_idna_2008=None):
     if strict_idna_2008 is None:
         strict_idna_2008 = policy.policy("strict_idna2008")

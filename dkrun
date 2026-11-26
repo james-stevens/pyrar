@@ -3,9 +3,11 @@
 cp -u /var/lib/pems/jrcs.net.pem pems/extra.pem
 cp -u /var/lib/pems/jrcs.net.pem pems/nol.pem
 
+addr="192.168.1.143"
+local="127.0.0.3"
 
 docker run \
-	-m 1g \
+	-m 1.5g \
 	-v /opt/github/pyrar/config:/opt/pyrar/config \
 	-v /opt/github/pyrar/htdocs:/opt/pyrar/htdocs \
 	-v /opt/github/pyrar/python:/opt/pyrar/python \
@@ -15,15 +17,16 @@ docker run \
 	-v /opt/github/pyrar/admin_htdocs:/opt/pyrar/admin_htdocs \
 	--env BASE="/opt/pyrar" \
 	--env PYTHONPATH="/opt/pyrar/python" \
+	--env SYSLOG_STDOUT="Y" \
 	--env PDNS_API_KEY="$(cat /run/pdns_api_key)" \
 	-p 10000:10000 -p 10001:10001 -p 10002:10002 \
 	-p 8081:8081 \
-	-p 127.0.0.1:25:25 \
-	-p 127.0.0.1:80:80 \
-	-p 192.168.1.145:80:80 \
-	-p 192.168.1.145:443:443 \
-	-p 192.168.1.145:1000:1000 \
-	-p 127.0.0.1:443:443 \
-	-p 192.168.1.145:53:53/udp -p 192.168.1.145:53:53 \
-	-p 127.0.0.1:53:53/udp -p 127.0.0.1:53:53 \
+	-p ${local}:25:25 \
+	-p ${local}:80:80 \
+	-p ${addr}:80:80 \
+	-p ${addr}:443:443 \
+	-p ${addr}:1000:1000 \
+	-p ${local}:443:443 \
+	-p ${addr}:53:53/udp -p ${addr}:53:53 \
+	-p ${local}:53:53/udp -p ${local}:53:53 \
 	-it pyrar $*

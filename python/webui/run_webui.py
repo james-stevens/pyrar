@@ -28,7 +28,7 @@ SESSION_TAG_LOWER = SESSION_TAG.lower()
 
 # remove these columns before transmitting to user
 REMOVE_TO_SECURE = {
-    "domains": [ "authcode" ],
+    "domains": ["authcode"],
     "users": ["password", "two_fa", "password_reset"],
     "user": ["password", "two_fa", "password_reset"],
     "orders": ["price_charged", "currency_charged"],
@@ -101,7 +101,7 @@ class WebuiReq:
                     self.clean_this_record(self.user_data[table], remove_cols)
                 if isinstance(self.user_data[table], list):
                     for this_record in self.user_data[table]:
-                        self.clean_this_record(this_record,remove_cols)
+                        self.clean_this_record(this_record, remove_cols)
 
     def send_user_data(self):
         check_messages(self, self.user_data)

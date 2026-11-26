@@ -30,13 +30,6 @@ done
 postalias /etc/postfix/aliases
 postalias /etc/postfix/relay_auth
 
-if test "${SYSLOG_SERVER}" = "None"
-	then
-		echo "*.* -/dev/console"
-	else
-		echo "*.* @${SYSLOG_SERVER}"
-	fi > /run/syslog.conf
-
 mkdir -p /run/epp /run/postfix
 mkdir /run/nginx; chown nginx: /run/nginx
 

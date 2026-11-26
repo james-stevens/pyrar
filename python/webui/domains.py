@@ -216,10 +216,11 @@ def webui_set_authcode(req):
 
     authcode = hashstr.make_hash(f"{req.post_js['name']}.{req.post_js['domain_id']}.{req.sess_code}", 15)
 
-    sql.sql_update_one("domains", {
-        "authcode": passwd.crypt(authcode),
-        "authcode_expire_dt": misc.now(policy.policy("domain_authcode_expire" * 86400))
-    }, {"domain_id": dom.dom_db["domain_id"]})
+    sql.sql_update_one(
+        "domains", {
+            "authcode": passwd.crypt(authcode),
+            "authcode_expire_dt": misc.now(policy.policy("domain_authcode_expire" * 86400))
+        }, {"domain_id": dom.dom_db["domain_id"]})
 
     bke_job = {
         "domain_id": dom.dom_db["domain_id"],

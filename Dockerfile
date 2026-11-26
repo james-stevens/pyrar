@@ -23,9 +23,6 @@ COPY basic_start_files/aliases /etc/postfix/aliases
 
 RUN apk add ldns-tools openssl
 
-RUN apk add sysklogd
-RUN rm -f /etc/periodic/daily/sysklogd
-
 ####################################
 # RUN apk add pdns pdns-backend-mysql
 ####################################

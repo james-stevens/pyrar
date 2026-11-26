@@ -1,0 +1,17 @@
+#! /bin/sh
+##########################################################################
+#    (c) Copyright 2021-2025 JRCS Ltd - All Rights Reserved              #
+##########################################################################
+
+if test "${SYSLOG_SERVER}"
+	then
+		exec /sbin/syslogd -n -R ${SYSLOG_SERVER}
+	fi
+
+if test "${SYSLOG_STDOUT}" = "Y"
+	then
+		exec /sbin/syslogd -n -O -
+	fi
+
+mkdir -p /opt/data/logs
+exec /sbin/syslogd -n -O /opt/pyrar/storage/logs/messages -b 9 -s 100000
